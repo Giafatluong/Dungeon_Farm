@@ -344,6 +344,7 @@ public class CombatManager : MonoBehaviour
     public void StartEnemyTurn(EnemyStats enemy)
     {
         currentTurn = Turn.Enemy;
+        enemy.ResetDefend();
 
         if (enemy == null)
         {

@@ -53,4 +53,27 @@ public class SpeedManager : MonoBehaviour
             }
         }
     }
+
+    public void RandomEqualSpeed()
+    {
+        int start = 0;
+        while(start < speedOrder.Count)
+        {
+            int end = start;
+            while(end+1 < speedOrder.Count && speedOrder[end+1].speed == speedOrder[start].speed)
+            {
+                end++;
+            }
+
+            for(int i=end; i>start; i--)
+            {
+                int randomIndex = Random.Range(start, i+1);
+                SpeedEntry tmp = speedOrder[i];
+                speedOrder[i] = speedOrder[randomIndex];
+                speedOrder[randomIndex] = tmp;
+            }
+
+            start = end+1;
+        }
+    }
 }
