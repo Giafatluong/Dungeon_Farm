@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c32e8c2eb4883b42bac2a10e839d4cb, type: 3}
+  m_Name: Slime
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyData
+  enemyName: Slime
+  maxHealth: 30
+  ATK: 5
+  DEF: 0
+  speed: 0
+  possibleIntents: 000000000200000003000000
+  intentEffects:
+  - effect: {fileID: 11400000, guid: 2c54625ab304a2649b5fcfa7060c0828, type: 2}
+    target: 0
+    value: 2
+    duration: 3
+    durationType: 0
+  - effect: {fileID: 11400000, guid: 447984b8d628a694299daecc4fdb03c1, type: 2}
+    target: 2
+    value: 2
+    duration: 3
+    durationType: 0

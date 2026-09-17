@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 284236d205486aa4c8e049821338417f, type: 3}
+  m_Name: Chilli
+  m_EditorClassIdentifier: Assembly-CSharp::FoodData
+  itemName: Chilli
+  itemIcon: {fileID: -1026108827, guid: 338eb9325b511bf4dbf0184fff5f5d9c, type: 3}
+  dropPrefab: {fileID: 5267890429968547255, guid: ae3bff0b13ad01a4ea48ca3d6d8d1dd0, type: 3}
+  itemType: 2
+  isStackable: 1
+  hungerValue: 5
+  healthValue: 2
+  foodBuff:
+  - buffs: {fileID: 11400000, guid: 6fbdc716dfd5399429b38f2c719b3694, type: 2}
+    buffDurationType: 0
+    buffDuration: 3
+    buffValue: 2
+  - buffs: {fileID: 11400000, guid: e4ce13189d79493419e78cd2185a7729, type: 2}
+    buffDurationType: 0
+    buffDuration: 3
+    buffValue: 11
