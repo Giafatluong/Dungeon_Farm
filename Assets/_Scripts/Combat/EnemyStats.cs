@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.Analytics;
+using UnityEngine.UI;
 
 public class EnemyStats : MonoBehaviour
 {
@@ -12,10 +13,12 @@ public class EnemyStats : MonoBehaviour
     public bool isDefending;
 
     public EnemyData.EnemyIntent currentIntent;
+    public HealthBar healthBar;
 
     private void Start()
     {
         currentHealth = enemyData.maxHealth;
+        healthBar.SetHealthBar(enemyData.maxHealth, enemyData.maxHealth);
 
         if (enemyData.possibleIntents.Length > 0)
         {
@@ -24,7 +27,7 @@ public class EnemyStats : MonoBehaviour
             ];
         }
     }
-
+#region GetSomeStats
     public int GetCurrentATK()
     {
         int value = enemyData.ATK;
@@ -74,7 +77,12 @@ public class EnemyStats : MonoBehaviour
 
         return value;
     }
+#endregion
 
+
+
+
+#region Buff
     public void AddBuff(
         StatEffectData buff,
         int value,
@@ -130,10 +138,16 @@ public class EnemyStats : MonoBehaviour
             }
         }
     }
+#endregion
+    
 
+
+
+#region Actions
     public void TakeDamage(int damage)
     {
         currentHealth -= damage;
+        healthBar.SetHealthBar(currentHealth, enemyData.maxHealth);
 
         if (currentHealth < 0)
         {
@@ -193,6 +207,7 @@ public class EnemyStats : MonoBehaviour
             );
         }
     }
+#endregion
 
     private void OnMouseDown()
     {

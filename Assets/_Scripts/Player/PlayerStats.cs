@@ -26,12 +26,15 @@ public class PlayerStats : MonoBehaviour
     public List<ActiveBuff> activeBuffs = new List<ActiveBuff>();
 
     public ItemContainer itemContainer;
+    public HealthBar healthBar;
 
     private void Start()
     {
         currentHealth = maxHealth;
         currentHunger = maxHunger;
         currentAP = maxAP;
+
+        healthBar.SetHealthBar(currentHealth, maxHealth);
     }
 
     #region PlayerAction
@@ -167,6 +170,7 @@ public class PlayerStats : MonoBehaviour
     public void TakeDamage(int damage)
     {
         currentHealth -= damage;
+        healthBar.SetHealthBar(currentHealth, maxHealth);
 
         if (currentHealth < 0)
         {
@@ -204,6 +208,7 @@ public class PlayerStats : MonoBehaviour
     public void Heal(int amount)
     {
         currentHealth += amount;
+        healthBar.SetHealthBar(currentHealth, maxHealth);
 
         if (currentHealth > maxHealth)
         {

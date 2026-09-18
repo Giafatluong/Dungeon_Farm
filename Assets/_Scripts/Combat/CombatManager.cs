@@ -1,3 +1,5 @@
+using System;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class CombatManager : MonoBehaviour
@@ -8,6 +10,7 @@ public class CombatManager : MonoBehaviour
     public EnemyStats[] enemies;
     public SpeedManager speedManager;
     public TurnManager turnManager;
+    public HealthBarManager healthBarManager;
 
     public enum Turn
     {
@@ -22,6 +25,7 @@ public class CombatManager : MonoBehaviour
     private void Start()
     {
         StartCombat();
+        healthBarManager.CreateHealthBars();
     }
 
     private void OnEnable()
