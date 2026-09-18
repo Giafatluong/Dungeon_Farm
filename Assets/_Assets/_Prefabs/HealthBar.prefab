@@ -90,7 +90,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HealthBar
   healthBar: {fileID: 3631340013037065459}
-  offset: {x: 0, y: 0.9, z: 0}
+  offset: {x: 0, y: 1.5, z: 0}
+  enemyTarget: {fileID: 0}
+  playerTarget: {fileID: 0}
 --- !u!1 &9134042499291741330
 GameObject:
   m_ObjectHideFlags: 0

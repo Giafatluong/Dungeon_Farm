@@ -1,7 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using UnityEngine.Analytics;
-using UnityEngine.UI;
 
 public class EnemyStats : MonoBehaviour
 {
@@ -13,13 +11,14 @@ public class EnemyStats : MonoBehaviour
     public bool isDefending;
 
     public EnemyData.EnemyIntent currentIntent;
-    public HealthBar healthBar;
+
+    private void Awake()
+    {
+        currentHealth = enemyData.maxHealth;
+    }
 
     private void Start()
     {
-        currentHealth = enemyData.maxHealth;
-        healthBar.SetHealthBar(enemyData.maxHealth, enemyData.maxHealth);
-
         if (enemyData.possibleIntents.Length > 0)
         {
             currentIntent = enemyData.possibleIntents[
@@ -27,7 +26,9 @@ public class EnemyStats : MonoBehaviour
             ];
         }
     }
-#region GetSomeStats
+
+    #region GetSomeStats
+
     public int GetCurrentATK()
     {
         int value = enemyData.ATK;
@@ -77,12 +78,11 @@ public class EnemyStats : MonoBehaviour
 
         return value;
     }
-#endregion
 
+    #endregion
 
+    #region Buff
 
-
-#region Buff
     public void AddBuff(
         StatEffectData buff,
         int value,
@@ -96,14 +96,16 @@ public class EnemyStats : MonoBehaviour
             buffDurationType = durationType,
             remainingDuration = duration
         };
-        for(int i=activeBuffs.Count-1; i>=0; i--)
+
+        for (int i = activeBuffs.Count - 1; i >= 0; i--)
         {
-            if(activeBuffs[i].buff != newBuff.buff) continue;
-            if(activeBuffs[i].buffDurationType != newBuff.buffDurationType) continue;
+            if (activeBuffs[i].buff != newBuff.buff) continue;
+            if (activeBuffs[i].buffDurationType != newBuff.buffDurationType) continue;
 
             activeBuffs[i].remainingDuration += newBuff.remainingDuration;
             return;
         }
+
         activeBuffs.Add(newBuff);
     }
 
@@ -138,16 +140,14 @@ public class EnemyStats : MonoBehaviour
             }
         }
     }
-#endregion
-    
 
+    #endregion
 
+    #region Actions
 
-#region Actions
     public void TakeDamage(int damage)
     {
         currentHealth -= damage;
-        healthBar.SetHealthBar(currentHealth, enemyData.maxHealth);
 
         if (currentHealth < 0)
         {
@@ -164,6 +164,7 @@ public class EnemyStats : MonoBehaviour
             gameObject.SetActive(false);
             return true;
         }
+
         activeBuffs.RemoveRange(0, activeBuffs.Count);
 
         return false;
@@ -207,7 +208,8 @@ public class EnemyStats : MonoBehaviour
             );
         }
     }
-#endregion
+
+    #endregion
 
     private void OnMouseDown()
     {

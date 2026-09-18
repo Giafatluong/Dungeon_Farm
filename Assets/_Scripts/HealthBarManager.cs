@@ -1,25 +1,23 @@
 using UnityEngine;
 using System.Collections.Generic;
-using Unity.VisualScripting;
-using System;
 
 public class HealthBarManager : MonoBehaviour
 {
     [SerializeField] private GameObject healthBarPrefab;
     [SerializeField] private Transform healthBarCanvas;
     [SerializeField] private PlayerStats playerStats;
-    [SerializeField] private EnemyStats[] enemies;
 
+    private EnemyStats[] enemies;
     private List<HealthBar> healthBars = new();
 
-    private void Update()
+    public void SetEnemies(EnemyStats[] newEnemies)
     {
-        ClearHealthBars();
+        enemies = newEnemies;
     }
 
     public void CreateHealthBars()
     {
-        ClearHealthBars();
+        ClearAllHealthBars();
 
         if (playerStats != null)
         {
@@ -36,6 +34,8 @@ public class HealthBarManager : MonoBehaviour
                 healthBars.Add(healthBar);
             }
         }
+
+        if (enemies == null) return;
 
         for (int i = 0; i < enemies.Length; i++)
         {
@@ -57,24 +57,48 @@ public class HealthBarManager : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        ClearHealthBars();
+    }
+
     public void ClearHealthBars()
     {
         for (int i = healthBars.Count - 1; i >= 0; i--)
         {
-            if (healthBars[i] == null) continue;
+            if (healthBars[i] == null)
+            {
+                healthBars.RemoveAt(i);
+                continue;
+            }
 
-            if (healthBars[i].enemyTarget != null && healthBars[i].enemyTarget.currentHealth <= 0)
+            if (healthBars[i].enemyTarget != null &&
+                healthBars[i].enemyTarget.currentHealth <= 0)
             {
                 Destroy(healthBars[i].gameObject);
                 healthBars.RemoveAt(i);
                 continue;
             }
 
-            if (healthBars[i].playerTarget != null && healthBars[i].playerTarget.currentHealth <= 0)
+            if (healthBars[i].playerTarget != null &&
+                healthBars[i].playerTarget.currentHealth <= 0)
             {
                 Destroy(healthBars[i].gameObject);
                 healthBars.RemoveAt(i);
             }
         }
+    }
+
+    private void ClearAllHealthBars()
+    {
+        for (int i = healthBars.Count - 1; i >= 0; i--)
+        {
+            if (healthBars[i] != null)
+            {
+                Destroy(healthBars[i].gameObject);
+            }
+        }
+
+        healthBars.Clear();
     }
 }

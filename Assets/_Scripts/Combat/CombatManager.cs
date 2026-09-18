@@ -11,6 +11,7 @@ public class CombatManager : MonoBehaviour
     public SpeedManager speedManager;
     public TurnManager turnManager;
     public HealthBarManager healthBarManager;
+    [SerializeField] private WaveManager waveManager;
 
     public enum Turn
     {
@@ -24,8 +25,6 @@ public class CombatManager : MonoBehaviour
 
     private void Start()
     {
-        StartCombat();
-        healthBarManager.CreateHealthBars();
     }
 
     private void OnEnable()
@@ -47,6 +46,11 @@ public class CombatManager : MonoBehaviour
     }
 
     #region Enemy
+
+    public void SetEnemies(EnemyStats[] newEnemies)
+    {
+        enemies = newEnemies;
+    }
 
     public void EnemyAction(EnemyStats enemy)
     {
@@ -306,6 +310,11 @@ public class CombatManager : MonoBehaviour
 
             enemies[i].ReduceCombatBuffDuration();
         }
+
+        if (waveManager != null)
+        {
+            waveManager.Continue();
+        }
     }
 
     #region TurnControl
@@ -348,13 +357,14 @@ public class CombatManager : MonoBehaviour
     public void StartEnemyTurn(EnemyStats enemy)
     {
         currentTurn = Turn.Enemy;
-        enemy.ResetDefend();
 
         if (enemy == null)
         {
             turnManager.NextTurn();
             return;
         }
+
+        enemy.ResetDefend();
 
         if (enemy.currentHealth <= 0)
         {
