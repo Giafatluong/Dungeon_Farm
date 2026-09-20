@@ -1,9 +1,11 @@
+
 using UnityEngine;
 using System.Collections.Generic;
 
 public class PlayerInteraction : MonoBehaviour
 {
     public List<FarmPlot> currentFarmPlots = new List<FarmPlot>();
+    public List<BedInteraction> currentBeds = new List<BedInteraction>();
 
     public LayerMask farmPlotLayer;
 
@@ -16,6 +18,14 @@ public class PlayerInteraction : MonoBehaviour
             currentFarmPlots.Add(farmPlot);
             Debug.Log("Di chuyen vao FarmPlot");
         }
+
+        BedInteraction bed = other.GetComponent<BedInteraction>();
+
+        if (bed != null && !currentBeds.Contains(bed))
+        {
+            currentBeds.Add(bed);
+            Debug.Log("Di chuyen vao giuong");
+        }
     }
 
     private void OnTriggerExit2D(Collider2D other)
@@ -27,17 +37,30 @@ public class PlayerInteraction : MonoBehaviour
             currentFarmPlots.Remove(farmPlot);
             Debug.Log("Da di chuyen ra khoi FarmPlot");
         }
+
+        BedInteraction bed = other.GetComponent<BedInteraction>();
+
+        if (bed != null && currentBeds.Contains(bed))
+        {
+            currentBeds.Remove(bed);
+            Debug.Log("Da di chuyen ra khoi giuong");
+        }
     }
 
     private void Update()
     {
         if (Input.GetMouseButtonDown(0))
         {
-            Interact();
+            InteractFarmPlot();
+        }
+
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            InteractBed();
         }
     }
 
-    private void Interact()
+    private void InteractFarmPlot()
     {
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
@@ -62,5 +85,46 @@ public class PlayerInteraction : MonoBehaviour
         {
             farmPlot.Harvest();
         }
+    }
+
+    private void InteractBed()
+    {
+        if (currentBeds.Count == 0)
+            return;
+
+        BedInteraction nearestBed = GetNearestBed();
+
+        if (nearestBed == null)
+            return;
+
+        nearestBed.Interact();
+    }
+
+    private BedInteraction GetNearestBed()
+    {
+        BedInteraction nearestBed = null;
+        float nearestDistance = Mathf.Infinity;
+
+        for (int i = currentBeds.Count - 1; i >= 0; i--)
+        {
+            if (currentBeds[i] == null)
+            {
+                currentBeds.RemoveAt(i);
+                continue;
+            }
+
+            float distance = Vector2.Distance(
+                transform.position,
+                currentBeds[i].transform.position
+            );
+
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearestBed = currentBeds[i];
+            }
+        }
+
+        return nearestBed;
     }
 }

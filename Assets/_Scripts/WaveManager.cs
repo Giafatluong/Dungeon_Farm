@@ -1,3 +1,4 @@
+
 using UnityEngine;
 using System.Collections;
 
@@ -5,8 +6,10 @@ public class WaveManager : MonoBehaviour
 {
     [SerializeField] private FloorData floorData;
     [SerializeField] private Transform enemySpawnPoint;
+    [SerializeField] private Transform[] combatPositions;
     [SerializeField] private CombatManager combatManager;
     [SerializeField] private HealthBarManager healthBarManager;
+    [SerializeField] private EnemyTargetSelector targetSelector;
 
     private int currentWaveIndex = -1;
     private bool isTransitioning;
@@ -15,6 +18,12 @@ public class WaveManager : MonoBehaviour
     {
         get
         {
+            if (floorData == null)
+                return null;
+
+            if (floorData.waves == null)
+                return null;
+
             if (currentWaveIndex < 0 || currentWaveIndex >= floorData.waves.Length)
                 return null;
 
@@ -41,13 +50,29 @@ public class WaveManager : MonoBehaviour
             return;
         }
 
+        if (combatManager == null)
+        {
+            Debug.Log("Combat Manager is NULL");
+            return;
+        }
+
+        if (targetSelector == null)
+        {
+            Debug.Log("Target Selector is NULL");
+            return;
+        }
+
         currentWaveIndex = 0;
         StartWave();
     }
 
     public void Continue()
     {
-        if (isTransitioning) return;
+        if (isTransitioning)
+            return;
+
+        if (CurrentWave == null)
+            return;
 
         if (currentWaveIndex >= floorData.waves.Length - 1)
         {
@@ -62,7 +87,9 @@ public class WaveManager : MonoBehaviour
     {
         isTransitioning = true;
 
-        float delay = CurrentWave != null ? CurrentWave.transitionDelay : 0f;
+        float delay = CurrentWave != null
+            ? CurrentWave.transitionDelay
+            : 0f;
 
         yield return new WaitForSeconds(delay);
 
@@ -76,7 +103,8 @@ public class WaveManager : MonoBehaviour
     {
         WaveData wave = CurrentWave;
 
-        if (wave == null) return;
+        if (wave == null)
+            return;
 
         Debug.Log(
             "Start Wave: " +
@@ -88,7 +116,6 @@ public class WaveManager : MonoBehaviour
         if (wave.waveType == WaveData.WaveType.Combat)
         {
             SpawnEnemies(wave);
-            combatManager.StartCombat();
         }
     }
 
@@ -100,11 +127,35 @@ public class WaveManager : MonoBehaviour
             return;
         }
 
-        EnemyStats[] newEnemies = new EnemyStats[wave.enemyPrefabs.Length];
-
-        for (int i = 0; i < wave.enemyPrefabs.Length; i++)
+        if (enemySpawnPoint == null)
         {
-            if (wave.enemyPrefabs[i] == null) continue;
+            Debug.Log("Enemy Spawn Point is NULL");
+            return;
+        }
+
+        if (combatPositions == null || combatPositions.Length == 0)
+        {
+            Debug.Log("Combat Positions are NULL or empty");
+            return;
+        }
+
+        int enemyCount = Mathf.Min(
+            wave.enemyPrefabs.Length,
+            combatPositions.Length
+        );
+
+        EnemyStats[] newEnemies = new EnemyStats[enemyCount];
+
+        for (int i = 0; i < enemyCount; i++)
+        {
+            if (wave.enemyPrefabs[i] == null)
+                continue;
+
+            if (combatPositions[i] == null)
+            {
+                Debug.Log("Combat Position " + i + " is NULL");
+                continue;
+            }
 
             GameObject enemyObject = Instantiate(
                 wave.enemyPrefabs[i],
@@ -112,18 +163,35 @@ public class WaveManager : MonoBehaviour
                 Quaternion.identity
             );
 
+            enemyObject.transform.position = combatPositions[i].position;
+
             EnemyStats enemyStats = enemyObject.GetComponent<EnemyStats>();
 
-            if (enemyStats != null)
+            if (enemyStats == null)
             {
-                newEnemies[i] = enemyStats;
+                Debug.Log(
+                    "Enemy prefab does not contain EnemyStats: " +
+                    wave.enemyPrefabs[i].name
+                );
+
+                Destroy(enemyObject);
+                continue;
             }
+
+            enemyStats.targetSelector = targetSelector;
+
+            newEnemies[i] = enemyStats;
         }
 
         combatManager.SetEnemies(newEnemies);
 
-        healthBarManager.SetEnemies(newEnemies);
-        healthBarManager.CreateHealthBars();
+        if (healthBarManager != null)
+        {
+            healthBarManager.SetEnemies(newEnemies);
+            healthBarManager.CreateHealthBars();
+        }
+
+        combatManager.StartCombat();
     }
 
     public int GetCurrentWaveIndex()

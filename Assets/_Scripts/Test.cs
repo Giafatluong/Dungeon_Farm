@@ -18,17 +18,17 @@ public class Test : MonoBehaviour
         {
             dayManager.NextDay();
         }
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            ItemData selectedItem = InventoryButton.selectedItem;
-            if(selectedItem.itemType != ItemData.ItemType.Food)
-            {
-                Debug.Log("khong phai do an");
-                return;
-            }
+        // if (Input.GetKeyDown(KeyCode.E))
+        // {
+        //     ItemData selectedItem = InventoryButton.selectedItem;
+        //     if(selectedItem.itemType != ItemData.ItemType.Food)
+        //     {
+        //         Debug.Log("khong phai do an");
+        //         return;
+        //     }
 
-            playerStats.Eat(selectedItem);
-        }
+        //     playerStats.Eat(selectedItem);
+        // }
         if (Input.GetKeyDown(KeyCode.R))
         {
             playerStats.ReduceHunger(20);

@@ -14,5 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WaveData
   waveType: 0
   isRandom: 0
-  enemyPrefabs: []
+  enemyPrefabs:
+  - {fileID: 670712790704607887, guid: f1ed11da91194f64caa2fbc58ba39277, type: 3}
   transitionDelay: 1

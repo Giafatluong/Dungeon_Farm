@@ -1,5 +1,4 @@
-using System;
-using Unity.VisualScripting;
+
 using UnityEngine;
 
 public class CombatManager : MonoBehaviour
@@ -11,6 +10,7 @@ public class CombatManager : MonoBehaviour
     public SpeedManager speedManager;
     public TurnManager turnManager;
     public HealthBarManager healthBarManager;
+
     [SerializeField] private WaveManager waveManager;
 
     public enum Turn
@@ -22,10 +22,6 @@ public class CombatManager : MonoBehaviour
     public Turn currentTurn;
 
     private bool isEating;
-
-    private void Start()
-    {
-    }
 
     private void OnEnable()
     {
@@ -39,8 +35,11 @@ public class CombatManager : MonoBehaviour
 
     private void OnItemSelected(ItemData item)
     {
-        if (!isEating) return;
-        if (currentTurn != Turn.Player) return;
+        if (!isEating)
+            return;
+
+        if (currentTurn != Turn.Player)
+            return;
 
         PlayerEat(item);
     }
@@ -54,8 +53,11 @@ public class CombatManager : MonoBehaviour
 
     public void EnemyAction(EnemyStats enemy)
     {
-        if (currentTurn != Turn.Enemy) return;
-        if (enemy == null) return;
+        if (currentTurn != Turn.Enemy)
+            return;
+
+        if (enemy == null)
+            return;
 
         if (enemy.currentHealth <= 0)
         {
@@ -74,9 +76,7 @@ public class CombatManager : MonoBehaviour
             }
 
             if (damage < 0)
-            {
                 damage = 0;
-            }
 
             playerStats.TakeDamage(damage);
 
@@ -123,6 +123,12 @@ public class CombatManager : MonoBehaviour
 
     public void ApplyPlayerDebuff(EnemyStats enemy)
     {
+        if (enemy == null)
+            return;
+
+        if (enemy.enemyData == null)
+            return;
+
         for (int i = 0; i < enemy.enemyData.intentEffects.Length; i++)
         {
             EnemyData.IntentEffect effect = enemy.enemyData.intentEffects[i];
@@ -141,6 +147,15 @@ public class CombatManager : MonoBehaviour
 
     public void ApplyAllyBuff(EnemyStats enemy)
     {
+        if (enemy == null)
+            return;
+
+        if (enemy.enemyData == null)
+            return;
+
+        if (enemies == null)
+            return;
+
         for (int i = 0; i < enemy.enemyData.intentEffects.Length; i++)
         {
             EnemyData.IntentEffect effect = enemy.enemyData.intentEffects[i];
@@ -150,9 +165,14 @@ public class CombatManager : MonoBehaviour
 
             for (int j = 0; j < enemies.Length; j++)
             {
-                if (enemies[j] == null) continue;
-                if (enemies[j] == enemy) continue;
-                if (enemies[j].currentHealth <= 0) continue;
+                if (enemies[j] == null)
+                    continue;
+
+                if (enemies[j] == enemy)
+                    continue;
+
+                if (enemies[j].currentHealth <= 0)
+                    continue;
 
                 enemies[j].AddBuff(
                     effect.effect,
@@ -170,19 +190,24 @@ public class CombatManager : MonoBehaviour
 
     public void PlayerAttack()
     {
-        if (currentTurn != Turn.Player) return;
-        if (playerStats.currentAP <= 0) return;
-        if (targetSelector.selectedEnemy == null) return;
-        if (targetSelector.selectedEnemy.currentHealth <= 0) return;
+        if (currentTurn != Turn.Player)
+            return;
+
+        if (playerStats.currentAP <= 0)
+            return;
+
+        if (targetSelector.selectedEnemy == null)
+            return;
+
+        if (targetSelector.selectedEnemy.currentHealth <= 0)
+            return;
 
         EnemyStats target = targetSelector.selectedEnemy;
 
         int damage = playerStats.GetCurrentATK() - target.GetCurrentDEF();
 
         if (damage < 0)
-        {
             damage = 0;
-        }
 
         target.TakeDamage(damage);
 
@@ -207,8 +232,11 @@ public class CombatManager : MonoBehaviour
 
     public void PlayerDefend()
     {
-        if (currentTurn != Turn.Player) return;
-        if (playerStats.currentAP <= 0) return;
+        if (currentTurn != Turn.Player)
+            return;
+
+        if (playerStats.currentAP <= 0)
+            return;
 
         playerStats.Defend();
 
@@ -222,18 +250,28 @@ public class CombatManager : MonoBehaviour
 
     public void SelectEat()
     {
-        if (currentTurn != Turn.Player) return;
-        if (playerStats.currentAP <= 0) return;
+        if (currentTurn != Turn.Player)
+            return;
+
+        if (playerStats.currentAP <= 0)
+            return;
 
         isEating = true;
     }
 
     public void PlayerEat(ItemData item)
     {
-        if (!isEating) return;
-        if (currentTurn != Turn.Player) return;
-        if (playerStats.currentAP <= 0) return;
-        if (item == null) return;
+        if (!isEating)
+            return;
+
+        if (currentTurn != Turn.Player)
+            return;
+
+        if (playerStats.currentAP <= 0)
+            return;
+
+        if (item == null)
+            return;
 
         FoodData food = item as FoodData;
 
@@ -248,9 +286,7 @@ public class CombatManager : MonoBehaviour
         playerStats.Eat(food);
 
         if (playerStats.currentHunger == hungerBefore)
-        {
             return;
-        }
 
         playerStats.currentAP--;
         isEating = false;
@@ -267,14 +303,16 @@ public class CombatManager : MonoBehaviour
 
     public bool AreAllEnemiesDead()
     {
+        if (enemies == null || enemies.Length == 0)
+            return false;
+
         for (int i = 0; i < enemies.Length; i++)
         {
-            if (enemies[i] == null) continue;
+            if (enemies[i] == null)
+                continue;
 
             if (enemies[i].currentHealth > 0)
-            {
                 return false;
-            }
         }
 
         return true;
@@ -282,6 +320,9 @@ public class CombatManager : MonoBehaviour
 
     public void DestroyAllEnemies()
     {
+        if (enemies == null)
+            return;
+
         for (int i = 0; i < enemies.Length; i++)
         {
             if (enemies[i] != null)
@@ -304,11 +345,15 @@ public class CombatManager : MonoBehaviour
 
         playerStats.ReduceCombatBuffDuration();
 
-        for (int i = 0; i < enemies.Length; i++)
+        if (enemies != null)
         {
-            if (enemies[i] == null) continue;
+            for (int i = 0; i < enemies.Length; i++)
+            {
+                if (enemies[i] == null)
+                    continue;
 
-            enemies[i].ReduceCombatBuffDuration();
+                enemies[i].ReduceCombatBuffDuration();
+            }
         }
 
         if (waveManager != null)
@@ -321,6 +366,18 @@ public class CombatManager : MonoBehaviour
 
     public void StartCombat()
     {
+        if (enemies == null || enemies.Length == 0)
+        {
+            Debug.Log("Cannot start combat: No enemies");
+            return;
+        }
+
+        if (turnManager == null)
+        {
+            Debug.Log("Cannot start combat: TurnManager is NULL");
+            return;
+        }
+
         turnManager.StartRound();
     }
 
@@ -331,10 +388,16 @@ public class CombatManager : MonoBehaviour
         playerStats.defendCount = 0;
         playerStats.currentAP = playerStats.maxAP;
 
+        if (enemies == null)
+            return;
+
         for (int i = 0; i < enemies.Length; i++)
         {
-            if (enemies[i] == null) continue;
-            if (enemies[i].currentHealth <= 0) continue;
+            if (enemies[i] == null)
+                continue;
+
+            if (enemies[i].currentHealth <= 0)
+                continue;
 
             Debug.Log(
                 "Enemy Intent: " +
@@ -347,7 +410,8 @@ public class CombatManager : MonoBehaviour
 
     public void EndTurnPlayer()
     {
-        if (currentTurn != Turn.Player) return;
+        if (currentTurn != Turn.Player)
+            return;
 
         playerStats.ReduceTurnBuffDuration();
 
