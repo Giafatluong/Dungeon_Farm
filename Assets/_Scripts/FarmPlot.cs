@@ -14,7 +14,7 @@ public class FarmPlot : MonoBehaviour
     public int daysInCurrentStage; //so ngay da qua cua giai doan hien tai
     public int currentStage; //giai doan hien tai cua cay
     public SpriteRenderer cropRenderer;
-    public SpriteRenderer soilRenderer;
+    // public SpriteRenderer soilRenderer;
     public ItemContainer itemContainer;
 
     [SerializeField] private InventoryController inventoryController;
@@ -31,6 +31,7 @@ public class FarmPlot : MonoBehaviour
         if (selectedCrop == null) return false;
 
         itemContainer.RemoveItem(selectedItem, 1);
+        gameObject.SetActive(true);
 
         currentState = State.Planted;
         currentGrowthDay = 0;
@@ -62,6 +63,7 @@ public class FarmPlot : MonoBehaviour
         currentStage = 0;
         daysInCurrentStage = 0;
         cropRenderer.sprite = null;
+        gameObject.SetActive(false);
     }
     public void NextDay()
     {
@@ -92,6 +94,8 @@ public class FarmPlot : MonoBehaviour
     private void Start()
     {
         dayManager.OnNewDay += NextDay;
+        gameObject.SetActive(false);
+        cropRenderer = GetComponent<SpriteRenderer>();
     }
     private void Update()
     {
