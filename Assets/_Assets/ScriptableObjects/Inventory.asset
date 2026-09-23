@@ -15,11 +15,11 @@ MonoBehaviour:
   maxSlots: 20
   itemSlots:
   - itemData: {fileID: 11400000, guid: 7fbf6b6fc33a6a24aa6ccfb21298e0fd, type: 2}
-    amount: 6
+    amount: 9
   - itemData: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
-    amount: 3
+    amount: 9
   - itemData: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
-    amount: 2
+    amount: 9
   - itemData: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
     amount: 10
   - itemData: {fileID: 11400000, guid: ea2db54ad97c8e94e968dd42f17c610f, type: 2}
@@ -34,8 +34,8 @@ MonoBehaviour:
     amount: 3
   - itemData: {fileID: 11400000, guid: 42b4889df87d85948a0ccdcad13f6420, type: 2}
     amount: 10
-  - itemData: {fileID: 0}
-    amount: 0
+  - itemData: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
+    amount: 8
   - itemData: {fileID: 0}
     amount: 0
   - itemData: {fileID: 0}
