@@ -82,7 +82,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 2
+  m_SortingOrder: 5
   m_MaskInteraction: 0
   m_Sprite: {fileID: 520704130, guid: 338eb9325b511bf4dbf0184fff5f5d9c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -106,8 +106,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a0a614ff2ba06e468b91ff00188c301, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemDrop
-  itemData: {fileID: 0}
-  amount: 0
+  itemData: {fileID: 11400000, guid: aaf3001eed98e2443b500d28635dfb36, type: 2}
+  amount: 4
   moveSpeed: 10
   player: {fileID: 0}
   itemContainer: {fileID: 11400000, guid: a25b2750692e3ff408f36198a3111a15, type: 2}

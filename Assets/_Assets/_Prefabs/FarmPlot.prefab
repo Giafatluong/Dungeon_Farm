@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2076582323262373694}
   - component: {fileID: 7185321398588808513}
   - component: {fileID: 514459651024872646}
+  - component: {fileID: -1813292557595624025}
   m_Layer: 0
   m_Name: FarmPlot
   m_TagString: Untagged
@@ -111,7 +112,7 @@ MonoBehaviour:
   daysInCurrentStage: 0
   currentStage: 0
   cropRenderer: {fileID: 2076582323262373694}
-  soilRenderer: {fileID: 0}
+  itemDropSpawner: {fileID: 0}
   itemContainer: {fileID: 11400000, guid: a25b2750692e3ff408f36198a3111a15, type: 2}
   inventoryController: {fileID: 0}
   availableCrops:
@@ -169,3 +170,17 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &-1813292557595624025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2311118115639106911}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 825e75512172ac440861fd5ca22e948e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemDropSpawner
+  player: {fileID: 0}
+  itemContainer: {fileID: 11400000, guid: a25b2750692e3ff408f36198a3111a15, type: 2}

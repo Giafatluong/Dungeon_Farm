@@ -16,7 +16,6 @@ public class PlayerInteraction : MonoBehaviour
         if (farmPlot != null && !currentFarmPlots.Contains(farmPlot))
         {
             currentFarmPlots.Add(farmPlot);
-            Debug.Log("Di chuyen vao FarmPlot");
         }
 
         BedInteraction bed = other.GetComponent<BedInteraction>();
@@ -35,7 +34,6 @@ public class PlayerInteraction : MonoBehaviour
         if (farmPlot != null && currentFarmPlots.Contains(farmPlot))
         {
             currentFarmPlots.Remove(farmPlot);
-            Debug.Log("Da di chuyen ra khoi FarmPlot");
         }
 
         BedInteraction bed = other.GetComponent<BedInteraction>();

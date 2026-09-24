@@ -14,6 +14,7 @@ public class FarmPlot : MonoBehaviour
     public int daysInCurrentStage; //so ngay da qua cua giai doan hien tai
     public int currentStage; //giai doan hien tai cua cay
     public SpriteRenderer cropRenderer;
+    public ItemDropSpawner itemDropSpawner;
     // public SpriteRenderer soilRenderer;
     public ItemContainer itemContainer;
 
@@ -44,9 +45,11 @@ public class FarmPlot : MonoBehaviour
     }
     public void Harvest()
     {
-        if(currentState != State.Ready) return;
+        if (currentState != State.Ready) return;
+        if (currentCrop == null) return;
+        if (currentCrop.producedItem == null) return;
 
-        GetComponent<ItemDropSpawner>().SpawnItem(
+        itemDropSpawner.SpawnItem(
             currentCrop.producedItem,
             currentCrop.harvestAmount
         );
@@ -91,7 +94,12 @@ public class FarmPlot : MonoBehaviour
     public DayManager dayManager;
     private void Start()
     {
-        dayManager.OnNewDay += NextDay;
+        if (dayManager != null)
+        {
+            dayManager.OnNewDay += NextDay;
+        }
+
+        itemDropSpawner = GetComponent<ItemDropSpawner>();
     }
     private void Update()
     {
