@@ -5,29 +5,64 @@ public class InventoryPanel : MonoBehaviour
 {
     [SerializeField] private ItemContainer itemContainer;
     [SerializeField] private List<InventoryButton> inventoryButtons;
+    [SerializeField] private Canvas canvas;
+    [SerializeField] private CurrentItemPanel currentItemPanel;
 
-    public ItemContainer ItemContainer => itemContainer; 
-    void Start()
+    public ItemContainer ItemContainer => itemContainer;
+
+    private void Start()
     {
+        for (int i = 0; i < inventoryButtons.Count; i++)
+        {
+            inventoryButtons[i].SetSlotData(itemContainer, i);
+            inventoryButtons[i].SetCanvas(canvas);
+        }
+
         SetInventoryButton();
+
+        if (currentItemPanel != null)
+        {
+            currentItemPanel.SetCurrentItem();
+        }
     }
 
     private void OnEnable()
     {
-        itemContainer.OnInventoryChange += SetInventoryButton;
+        if (itemContainer != null)
+        {
+            itemContainer.OnInventoryChange += RefreshInventory;
+        }
     }
+
     private void OnDisable()
     {
-        itemContainer.OnInventoryChange -= SetInventoryButton;       
+        if (itemContainer != null)
+        {
+            itemContainer.OnInventoryChange -= RefreshInventory;
+        }
+    }
+
+    private void RefreshInventory()
+    {
+        SetInventoryButton();
+
+        if (currentItemPanel != null)
+        {
+            currentItemPanel.SetCurrentItem();
+        }
     }
 
     public void SetInventoryButton()
     {
         for (int i = 0; i < inventoryButtons.Count; i++)
         {
-            if (i < ItemContainer.itemSlots.Length && ItemContainer.itemSlots[i].itemData != null)
+            if (i < itemContainer.itemSlots.Length &&
+                itemContainer.itemSlots[i].itemData != null)
             {
-                inventoryButtons[i].SetItem(ItemContainer.itemSlots[i].itemData, ItemContainer.itemSlots[i].amount);
+                inventoryButtons[i].SetItem(
+                    itemContainer.itemSlots[i].itemData,
+                    itemContainer.itemSlots[i].amount
+                );
             }
             else
             {

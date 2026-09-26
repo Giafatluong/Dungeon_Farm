@@ -12,6 +12,7 @@ public class ItemContainer : ScriptableObject
 {
     public int maxSlots = 20;
     public ItemSlot[] itemSlots;
+
     public event System.Action OnInventoryChange;
 
     private void OnEnable()
@@ -94,19 +95,21 @@ public class ItemContainer : ScriptableObject
                     itemSlots[i].itemData = null;
                     itemSlots[i].amount = 0;
                 }
+
                 OnInventoryChange?.Invoke();
                 return;
             }
         }
-
-        Debug.Log("Item not found!");
     }
 
     public bool HasItem(ItemData itemData)
     {
         for (int i = 0; i < maxSlots; i++)
         {
-            if (itemSlots[i].itemData == itemData) return true;
+            if (itemSlots[i].itemData == itemData)
+            {
+                return true;
+            }
         }
 
         return false;
@@ -116,9 +119,35 @@ public class ItemContainer : ScriptableObject
     {
         for (int i = 0; i < maxSlots; i++)
         {
-            if (itemSlots[i].itemData == null) return i;
+            if (itemSlots[i].itemData == null)
+            {
+                return i;
+            }
         }
 
         return -1;
+    }
+
+    public void SwapSlots(int indexA, int indexB)
+    {
+        if (indexA < 0 || indexA >= itemSlots.Length)
+            return;
+
+        if (indexB < 0 || indexB >= itemSlots.Length)
+            return;
+
+        if (indexA == indexB)
+            return;
+
+        ItemData tempItem = itemSlots[indexA].itemData;
+        int tempAmount = itemSlots[indexA].amount;
+
+        itemSlots[indexA].itemData = itemSlots[indexB].itemData;
+        itemSlots[indexA].amount = itemSlots[indexB].amount;
+
+        itemSlots[indexB].itemData = tempItem;
+        itemSlots[indexB].amount = tempAmount;
+
+        OnInventoryChange?.Invoke();
     }
 }
