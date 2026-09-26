@@ -6,6 +6,7 @@ public class PlayerInteraction : MonoBehaviour
 {
     public List<FarmPlot> currentFarmPlots = new List<FarmPlot>();
     public List<BedInteraction> currentBeds = new List<BedInteraction>();
+    public InventoryController inventoryController;
 
     public LayerMask farmPlotLayer;
 
@@ -47,6 +48,7 @@ public class PlayerInteraction : MonoBehaviour
 
     private void Update()
     {
+        if(inventoryController.isInteractable == false) return;
         if (Input.GetMouseButtonDown(0))
         {
             InteractFarmPlot();
@@ -61,7 +63,6 @@ public class PlayerInteraction : MonoBehaviour
     private void InteractFarmPlot()
     {
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-
         Collider2D hit = Physics2D.OverlapPoint(mousePosition, farmPlotLayer);
 
         if (hit == null)

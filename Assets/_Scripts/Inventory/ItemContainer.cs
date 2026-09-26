@@ -33,6 +33,9 @@ public class ItemContainer : ScriptableObject
 
     public void AddItem(ItemData itemData, int amount)
     {
+        if (itemData == null || amount <= 0)
+            return;
+
         if (itemData.isStackable)
         {
             if (HasItem(itemData))
@@ -57,10 +60,6 @@ public class ItemContainer : ScriptableObject
 
                 OnInventoryChange?.Invoke();
             }
-            else
-            {
-                Debug.Log("Inventory Full");
-            }
         }
         else
         {
@@ -70,7 +69,6 @@ public class ItemContainer : ScriptableObject
 
                 if (slot == -1)
                 {
-                    Debug.Log("Inventory Full!");
                     return;
                 }
 
@@ -84,6 +82,9 @@ public class ItemContainer : ScriptableObject
 
     public void RemoveItem(ItemData itemData, int amount)
     {
+        if (itemData == null || amount <= 0)
+            return;
+
         for (int i = 0; i < maxSlots; i++)
         {
             if (itemSlots[i].itemData == itemData)
@@ -94,6 +95,11 @@ public class ItemContainer : ScriptableObject
                 {
                     itemSlots[i].itemData = null;
                     itemSlots[i].amount = 0;
+
+                    if (InventoryButton.selectedItem == itemData)
+                    {
+                        InventoryButton.selectedItem = null;
+                    }
                 }
 
                 OnInventoryChange?.Invoke();
@@ -104,9 +110,13 @@ public class ItemContainer : ScriptableObject
 
     public bool HasItem(ItemData itemData)
     {
+        if (itemData == null)
+            return false;
+
         for (int i = 0; i < maxSlots; i++)
         {
-            if (itemSlots[i].itemData == itemData)
+            if (itemSlots[i].itemData == itemData &&
+                itemSlots[i].amount > 0)
             {
                 return true;
             }

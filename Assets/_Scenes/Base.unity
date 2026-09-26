@@ -837,6 +837,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InventoryController
   inventoryPanel: {fileID: 384081377}
   currentItemPanel: {fileID: 748462899}
+  isInteractable: 0
 --- !u!1001 &58385962
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12528,8 +12529,8 @@ Rigidbody2D:
     m_Bits: 0
   m_Interpolate: 0
   m_SleepingMode: 1
-  m_CollisionDetection: 0
-  m_Constraints: 0
+  m_CollisionDetection: 1
+  m_Constraints: 4
 --- !u!114 &925655591
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12557,6 +12558,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInteraction
   currentFarmPlots: []
   currentBeds: []
+  inventoryController: {fileID: 47955955}
   farmPlotLayer:
     serializedVersion: 2
     m_Bits: 8

@@ -4,6 +4,7 @@ public class InventoryController : MonoBehaviour
 {
     [SerializeField] private InventoryPanel inventoryPanel;
     [SerializeField] private CurrentItemPanel currentItemPanel;
+    public bool isInteractable;
 
     private void Update()
     {
@@ -29,10 +30,12 @@ public class InventoryController : MonoBehaviour
     {
         inventoryPanel.gameObject.SetActive(false);
         currentItemPanel.gameObject.SetActive(true);
+        isInteractable = true;
     }
     private void OpenInventoryPanel()
     {
         inventoryPanel.gameObject.SetActive(true);
         currentItemPanel.gameObject.SetActive(false);
+        isInteractable = false;
     }
 }

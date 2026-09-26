@@ -1,35 +1,61 @@
 using UnityEngine;
 using System.Collections.Generic;
+
 public class FarmPlot : MonoBehaviour
-{   
+{
     public enum State
     {
         Empty,
         Planted,
         Ready
     }
+
     public State currentState;
     public CropData currentCrop;
-    public int currentGrowthDay; //ngay hien tai cua giai doan phat trien
-    public int daysInCurrentStage; //so ngay da qua cua giai doan hien tai
-    public int currentStage; //giai doan hien tai cua cay
+
+    public int currentGrowthDay;
+    public int daysInCurrentStage;
+    public int currentStage;
+
     public SpriteRenderer cropRenderer;
     public ItemDropSpawner itemDropSpawner;
-    // public SpriteRenderer soilRenderer;
     public ItemContainer itemContainer;
 
     [SerializeField] private InventoryController inventoryController;
+
     public List<CropData> availableCrops;
 
     public bool Planted()
     {
-        if (currentState != State.Empty) return false;
+        if (currentState != State.Empty)
+            return false;
+
         ItemData selectedItem = InventoryButton.selectedItem;
 
-        if (selectedItem == null) return false;
-        CropData selectedCrop = availableCrops.Find(crop => crop.seedItem == selectedItem);
+        if (selectedItem == null)
+            return false;
 
-        if (selectedCrop == null) return false;
+        int slotIndex = -1;
+
+        for (int i = 0; i < itemContainer.itemSlots.Length; i++)
+        {
+            if (itemContainer.itemSlots[i].itemData == selectedItem &&
+                itemContainer.itemSlots[i].amount > 0)
+            {
+                slotIndex = i;
+                break;
+            }
+        }
+
+        if (slotIndex == -1)
+            return false;
+
+        CropData selectedCrop = availableCrops.Find(
+            crop => crop.seedItem == selectedItem
+        );
+
+        if (selectedCrop == null)
+            return false;
 
         itemContainer.RemoveItem(selectedItem, 1);
 
@@ -39,15 +65,20 @@ public class FarmPlot : MonoBehaviour
         daysInCurrentStage = 0;
 
         currentCrop = selectedCrop;
-        cropRenderer.sprite = currentCrop.growthStages[currentStage];
+
+        cropRenderer.sprite =
+            currentCrop.growthStages[currentStage];
 
         return true;
     }
+
     public void Harvest()
     {
-        if (currentState != State.Ready) return;
-        if (currentCrop == null) return;
-        if (currentCrop.producedItem == null) return;
+        if (currentState != State.Ready)
+            return;
+
+        if (currentCrop == null)
+            return;
 
         itemDropSpawner.SpawnItem(
             currentCrop.producedItem,
@@ -61,15 +92,21 @@ public class FarmPlot : MonoBehaviour
     {
         currentState = State.Empty;
         currentCrop = null;
+
         currentGrowthDay = 0;
         currentStage = 0;
         daysInCurrentStage = 0;
+
         cropRenderer.sprite = null;
     }
+
     public void NextDay()
     {
-        if (currentState == State.Empty || currentState == State.Ready)
+        if (currentState == State.Empty ||
+            currentState == State.Ready)
+        {
             return;
+        }
 
         currentGrowthDay++;
         daysInCurrentStage++;
@@ -78,12 +115,16 @@ public class FarmPlot : MonoBehaviour
         {
             daysInCurrentStage = 0;
 
-            if (currentStage < currentCrop.growthStages.Length - 1)
+            if (currentStage <
+                currentCrop.growthStages.Length - 1)
             {
                 currentStage++;
-                cropRenderer.sprite = currentCrop.growthStages[currentStage];
 
-                if (currentStage == currentCrop.growthStages.Length - 1)
+                cropRenderer.sprite =
+                    currentCrop.growthStages[currentStage];
+
+                if (currentStage ==
+                    currentCrop.growthStages.Length - 1)
                 {
                     currentState = State.Ready;
                 }
@@ -92,6 +133,7 @@ public class FarmPlot : MonoBehaviour
     }
 
     public DayManager dayManager;
+
     private void Start()
     {
         if (dayManager != null)
@@ -99,8 +141,13 @@ public class FarmPlot : MonoBehaviour
             dayManager.OnNewDay += NextDay;
         }
 
-        itemDropSpawner = GetComponent<ItemDropSpawner>();
+        if (itemDropSpawner == null)
+        {
+            itemDropSpawner =
+                GetComponent<ItemDropSpawner>();
+        }
     }
+
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.H))
@@ -108,9 +155,10 @@ public class FarmPlot : MonoBehaviour
             Harvest();
         }
     }
+
     private void OnDestroy()
     {
-        if(dayManager != null)
+        if (dayManager != null)
         {
             dayManager.OnNewDay -= NextDay;
         }
