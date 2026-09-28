@@ -6,10 +6,16 @@ public class PlayerMovement : MonoBehaviour
 
     private Rigidbody2D rb;
     private Vector2 movement;
+    private Animator anim;
+    
+    private SpriteRenderer spriteRenderer; 
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
+        
+        spriteRenderer = GetComponent<SpriteRenderer>(); 
     }
 
     private void Update()
@@ -18,6 +24,25 @@ public class PlayerMovement : MonoBehaviour
         movement.y = Input.GetAxisRaw("Vertical");
 
         movement = movement.normalized;
+
+        anim.SetFloat("Horizontal", movement.x);
+        anim.SetFloat("Vertical", movement.y);
+        anim.SetFloat("Speed", movement.sqrMagnitude);
+
+        if (movement != Vector2.zero)
+        {
+            anim.SetFloat("LastHorizontal", movement.x);
+            anim.SetFloat("LastVertical", movement.y);
+        }
+
+        if (movement.x > 0)
+        {
+            spriteRenderer.flipX = false; 
+        }
+        else if (movement.x < 0)
+        {
+            spriteRenderer.flipX = true; 
+        }
     }
 
     private void FixedUpdate()
