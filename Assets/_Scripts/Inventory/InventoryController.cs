@@ -4,8 +4,12 @@ public class InventoryController : MonoBehaviour
 {
     [SerializeField] private InventoryPanel inventoryPanel;
     [SerializeField] private CurrentItemPanel currentItemPanel;
-    public bool isInteractable;
+    public bool isInteractable = true;
 
+    private void Start()
+    {
+        isInteractable = true;
+    }
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.I))
