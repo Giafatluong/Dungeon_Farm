@@ -15267,7 +15267,7 @@ Rigidbody2D:
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
-  m_Constraints: 0
+  m_Constraints: 4
 --- !u!114 &925655591
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32282,7 +32282,6 @@ Transform:
   - {fileID: 1610305269}
   - {fileID: 649186542}
   - {fileID: 481845348}
-  - {fileID: 1746752139}
   - {fileID: 1624689786}
   - {fileID: 1861671941}
   - {fileID: 757014370}
@@ -33566,7 +33565,6 @@ Transform:
   - {fileID: 1594682375}
   - {fileID: 1446243719}
   - {fileID: 319634009}
-  - {fileID: 531527896}
   - {fileID: 1117349372}
   - {fileID: 1011824258}
   - {fileID: 1918881301}
@@ -33577,15 +33575,12 @@ Transform:
   - {fileID: 517558909}
   - {fileID: 985946412}
   - {fileID: 1938854119}
-  - {fileID: 544396521}
   - {fileID: 766480255}
   - {fileID: 1723991806}
   - {fileID: 401050732}
-  - {fileID: 48363070}
   - {fileID: 79295465}
   - {fileID: 1588980791}
   - {fileID: 1989960180}
-  - {fileID: 910557962}
   - {fileID: 1581290187}
   - {fileID: 18162325}
   m_Father: {fileID: 564169254}
