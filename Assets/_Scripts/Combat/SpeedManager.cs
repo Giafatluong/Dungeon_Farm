@@ -15,6 +15,11 @@ public class SpeedManager : MonoBehaviour
 
     public List<SpeedEntry> speedOrder = new List<SpeedEntry>();
 
+    private void Awake()
+    {
+        if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
+    }
+
     public void SetEnemies(EnemyStats[] newEnemies)
     {
         enemies.Clear();
@@ -32,6 +37,7 @@ public class SpeedManager : MonoBehaviour
 
     public void CreateSpeedOrder(bool isAmbush = false)
     {
+        if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
         speedOrder.Clear();
 
         if (isAmbush)

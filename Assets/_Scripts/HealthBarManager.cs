@@ -10,6 +10,11 @@ public class HealthBarManager : MonoBehaviour
     private EnemyStats[] enemies;
     private List<HealthBar> healthBars = new();
 
+    private void Awake()
+    {
+        if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
+    }
+
     public void SetEnemies(EnemyStats[] newEnemies)
     {
         enemies = newEnemies;
@@ -18,6 +23,8 @@ public class HealthBarManager : MonoBehaviour
     public void CreateHealthBars()
     {
         ClearAllHealthBars();
+
+        if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
 
         if (playerStats != null)
         {

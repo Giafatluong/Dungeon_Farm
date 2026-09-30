@@ -3,7 +3,13 @@ using System.Collections;
 
 public class WaveManager : MonoBehaviour
 {
+    [Header("Level Design - Floor Configuration")]
+    [Tooltip("FloorData đang được sử dụng (nếu có, game sẽ chạy CHÍNH XÁC theo thứ tự các stage bạn thiết kế)")]
     [SerializeField] private FloorData floorData;
+    [Tooltip("Danh sách tất cả các Floor do bạn tự thiết kế (Floor 1, Floor 2, Floor 3...)")]
+    [SerializeField] private FloorData[] allFloors;
+
+    [Header("Positions & Core")]
     [SerializeField] private Transform enemySpawnPoint;
     [SerializeField] private Transform[] combatPositions;
     [SerializeField] private CombatManager combatManager;
@@ -20,15 +26,33 @@ public class WaveManager : MonoBehaviour
     private int currentWaveIndex = -1;
     private bool isTransitioning;
 
+    public FloorData GetActiveFloor()
+    {
+        if (floorData != null) return floorData;
+
+        if (allFloors != null && allFloors.Length > 0)
+        {
+            int floorIndex = 0;
+            if (ProgressionManager.Instance != null)
+            {
+                floorIndex = Mathf.Clamp(ProgressionManager.Instance.currentFloor - 1, 0, allFloors.Length - 1);
+            }
+            return allFloors[floorIndex];
+        }
+
+        return null;
+    }
+
     public WaveData CurrentWave
     {
         get
         {
             if (runtimeWaves == null || runtimeWaves.Length == 0)
             {
-                if (floorData == null || floorData.waves == null) return null;
-                if (currentWaveIndex < 0 || currentWaveIndex >= floorData.waves.Length) return null;
-                return floorData.waves[currentWaveIndex];
+                FloorData activeFloor = GetActiveFloor();
+                if (activeFloor == null || activeFloor.waves == null) return null;
+                if (currentWaveIndex < 0 || currentWaveIndex >= activeFloor.waves.Length) return null;
+                return activeFloor.waves[currentWaveIndex];
             }
 
             if (currentWaveIndex < 0 || currentWaveIndex >= runtimeWaves.Length)
@@ -36,6 +60,14 @@ public class WaveManager : MonoBehaviour
 
             return runtimeWaves[currentWaveIndex];
         }
+    }
+
+    private void Awake()
+    {
+        if (combatManager == null) combatManager = GetComponent<CombatManager>();
+        if (healthBarManager == null) healthBarManager = GetComponent<HealthBarManager>();
+        if (targetSelector == null) targetSelector = GetComponent<EnemyTargetSelector>();
+        if (floorGenerator == null) floorGenerator = GetComponent<FloorGenerator>();
     }
 
     private void Start()
@@ -50,19 +82,24 @@ public class WaveManager : MonoBehaviour
 
     public void StartFirstWave()
     {
-        // Nếu có FloorGenerator, tạo danh sách wave ngẫu nhiên cân bằng theo GDD
-        if (floorGenerator != null)
+        FloorData activeFloor = GetActiveFloor();
+
+        // 1. Ưu tiên hàng đầu: Chạy theo FloorData do bạn tự sắp xếp (Level Design)
+        if (activeFloor != null && activeFloor.waves != null && activeFloor.waves.Length > 0)
         {
-            runtimeWaves = floorGenerator.GenerateFloor();
+            runtimeWaves = activeFloor.waves;
+            Debug.Log($"🎮 [WaveManager] Đang chạy Floor do bạn thiết kế: '{activeFloor.floorName ?? activeFloor.name}' với {runtimeWaves.Length} stages.");
         }
-        else if (floorData != null && floorData.waves != null)
+        else if (floorGenerator != null)
         {
-            runtimeWaves = floorData.waves;
+            // 2. Chỉ khi bạn không gán FloorData nào thì mới sinh tự động hoàn toàn bằng FloorGenerator
+            runtimeWaves = floorGenerator.GenerateFloor();
+            Debug.Log($"🎲 [WaveManager] Tự động sinh Floor ngẫu nhiên bằng FloorGenerator.");
         }
 
         if (runtimeWaves == null || runtimeWaves.Length == 0)
         {
-            Debug.Log("Floor không có Wave/Stage nào.");
+            Debug.LogWarning("⚠️ Floor không có Wave/Stage nào.");
             return;
         }
 
@@ -87,12 +124,17 @@ public class WaveManager : MonoBehaviour
         if (isTransitioning)
             return;
 
-        int totalStages = runtimeWaves != null ? runtimeWaves.Length : (floorData != null && floorData.waves != null ? floorData.waves.Length : 0);
+        FloorData activeFloor = GetActiveFloor();
+        int totalStages = runtimeWaves != null ? runtimeWaves.Length : (activeFloor != null && activeFloor.waves != null ? activeFloor.waves.Length : 0);
 
         if (currentWaveIndex >= totalStages - 1)
         {
             Debug.Log("Hoàn thành toàn bộ Floor!");
-            if (ProgressionManager.Instance != null)
+            if (CombatUI.Instance != null)
+            {
+                CombatUI.Instance.ShowVictoryScreen("🏆 CHIẾN THẮNG HẦM NGỤC!\n\nBạn đã dọn sạch toàn bộ các tầng và đánh bại Boss!\nChiến lợi phẩm và hạt giống đã được bảo vệ an toàn.");
+            }
+            else if (ProgressionManager.Instance != null)
             {
                 ProgressionManager.Instance.CompleteRun();
             }
@@ -195,12 +237,25 @@ public class WaveManager : MonoBehaviour
     private void HandleRewardStage()
     {
         Debug.Log("Đến phòng thưởng (Reward Stage)!");
-        // Tự động chuyển tiếp sau khi nhận thưởng
-        Continue();
+        string rewardDesc = "Bạn đã tìm thấy rương kho báu trong phòng thưởng!\nNhận thêm vật phẩm hồi phục sức mạnh.";
+
+        if (CombatUI.Instance != null)
+        {
+            CombatUI.Instance.ShowRewardScreen(rewardDesc);
+        }
+        else
+        {
+            Continue();
+        }
     }
 
     public void TriggerAmbush()
     {
+        if (CombatUI.Instance != null)
+        {
+            CombatUI.Instance.LogMessage("⚠️ CẢNH BÁO: Bị phục kích! Kẻ địch sẽ hành động trước!");
+        }
+
         WaveData wave = CurrentWave;
         if (wave != null && wave.enemyPrefabs != null && wave.enemyPrefabs.Length > 0)
         {
@@ -215,7 +270,10 @@ public class WaveManager : MonoBehaviour
 
     public void SpawnEnemies(WaveData wave, bool isAmbush = false)
     {
-        if (wave.enemyPrefabs == null || wave.enemyPrefabs.Length == 0)
+        // Lấy danh sách quái (hỗ trợ cả cố định lẫn bốc ngẫu nhiên từ pool)
+        GameObject[] enemiesToSpawn = wave.GetEnemiesToSpawn();
+
+        if (enemiesToSpawn == null || enemiesToSpawn.Length == 0)
         {
             Debug.Log("Wave has no enemy");
             return;
@@ -234,7 +292,7 @@ public class WaveManager : MonoBehaviour
         }
 
         int enemyCount = Mathf.Min(
-            wave.enemyPrefabs.Length,
+            enemiesToSpawn.Length,
             combatPositions.Length
         );
 
@@ -242,7 +300,7 @@ public class WaveManager : MonoBehaviour
 
         for (int i = 0; i < enemyCount; i++)
         {
-            if (wave.enemyPrefabs[i] == null)
+            if (enemiesToSpawn[i] == null)
                 continue;
 
             if (combatPositions[i] == null)
@@ -252,7 +310,7 @@ public class WaveManager : MonoBehaviour
             }
 
             GameObject enemyObject = Instantiate(
-                wave.enemyPrefabs[i],
+                enemiesToSpawn[i],
                 enemySpawnPoint.position,
                 Quaternion.identity
             );
@@ -265,7 +323,7 @@ public class WaveManager : MonoBehaviour
             {
                 Debug.Log(
                     "Enemy prefab does not contain EnemyStats: " +
-                    wave.enemyPrefabs[i].name
+                    enemiesToSpawn[i].name
                 );
 
                 Destroy(enemyObject);
@@ -292,13 +350,14 @@ public class WaveManager : MonoBehaviour
     {
         if (progressController == null) return;
 
-        int total = runtimeWaves != null ? runtimeWaves.Length : (floorData != null && floorData.waves != null ? floorData.waves.Length : 10);
+        FloorData activeFloor = GetActiveFloor();
+        int total = runtimeWaves != null ? runtimeWaves.Length : (activeFloor != null && activeFloor.waves != null ? activeFloor.waves.Length : 10);
         progressController.totalStage = total;
         progressController.currentStage = currentWaveIndex + 1;
 
         if (progressController.image != null)
         {
-            progressController.image.fillAmount = progressController.currentStage / progressController.totalStage;
+            progressController.image.fillAmount = (float)progressController.currentStage / progressController.totalStage;
         }
     }
 

@@ -8,8 +8,19 @@ public class TurnManager : MonoBehaviour
     private int currentIndex;
     private bool isAmbushRound;
 
+    private void Awake()
+    {
+        if (speedManager == null) speedManager = GetComponent<SpeedManager>();
+        if (combatManager == null) combatManager = GetComponent<CombatManager>();
+    }
+
     public void StartRound(bool isAmbush = false)
     {
+        if (speedManager == null || combatManager == null)
+        {
+            Awake();
+        }
+
         isAmbushRound = isAmbush;
         speedManager.CreateSpeedOrder(isAmbushRound);
         currentIndex = 0;
@@ -19,6 +30,8 @@ public class TurnManager : MonoBehaviour
 
     public void StartCurrentTurn()
     {
+        if (speedManager == null || speedManager.speedOrder == null) return;
+
         if (currentIndex >= speedManager.speedOrder.Count)
         {
             isAmbushRound = false;
@@ -28,7 +41,13 @@ public class TurnManager : MonoBehaviour
 
         SpeedEntry currentEntry = speedManager.speedOrder[currentIndex];
 
-        if (currentEntry.character == combatManager.playerStats.gameObject)
+        if (currentEntry == null || currentEntry.character == null)
+        {
+            NextTurn();
+            return;
+        }
+
+        if (combatManager != null && combatManager.playerStats != null && currentEntry.character == combatManager.playerStats.gameObject)
         {
             combatManager.StartPlayerTurn();
         }

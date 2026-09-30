@@ -29,6 +29,9 @@ public class PlayerStats : MonoBehaviour
     public HealthBar healthBar;
 
     public event System.Action OnPlayerDeath;
+    public event System.Action<int> OnPlayerDamaged;
+    public event System.Action<int> OnPlayerHealed;
+    public event System.Action OnPlayerDefended;
 
     private void Start()
     {
@@ -94,6 +97,7 @@ public class PlayerStats : MonoBehaviour
     public void Defend()
     {
         defendCount++;
+        OnPlayerDefended?.Invoke();
     }
 
     #endregion
@@ -209,7 +213,14 @@ public class PlayerStats : MonoBehaviour
 
             if (ProgressionManager.Instance != null)
             {
-                ProgressionManager.Instance.HandlePlayerDeath(itemContainer);
+                if (CombatUI.Instance != null)
+                {
+                    ProgressionManager.Instance.HandlePlayerDeathWithoutReload(itemContainer);
+                }
+                else
+                {
+                    ProgressionManager.Instance.HandlePlayerDeath(itemContainer);
+                }
             }
             return;
         }
@@ -218,6 +229,8 @@ public class PlayerStats : MonoBehaviour
         {
             healthBar.SetHealthBar(currentHealth, maxHealth);
         }
+
+        OnPlayerDamaged?.Invoke(damage);
     }
 
     public void OnStageTransition()
@@ -267,12 +280,17 @@ public class PlayerStats : MonoBehaviour
     public void Heal(int amount)
     {
         currentHealth += amount;
-        healthBar.SetHealthBar(currentHealth, maxHealth);
+        if (healthBar != null)
+        {
+            healthBar.SetHealthBar(currentHealth, maxHealth);
+        }
 
         if (currentHealth > maxHealth)
         {
             currentHealth = maxHealth;
         }
+
+        OnPlayerHealed?.Invoke(amount);
     }
 
     #endregion

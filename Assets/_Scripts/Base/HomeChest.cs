@@ -15,6 +15,9 @@ public class HomeChest : MonoBehaviour, IInteractable
     public event System.Action<bool> OnChestToggled;
     public event System.Action OnChestContentsChanged;
 
+    private Transform playerTransform;
+    private Collider2D col;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -25,13 +28,19 @@ public class HomeChest : MonoBehaviour, IInteractable
         Instance = this;
     }
 
-    private Transform playerTransform;
-    private Collider2D col;
-
     private void Start()
     {
         col = GetComponent<Collider2D>();
         FindPlayer();
+
+        if (backpackContainer == null)
+        {
+            InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+            if (invPanel != null)
+            {
+                backpackContainer = invPanel.ItemContainer;
+            }
+        }
     }
 
     private void FindPlayer()
@@ -57,9 +66,22 @@ public class HomeChest : MonoBehaviour, IInteractable
             playerInRange = (dist <= 2.2f);
         }
 
+        // Tự động đóng rương khi người chơi đi ra xa
+        if (!playerInRange && isOpen)
+        {
+            CloseChest();
+        }
+
+        // Nhấn E để tương tác mở / đóng
         if (playerInRange && Input.GetKeyDown(KeyCode.E))
         {
             Interact();
+        }
+
+        // Nhấn Escape để đóng rương khi đang mở
+        if (isOpen && Input.GetKeyDown(KeyCode.Escape))
+        {
+            CloseChest();
         }
     }
 
@@ -78,15 +100,36 @@ public class HomeChest : MonoBehaviour, IInteractable
     public void OpenChest()
     {
         isOpen = true;
-        Debug.Log("Đã mở Rương ở nhà. Các vật phẩm cất trong rương được bảo vệ an toàn 100%!");
+        Debug.Log("[HomeChest] Đã mở Rương ở nhà. Các vật phẩm cất trong rương được bảo vệ an toàn 100%!");
         OnChestToggled?.Invoke(true);
+
+        if (chestContainer == null)
+            Debug.LogWarning("[HomeChest] chestContainer chưa được gán ScriptableObject (HomeChest.asset)!");
+        if (backpackContainer == null)
+            Debug.LogWarning("[HomeChest] backpackContainer chưa được gán ScriptableObject (Inventory.asset)!");
+
+        // Mở giao diện ChestUI với drag-drop
+        if (ChestUI.Instance != null && chestContainer != null && backpackContainer != null)
+        {
+            ChestUI.Instance.Open(chestContainer, backpackContainer);
+        }
+        else if (ChestUI.Instance == null)
+        {
+            Debug.LogWarning("[HomeChest] Không tìm thấy ChestUI trong scene!");
+        }
     }
 
     public void CloseChest()
     {
         isOpen = false;
-        Debug.Log("Đã đóng Rương ở nhà.");
+        Debug.Log("[HomeChest] Đã đóng Rương ở nhà.");
         OnChestToggled?.Invoke(false);
+
+        // Đóng giao diện ChestUI
+        if (ChestUI.Instance != null)
+        {
+            ChestUI.Instance.Close();
+        }
     }
 
     // Chuyển vật phẩm từ Ba lô vào Rương
@@ -97,11 +140,18 @@ public class HomeChest : MonoBehaviour, IInteractable
 
         if (!backpackContainer.HasItem(item)) return false;
 
+        // Kiểm tra xem rương còn chỗ chứa không trước khi trừ trong ba lô
+        if (!chestContainer.CanAddItem(item))
+        {
+            Debug.LogWarning("[HomeChest] Rương đã đầy, không thể cất thêm đồ!");
+            return false;
+        }
+
         // Thêm vào rương và trừ trong ba lô
         chestContainer.AddItem(item, amount);
         backpackContainer.RemoveItem(item, amount);
 
-        Debug.Log($"Đã cất {amount}x {item.itemName} vào Rương.");
+        Debug.Log($"[HomeChest] Đã cất {amount}x {item.itemName} vào Rương.");
         OnChestContentsChanged?.Invoke();
         return true;
     }
@@ -114,10 +164,17 @@ public class HomeChest : MonoBehaviour, IInteractable
 
         if (!chestContainer.HasItem(item)) return false;
 
+        // Kiểm tra xem ba lô còn chỗ chứa không trước khi trừ trong rương
+        if (!backpackContainer.CanAddItem(item))
+        {
+            Debug.LogWarning("[HomeChest] Ba lô đã đầy, không thể lấy thêm đồ!");
+            return false;
+        }
+
         backpackContainer.AddItem(item, amount);
         chestContainer.RemoveItem(item, amount);
 
-        Debug.Log($"Đã lấy {amount}x {item.itemName} từ Rương ra Ba lô.");
+        Debug.Log($"[HomeChest] Đã lấy {amount}x {item.itemName} từ Rương ra Ba lô.");
         OnChestContentsChanged?.Invoke();
         return true;
     }
@@ -127,7 +184,7 @@ public class HomeChest : MonoBehaviour, IInteractable
         if (other.CompareTag("Player"))
         {
             playerInRange = true;
-            Debug.Log("Đến gần Rương nhà (Home Chest). Nhấn E để cất/lấy đồ.");
+            Debug.Log("[HomeChest] Đến gần Rương nhà (Home Chest). Nhấn E để cất/lấy đồ.");
         }
     }
 

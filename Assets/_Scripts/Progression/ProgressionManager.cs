@@ -100,6 +100,17 @@ public class ProgressionManager : MonoBehaviour
 
     public void HandlePlayerDeath(ItemContainer inventory)
     {
+        HandlePlayerDeathWithoutReload(inventory);
+
+        // Quay về Base
+        if (SceneTransitionManager.Instance != null)
+        {
+            SceneTransitionManager.Instance.LoadBase();
+        }
+    }
+
+    public void HandlePlayerDeathWithoutReload(ItemContainer inventory)
+    {
         Debug.Log("Người chơi tử trận! Kết thúc Run.");
         runActive = false;
 
@@ -110,12 +121,6 @@ public class ProgressionManager : MonoBehaviour
         }
 
         OnRunEnded?.Invoke(false);
-
-        // Quay về Base
-        if (SceneTransitionManager.Instance != null)
-        {
-            SceneTransitionManager.Instance.LoadBase();
-        }
     }
 
     public void CompleteRun()

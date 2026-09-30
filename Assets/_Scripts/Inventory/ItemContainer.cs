@@ -42,7 +42,7 @@ public class ItemContainer : ScriptableObject
             {
                 for (int i = 0; i < maxSlots; i++)
                 {
-                    if (itemSlots[i].itemData == itemData)
+                    if (itemSlots[i] != null && itemSlots[i].itemData == itemData)
                     {
                         itemSlots[i].amount += amount;
                         OnInventoryChange?.Invoke();
@@ -55,6 +55,7 @@ public class ItemContainer : ScriptableObject
 
             if (slot != -1)
             {
+                if (itemSlots[slot] == null) itemSlots[slot] = new ItemSlot();
                 itemSlots[slot].itemData = itemData;
                 itemSlots[slot].amount = amount;
 
@@ -72,6 +73,7 @@ public class ItemContainer : ScriptableObject
                     return;
                 }
 
+                if (itemSlots[slot] == null) itemSlots[slot] = new ItemSlot();
                 itemSlots[slot].itemData = itemData;
                 itemSlots[slot].amount = 1;
             }
@@ -87,7 +89,7 @@ public class ItemContainer : ScriptableObject
 
         for (int i = 0; i < maxSlots; i++)
         {
-            if (itemSlots[i].itemData == itemData)
+            if (itemSlots[i] != null && itemSlots[i].itemData == itemData)
             {
                 itemSlots[i].amount -= amount;
 
@@ -115,7 +117,8 @@ public class ItemContainer : ScriptableObject
 
         for (int i = 0; i < maxSlots; i++)
         {
-            if (itemSlots[i].itemData == itemData &&
+            if (itemSlots[i] != null &&
+                itemSlots[i].itemData == itemData &&
                 itemSlots[i].amount > 0)
             {
                 return true;
@@ -129,13 +132,20 @@ public class ItemContainer : ScriptableObject
     {
         for (int i = 0; i < maxSlots; i++)
         {
-            if (itemSlots[i].itemData == null)
+            if (itemSlots[i] == null || itemSlots[i].itemData == null)
             {
                 return i;
             }
         }
 
         return -1;
+    }
+
+    public bool CanAddItem(ItemData itemData)
+    {
+        if (itemData == null) return false;
+        if (itemData.isStackable && HasItem(itemData)) return true;
+        return GetEmptySlot() != -1;
     }
 
     public void SwapSlots(int indexA, int indexB)
@@ -149,6 +159,22 @@ public class ItemContainer : ScriptableObject
         if (indexA == indexB)
             return;
 
+        if (itemSlots[indexA] == null) itemSlots[indexA] = new ItemSlot();
+        if (itemSlots[indexB] == null) itemSlots[indexB] = new ItemSlot();
+
+        // Nếu cùng loại item và stack được -> Gộp stack vào slot B thay vì hoán đổi
+        if (itemSlots[indexA].itemData != null &&
+            itemSlots[indexA].itemData == itemSlots[indexB].itemData &&
+            itemSlots[indexA].itemData.isStackable)
+        {
+            itemSlots[indexB].amount += itemSlots[indexA].amount;
+            itemSlots[indexA].itemData = null;
+            itemSlots[indexA].amount = 0;
+
+            OnInventoryChange?.Invoke();
+            return;
+        }
+
         ItemData tempItem = itemSlots[indexA].itemData;
         int tempAmount = itemSlots[indexA].amount;
 
@@ -158,6 +184,14 @@ public class ItemContainer : ScriptableObject
         itemSlots[indexB].itemData = tempItem;
         itemSlots[indexB].amount = tempAmount;
 
+        OnInventoryChange?.Invoke();
+    }
+
+    /// <summary>
+    /// Gọi thủ công khi dữ liệu slot bị thay đổi từ bên ngoài (ví dụ: cross-container transfer)
+    /// </summary>
+    public void NotifyChange()
+    {
         OnInventoryChange?.Invoke();
     }
 }

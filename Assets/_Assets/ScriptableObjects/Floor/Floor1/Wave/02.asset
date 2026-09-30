@@ -10,9 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 13d0d1a080a9cd24492a2e15989c8098, type: 3}
-  m_Name: Wave_01 3
+  m_Name: 02
   m_EditorClassIdentifier: Assembly-CSharp::WaveData
   waveType: 0
   isRandom: 0
-  enemyPrefabs: []
+  enemyPrefabs:
+  - {fileID: 670712790704607887, guid: f1ed11da91194f64caa2fbc58ba39277, type: 3}
+  - {fileID: 7002984327749960086, guid: 21b13d0ed8bdf224dae074a2c4e6b905, type: 3}
+  randomEnemyPool: []
+  minRandomEnemies: 1
+  maxRandomEnemies: 3
   transitionDelay: 1

@@ -12,8 +12,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec29c248bae1a634f9771ab9be447621, type: 3}
   m_Name: HomeChest
   m_EditorClassIdentifier: Assembly-CSharp::ItemContainer
-  maxSlots: 20
+  maxSlots: 33
   itemSlots:
+  - itemData: {fileID: 0}
+    amount: 0
+  - itemData: {fileID: 0}
+    amount: 0
+  - itemData: {fileID: 0}
+    amount: 0
+  - itemData: {fileID: 0}
+    amount: 0
+  - itemData: {fileID: 0}
+    amount: 0
+  - itemData: {fileID: 0}
+    amount: 0
+  - itemData: {fileID: 0}
+    amount: 0
+  - itemData: {fileID: 0}
+    amount: 0
+  - itemData: {fileID: 0}
+    amount: 0
+  - itemData: {fileID: 0}
+    amount: 0
+  - itemData: {fileID: 0}
+    amount: 0
+  - itemData: {fileID: 0}
+    amount: 0
+  - itemData: {fileID: 0}
+    amount: 0
   - itemData: {fileID: 0}
     amount: 0
   - itemData: {fileID: 0}

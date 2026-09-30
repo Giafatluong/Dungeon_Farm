@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b361ef3d9b53cdd41b30d69a54936c4a, type: 3}
   m_Name: Floor_01
   m_EditorClassIdentifier: Assembly-CSharp::FloorData
-  floorName: 
+  floorName: Floor 1
+  floorNumber: 1
   waves:
-  - {fileID: 11400000, guid: 7c7cb7bad67cff843b03087e8e336e8c, type: 2}
-  - {fileID: 11400000, guid: 541941b70e67047429f8f2aeafae9f5e, type: 2}
-  - {fileID: 11400000, guid: d065fb35a68fa8c4aae7d31a9e73276f, type: 2}
+  - {fileID: 11400000, guid: 7ef44aee34e5f224d90412309eabf330, type: 2}
+  - {fileID: 11400000, guid: 361cc5e484d52824d8405584fcf64ef7, type: 2}

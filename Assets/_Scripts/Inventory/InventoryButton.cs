@@ -24,6 +24,10 @@ public class InventoryButton : MonoBehaviour,
     private GameObject dragIcon;
     private Canvas canvas;
 
+    // Cho phép đọc từ bên ngoài (ChestUI cần biết container/index khi drop cross-container)
+    public ItemContainer SlotContainer => itemContainer;
+    public int SlotIndex => slotIndex;
+
     public void SetSlotData(ItemContainer container, int index)
     {
         itemContainer = container;
@@ -35,21 +39,36 @@ public class InventoryButton : MonoBehaviour,
         canvas = targetCanvas;
     }
 
+    private void OnDisable()
+    {
+        // Dọn dẹp drag icon nếu UI bị ẩn hoặc đóng giữa chừng khi đang kéo
+        if (dragIcon != null)
+        {
+            Destroy(dragIcon);
+        }
+    }
+
     public void SetItem(ItemData itemData, int amount)
     {
         currentItem = itemData;
 
-        itemIcon.gameObject.SetActive(true);
-        itemIcon.sprite = itemData.itemIcon;
-
-        if (itemData.isStackable)
+        if (itemIcon != null)
         {
-            itemAmount.gameObject.SetActive(true);
-            itemAmount.text = amount.ToString();
+            itemIcon.gameObject.SetActive(true);
+            itemIcon.sprite = itemData.itemIcon;
         }
-        else
+
+        if (itemAmount != null)
         {
-            itemAmount.gameObject.SetActive(false);
+            if (itemData.isStackable)
+            {
+                itemAmount.gameObject.SetActive(true);
+                itemAmount.text = amount.ToString();
+            }
+            else
+            {
+                itemAmount.gameObject.SetActive(false);
+            }
         }
     }
 
@@ -57,9 +76,16 @@ public class InventoryButton : MonoBehaviour,
     {
         currentItem = null;
 
-        itemIcon.sprite = null;
-        itemIcon.gameObject.SetActive(false);
-        itemAmount.gameObject.SetActive(false);
+        if (itemIcon != null)
+        {
+            itemIcon.sprite = null;
+            itemIcon.gameObject.SetActive(false);
+        }
+
+        if (itemAmount != null)
+        {
+            itemAmount.gameObject.SetActive(false);
+        }
     }
 
     public void SelectItem()
@@ -67,26 +93,29 @@ public class InventoryButton : MonoBehaviour,
         if (currentItem != null)
         {
             selectedItem = currentItem;
-
             OnItemSelected?.Invoke(currentItem);
         }
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (currentItem == null)
+        if (currentItem == null || itemIcon == null || itemIcon.sprite == null)
             return;
+
+        if (canvas == null)
+            canvas = GetComponentInParent<Canvas>();
+
+        if (canvas == null)
+            canvas = FindFirstObjectByType<Canvas>();
 
         if (canvas == null)
             return;
 
         dragIcon = new GameObject("DragIcon");
-
         dragIcon.transform.SetParent(canvas.transform, false);
         dragIcon.transform.SetAsLastSibling();
 
         Image image = dragIcon.AddComponent<Image>();
-
         image.sprite = itemIcon.sprite;
         image.preserveAspect = true;
         image.raycastTarget = false;
@@ -94,7 +123,10 @@ public class InventoryButton : MonoBehaviour,
         RectTransform dragRect = dragIcon.GetComponent<RectTransform>();
         RectTransform iconRect = itemIcon.GetComponent<RectTransform>();
 
-        dragRect.sizeDelta = iconRect.rect.size;
+        if (dragRect != null && iconRect != null)
+        {
+            dragRect.sizeDelta = iconRect.rect.size;
+        }
 
         dragIcon.transform.position = eventData.position;
     }
@@ -120,18 +152,24 @@ public class InventoryButton : MonoBehaviour,
         InventoryButton draggedButton =
             eventData.pointerDrag?.GetComponent<InventoryButton>();
 
-        if (draggedButton == null)
+        if (draggedButton == null || draggedButton == this)
             return;
 
-        if (draggedButton == this)
+        if (draggedButton.SlotContainer == null || itemContainer == null)
             return;
 
-        if (itemContainer == null)
-            return;
-
-        itemContainer.SwapSlots(
-            draggedButton.slotIndex,
-            slotIndex
-        );
+        // Cùng container → swap hoặc gộp stack
+        if (draggedButton.SlotContainer == itemContainer)
+        {
+            itemContainer.SwapSlots(draggedButton.SlotIndex, slotIndex);
+        }
+        else
+        {
+            // Khác container → cross-container transfer (Chest ↔ Backpack)
+            ChestUI.TransferItem(
+                draggedButton.SlotContainer, draggedButton.SlotIndex,
+                itemContainer, slotIndex
+            );
+        }
     }
 }

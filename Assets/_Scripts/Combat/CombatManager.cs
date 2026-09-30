@@ -13,6 +13,12 @@ public class CombatManager : MonoBehaviour
 
     [SerializeField] private WaveManager waveManager;
 
+    public event System.Action<string> OnCombatLog;
+    public event System.Action<Turn> OnTurnChanged;
+    public event System.Action<EnemyStats, int> OnPlayerAttackAction;
+    public event System.Action OnPlayerDefendAction;
+    public event System.Action<FoodData> OnPlayerEatAction;
+
     public enum Turn
     {
         Player,
@@ -22,6 +28,28 @@ public class CombatManager : MonoBehaviour
     public Turn currentTurn;
 
     private bool isEating;
+
+    private void Awake()
+    {
+        if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
+        if (playerStats == null)
+        {
+            // Tự động tìm GameObject Player hoặc tạo PlayerCombat dự phòng
+            GameObject pGO = GameObject.Find("PlayerCombat");
+            if (pGO == null) pGO = GameObject.FindGameObjectWithTag("Player");
+            if (pGO != null)
+            {
+                playerStats = pGO.GetComponent<PlayerStats>();
+                if (playerStats == null) playerStats = pGO.AddComponent<PlayerStats>();
+            }
+        }
+
+        if (targetSelector == null) targetSelector = FindFirstObjectByType<EnemyTargetSelector>();
+        if (speedManager == null) speedManager = FindFirstObjectByType<SpeedManager>();
+        if (turnManager == null) turnManager = FindFirstObjectByType<TurnManager>();
+        if (healthBarManager == null) healthBarManager = FindFirstObjectByType<HealthBarManager>();
+        if (waveManager == null) waveManager = FindFirstObjectByType<WaveManager>();
+    }
 
     private void OnEnable()
     {
@@ -84,45 +112,37 @@ public class CombatManager : MonoBehaviour
 
             playerStats.TakeDamage(damage);
 
-            Debug.Log(
-                enemy.enemyData.enemyName +
-                " Attack Player: " +
-                damage +
-                " damage"
-            );
+            string logMsg = $"💀 {enemy.enemyData.enemyName} tấn công bạn gây {damage} sát thương!";
+            Debug.Log(logMsg);
+            OnCombatLog?.Invoke(logMsg);
         }
         else if (enemy.currentIntent == EnemyData.EnemyIntent.Defend)
         {
             enemy.Defend();
 
-            Debug.Log(
-                enemy.enemyData.enemyName +
-                " Defend"
-            );
+            string logMsg = $"🛡️ {enemy.enemyData.enemyName} vào thế phòng thủ (+{enemy.enemyData.DEF} DEF)!";
+            Debug.Log(logMsg);
+            OnCombatLog?.Invoke(logMsg);
         }
         else if (enemy.currentIntent == EnemyData.EnemyIntent.Buff)
         {
             enemy.ApplyIntentBuff();
             ApplyAllyBuff(enemy);
 
-            Debug.Log(
-                enemy.enemyData.enemyName +
-                " Buff"
-            );
+            string logMsg = $"✨ {enemy.enemyData.enemyName} kích hoạt hiệu ứng Buff!";
+            Debug.Log(logMsg);
+            OnCombatLog?.Invoke(logMsg);
         }
         else if (enemy.currentIntent == EnemyData.EnemyIntent.Debuff)
         {
             ApplyPlayerDebuff(enemy);
 
-            Debug.Log(
-                enemy.enemyData.enemyName +
-                " Debuff Player"
-            );
+            string logMsg = $"☠️ {enemy.enemyData.enemyName} sử dụng chiêu thức làm suy yếu bạn!";
+            Debug.Log(logMsg);
+            OnCombatLog?.Invoke(logMsg);
         }
 
         enemy.SelectIntent();
-
-        turnManager.NextTurn();
     }
 
     public void ApplyPlayerDebuff(EnemyStats enemy)
@@ -198,13 +218,21 @@ public class CombatManager : MonoBehaviour
             return;
 
         if (playerStats.currentAP <= 0)
+        {
+            OnCombatLog?.Invoke("⚠️ Không đủ AP để tấn công!");
             return;
+        }
+
+        if (targetSelector.selectedEnemy == null || targetSelector.selectedEnemy.currentHealth <= 0)
+        {
+            targetSelector.AutoSelectTarget(enemies);
+        }
 
         if (targetSelector.selectedEnemy == null)
+        {
+            OnCombatLog?.Invoke("⚠️ Chưa chọn kẻ địch để tấn công!");
             return;
-
-        if (targetSelector.selectedEnemy.currentHealth <= 0)
-            return;
+        }
 
         EnemyStats target = targetSelector.selectedEnemy;
 
@@ -214,26 +242,35 @@ public class CombatManager : MonoBehaviour
             damage = 0;
 
         target.TakeDamage(damage);
+        OnPlayerAttackAction?.Invoke(target, damage);
+
+        string attackMsg = $"⚔️ Bạn tấn công {target.enemyData.enemyName} gây {damage} sát thương!";
+        Debug.Log(attackMsg);
+        OnCombatLog?.Invoke(attackMsg);
 
         if (target.currentHealth <= 0)
         {
             TryDropUnlockedSeed(target.transform.position);
+
+            // Kiểm tra nếu là Boss
+            Boss boss = target.GetComponent<Boss>();
+            if (boss != null)
+            {
+                boss.OnBossDefeated(playerStats != null ? playerStats.itemContainer : null);
+                OnCombatLog?.Invoke($"👑 Chúc mừng! Bạn đã tiêu diệt trùm {boss.bossID}!");
+            }
+
+            // Tự động chuyển mục tiêu sang quái sống tiếp theo
+            targetSelector.AutoSelectTarget(enemies);
         }
 
         playerStats.currentAP--;
 
         targetSelector.CheckTarget();
 
-        Debug.Log(
-            "Player Attack " +
-            target.enemyData.enemyName +
-            ": " +
-            damage +
-            " damage"
-        );
-
         if (AreAllEnemiesDead())
         {
+            OnCombatLog?.Invoke("🎉 Đã quét sạch toàn bộ kẻ địch!");
             DestroyAllEnemies();
             EndCombat();
         }
@@ -276,16 +313,18 @@ public class CombatManager : MonoBehaviour
             return;
 
         if (playerStats.currentAP <= 0)
+        {
+            OnCombatLog?.Invoke("⚠️ Không đủ AP để phòng thủ!");
             return;
+        }
 
         playerStats.Defend();
-
         playerStats.currentAP--;
+        OnPlayerDefendAction?.Invoke();
 
-        Debug.Log(
-            "Player Defend: " +
-            playerStats.defendCount
-        );
+        string defMsg = $"🛡️ Bạn vào thế phòng thủ! (Giảm {playerStats.defendValue * playerStats.defendCount} sát thương cho đến hết lượt địch)";
+        Debug.Log(defMsg);
+        OnCombatLog?.Invoke(defMsg);
     }
 
     public void SelectEat()
@@ -301,14 +340,14 @@ public class CombatManager : MonoBehaviour
 
     public void PlayerEat(ItemData item)
     {
-        if (!isEating)
-            return;
-
         if (currentTurn != Turn.Player)
             return;
 
         if (playerStats.currentAP <= 0)
+        {
+            OnCombatLog?.Invoke("⚠️ Không đủ AP để ăn uống!");
             return;
+        }
 
         if (item == null)
             return;
@@ -317,26 +356,30 @@ public class CombatManager : MonoBehaviour
 
         if (food == null)
         {
-            Debug.Log("Khong phai do an");
+            OnCombatLog?.Invoke("⚠️ Vật phẩm này không phải món ăn!");
+            return;
+        }
+
+        if (playerStats.currentHunger + food.hungerValue > playerStats.maxHunger)
+        {
+            OnCombatLog?.Invoke("⚠️ Bạn quá no, không thể ăn thêm món này!");
             return;
         }
 
         int hungerBefore = playerStats.currentHunger;
 
         playerStats.Eat(food);
+        OnPlayerEatAction?.Invoke(food);
 
-        if (playerStats.currentHunger == hungerBefore)
+        if (playerStats.currentHunger == hungerBefore && food.hungerValue > 0)
             return;
 
         playerStats.currentAP--;
         isEating = false;
 
-        Debug.Log(
-            "Player Eat: " +
-            food.itemName +
-            " | AP: " +
-            playerStats.currentAP
-        );
+        string eatMsg = $"🍖 Bạn đã ăn {food.itemName}! Hồi phục {food.healthValue} HP, {food.hungerValue} Độ no.";
+        Debug.Log(eatMsg);
+        OnCombatLog?.Invoke(eatMsg);
     }
 
     #endregion
@@ -431,6 +474,14 @@ public class CombatManager : MonoBehaviour
         playerStats.defendCount = 0;
         playerStats.currentAP = playerStats.maxAP;
 
+        if (targetSelector != null)
+        {
+            targetSelector.AutoSelectTarget(enemies);
+        }
+
+        OnTurnChanged?.Invoke(Turn.Player);
+        OnCombatLog?.Invoke($"🌟 LƯỢT CỦA BẠN! Bạn có {playerStats.currentAP} AP để hành động.");
+
         if (enemies == null)
             return;
 
@@ -457,6 +508,7 @@ public class CombatManager : MonoBehaviour
             return;
 
         playerStats.ReduceTurnBuffDuration();
+        OnCombatLog?.Invoke("⏳ Bạn đã kết thúc lượt.");
 
         turnManager.NextTurn();
     }
@@ -464,6 +516,7 @@ public class CombatManager : MonoBehaviour
     public void StartEnemyTurn(EnemyStats enemy)
     {
         currentTurn = Turn.Enemy;
+        OnTurnChanged?.Invoke(Turn.Enemy);
 
         if (enemy == null)
         {
@@ -479,7 +532,18 @@ public class CombatManager : MonoBehaviour
             return;
         }
 
-        EnemyAction(enemy);
+        StartCoroutine(EnemyTurnRoutine(enemy));
+    }
+
+    private System.Collections.IEnumerator EnemyTurnRoutine(EnemyStats enemy)
+    {
+        yield return new WaitForSeconds(0.4f);
+        if (enemy != null && enemy.currentHealth > 0)
+        {
+            EnemyAction(enemy);
+        }
+        yield return new WaitForSeconds(0.4f);
+        turnManager.NextTurn();
     }
 
     #endregion
