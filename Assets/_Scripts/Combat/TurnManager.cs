@@ -6,10 +6,12 @@ public class TurnManager : MonoBehaviour
     [SerializeField] private CombatManager combatManager;
 
     private int currentIndex;
+    private bool isAmbushRound;
 
-    public void StartRound()
+    public void StartRound(bool isAmbush = false)
     {
-        speedManager.CreateSpeedOrder();
+        isAmbushRound = isAmbush;
+        speedManager.CreateSpeedOrder(isAmbushRound);
         currentIndex = 0;
 
         StartCurrentTurn();
@@ -19,7 +21,8 @@ public class TurnManager : MonoBehaviour
     {
         if (currentIndex >= speedManager.speedOrder.Count)
         {
-            StartRound();
+            isAmbushRound = false;
+            StartRound(false);
             return;
         }
 
@@ -33,7 +36,7 @@ public class TurnManager : MonoBehaviour
         {
             EnemyStats enemy = currentEntry.character.GetComponent<EnemyStats>();
 
-            if (enemy == null)
+            if (enemy == null || enemy.currentHealth <= 0)
             {
                 NextTurn();
                 return;
@@ -49,7 +52,8 @@ public class TurnManager : MonoBehaviour
 
         if (currentIndex >= speedManager.speedOrder.Count)
         {
-            StartRound();
+            isAmbushRound = false;
+            StartRound(false);
             return;
         }
 

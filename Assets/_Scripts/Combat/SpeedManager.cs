@@ -11,14 +11,59 @@ public class SpeedEntry
 public class SpeedManager : MonoBehaviour
 {
     [SerializeField] private PlayerStats playerStats;
-    [SerializeField] private List<EnemyStats> enemies;
+    [SerializeField] private List<EnemyStats> enemies = new List<EnemyStats>();
 
     public List<SpeedEntry> speedOrder = new List<SpeedEntry>();
 
-    public void CreateSpeedOrder()
+    public void SetEnemies(EnemyStats[] newEnemies)
+    {
+        enemies.Clear();
+        if (newEnemies != null)
+        {
+            for (int i = 0; i < newEnemies.Length; i++)
+            {
+                if (newEnemies[i] != null)
+                {
+                    enemies.Add(newEnemies[i]);
+                }
+            }
+        }
+    }
+
+    public void CreateSpeedOrder(bool isAmbush = false)
     {
         speedOrder.Clear();
 
+        if (isAmbush)
+        {
+            // Trong Ambush: Enemy hành động trước theo thứ tự Speed; sau đó mới đến Player
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                if (enemies[i] == null) continue;
+                if (enemies[i].currentHealth <= 0) continue;
+
+                speedOrder.Add(new SpeedEntry
+                {
+                    character = enemies[i].gameObject,
+                    speed = enemies[i].GetCurrentSpeed()
+                });
+            }
+
+            SortEntries();
+            RandomEqualSpeed();
+
+            if (playerStats != null)
+            {
+                speedOrder.Add(new SpeedEntry
+                {
+                    character = playerStats.gameObject,
+                    speed = playerStats.GetCurrentSpeed()
+                });
+            }
+            return;
+        }
+
+        // Lượt bình thường: thêm cả Player và Enemy rồi sắp xếp theo Speed
         if (playerStats != null)
         {
             speedOrder.Add(new SpeedEntry
@@ -40,6 +85,12 @@ public class SpeedManager : MonoBehaviour
             });
         }
 
+        SortEntries();
+        RandomEqualSpeed();
+    }
+
+    private void SortEntries()
+    {
         for (int i = 0; i < speedOrder.Count - 1; i++)
         {
             for (int j = i + 1; j < speedOrder.Count; j++)
@@ -57,23 +108,23 @@ public class SpeedManager : MonoBehaviour
     public void RandomEqualSpeed()
     {
         int start = 0;
-        while(start < speedOrder.Count)
+        while (start < speedOrder.Count)
         {
             int end = start;
-            while(end+1 < speedOrder.Count && speedOrder[end+1].speed == speedOrder[start].speed)
+            while (end + 1 < speedOrder.Count && speedOrder[end + 1].speed == speedOrder[start].speed)
             {
                 end++;
             }
 
-            for(int i=end; i>start; i--)
+            for (int i = end; i > start; i--)
             {
-                int randomIndex = Random.Range(start, i+1);
+                int randomIndex = Random.Range(start, i + 1);
                 SpeedEntry tmp = speedOrder[i];
                 speedOrder[i] = speedOrder[randomIndex];
                 speedOrder[randomIndex] = tmp;
             }
 
-            start = end+1;
+            start = end + 1;
         }
     }
 }

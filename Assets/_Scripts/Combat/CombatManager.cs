@@ -1,5 +1,5 @@
-
 using UnityEngine;
+using System.Collections.Generic;
 
 public class CombatManager : MonoBehaviour
 {
@@ -49,6 +49,10 @@ public class CombatManager : MonoBehaviour
     public void SetEnemies(EnemyStats[] newEnemies)
     {
         enemies = newEnemies;
+        if (speedManager != null)
+        {
+            speedManager.SetEnemies(newEnemies);
+        }
     }
 
     public void EnemyAction(EnemyStats enemy)
@@ -69,10 +73,10 @@ public class CombatManager : MonoBehaviour
         {
             int damage = enemy.GetCurrentATK() - playerStats.GetCurrentDEF();
 
+            // GDD: Tăng khả năng phòng thủ cho đến hết Enemy Turn
             if (playerStats.defendCount > 0)
             {
-                damage -= playerStats.defendValue;
-                playerStats.defendCount--;
+                damage -= (playerStats.defendValue * playerStats.defendCount);
             }
 
             if (damage < 0)
@@ -211,6 +215,11 @@ public class CombatManager : MonoBehaviour
 
         target.TakeDamage(damage);
 
+        if (target.currentHealth <= 0)
+        {
+            TryDropUnlockedSeed(target.transform.position);
+        }
+
         playerStats.currentAP--;
 
         targetSelector.CheckTarget();
@@ -227,6 +236,37 @@ public class CombatManager : MonoBehaviour
         {
             DestroyAllEnemies();
             EndCombat();
+        }
+    }
+
+    private void TryDropUnlockedSeed(Vector3 dropPosition)
+    {
+        if (ProgressionManager.Instance == null) return;
+
+        // Chỉ lọc các hạt giống ĐÃ MỞ KHÓA và KHÔNG PHẢI HẠT HIẾM (trừ hạt hiếm chỉ boss mới rơi)
+        List<ItemData> dropCandidates = new List<ItemData>();
+        for (int i = 0; i < ProgressionManager.Instance.unlockedSeeds.Count; i++)
+        {
+            ItemData seed = ProgressionManager.Instance.unlockedSeeds[i];
+            if (seed != null && seed.itemType == ItemData.ItemType.Seed && !seed.isRare)
+            {
+                dropCandidates.Add(seed);
+            }
+        }
+
+        if (dropCandidates.Count == 0) return;
+
+        // Tỷ lệ quái thường rơi hạt giống đã mở khóa (ví dụ 40%)
+        float dropChance = 0.40f;
+        if (Random.value < dropChance)
+        {
+            ItemData chosenSeed = dropCandidates[Random.Range(0, dropCandidates.Count)];
+            Debug.Log($"Quái thường rơi hạt giống đã mở khóa: {chosenSeed.itemName}!");
+
+            if (playerStats != null && playerStats.itemContainer != null)
+            {
+                playerStats.itemContainer.AddItem(chosenSeed, 1);
+            }
         }
     }
 
@@ -343,7 +383,10 @@ public class CombatManager : MonoBehaviour
             targetSelector.ClearTarget();
         }
 
-        playerStats.ReduceCombatBuffDuration();
+        if (playerStats != null)
+        {
+            playerStats.OnCombatComplete();
+        }
 
         if (enemies != null)
         {
@@ -364,7 +407,7 @@ public class CombatManager : MonoBehaviour
 
     #region TurnControl
 
-    public void StartCombat()
+    public void StartCombat(bool isAmbush = false)
     {
         if (enemies == null || enemies.Length == 0)
         {
@@ -378,7 +421,7 @@ public class CombatManager : MonoBehaviour
             return;
         }
 
-        turnManager.StartRound();
+        turnManager.StartRound(isAmbush);
     }
 
     public void StartPlayerTurn()

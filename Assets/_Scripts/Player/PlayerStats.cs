@@ -28,13 +28,23 @@ public class PlayerStats : MonoBehaviour
     public ItemContainer itemContainer;
     public HealthBar healthBar;
 
+    public event System.Action OnPlayerDeath;
+
     private void Start()
     {
+        if (ProgressionManager.Instance != null)
+        {
+            maxHealth += ProgressionManager.Instance.permanentMaxHP;
+        }
+
         currentHealth = maxHealth;
         currentHunger = maxHunger;
         currentAP = maxAP;
 
-        healthBar.SetHealthBar(currentHealth, maxHealth);
+        if (healthBar != null)
+        {
+            healthBar.SetHealthBar(currentHealth, maxHealth);
+        }
     }
 
     #region PlayerAction
@@ -94,6 +104,11 @@ public class PlayerStats : MonoBehaviour
     {
         int value = ATK;
 
+        if (ProgressionManager.Instance != null)
+        {
+            value += ProgressionManager.Instance.permanentATK;
+        }
+
         for (int i = 0; i < activeBuffs.Count; i++)
         {
             if (activeBuffs[i].buff.buffType == StatEffectData.BuffType.Attack)
@@ -110,6 +125,11 @@ public class PlayerStats : MonoBehaviour
     {
         int value = DEF;
 
+        if (ProgressionManager.Instance != null)
+        {
+            value += ProgressionManager.Instance.permanentDEF;
+        }
+
         for (int i = 0; i < activeBuffs.Count; i++)
         {
             if (activeBuffs[i].buff.buffType == StatEffectData.BuffType.Defense)
@@ -125,6 +145,11 @@ public class PlayerStats : MonoBehaviour
     public int GetCurrentSpeed()
     {
         int value = speed;
+
+        if (ProgressionManager.Instance != null)
+        {
+            value += ProgressionManager.Instance.permanentSpeed;
+        }
 
         for (int i = 0; i < activeBuffs.Count; i++)
         {
@@ -170,13 +195,47 @@ public class PlayerStats : MonoBehaviour
     public void TakeDamage(int damage)
     {
         currentHealth -= damage;
-        healthBar.SetHealthBar(currentHealth, maxHealth);
 
-        if (currentHealth < 0)
+        if (currentHealth <= 0)
         {
             currentHealth = 0;
-            Debug.Log("Ngu");
+            if (healthBar != null)
+            {
+                healthBar.SetHealthBar(currentHealth, maxHealth);
+            }
+
+            Debug.Log("Player đã tử trận!");
+            OnPlayerDeath?.Invoke();
+
+            if (ProgressionManager.Instance != null)
+            {
+                ProgressionManager.Instance.HandlePlayerDeath(itemContainer);
+            }
+            return;
         }
+
+        if (healthBar != null)
+        {
+            healthBar.SetHealthBar(currentHealth, maxHealth);
+        }
+    }
+
+    public void OnStageTransition()
+    {
+        // GDD: Hunger giảm khi người chơi di chuyển giữa các Stage
+        ReduceHunger(5);
+
+        // GDD: Buff theo Turn cũng giảm mỗi khi người chơi di chuyển sang Stage mới
+        ReduceTurnBuffDuration();
+    }
+
+    public void OnCombatComplete()
+    {
+        // GDD: Hunger giảm sau mỗi Combat
+        ReduceHunger(10);
+
+        // GDD: Buff theo Combat giảm sau khi hoàn thành một Combat
+        ReduceCombatBuffDuration();
     }
 
     public void AddHunger(int amount)

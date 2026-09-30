@@ -16,4 +16,5 @@ public class ItemData : ScriptableObject
     public ItemType itemType;
 
     public bool isStackable;
+    public bool isRare; // Hạt giống/vật phẩm hiếm (chỉ Boss mới rơi)
 }

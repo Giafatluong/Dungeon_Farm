@@ -1,9 +1,10 @@
 using UnityEngine;
-using System.Collections.Generic;
 
-public class Offering : MonoBehaviour
+[CreateAssetMenu(fileName = "New Offering", menuName = "Statue/Offering Data")]
+public class Offering : ScriptableObject
 {
-    public ID offeringID;
+    public string offeringKey;
+    public string offeringName;
     public ItemRequirement[] requiredItems;
     public enum RewardStat
     {
@@ -11,6 +12,7 @@ public class Offering : MonoBehaviour
         DEF,
         Speed
     }
-    public int rewardAmount;
+    public RewardStat rewardStat;
+    public int rewardAmount = 1;
     public bool completed;
 }

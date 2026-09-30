@@ -1,6 +1,7 @@
 using UnityEngine;
 
-public class ItemRequirement : MonoBehaviour
+[System.Serializable]
+public class ItemRequirement
 {
     public ItemData item;
     public int amount;

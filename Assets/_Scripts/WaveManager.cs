@@ -1,4 +1,3 @@
-
 using UnityEngine;
 using System.Collections;
 
@@ -11,6 +10,13 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private HealthBarManager healthBarManager;
     [SerializeField] private EnemyTargetSelector targetSelector;
 
+    [Header("Encounter Managers")]
+    [SerializeField] private Camp camp;
+    [SerializeField] private MerchantEvent merchantEvent;
+    [SerializeField] private ProgressController progressController;
+    [SerializeField] private FloorGenerator floorGenerator;
+
+    private WaveData[] runtimeWaves;
     private int currentWaveIndex = -1;
     private bool isTransitioning;
 
@@ -18,35 +24,45 @@ public class WaveManager : MonoBehaviour
     {
         get
         {
-            if (floorData == null)
+            if (runtimeWaves == null || runtimeWaves.Length == 0)
+            {
+                if (floorData == null || floorData.waves == null) return null;
+                if (currentWaveIndex < 0 || currentWaveIndex >= floorData.waves.Length) return null;
+                return floorData.waves[currentWaveIndex];
+            }
+
+            if (currentWaveIndex < 0 || currentWaveIndex >= runtimeWaves.Length)
                 return null;
 
-            if (floorData.waves == null)
-                return null;
-
-            if (currentWaveIndex < 0 || currentWaveIndex >= floorData.waves.Length)
-                return null;
-
-            return floorData.waves[currentWaveIndex];
+            return runtimeWaves[currentWaveIndex];
         }
     }
 
     private void Start()
     {
+        if (ProgressionManager.Instance != null)
+        {
+            ProgressionManager.Instance.StartRun(1);
+        }
+
         StartFirstWave();
     }
 
     public void StartFirstWave()
     {
-        if (floorData == null)
+        // Nếu có FloorGenerator, tạo danh sách wave ngẫu nhiên cân bằng theo GDD
+        if (floorGenerator != null)
         {
-            Debug.Log("Floor Data is NULL");
-            return;
+            runtimeWaves = floorGenerator.GenerateFloor();
+        }
+        else if (floorData != null && floorData.waves != null)
+        {
+            runtimeWaves = floorData.waves;
         }
 
-        if (floorData.waves == null || floorData.waves.Length == 0)
+        if (runtimeWaves == null || runtimeWaves.Length == 0)
         {
-            Debug.Log("Floor has no Wave");
+            Debug.Log("Floor không có Wave/Stage nào.");
             return;
         }
 
@@ -71,12 +87,15 @@ public class WaveManager : MonoBehaviour
         if (isTransitioning)
             return;
 
-        if (CurrentWave == null)
-            return;
+        int totalStages = runtimeWaves != null ? runtimeWaves.Length : (floorData != null && floorData.waves != null ? floorData.waves.Length : 0);
 
-        if (currentWaveIndex >= floorData.waves.Length - 1)
+        if (currentWaveIndex >= totalStages - 1)
         {
-            Debug.Log("Floor Complete");
+            Debug.Log("Hoàn thành toàn bộ Floor!");
+            if (ProgressionManager.Instance != null)
+            {
+                ProgressionManager.Instance.CompleteRun();
+            }
             return;
         }
 
@@ -94,6 +113,16 @@ public class WaveManager : MonoBehaviour
         yield return new WaitForSeconds(delay);
 
         currentWaveIndex++;
+
+        // Theo GDD: Giảm Hunger và giảm buff theo Turn khi di chuyển giữa các Stage
+        if (combatManager != null && combatManager.playerStats != null)
+        {
+            combatManager.playerStats.OnStageTransition();
+        }
+
+        // Cập nhật thanh tiến trình Stage trên UI
+        UpdateProgressBar();
+
         StartWave();
 
         isTransitioning = false;
@@ -106,20 +135,85 @@ public class WaveManager : MonoBehaviour
         if (wave == null)
             return;
 
-        Debug.Log(
-            "Start Wave: " +
-            currentWaveIndex +
-            " | Type: " +
-            wave.waveType
-        );
+        Debug.Log($"Bắt đầu Stage: {currentWaveIndex + 1} | Loại: {wave.waveType}");
 
-        if (wave.waveType == WaveData.WaveType.Combat)
+        UpdateProgressBar();
+
+        switch (wave.waveType)
         {
-            SpawnEnemies(wave);
+            case WaveData.WaveType.Combat:
+                SpawnEnemies(wave, isAmbush: false);
+                break;
+
+            case WaveData.WaveType.Boss:
+                SpawnEnemies(wave, isAmbush: false);
+                break;
+
+            case WaveData.WaveType.Camp:
+                HandleCampStage();
+                break;
+
+            case WaveData.WaveType.Event:
+                HandleEventStage();
+                break;
+
+            case WaveData.WaveType.Reward:
+                HandleRewardStage();
+                break;
         }
     }
 
-    private void SpawnEnemies(WaveData wave)
+    private void HandleCampStage()
+    {
+        Debug.Log("Đã đến khu cắm trại (Camp). Người chơi có thể nghỉ ngơi, ăn, nấu ăn hoặc tập thể dục.");
+        if (camp != null)
+        {
+            camp.gameObject.SetActive(true);
+            camp.waveManager = this;
+            if (combatManager != null)
+            {
+                camp.playerStats = combatManager.playerStats;
+                camp.itemContainer = combatManager.playerStats.itemContainer;
+            }
+        }
+    }
+
+    private void HandleEventStage()
+    {
+        Debug.Log("Gặp sự kiện đặc biệt (Merchant Event).");
+        if (merchantEvent != null && merchantEvent.merchantActive)
+        {
+            merchantEvent.gameObject.SetActive(true);
+        }
+        else
+        {
+            // Nếu không có event hoặc merchant đã hết hạn, tự động tiếp tục
+            Continue();
+        }
+    }
+
+    private void HandleRewardStage()
+    {
+        Debug.Log("Đến phòng thưởng (Reward Stage)!");
+        // Tự động chuyển tiếp sau khi nhận thưởng
+        Continue();
+    }
+
+    public void TriggerAmbush()
+    {
+        WaveData wave = CurrentWave;
+        if (wave != null && wave.enemyPrefabs != null && wave.enemyPrefabs.Length > 0)
+        {
+            SpawnEnemies(wave, isAmbush: true);
+        }
+        else
+        {
+            Debug.Log("Bị Ambush nhưng wave không có quái. Tiếp tục...");
+            Continue();
+        }
+    }
+
+    public void SpawnEnemies(WaveData wave, bool isAmbush = false)
     {
         if (wave.enemyPrefabs == null || wave.enemyPrefabs.Length == 0)
         {
@@ -191,7 +285,21 @@ public class WaveManager : MonoBehaviour
             healthBarManager.CreateHealthBars();
         }
 
-        combatManager.StartCombat();
+        combatManager.StartCombat(isAmbush);
+    }
+
+    private void UpdateProgressBar()
+    {
+        if (progressController == null) return;
+
+        int total = runtimeWaves != null ? runtimeWaves.Length : (floorData != null && floorData.waves != null ? floorData.waves.Length : 10);
+        progressController.totalStage = total;
+        progressController.currentStage = currentWaveIndex + 1;
+
+        if (progressController.image != null)
+        {
+            progressController.image.fillAmount = progressController.currentStage / progressController.totalStage;
+        }
     }
 
     public int GetCurrentWaveIndex()
