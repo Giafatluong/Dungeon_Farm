@@ -19,14 +19,44 @@ public class HomeChest : MonoBehaviour, IInteractable
     {
         if (Instance != null && Instance != this)
         {
-            Destroy(gameObject);
+            Destroy(this);
             return;
         }
         Instance = this;
     }
 
+    private Transform playerTransform;
+    private Collider2D col;
+
+    private void Start()
+    {
+        col = GetComponent<Collider2D>();
+        FindPlayer();
+    }
+
+    private void FindPlayer()
+    {
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            playerTransform = player.transform;
+        }
+    }
+
     private void Update()
     {
+        if (playerTransform == null)
+        {
+            FindPlayer();
+        }
+
+        if (playerTransform != null)
+        {
+            Vector3 center = col != null ? col.bounds.center : transform.position;
+            float dist = Vector2.Distance(center, playerTransform.position);
+            playerInRange = (dist <= 2.2f);
+        }
+
         if (playerInRange && Input.GetKeyDown(KeyCode.E))
         {
             Interact();

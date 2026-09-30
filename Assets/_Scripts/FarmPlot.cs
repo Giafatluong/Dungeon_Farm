@@ -136,6 +136,11 @@ public class FarmPlot : MonoBehaviour
 
     private void Start()
     {
+        if (dayManager == null)
+        {
+            dayManager = FindFirstObjectByType<DayManager>();
+        }
+
         if (dayManager != null)
         {
             dayManager.OnNewDay += NextDay;

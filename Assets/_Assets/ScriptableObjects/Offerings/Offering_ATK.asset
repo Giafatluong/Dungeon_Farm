@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36a929b1cfcee5049bbfcc297d7a36d9, type: 3}
+  m_Name: Offering_ATK
+  m_EditorClassIdentifier: Assembly-CSharp::Offering
+  offeringKey: offering_atk_1
+  offeringName: "L\u1EC5 V\u1EADt Chi\u1EBFn Binh (+1 ATK)"
+  requiredItems:
+  - item: {fileID: 11400000, guid: 3df971529d87e11458e9cca160be2dad, type: 2}
+    amount: 3
+  - item: {fileID: 11400000, guid: bebc2ac43f68ce44d89cca458fd002c8, type: 2}
+    amount: 3
+  rewardStat: 0
+  rewardAmount: 1
+  completed: 0

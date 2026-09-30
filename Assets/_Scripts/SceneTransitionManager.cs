@@ -19,6 +19,10 @@ public class SceneTransitionManager : MonoBehaviour
 
     public void LoadDungeon()
     {
+        if (ProgressionManager.Instance != null && !ProgressionManager.Instance.runActive)
+        {
+            ProgressionManager.Instance.StartRun(1);
+        }
         SceneManager.LoadScene("Dungeon");
     }
 

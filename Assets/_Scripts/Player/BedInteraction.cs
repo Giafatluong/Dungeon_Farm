@@ -14,6 +14,11 @@ public class BedInteraction : MonoBehaviour
 
         if (dayManager == null)
         {
+            dayManager = FindFirstObjectByType<DayManager>();
+        }
+
+        if (dayManager == null)
+        {
             Debug.Log("Day Manager is NULL");
             return;
         }
