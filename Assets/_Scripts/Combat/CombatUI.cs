@@ -170,6 +170,8 @@ public class CombatUI : MonoBehaviour
         {
             combatManager.OnCombatLog += LogMessage;
             combatManager.OnTurnChanged += HandleTurnChanged;
+            combatManager.OnCombatPreparationCountdown += HandleCombatPreparationCountdown;
+            combatManager.OnCombatStarted += HandleCombatStarted;
         }
 
         if (playerStats != null)
@@ -194,6 +196,8 @@ public class CombatUI : MonoBehaviour
         {
             combatManager.OnCombatLog -= LogMessage;
             combatManager.OnTurnChanged -= HandleTurnChanged;
+            combatManager.OnCombatPreparationCountdown -= HandleCombatPreparationCountdown;
+            combatManager.OnCombatStarted -= HandleCombatStarted;
         }
 
         if (playerStats != null)
@@ -228,8 +232,9 @@ public class CombatUI : MonoBehaviour
             }
         }
 
-        // Bắt phím tắt nhanh
-        if (combatManager != null && combatManager.currentTurn == CombatManager.Turn.Player && playerStats != null && playerStats.currentHealth > 0)
+        // Bắt phím tắt nhanh (chỉ khi combat đang hoạt động và không trong lúc đếm ngược chuẩn bị)
+        bool canUseShortcuts = combatManager != null && combatManager.isCombatActive && !combatManager.isPreparingCombat && combatManager.currentTurn == CombatManager.Turn.Player && playerStats != null && playerStats.currentHealth > 0;
+        if (canUseShortcuts)
         {
             if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
             {
@@ -355,7 +360,7 @@ public class CombatUI : MonoBehaviour
     {
         if (combatManager == null || playerStats == null) return;
 
-        bool isPlayerTurn = combatManager.currentTurn == CombatManager.Turn.Player;
+        bool isPlayerTurn = combatManager.isCombatActive && !combatManager.isPreparingCombat && combatManager.currentTurn == CombatManager.Turn.Player;
         bool hasAP = playerStats.currentAP > 0;
         bool isAlive = playerStats.currentHealth > 0;
 
@@ -383,6 +388,42 @@ public class CombatUI : MonoBehaviour
     public void UpdateTurnBanner()
     {
         if (combatManager == null) return;
+
+        if (combatManager.isPreparingCombat)
+        {
+            int secs = Mathf.CeilToInt(combatManager.preparationTimeRemaining);
+            if (turnBannerText != null)
+            {
+                turnBannerText.text = combatManager.isAmbushCurrent
+                    ? $"⚠️ BỊ PHỤC KÍCH! ĐỊCH SẼ TẤN CÔNG SAU {secs}s"
+                    : $"⚔️ CHUẨN BỊ CHIẾN ĐẤU ({secs}s)";
+                turnBannerText.color = combatManager.isAmbushCurrent
+                    ? new Color(1f, 0.4f, 0.2f)
+                    : new Color(1f, 0.85f, 0.2f);
+            }
+
+            if (turnBannerBg != null)
+            {
+                turnBannerBg.color = combatManager.isAmbushCurrent
+                    ? new Color(0.6f, 0.15f, 0.05f, 0.85f)
+                    : new Color(0.5f, 0.35f, 0.05f, 0.85f);
+            }
+            return;
+        }
+
+        if (!combatManager.isCombatActive)
+        {
+            if (turnBannerText != null)
+            {
+                turnBannerText.text = "AN TOÀN (KHÔNG CÓ KẺ ĐỊCH)";
+                turnBannerText.color = new Color(0.7f, 0.9f, 0.7f);
+            }
+            if (turnBannerBg != null)
+            {
+                turnBannerBg.color = new Color(0.1f, 0.3f, 0.2f, 0.7f);
+            }
+            return;
+        }
 
         bool isPlayer = combatManager.currentTurn == CombatManager.Turn.Player;
         if (turnBannerText != null)
@@ -474,6 +515,18 @@ public class CombatUI : MonoBehaviour
         {
             UpdateTargetInfo(targetSelector.selectedEnemy);
         }
+    }
+
+    private void HandleCombatPreparationCountdown(float remainingSeconds)
+    {
+        UpdateTurnBanner();
+        UpdateActionButtons();
+    }
+
+    private void HandleCombatStarted()
+    {
+        UpdateTurnBanner();
+        UpdateActionButtons();
     }
 
     #region Action Handlers

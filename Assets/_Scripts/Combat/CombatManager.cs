@@ -18,6 +18,19 @@ public class CombatManager : MonoBehaviour
     public event System.Action<EnemyStats, int> OnPlayerAttackAction;
     public event System.Action OnPlayerDefendAction;
     public event System.Action<FoodData> OnPlayerEatAction;
+    public event System.Action<float> OnCombatPreparationCountdown;
+    public event System.Action OnCombatStarted;
+
+    [Header("Combat Delay Settings")]
+    [Tooltip("Thời gian chờ (giây) sau khi quái xuất hiện trước khi bắt đầu lượt combat đầu tiên (tránh người chơi vào game bị mất máu bất ngờ)")]
+    public float combatStartDelay = 3.0f;
+
+    public bool isCombatActive { get; private set; } = false;
+    public bool isPreparingCombat { get; private set; } = false;
+    public bool isAmbushCurrent { get; private set; } = false;
+    public float preparationTimeRemaining { get; private set; } = 0f;
+
+    private Coroutine startCombatCoroutine;
 
     public enum Turn
     {
@@ -59,6 +72,12 @@ public class CombatManager : MonoBehaviour
     private void OnDisable()
     {
         InventoryButton.OnItemSelected -= OnItemSelected;
+
+        if (startCombatCoroutine != null)
+        {
+            StopCoroutine(startCombatCoroutine);
+            startCombatCoroutine = null;
+        }
     }
 
     private void OnItemSelected(ItemData item)
@@ -85,6 +104,9 @@ public class CombatManager : MonoBehaviour
 
     public void EnemyAction(EnemyStats enemy)
     {
+        if (!isCombatActive || isPreparingCombat)
+            return;
+
         if (currentTurn != Turn.Enemy)
             return;
 
@@ -214,6 +236,9 @@ public class CombatManager : MonoBehaviour
 
     public void PlayerAttack()
     {
+        if (!isCombatActive || isPreparingCombat)
+            return;
+
         if (currentTurn != Turn.Player)
             return;
 
@@ -309,6 +334,9 @@ public class CombatManager : MonoBehaviour
 
     public void PlayerDefend()
     {
+        if (!isCombatActive || isPreparingCombat)
+            return;
+
         if (currentTurn != Turn.Player)
             return;
 
@@ -329,6 +357,9 @@ public class CombatManager : MonoBehaviour
 
     public void SelectEat()
     {
+        if (!isCombatActive || isPreparingCombat)
+            return;
+
         if (currentTurn != Turn.Player)
             return;
 
@@ -340,6 +371,9 @@ public class CombatManager : MonoBehaviour
 
     public void PlayerEat(ItemData item)
     {
+        if (!isCombatActive || isPreparingCombat)
+            return;
+
         if (currentTurn != Turn.Player)
             return;
 
@@ -419,6 +453,16 @@ public class CombatManager : MonoBehaviour
     {
         Debug.Log("Combat End");
 
+        if (startCombatCoroutine != null)
+        {
+            StopCoroutine(startCombatCoroutine);
+            startCombatCoroutine = null;
+        }
+
+        isPreparingCombat = false;
+        isCombatActive = false;
+        preparationTimeRemaining = 0f;
+
         currentTurn = Turn.Player;
 
         if (targetSelector != null)
@@ -464,6 +508,47 @@ public class CombatManager : MonoBehaviour
             return;
         }
 
+        if (startCombatCoroutine != null)
+        {
+            StopCoroutine(startCombatCoroutine);
+        }
+
+        startCombatCoroutine = StartCoroutine(StartCombatRoutine(isAmbush));
+    }
+
+    private System.Collections.IEnumerator StartCombatRoutine(bool isAmbush)
+    {
+        if (combatStartDelay > 0f)
+        {
+            isPreparingCombat = true;
+            isCombatActive = false;
+            isAmbushCurrent = isAmbush;
+            preparationTimeRemaining = combatStartDelay;
+
+            string initialMsg = isAmbush
+                ? $"⚠️ CẢNH BÁO: Bị phục kích! Kẻ địch sẽ hành động trước sau {Mathf.CeilToInt(combatStartDelay)}s..."
+                : $"⚔️ Kẻ địch đã xuất hiện! Trận chiến bắt đầu sau {Mathf.CeilToInt(combatStartDelay)}s...";
+
+            Debug.Log(initialMsg);
+            OnCombatLog?.Invoke(initialMsg);
+
+            while (preparationTimeRemaining > 0f)
+            {
+                OnCombatPreparationCountdown?.Invoke(preparationTimeRemaining);
+                float step = Mathf.Min(1.0f, preparationTimeRemaining);
+                yield return new WaitForSeconds(step);
+                preparationTimeRemaining -= step;
+            }
+        }
+
+        preparationTimeRemaining = 0f;
+        isPreparingCombat = false;
+        isCombatActive = true;
+        startCombatCoroutine = null;
+
+        OnCombatLog?.Invoke("💥 TRẬN ĐẤU CHÍNH THỨC BẮT ĐẦU!");
+        OnCombatStarted?.Invoke();
+
         turnManager.StartRound(isAmbush);
     }
 
@@ -504,6 +589,9 @@ public class CombatManager : MonoBehaviour
 
     public void EndTurnPlayer()
     {
+        if (!isCombatActive || isPreparingCombat)
+            return;
+
         if (currentTurn != Turn.Player)
             return;
 

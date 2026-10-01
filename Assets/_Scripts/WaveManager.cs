@@ -331,16 +331,33 @@ public class WaveManager : MonoBehaviour
             }
 
             enemyStats.targetSelector = targetSelector;
+            enemyStats.SelectIntent();
 
             newEnemies[i] = enemyStats;
         }
 
-        combatManager.SetEnemies(newEnemies);
+        // Lọc các kẻ địch hợp lệ
+        System.Collections.Generic.List<EnemyStats> validEnemies = new System.Collections.Generic.List<EnemyStats>();
+        for (int i = 0; i < newEnemies.Length; i++)
+        {
+            if (newEnemies[i] != null)
+            {
+                validEnemies.Add(newEnemies[i]);
+            }
+        }
+        EnemyStats[] enemyArray = validEnemies.ToArray();
+
+        combatManager.SetEnemies(enemyArray);
 
         if (healthBarManager != null)
         {
-            healthBarManager.SetEnemies(newEnemies);
+            healthBarManager.SetEnemies(enemyArray);
             healthBarManager.CreateHealthBars();
+        }
+
+        if (targetSelector != null)
+        {
+            targetSelector.AutoSelectTarget(enemyArray);
         }
 
         combatManager.StartCombat(isAmbush);

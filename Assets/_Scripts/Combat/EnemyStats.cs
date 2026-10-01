@@ -14,16 +14,18 @@ public class EnemyStats : MonoBehaviour
 
     private void Awake()
     {
-        currentHealth = enemyData.maxHealth;
+        if (enemyData != null)
+        {
+            currentHealth = enemyData.maxHealth;
+            SelectIntent();
+        }
     }
 
     private void Start()
     {
-        if (enemyData.possibleIntents.Length > 0)
+        if (currentIntent == default && enemyData != null && enemyData.possibleIntents != null && enemyData.possibleIntents.Length > 0)
         {
-            currentIntent = enemyData.possibleIntents[
-                Random.Range(0, enemyData.possibleIntents.Length)
-            ];
+            SelectIntent();
         }
     }
 
@@ -182,7 +184,7 @@ public class EnemyStats : MonoBehaviour
 
     public void SelectIntent()
     {
-        if (enemyData.possibleIntents.Length == 0) return;
+        if (enemyData == null || enemyData.possibleIntents == null || enemyData.possibleIntents.Length == 0) return;
 
         currentIntent = enemyData.possibleIntents[
             Random.Range(0, enemyData.possibleIntents.Length)
