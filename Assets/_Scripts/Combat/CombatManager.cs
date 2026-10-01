@@ -488,7 +488,14 @@ public class CombatManager : MonoBehaviour
 
         if (waveManager != null)
         {
-            waveManager.Continue();
+            if (waveManager.camp != null && waveManager.camp.mustContinue)
+            {
+                waveManager.HandlePostAmbushCamp();
+            }
+            else
+            {
+                waveManager.Continue();
+            }
         }
     }
 

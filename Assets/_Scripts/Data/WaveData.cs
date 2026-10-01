@@ -39,7 +39,21 @@ public class WaveData : ScriptableObject
     {
         if (!isRandom)
         {
-            return enemyPrefabs != null ? (GameObject[])enemyPrefabs.Clone() : new GameObject[0];
+            if (enemyPrefabs != null && enemyPrefabs.Length > 0)
+            {
+                return (GameObject[])enemyPrefabs.Clone();
+            }
+            if (randomEnemyPool != null && randomEnemyPool.Length > 0)
+            {
+                int fallbackCount = Mathf.Clamp(Random.Range(minRandomEnemies, maxRandomEnemies + 1), 1, 3);
+                GameObject[] fallbackResult = new GameObject[fallbackCount];
+                for (int i = 0; i < fallbackCount; i++)
+                {
+                    fallbackResult[i] = randomEnemyPool[Random.Range(0, randomEnemyPool.Length)];
+                }
+                return fallbackResult;
+            }
+            return new GameObject[0];
         }
 
         // Nếu là ngẫu nhiên

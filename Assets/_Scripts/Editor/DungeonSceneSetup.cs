@@ -182,6 +182,9 @@ public static class DungeonSceneSetup
         Camp camp = campGO.GetComponent<Camp>();
         if (camp == null) camp = campGO.AddComponent<Camp>();
 
+        CookingManager cookingManager = dmGO.GetComponent<CookingManager>();
+        if (cookingManager == null) cookingManager = dmGO.AddComponent<CookingManager>();
+
         GameObject merchantGO = GameObject.Find("MerchantEvent");
         if (merchantGO == null)
         {
@@ -343,6 +346,15 @@ public static class DungeonSceneSetup
         soUI.FindProperty("targetSelector").objectReferenceValue = targetSelector;
         soUI.FindProperty("waveManager").objectReferenceValue = waveManager;
         soUI.ApplyModifiedProperties();
+
+        // Gán references cho CampUI
+        CampUI campUI = combatCanvasGO.GetComponent<CampUI>();
+        if (campUI == null) campUI = combatCanvasGO.AddComponent<CampUI>();
+        SerializedObject soCampUI = new SerializedObject(campUI);
+        soCampUI.FindProperty("camp").objectReferenceValue = camp;
+        soCampUI.FindProperty("playerStats").objectReferenceValue = playerStats;
+        soCampUI.FindProperty("waveManager").objectReferenceValue = waveManager;
+        soCampUI.ApplyModifiedProperties();
 
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         EditorSceneManager.SaveOpenScenes();

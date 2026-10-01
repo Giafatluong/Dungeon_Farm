@@ -285,6 +285,11 @@ public class CombatUI : MonoBehaviour
         UpdateTurnBanner();
         if (targetSelector != null) UpdateTargetInfo(targetSelector.selectedEnemy);
         UpdateStageProgress();
+
+        if (CampUI.Instance != null && CampUI.Instance.camp != null && CampUI.Instance.camp.isCampOpen)
+        {
+            CampUI.Instance.UpdatePlayerStatusUI();
+        }
     }
 
     public void UpdatePlayerHUD()
@@ -413,6 +418,20 @@ public class CombatUI : MonoBehaviour
 
         if (!combatManager.isCombatActive)
         {
+            if (CampUI.Instance != null && CampUI.Instance.camp != null && CampUI.Instance.camp.isCampOpen)
+            {
+                if (turnBannerText != null)
+                {
+                    turnBannerText.text = "🏕️ KHU CẮM TRẠI (CAMP) - NGHỈ NGƠI & NẤU NƯỚNG";
+                    turnBannerText.color = new Color(1f, 0.85f, 0.3f);
+                }
+                if (turnBannerBg != null)
+                {
+                    turnBannerBg.color = new Color(0.35f, 0.22f, 0.08f, 0.9f);
+                }
+                return;
+            }
+
             if (turnBannerText != null)
             {
                 turnBannerText.text = "AN TOÀN (KHÔNG CÓ KẺ ĐỊCH)";

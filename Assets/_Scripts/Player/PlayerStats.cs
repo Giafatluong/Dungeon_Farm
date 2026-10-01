@@ -62,36 +62,95 @@ public class PlayerStats : MonoBehaviour
             return;
         }
 
-        if (!itemContainer.HasItem(food))
+        if (itemContainer != null && !itemContainer.HasItem(food))
         {
             Debug.Log("khong co do an");
             return;
         }
 
-        if (currentHunger + food.hungerValue > maxHunger)
+        if (currentHunger >= maxHunger)
         {
             Debug.Log("No qua k an dc");
             return;
         }
 
-        if (food.foodBuff.Length != 0)
+        bool appliedAnyBuff = false;
+        if (food.foodBuff != null && food.foodBuff.Length > 0)
         {
             for (int i = 0; i < food.foodBuff.Length; i++)
             {
-                AddBuff(
-                    food.foodBuff[i].buffs,
-                    food.foodBuff[i].buffValue,
-                    food.foodBuff[i].buffDuration,
-                    food.foodBuff[i].buffDurationType
-                );
+                if (food.foodBuff[i] != null && food.foodBuff[i].buffs != null)
+                {
+                    AddBuff(
+                        food.foodBuff[i].buffs,
+                        food.foodBuff[i].buffValue,
+                        food.foodBuff[i].buffDuration,
+                        food.foodBuff[i].buffDurationType
+                    );
+                    appliedAnyBuff = true;
+                }
             }
+        }
+
+        if (!appliedAnyBuff)
+        {
+            ApplyDefaultFoodBuff(food);
         }
 
         AddHunger(food.hungerValue);
         Heal(food.healthValue);
-        itemContainer.RemoveItem(food, 1);
+        if (itemContainer != null)
+        {
+            itemContainer.RemoveItem(food, 1);
+        }
 
         Debug.Log("da an : " + food.itemName);
+    }
+
+    private void ApplyDefaultFoodBuff(FoodData food)
+    {
+        if (food == null) return;
+
+        StatEffectData buffToApply = null;
+        int value = 2;
+        int duration = 3;
+
+        StatEffectData[] loadedBuffs = Resources.FindObjectsOfTypeAll<StatEffectData>();
+        string fname = (food.itemName ?? food.name ?? "").ToLower();
+
+        StatEffectData atkBuff = null, defBuff = null, spdBuff = null;
+        if (loadedBuffs != null)
+        {
+            for (int i = 0; i < loadedBuffs.Length; i++)
+            {
+                var b = loadedBuffs[i];
+                if (b == null) continue;
+                if (b.buffType == StatEffectData.BuffType.Attack) atkBuff = b;
+                else if (b.buffType == StatEffectData.BuffType.Defense) defBuff = b;
+                else if (b.buffType == StatEffectData.BuffType.Speed) spdBuff = b;
+            }
+        }
+
+        if (fname.Contains("chilli") || fname.Contains("cay") || fname.Contains("spicy") || fname.Contains("meat") || fname.Contains("thit"))
+        {
+            buffToApply = atkBuff;
+            value = 3;
+        }
+        else if (fname.Contains("corn") || fname.Contains("bap") || fname.Contains("speed") || fname.Contains("carrot") || fname.Contains("rot"))
+        {
+            buffToApply = spdBuff;
+            value = 2;
+        }
+        else
+        {
+            buffToApply = defBuff;
+            value = 2;
+        }
+
+        if (buffToApply != null)
+        {
+            AddBuff(buffToApply, value, duration, FoodData.BuffDurationType.Turn);
+        }
     }
 
     public void Defend()
@@ -115,12 +174,12 @@ public class PlayerStats : MonoBehaviour
 
         for (int i = 0; i < activeBuffs.Count; i++)
         {
-            if (activeBuffs[i].buff.buffType == StatEffectData.BuffType.Attack)
+            if (activeBuffs[i] != null && activeBuffs[i].buff != null && activeBuffs[i].buff.buffType == StatEffectData.BuffType.Attack)
             {
                 value += activeBuffs[i].buffValue;
             }
         }
-        if(value <= 0) value = 0;
+        if (value <= 0) value = 0;
 
         return value;
     }
@@ -136,12 +195,12 @@ public class PlayerStats : MonoBehaviour
 
         for (int i = 0; i < activeBuffs.Count; i++)
         {
-            if (activeBuffs[i].buff.buffType == StatEffectData.BuffType.Defense)
+            if (activeBuffs[i] != null && activeBuffs[i].buff != null && activeBuffs[i].buff.buffType == StatEffectData.BuffType.Defense)
             {
                 value += activeBuffs[i].buffValue;
             }
         }
-        if(value <= 0) value = 0;
+        if (value <= 0) value = 0;
 
         return value;
     }
@@ -157,12 +216,12 @@ public class PlayerStats : MonoBehaviour
 
         for (int i = 0; i < activeBuffs.Count; i++)
         {
-            if (activeBuffs[i].buff.buffType == StatEffectData.BuffType.Speed)
+            if (activeBuffs[i] != null && activeBuffs[i].buff != null && activeBuffs[i].buff.buffType == StatEffectData.BuffType.Speed)
             {
                 value += activeBuffs[i].buffValue;
             }
         }
-        if(value <= 0) value = 0;
+        if (value <= 0) value = 0;
 
         return value;
     }
@@ -177,6 +236,8 @@ public class PlayerStats : MonoBehaviour
         int duration,
         FoodData.BuffDurationType durationType)
     {
+        if (buff == null) return;
+
         ActiveBuff newBuff = new()
         {
             buff = buff,
@@ -184,12 +245,15 @@ public class PlayerStats : MonoBehaviour
             remainingDuration = duration,
             buffDurationType = durationType
         };
-        for(int i=activeBuffs.Count-1; i>=0; i--)
+
+        for (int i = activeBuffs.Count - 1; i >= 0; i--)
         {
-            if(activeBuffs[i].buff != newBuff.buff) continue;
-            if(activeBuffs[i].buffDurationType != newBuff.buffDurationType) continue;
+            if (activeBuffs[i] == null || activeBuffs[i].buff == null) continue;
+            if (activeBuffs[i].buff.buffType != newBuff.buff.buffType) continue;
+            if (activeBuffs[i].buffDurationType != newBuff.buffDurationType) continue;
 
             activeBuffs[i].remainingDuration += newBuff.remainingDuration;
+            activeBuffs[i].buffValue = Mathf.Max(activeBuffs[i].buffValue, newBuff.buffValue);
             return;
         }
 

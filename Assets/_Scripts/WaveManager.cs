@@ -17,7 +17,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private EnemyTargetSelector targetSelector;
 
     [Header("Encounter Managers")]
-    [SerializeField] private Camp camp;
+    public Camp camp;
     [SerializeField] private MerchantEvent merchantEvent;
     [SerializeField] private ProgressController progressController;
     [SerializeField] private FloorGenerator floorGenerator;
@@ -207,16 +207,43 @@ public class WaveManager : MonoBehaviour
 
     private void HandleCampStage()
     {
-        Debug.Log("Đã đến khu cắm trại (Camp). Người chơi có thể nghỉ ngơi, ăn, nấu ăn hoặc tập thể dục.");
+        Debug.Log("🏕️ Đã đến khu cắm trại (Camp). Người chơi có thể nghỉ ngơi, ăn, nấu ăn hoặc tập thể dục.");
+        if (camp == null) camp = FindFirstObjectByType<Camp>(FindObjectsInactive.Include);
+        if (camp == null)
+        {
+            GameObject campGO = new GameObject("Camp_Runtime", typeof(Camp));
+            camp = campGO.GetComponent<Camp>();
+        }
+
+        PlayerStats pStats = (combatManager != null && combatManager.playerStats != null) ? combatManager.playerStats : FindFirstObjectByType<PlayerStats>();
+        ItemContainer container = pStats != null ? pStats.itemContainer : null;
+
+        // Đảm bảo CampUI đã tồn tại trên Canvas và mở giao diện Camp
+        CampUI campUI = CampUI.EnsureInstance();
+        camp.OpenCamp(pStats, container, this);
+        if (campUI != null)
+        {
+            campUI.ShowCampScreen();
+        }
+    }
+
+    public void HandlePostAmbushCamp()
+    {
+        Debug.Log("🏕️ Đã đẩy lùi phục kích tại Camp! Mở lại bảng Camp nhưng chỉ cho phép Đi Tiếp.");
+        isTransitioning = false;
+
+        if (camp == null) camp = FindFirstObjectByType<Camp>(FindObjectsInactive.Include);
         if (camp != null)
         {
-            camp.gameObject.SetActive(true);
-            camp.waveManager = this;
-            if (combatManager != null)
-            {
-                camp.playerStats = combatManager.playerStats;
-                camp.itemContainer = combatManager.playerStats.itemContainer;
-            }
+            camp.isCampOpen = true;
+            camp.mustContinue = true;
+            camp.ambushState = false;
+        }
+
+        CampUI campUI = CampUI.EnsureInstance();
+        if (campUI != null)
+        {
+            campUI.ShowPostAmbushCampScreen();
         }
     }
 
@@ -257,15 +284,53 @@ public class WaveManager : MonoBehaviour
         }
 
         WaveData wave = CurrentWave;
-        if (wave != null && wave.enemyPrefabs != null && wave.enemyPrefabs.Length > 0)
+        GameObject[] enemiesToSpawn = wave != null ? wave.GetEnemiesToSpawn() : null;
+
+        // Nếu wave hiện tại không có quái (ví dụ đang ở Camp), lấy từ pool quái chiến đấu
+        if (enemiesToSpawn == null || enemiesToSpawn.Length == 0)
+        {
+            wave = GetFallbackCombatWave();
+            if (wave != null)
+            {
+                enemiesToSpawn = wave.GetEnemiesToSpawn();
+            }
+        }
+
+        if (enemiesToSpawn != null && enemiesToSpawn.Length > 0)
         {
             SpawnEnemies(wave, isAmbush: true);
         }
         else
         {
-            Debug.Log("Bị Ambush nhưng wave không có quái. Tiếp tục...");
+            Debug.Log("Bị Ambush nhưng không tìm thấy quái để spawn. Tiếp tục...");
             Continue();
         }
+    }
+
+    private WaveData GetFallbackCombatWave()
+    {
+        if (floorGenerator != null && floorGenerator.combatWavePool != null && floorGenerator.combatWavePool.Length > 0)
+        {
+            return floorGenerator.combatWavePool[Random.Range(0, floorGenerator.combatWavePool.Length)];
+        }
+
+        FloorData floor = GetActiveFloor();
+        if (floor != null && floor.waves != null)
+        {
+            for (int i = 0; i < floor.waves.Length; i++)
+            {
+                if (floor.waves[i] != null && floor.waves[i].waveType == WaveData.WaveType.Combat)
+                {
+                    GameObject[] pool = floor.waves[i].GetEnemiesToSpawn();
+                    if (pool != null && pool.Length > 0)
+                    {
+                        return floor.waves[i];
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     public void SpawnEnemies(WaveData wave, bool isAmbush = false)
