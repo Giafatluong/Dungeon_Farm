@@ -16,7 +16,8 @@ public class ItemDrop : MonoBehaviour
     [Header("Drop Effect")]
     public float jumpForce = 3f;
     public float horizontalForce = 2f;
-    public float dropTime = 2f;
+    public float dropTime = 1f;
+    public bool canCollect = false;
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -38,6 +39,8 @@ public class ItemDrop : MonoBehaviour
 
         rb.linearVelocity = Vector2.zero;
         rb.bodyType = RigidbodyType2D.Kinematic;
+
+        canCollect = true;
     }
 
     public void StartMove(GameObject targetPlayer)
@@ -54,6 +57,7 @@ public class ItemDrop : MonoBehaviour
     private void Update()
     {
         if (!isMoving || player == null) return;
+        if(canCollect == false) return;
 
         transform.position = Vector3.MoveTowards(
             transform.position,

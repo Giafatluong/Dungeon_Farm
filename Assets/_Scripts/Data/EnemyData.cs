@@ -59,9 +59,6 @@ public class EnemyData : ScriptableObject
     [Range(0f, 1f)]
     public float seedDropChance = 0.35f;
 
-    /// <summary>
-    /// Quay số sinh ngẫu nhiên chiến lợi phẩm rơi khi quái bị tiêu diệt
-    /// </summary>
     public System.Collections.Generic.List<ItemSlot> RollDrops()
     {
         var drops = new System.Collections.Generic.List<ItemSlot>();

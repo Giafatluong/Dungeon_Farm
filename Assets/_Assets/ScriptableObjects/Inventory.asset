@@ -15,17 +15,17 @@ MonoBehaviour:
   maxSlots: 33
   itemSlots:
   - itemData: {fileID: 11400000, guid: 5aac5a38adcb69d4d8122b9760c16186, type: 2}
-    amount: 10
+    amount: 153
   - itemData: {fileID: 11400000, guid: 7fbf6b6fc33a6a24aa6ccfb21298e0fd, type: 2}
-    amount: 2242
+    amount: 2137
+  - itemData: {fileID: 11400000, guid: bebc2ac43f68ce44d89cca458fd002c8, type: 2}
+    amount: 9
+  - itemData: {fileID: 11400000, guid: f19d79014c20725448aa9f587e9a9650, type: 2}
+    amount: 1
   - itemData: {fileID: 0}
     amount: 0
-  - itemData: {fileID: 0}
-    amount: 0
-  - itemData: {fileID: 0}
-    amount: 0
-  - itemData: {fileID: 0}
-    amount: 0
+  - itemData: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
+    amount: 100
   - itemData: {fileID: 0}
     amount: 0
   - itemData: {fileID: 0}

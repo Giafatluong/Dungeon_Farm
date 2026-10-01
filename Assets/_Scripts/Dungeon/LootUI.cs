@@ -3,14 +3,6 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 
-/// <summary>
-/// Bảng UI Chiến Lợi Phẩm sau khi tiêu diệt quái / kết thúc combat:
-/// - Bên trái: Danh sách vật phẩm quái rơi (Loot Container)
-/// - Bên phải: Túi đồ hiện tại của người chơi (Backpack Container)
-/// - Kéo thả vật phẩm tự do giữa 2 bên để nhặt đồ hoặc vứt bớt đồ thừa ra loot container
-/// - Nút "Loot Hết": tự động chuyển toàn bộ vật phẩm còn chỗ vào túi đồ
-/// - Nút "Tiếp Tục": đóng bảng UI và tiếp tục màn chơi tiếp theo
-/// </summary>
 public class LootUI : MonoBehaviour
 {
     public static LootUI Instance { get; private set; }
