@@ -124,10 +124,9 @@ public class CombatManager : MonoBehaviour
         {
             int damage = enemy.GetCurrentATK() - playerStats.GetCurrentDEF();
 
-            // GDD: Tăng khả năng phòng thủ cho đến hết Enemy Turn
             if (playerStats.defendCount > 0)
             {
-                damage -= (playerStats.defendValue * playerStats.defendCount);
+                damage -= playerStats.defendValue * playerStats.defendCount;
             }
 
             if (damage < 0)

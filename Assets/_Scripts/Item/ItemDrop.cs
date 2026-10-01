@@ -16,8 +16,7 @@ public class ItemDrop : MonoBehaviour
     [Header("Drop Effect")]
     public float jumpForce = 3f;
     public float horizontalForce = 2f;
-    public float dropTime = 0.5f;
-
+    public float dropTime = 2f;
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -43,8 +42,7 @@ public class ItemDrop : MonoBehaviour
 
     public void StartMove(GameObject targetPlayer)
     {
-        if (isMoving)
-            return;
+        if (isMoving) return;
 
         player = targetPlayer;
         isMoving = true;
@@ -55,8 +53,7 @@ public class ItemDrop : MonoBehaviour
 
     private void Update()
     {
-        if (!isMoving || player == null)
-            return;
+        if (!isMoving || player == null) return;
 
         transform.position = Vector3.MoveTowards(
             transform.position,

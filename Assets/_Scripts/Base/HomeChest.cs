@@ -66,19 +66,16 @@ public class HomeChest : MonoBehaviour, IInteractable
             playerInRange = (dist <= 2.2f);
         }
 
-        // Tự động đóng rương khi người chơi đi ra xa
         if (!playerInRange && isOpen)
         {
             CloseChest();
         }
 
-        // Nhấn E để tương tác mở / đóng
         if (playerInRange && Input.GetKeyDown(KeyCode.E))
         {
             Interact();
         }
 
-        // Nhấn Escape để đóng rương khi đang mở
         if (isOpen && Input.GetKeyDown(KeyCode.Escape))
         {
             CloseChest();
@@ -108,7 +105,6 @@ public class HomeChest : MonoBehaviour, IInteractable
         if (backpackContainer == null)
             Debug.LogWarning("[HomeChest] backpackContainer chưa được gán ScriptableObject (Inventory.asset)!");
 
-        // Mở giao diện ChestUI với drag-drop
         if (ChestUI.Instance != null && chestContainer != null && backpackContainer != null)
         {
             ChestUI.Instance.Open(chestContainer, backpackContainer);
