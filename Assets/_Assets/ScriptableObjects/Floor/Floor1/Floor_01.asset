@@ -16,4 +16,5 @@ MonoBehaviour:
   floorNumber: 1
   waves:
   - {fileID: 11400000, guid: 7ef44aee34e5f224d90412309eabf330, type: 2}
+  - {fileID: 11400000, guid: cb5324f0f9c3a8245884ad6c13ec24f1, type: 2}
   - {fileID: 11400000, guid: 361cc5e484d52824d8405584fcf64ef7, type: 2}

@@ -19,4 +19,8 @@ MonoBehaviour:
   isStackable: 1
   hungerValue: 5
   healthValue: 5
-  foodBuff: []
+  foodBuff:
+  - buffs: {fileID: 11400000, guid: 6fbdc716dfd5399429b38f2c719b3694, type: 2}
+    buffDurationType: 0
+    buffDuration: 3
+    buffValue: 1
