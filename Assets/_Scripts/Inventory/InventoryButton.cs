@@ -28,6 +28,19 @@ public class InventoryButton : MonoBehaviour,
     public ItemContainer SlotContainer => itemContainer;
     public int SlotIndex => slotIndex;
 
+    private void Awake()
+    {
+        if (itemIcon == null)
+        {
+            Transform iconT = transform.Find("Icon") ?? transform.Find("ItemIcon") ?? transform.Find("Image");
+            if (iconT != null) itemIcon = iconT.GetComponent<Image>();
+        }
+        if (itemAmount == null)
+        {
+            itemAmount = GetComponentInChildren<TextMeshProUGUI>(true);
+        }
+    }
+
     public void SetSlotData(ItemContainer container, int index)
     {
         itemContainer = container;
@@ -48,9 +61,26 @@ public class InventoryButton : MonoBehaviour,
         }
     }
 
+    public void BindComponents(Image icon, TextMeshProUGUI amount)
+    {
+        itemIcon = icon;
+        itemAmount = amount;
+    }
+
     public void SetItem(ItemData itemData, int amount)
     {
         currentItem = itemData;
+
+        if (itemIcon == null)
+        {
+            Transform iconT = transform.Find("Icon") ?? transform.Find("ItemIcon") ?? transform.Find("Image");
+            if (iconT != null) itemIcon = iconT.GetComponent<Image>();
+        }
+
+        if (itemAmount == null)
+        {
+            itemAmount = GetComponentInChildren<TextMeshProUGUI>(true);
+        }
 
         if (itemIcon != null)
         {
@@ -97,10 +127,16 @@ public class InventoryButton : MonoBehaviour,
         }
     }
 
+    private ScrollRect parentScrollRect;
+
     public void OnBeginDrag(PointerEventData eventData)
     {
         if (currentItem == null || itemIcon == null || itemIcon.sprite == null)
+        {
+            if (parentScrollRect == null) parentScrollRect = GetComponentInParent<ScrollRect>();
+            if (parentScrollRect != null) parentScrollRect.OnBeginDrag(eventData);
             return;
+        }
 
         if (canvas == null)
             canvas = GetComponentInParent<Canvas>();
@@ -134,7 +170,10 @@ public class InventoryButton : MonoBehaviour,
     public void OnDrag(PointerEventData eventData)
     {
         if (dragIcon == null)
+        {
+            if (parentScrollRect != null) parentScrollRect.OnDrag(eventData);
             return;
+        }
 
         dragIcon.transform.position = eventData.position;
     }
@@ -144,6 +183,10 @@ public class InventoryButton : MonoBehaviour,
         if (dragIcon != null)
         {
             Destroy(dragIcon);
+        }
+        else if (parentScrollRect != null)
+        {
+            parentScrollRect.OnEndDrag(eventData);
         }
     }
 

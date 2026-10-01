@@ -254,10 +254,13 @@ public class CombatUI : MonoBehaviour
             }
         }
 
-        // Cho phép click chuột trái lên kẻ địch để chọn mục tiêu
+        // Cho phép click chuột trái lên kẻ địch để chọn mục tiêu (chỉ khi không click vào UI)
         if (Input.GetMouseButtonDown(0))
         {
-            CheckMouseClickEnemy();
+            if (UnityEngine.EventSystems.EventSystem.current == null || !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            {
+                CheckMouseClickEnemy();
+            }
         }
 
         UpdatePlayerHUD();

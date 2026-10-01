@@ -79,16 +79,20 @@ public class HealthBarManager : MonoBehaviour
                 continue;
             }
 
-            if (healthBars[i].enemyTarget != null &&
-                healthBars[i].enemyTarget.currentHealth <= 0)
+            // Thanh máu của Enemy
+            if (healthBars[i].playerTarget == null)
             {
-                Destroy(healthBars[i].gameObject);
-                healthBars.RemoveAt(i);
-                continue;
+                if (healthBars[i].enemyTarget == null ||
+                    healthBars[i].enemyTarget.currentHealth <= 0 ||
+                    !healthBars[i].enemyTarget.gameObject.activeInHierarchy)
+                {
+                    Destroy(healthBars[i].gameObject);
+                    healthBars.RemoveAt(i);
+                    continue;
+                }
             }
-
-            if (healthBars[i].playerTarget != null &&
-                healthBars[i].playerTarget.currentHealth <= 0)
+            // Thanh máu của Player
+            else if (healthBars[i].playerTarget.currentHealth <= 0)
             {
                 Destroy(healthBars[i].gameObject);
                 healthBars.RemoveAt(i);
@@ -96,7 +100,41 @@ public class HealthBarManager : MonoBehaviour
         }
     }
 
-    private void ClearAllHealthBars()
+    /// <summary>
+    /// Xóa toàn bộ thanh máu của kẻ địch (khi tiêu diệt hết hoặc kết thúc wave)
+    /// </summary>
+    public void ClearEnemyHealthBars()
+    {
+        for (int i = healthBars.Count - 1; i >= 0; i--)
+        {
+            if (healthBars[i] == null)
+            {
+                healthBars.RemoveAt(i);
+                continue;
+            }
+
+            if (healthBars[i].playerTarget == null)
+            {
+                Destroy(healthBars[i].gameObject);
+                healthBars.RemoveAt(i);
+            }
+        }
+
+        // Quét thêm trên healthBarCanvas phòng trường hợp có thanh máu mồ côi
+        if (healthBarCanvas != null)
+        {
+            HealthBar[] allBars = healthBarCanvas.GetComponentsInChildren<HealthBar>(true);
+            foreach (var bar in allBars)
+            {
+                if (bar != null && bar.playerTarget == null)
+                {
+                    Destroy(bar.gameObject);
+                }
+            }
+        }
+    }
+
+    public void ClearAllHealthBars()
     {
         for (int i = healthBars.Count - 1; i >= 0; i--)
         {

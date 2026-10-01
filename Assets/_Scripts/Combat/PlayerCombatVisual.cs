@@ -19,6 +19,7 @@ public class PlayerCombatVisual : MonoBehaviour
     private Vector3 originalPosition;
     private Color originalColor = Color.white;
     private Coroutine currentVisualRoutine;
+    private bool isMovingTransition = false;
 
     private void Awake()
     {
@@ -73,6 +74,9 @@ public class PlayerCombatVisual : MonoBehaviour
 
     private void Update()
     {
+        if (isMovingTransition)
+            return;
+
         // Giữ cho Animator luôn phát BlendTree Idle quay sang phải
         if (animator != null && animator.isActiveAndEnabled)
         {
@@ -82,6 +86,59 @@ public class PlayerCombatVisual : MonoBehaviour
             animator.SetFloat("Vertical", 0f);
             animator.SetFloat("Speed", 0f);
         }
+    }
+
+    /// <summary>
+    /// Kích hoạt animation bước đi/chạy và di chuyển Player tiến về phía trước trong lúc chuyển Wave
+    /// Tạo cảm giác người chơi đang di chuyển tiến sâu vào hầm ngục.
+    /// </summary>
+    public void PlayMoveTransition(float duration, System.Action onComplete = null)
+    {
+        if (currentVisualRoutine != null)
+        {
+            StopCoroutine(currentVisualRoutine);
+        }
+        currentVisualRoutine = StartCoroutine(MoveTransitionRoutine(duration, onComplete));
+    }
+
+    private IEnumerator MoveTransitionRoutine(float duration, System.Action onComplete)
+    {
+        isMovingTransition = true;
+        FaceRight();
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+
+            if (animator != null && animator.isActiveAndEnabled)
+            {
+                animator.SetFloat("LastHorizontal", 1f);
+                animator.SetFloat("LastVertical", 0f);
+                animator.SetFloat("Horizontal", 1f);
+                animator.SetFloat("Vertical", 0f);
+                animator.SetFloat("Speed", 1f);
+            }
+
+            // Player giữ nguyên vị trí ban đầu (chạy tại chỗ kiểu Capybara Go)
+            transform.position = originalPosition;
+            yield return null;
+        }
+
+        transform.position = originalPosition;
+        isMovingTransition = false;
+
+        if (animator != null && animator.isActiveAndEnabled)
+        {
+            animator.SetFloat("LastHorizontal", 1f);
+            animator.SetFloat("LastVertical", 0f);
+            animator.SetFloat("Horizontal", 0f);
+            animator.SetFloat("Vertical", 0f);
+            animator.SetFloat("Speed", 0f);
+        }
+
+        currentVisualRoutine = null;
+        onComplete?.Invoke();
     }
 
     private void OnDestroy()

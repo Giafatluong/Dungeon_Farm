@@ -40,6 +40,16 @@ public class HealthBar : MonoBehaviour
 
     private void Update()
     {
+        // Thanh máu của kẻ địch: Nếu target null, đã chết (HP <= 0) hoặc bị tắt -> Tự hủy ngay lập tức
+        if (playerTarget == null)
+        {
+            if (enemyTarget == null || enemyTarget.currentHealth <= 0 || !enemyTarget.gameObject.activeInHierarchy)
+            {
+                Destroy(gameObject);
+                return;
+            }
+        }
+
         if (enemyTarget != null)
         {
             transform.position = enemyTarget.transform.position + offset;
@@ -71,6 +81,12 @@ public class HealthBar : MonoBehaviour
 
         if (playerTarget != null)
         {
+            if (playerTarget.currentHealth <= 0 || !playerTarget.gameObject.activeInHierarchy)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
             transform.position = playerTarget.transform.position + offset;
 
             SetHealthBar(

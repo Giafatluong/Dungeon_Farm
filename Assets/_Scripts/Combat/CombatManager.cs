@@ -31,6 +31,7 @@ public class CombatManager : MonoBehaviour
     public float preparationTimeRemaining { get; private set; } = 0f;
 
     private Coroutine startCombatCoroutine;
+    private List<ItemSlot> currentCombatLoot = new List<ItemSlot>();
 
     public enum Turn
     {
@@ -275,13 +276,48 @@ public class CombatManager : MonoBehaviour
 
         if (target.currentHealth <= 0)
         {
-            TryDropUnlockedSeed(target.transform.position);
+            // 1. Thu thập chiến lợi phẩm rơi từ quái dựa trên loot table (tỉ lệ, số lượng, điều kiện mở khóa)
+            if (target.enemyData != null)
+            {
+                List<ItemSlot> drops = target.enemyData.RollDrops();
+                if (drops != null && drops.Count > 0)
+                {
+                    foreach (var d in drops)
+                    {
+                        if (d != null && d.itemData != null && d.amount > 0)
+                        {
+                            currentCombatLoot.Add(d);
+                            string dropMsg = $"🎁 {target.enemyData.enemyName} rơi {d.amount}x {d.itemData.itemName}!";
+                            Debug.Log(dropMsg);
+                            OnCombatLog?.Invoke(dropMsg);
+                        }
+                    }
+                }
+            }
 
-            // Kiểm tra nếu là Boss
+            // 2. Kiểm tra nếu là Boss
             Boss boss = target.GetComponent<Boss>();
             if (boss != null)
             {
-                boss.OnBossDefeated(playerStats != null ? playerStats.itemContainer : null);
+                if (boss.rewardItems != null)
+                {
+                    for (int i = 0; i < boss.rewardItems.Length; i++)
+                    {
+                        if (boss.rewardItems[i].item != null && boss.rewardItems[i].amount > 0)
+                        {
+                            currentCombatLoot.Add(new ItemSlot { itemData = boss.rewardItems[i].item, amount = boss.rewardItems[i].amount });
+                        }
+                    }
+                }
+                if (boss.rareSeedReward != null)
+                {
+                    currentCombatLoot.Add(new ItemSlot { itemData = boss.rareSeedReward, amount = 1 });
+                    if (ProgressionManager.Instance != null)
+                    {
+                        ProgressionManager.Instance.UnlockSeed(boss.rareSeedReward);
+                    }
+                }
+                boss.isDefeated = true;
                 OnCombatLog?.Invoke($"👑 Chúc mừng! Bạn đã tiêu diệt trùm {boss.bossID}!");
             }
 
@@ -297,37 +333,32 @@ public class CombatManager : MonoBehaviour
         {
             OnCombatLog?.Invoke("🎉 Đã quét sạch toàn bộ kẻ địch!");
             DestroyAllEnemies();
-            EndCombat();
-        }
-    }
+            isCombatActive = false;
 
-    private void TryDropUnlockedSeed(Vector3 dropPosition)
-    {
-        if (ProgressionManager.Instance == null) return;
+            // Mở bảng LootUI để nhặt đồ, quản lý túi đồ trước khi đi tiếp
+            LootUI lootUI = LootUI.EnsureInstance();
 
-        // Chỉ lọc các hạt giống ĐÃ MỞ KHÓA và KHÔNG PHẢI HẠT HIẾM (trừ hạt hiếm chỉ boss mới rơi)
-        List<ItemData> dropCandidates = new List<ItemData>();
-        for (int i = 0; i < ProgressionManager.Instance.unlockedSeeds.Count; i++)
-        {
-            ItemData seed = ProgressionManager.Instance.unlockedSeeds[i];
-            if (seed != null && seed.itemType == ItemData.ItemType.Seed && !seed.isRare)
+            if (lootUI != null)
             {
-                dropCandidates.Add(seed);
+                lootUI.Open(currentCombatLoot, playerStats != null ? playerStats.itemContainer : null, () =>
+                {
+                    currentCombatLoot.Clear();
+                    EndCombat();
+                });
             }
-        }
-
-        if (dropCandidates.Count == 0) return;
-
-        // Tỷ lệ quái thường rơi hạt giống đã mở khóa (ví dụ 40%)
-        float dropChance = 0.40f;
-        if (Random.value < dropChance)
-        {
-            ItemData chosenSeed = dropCandidates[Random.Range(0, dropCandidates.Count)];
-            Debug.Log($"Quái thường rơi hạt giống đã mở khóa: {chosenSeed.itemName}!");
-
-            if (playerStats != null && playerStats.itemContainer != null)
+            else
             {
-                playerStats.itemContainer.AddItem(chosenSeed, 1);
+                // Fallback nếu hoàn toàn không có UI/Canvas: tự động nhặt vào túi đồ
+                if (playerStats != null && playerStats.itemContainer != null)
+                {
+                    foreach (var loot in currentCombatLoot)
+                    {
+                        if (loot != null && loot.itemData != null)
+                            playerStats.itemContainer.AddItem(loot.itemData, loot.amount);
+                    }
+                }
+                currentCombatLoot.Clear();
+                EndCombat();
             }
         }
     }
@@ -437,14 +468,28 @@ public class CombatManager : MonoBehaviour
 
     public void DestroyAllEnemies()
     {
-        if (enemies == null)
-            return;
-
-        for (int i = 0; i < enemies.Length; i++)
+        if (enemies != null)
         {
-            if (enemies[i] != null)
+            for (int i = 0; i < enemies.Length; i++)
             {
-                Destroy(enemies[i].gameObject);
+                if (enemies[i] != null)
+                {
+                    Destroy(enemies[i].gameObject);
+                }
+            }
+        }
+
+        // Xóa triệt để toàn bộ thanh máu của kẻ địch khi quét sạch quái
+        if (healthBarManager != null)
+        {
+            healthBarManager.ClearEnemyHealthBars();
+        }
+        else
+        {
+            HealthBarManager hbm = FindFirstObjectByType<HealthBarManager>();
+            if (hbm != null)
+            {
+                hbm.ClearEnemyHealthBars();
             }
         }
     }
@@ -452,6 +497,20 @@ public class CombatManager : MonoBehaviour
     public void EndCombat()
     {
         Debug.Log("Combat End");
+
+        // Dọn dẹp thanh máu quái
+        if (healthBarManager != null)
+        {
+            healthBarManager.ClearEnemyHealthBars();
+        }
+        else
+        {
+            HealthBarManager hbm = FindFirstObjectByType<HealthBarManager>();
+            if (hbm != null)
+            {
+                hbm.ClearEnemyHealthBars();
+            }
+        }
 
         if (startCombatCoroutine != null)
         {
@@ -525,6 +584,8 @@ public class CombatManager : MonoBehaviour
 
     private System.Collections.IEnumerator StartCombatRoutine(bool isAmbush)
     {
+        currentCombatLoot.Clear();
+
         if (combatStartDelay > 0f)
         {
             isPreparingCombat = true;

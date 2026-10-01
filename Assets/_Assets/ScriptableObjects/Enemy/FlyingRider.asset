@@ -21,3 +21,16 @@ MonoBehaviour:
   possibleIntents: 00000000010000000200000003000000
   currentIntent: 0
   intentValue: 0
+  lootDrops:
+  - item: {fileID: 11400000, guid: 24d50eb236d912048b08475f98b0e46a, type: 2}
+    dropChance: 0.55
+    minAmount: 1
+    maxAmount: 2
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
+    dropChance: 0.45
+    minAmount: 1
+    maxAmount: 1
+    requireUnlock: 1
+  dropUnlockedSeeds: 1
+  seedDropChance: 0.35

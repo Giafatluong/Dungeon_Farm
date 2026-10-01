@@ -24,3 +24,21 @@ MonoBehaviour:
     value: 2
     duration: 3
     durationType: 0
+  lootDrops:
+  - item: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
+    dropChance: 0.65
+    minAmount: 1
+    maxAmount: 2
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: 96b10b9a95c45c84484c4737865e12cb, type: 2}
+    dropChance: 0.4
+    minAmount: 1
+    maxAmount: 1
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
+    dropChance: 0.4
+    minAmount: 1
+    maxAmount: 1
+    requireUnlock: 1
+  dropUnlockedSeeds: 1
+  seedDropChance: 0.35

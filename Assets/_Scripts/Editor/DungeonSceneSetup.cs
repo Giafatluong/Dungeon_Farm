@@ -14,7 +14,8 @@ public static class DungeonSceneSetup
     private const string FLOOR01_ASSET_PATH = "Assets/_Assets/ScriptableObjects/Floor/Floor_01.asset";
     private const string HEALTHBAR_PREFAB_PATH = "Assets/_Assets/_Prefabs/HealthBar.prefab";
     private const string INPUT_ACTIONS_PATH = "Assets/InputSystem_Actions.inputactions";
-    private const string AUTO_SETUP_KEY = "DungeonCombatSetup_Auto_V3";
+    private const string SLOT_PREFAB_PATH = "Assets/_Assets/_Prefabs/inventorySlot.prefab";
+    private const string AUTO_SETUP_KEY = "DungeonCombatSetup_Auto_V7";
 
     static DungeonSceneSetup()
     {
@@ -52,6 +53,7 @@ public static class DungeonSceneSetup
         ItemContainer inventory = AssetDatabase.LoadAssetAtPath<ItemContainer>(INVENTORY_ASSET_PATH);
         FloorData floor01 = AssetDatabase.LoadAssetAtPath<FloorData>(FLOOR01_ASSET_PATH);
         GameObject healthBarPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(HEALTHBAR_PREFAB_PATH);
+        GameObject slotPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(SLOT_PREFAB_PATH);
         InputActionAsset inputActions = AssetDatabase.LoadAssetAtPath<InputActionAsset>(INPUT_ACTIONS_PATH);
 
         // 2. Cấu hình Camera
@@ -355,6 +357,11 @@ public static class DungeonSceneSetup
         soCampUI.FindProperty("playerStats").objectReferenceValue = playerStats;
         soCampUI.FindProperty("waveManager").objectReferenceValue = waveManager;
         soCampUI.ApplyModifiedProperties();
+
+        // Gán references và xây dựng UI cho LootUI
+        LootUI lootUI = combatCanvasGO.GetComponent<LootUI>();
+        if (lootUI == null) lootUI = combatCanvasGO.AddComponent<LootUI>();
+        BuildLootUIHierarchy(combatCanvasGO, lootUI, slotPrefab);
 
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         EditorSceneManager.SaveOpenScenes();
@@ -886,6 +893,229 @@ public static class DungeonSceneSetup
         rt.anchorMax = Vector2.one;
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
+    }
+
+    private static void BuildLootUIHierarchy(GameObject canvasGO, LootUI lootUI, GameObject slotPrefab)
+    {
+        GameObject modal = GetOrCreateChild(canvasGO, "LootPanel");
+        FillRect(modal);
+
+        Image backdrop = modal.GetComponent<Image>();
+        if (backdrop == null) backdrop = modal.AddComponent<Image>();
+        backdrop.color = new Color(0.03f, 0.04f, 0.07f, 0.88f);
+
+        // Center Box
+        GameObject box = GetOrCreateChild(modal, "Box");
+        RectTransform boxRT = box.GetComponent<RectTransform>();
+        boxRT.anchorMin = new Vector2(0.5f, 0.5f);
+        boxRT.anchorMax = new Vector2(0.5f, 0.5f);
+        boxRT.pivot = new Vector2(0.5f, 0.5f);
+        boxRT.sizeDelta = new Vector2(1160, 680);
+        boxRT.anchoredPosition = Vector2.zero;
+
+        Image boxBg = box.GetComponent<Image>();
+        if (boxBg == null) boxBg = box.AddComponent<Image>();
+        boxBg.color = new Color(0.10f, 0.12f, 0.17f, 0.98f);
+
+        // Title
+        GameObject titleGO = GetOrCreateChild(box, "Title");
+        RectTransform titleRT = titleGO.GetComponent<RectTransform>();
+        titleRT.anchorMin = new Vector2(0, 1);
+        titleRT.anchorMax = new Vector2(1, 1);
+        titleRT.pivot = new Vector2(0.5f, 1);
+        titleRT.anchoredPosition = new Vector2(0, -32);
+        titleRT.sizeDelta = new Vector2(0, 40);
+        TextMeshProUGUI titleText = titleGO.GetComponent<TextMeshProUGUI>();
+        if (titleText == null) titleText = titleGO.AddComponent<TextMeshProUGUI>();
+        titleText.fontSize = 28;
+        titleText.fontStyle = FontStyles.Bold;
+        titleText.alignment = TextAlignmentOptions.Center;
+        titleText.text = "⚔️ CHIẾN LỢI PHẨM CHIẾN THẮNG";
+        titleText.color = new Color(1f, 0.85f, 0.3f);
+
+        // Hint Text
+        GameObject hintGO = GetOrCreateChild(box, "HintText");
+        RectTransform hintRT = hintGO.GetComponent<RectTransform>();
+        hintRT.anchorMin = new Vector2(0, 1);
+        hintRT.anchorMax = new Vector2(1, 1);
+        hintRT.pivot = new Vector2(0.5f, 1);
+        hintRT.anchoredPosition = new Vector2(0, -70);
+        hintRT.sizeDelta = new Vector2(0, 30);
+        TextMeshProUGUI hintText = hintGO.GetComponent<TextMeshProUGUI>();
+        if (hintText == null) hintText = hintGO.AddComponent<TextMeshProUGUI>();
+        hintText.fontSize = 15;
+        hintText.alignment = TextAlignmentOptions.Center;
+        hintText.text = "💡 Kéo thả vật phẩm giữa 2 bên để sắp xếp, hoặc dùng thanh trượt để xem toàn bộ túi đồ";
+        hintText.color = new Color(0.85f, 0.92f, 1f);
+
+        // Left Frame: Loot (Scrollable with Scrollbar slider)
+        GameObject lootFrame = GetOrCreateChild(box, "Loot_Frame");
+        RectTransform lootFRT = lootFrame.GetComponent<RectTransform>();
+        lootFRT.anchorMin = new Vector2(0.5f, 0.5f);
+        lootFRT.anchorMax = new Vector2(0.5f, 0.5f);
+        lootFRT.pivot = new Vector2(0.5f, 0.5f);
+        lootFRT.anchoredPosition = new Vector2(-275, -15);
+        lootFRT.sizeDelta = new Vector2(520, 420);
+        Image lootFImg = lootFrame.GetComponent<Image>();
+        if (lootFImg == null) lootFImg = lootFrame.AddComponent<Image>();
+        lootFImg.color = new Color(0.06f, 0.08f, 0.12f, 0.92f);
+
+        GameObject lootHdrGO = GetOrCreateChild(lootFrame, "Header");
+        RectTransform lootHdrRT = lootHdrGO.GetComponent<RectTransform>();
+        lootHdrRT.anchorMin = new Vector2(0, 1);
+        lootHdrRT.anchorMax = new Vector2(1, 1);
+        lootHdrRT.pivot = new Vector2(0.5f, 1);
+        lootHdrRT.anchoredPosition = new Vector2(0, -16);
+        lootHdrRT.sizeDelta = new Vector2(0, 30);
+        TextMeshProUGUI lootHdr = lootHdrGO.GetComponent<TextMeshProUGUI>();
+        if (lootHdr == null) lootHdr = lootHdrGO.AddComponent<TextMeshProUGUI>();
+        lootHdr.fontSize = 16;
+        lootHdr.fontStyle = FontStyles.Bold;
+        lootHdr.alignment = TextAlignmentOptions.Center;
+        lootHdr.text = "CHIẾN LỢI PHẨM (RƠI TỪ QUÁI)";
+        lootHdr.color = new Color(1f, 0.85f, 0.3f);
+
+        Transform lootSlotsParent = BuildScrollableSlotGrid(lootFrame, "LootSlots", 5, new Color(0.85f, 0.65f, 0.2f));
+
+        // Right Frame: Backpack (Scrollable with Scrollbar slider)
+        GameObject backpackFrame = GetOrCreateChild(box, "Backpack_Frame");
+        RectTransform bpFRT = backpackFrame.GetComponent<RectTransform>();
+        bpFRT.anchorMin = new Vector2(0.5f, 0.5f);
+        bpFRT.anchorMax = new Vector2(0.5f, 0.5f);
+        bpFRT.pivot = new Vector2(0.5f, 0.5f);
+        bpFRT.anchoredPosition = new Vector2(275, -15);
+        bpFRT.sizeDelta = new Vector2(520, 420);
+        Image bpFImg = backpackFrame.GetComponent<Image>();
+        if (bpFImg == null) bpFImg = backpackFrame.AddComponent<Image>();
+        bpFImg.color = new Color(0.06f, 0.08f, 0.12f, 0.92f);
+
+        GameObject bpHdrGO = GetOrCreateChild(backpackFrame, "Header");
+        RectTransform bpHdrRT = bpHdrGO.GetComponent<RectTransform>();
+        bpHdrRT.anchorMin = new Vector2(0, 1);
+        bpHdrRT.anchorMax = new Vector2(1, 1);
+        bpHdrRT.pivot = new Vector2(0.5f, 1);
+        bpHdrRT.anchoredPosition = new Vector2(0, -16);
+        bpHdrRT.sizeDelta = new Vector2(0, 30);
+        TextMeshProUGUI bpHdr = bpHdrGO.GetComponent<TextMeshProUGUI>();
+        if (bpHdr == null) bpHdr = bpHdrGO.AddComponent<TextMeshProUGUI>();
+        bpHdr.fontSize = 16;
+        bpHdr.fontStyle = FontStyles.Bold;
+        bpHdr.alignment = TextAlignmentOptions.Center;
+        bpHdr.text = "BA LÔ NGƯỜI CHƠI (TÚI ĐỒ)";
+        bpHdr.color = new Color(0.2f, 0.7f, 0.95f);
+
+        Transform bpSlotsParent = BuildScrollableSlotGrid(backpackFrame, "BackpackSlots", 5, new Color(0.25f, 0.75f, 0.95f));
+
+        // Buttons
+        Button btnLootAll = CreateActionButton(box, "BtnLootAll", "✨ LOOT HẾT", new Vector2(-160, -285), new Color(0.15f, 0.65f, 0.35f));
+        Button btnContinue = CreateActionButton(box, "BtnContinue", "➡️ TIẾP TỤC", new Vector2(160, -285), new Color(0.2f, 0.45f, 0.85f));
+
+        // Serialize references on LootUI
+        SerializedObject so = new SerializedObject(lootUI);
+        so.FindProperty("lootPanel").objectReferenceValue = modal;
+        so.FindProperty("lootSlotsParent").objectReferenceValue = lootSlotsParent;
+        so.FindProperty("backpackSlotsParent").objectReferenceValue = bpSlotsParent;
+        so.FindProperty("canvas").objectReferenceValue = canvasGO.GetComponent<Canvas>();
+        so.FindProperty("slotPrefab").objectReferenceValue = slotPrefab;
+        so.FindProperty("lootAllButton").objectReferenceValue = btnLootAll;
+        so.FindProperty("continueButton").objectReferenceValue = btnContinue;
+        so.FindProperty("titleText").objectReferenceValue = titleText;
+        so.FindProperty("hintText").objectReferenceValue = hintText;
+        so.ApplyModifiedProperties();
+
+        modal.SetActive(false);
+    }
+
+    private static Transform BuildScrollableSlotGrid(GameObject frame, string slotsName, int cols, Color handleColor)
+    {
+        GameObject scrollGO = GetOrCreateChild(frame, "ScrollView");
+        RectTransform scrollRT = scrollGO.GetComponent<RectTransform>();
+        scrollRT.anchorMin = Vector2.zero;
+        scrollRT.anchorMax = Vector2.one;
+        scrollRT.offsetMin = new Vector2(12, 12);
+        scrollRT.offsetMax = new Vector2(-12, -48);
+
+        ScrollRect scrollRect = scrollGO.GetComponent<ScrollRect>();
+        if (scrollRect == null) scrollRect = scrollGO.AddComponent<ScrollRect>();
+        scrollRect.horizontal = false;
+        scrollRect.vertical = true;
+        scrollRect.scrollSensitivity = 30f;
+        scrollRect.movementType = ScrollRect.MovementType.Elastic;
+
+        GameObject viewportGO = GetOrCreateChild(scrollGO, "Viewport");
+        RectTransform viewportRT = viewportGO.GetComponent<RectTransform>();
+        viewportRT.anchorMin = Vector2.zero;
+        viewportRT.anchorMax = Vector2.one;
+        viewportRT.offsetMin = Vector2.zero;
+        viewportRT.offsetMax = new Vector2(-22, 0);
+        if (viewportGO.GetComponent<RectMask2D>() == null) viewportGO.AddComponent<RectMask2D>();
+
+        GameObject contentGO = GetOrCreateChild(viewportGO, slotsName);
+        RectTransform contentRT = contentGO.GetComponent<RectTransform>();
+        contentRT.anchorMin = new Vector2(0, 1);
+        contentRT.anchorMax = new Vector2(1, 1);
+        contentRT.pivot = new Vector2(0.5f, 1);
+        contentRT.anchoredPosition = Vector2.zero;
+        contentRT.sizeDelta = new Vector2(0, 0);
+
+        GridLayoutGroup grid = contentGO.GetComponent<GridLayoutGroup>();
+        if (grid == null) grid = contentGO.AddComponent<GridLayoutGroup>();
+        grid.cellSize = new Vector2(66, 66);
+        grid.spacing = new Vector2(10, 10);
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = cols;
+        grid.childAlignment = TextAnchor.UpperCenter;
+        grid.padding = new RectOffset(6, 6, 8, 8);
+
+        ContentSizeFitter csf = contentGO.GetComponent<ContentSizeFitter>();
+        if (csf == null) csf = contentGO.AddComponent<ContentSizeFitter>();
+        csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        // Scrollbar slider
+        GameObject scrollbarGO = GetOrCreateChild(scrollGO, "Scrollbar");
+        RectTransform scrollbarRT = scrollbarGO.GetComponent<RectTransform>();
+        scrollbarRT.anchorMin = new Vector2(1, 0);
+        scrollbarRT.anchorMax = new Vector2(1, 1);
+        scrollbarRT.pivot = new Vector2(1, 0.5f);
+        scrollbarRT.anchoredPosition = Vector2.zero;
+        scrollbarRT.sizeDelta = new Vector2(16, 0);
+
+        Image scrollbarBg = scrollbarGO.GetComponent<Image>();
+        if (scrollbarBg == null) scrollbarBg = scrollbarGO.AddComponent<Image>();
+        scrollbarBg.color = new Color(0.08f, 0.10f, 0.15f, 0.9f);
+
+        Scrollbar scrollbar = scrollbarGO.GetComponent<Scrollbar>();
+        if (scrollbar == null) scrollbar = scrollbarGO.AddComponent<Scrollbar>();
+        scrollbar.direction = Scrollbar.Direction.BottomToTop;
+
+        GameObject slidingArea = GetOrCreateChild(scrollbarGO, "Sliding Area");
+        RectTransform slidingRT = slidingArea.GetComponent<RectTransform>();
+        slidingRT.anchorMin = Vector2.zero;
+        slidingRT.anchorMax = Vector2.one;
+        slidingRT.offsetMin = new Vector2(2, 4);
+        slidingRT.offsetMax = new Vector2(-2, -4);
+
+        GameObject handleGO = GetOrCreateChild(slidingArea, "Handle");
+        RectTransform handleRT = handleGO.GetComponent<RectTransform>();
+        handleRT.anchorMin = Vector2.zero;
+        handleRT.anchorMax = Vector2.one;
+        handleRT.offsetMin = Vector2.zero;
+        handleRT.offsetMax = Vector2.zero;
+
+        Image handleImg = handleGO.GetComponent<Image>();
+        if (handleImg == null) handleImg = handleGO.AddComponent<Image>();
+        handleImg.color = handleColor;
+
+        scrollbar.handleRect = handleRT;
+        scrollbar.targetGraphic = handleImg;
+
+        scrollRect.viewport = viewportRT;
+        scrollRect.content = contentRT;
+        scrollRect.verticalScrollbar = scrollbar;
+        scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+
+        return contentGO.transform;
     }
 }
 #endif

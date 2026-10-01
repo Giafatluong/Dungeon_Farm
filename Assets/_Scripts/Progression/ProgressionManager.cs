@@ -13,6 +13,7 @@ public class ProgressionManager : MonoBehaviour
 
     [Header("Meta Progression Unlocks")]
     public List<ItemData> unlockedSeeds = new List<ItemData>();
+    public List<ItemData> unlockedItems = new List<ItemData>();
     public List<RecipeData> unlockedRecipes = new List<RecipeData>();
     public HashSet<string> completedOfferings = new HashSet<string>();
 
@@ -34,6 +35,51 @@ public class ProgressionManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // Khởi tạo hạt giống cơ bản nếu danh sách còn rỗng
+        InitializeDefaultUnlocks();
+    }
+
+    private void InitializeDefaultUnlocks()
+    {
+        if (unlockedSeeds == null) unlockedSeeds = new List<ItemData>();
+        if (unlockedItems == null) unlockedItems = new List<ItemData>();
+
+        if (unlockedSeeds.Count == 0)
+        {
+            // Tải các hạt giống mặc định cơ bản
+            ItemData[] allSeeds = Resources.FindObjectsOfTypeAll<ItemData>();
+            foreach (var seed in allSeeds)
+            {
+                if (seed != null && seed.itemType == ItemData.ItemType.Seed && !seed.isRare)
+                {
+                    if (seed.name.Contains("Wheat") || seed.name.Contains("Carrot"))
+                    {
+                        if (!unlockedSeeds.Contains(seed)) unlockedSeeds.Add(seed);
+                    }
+                }
+            }
+        }
+    }
+
+    public bool IsItemUnlocked(ItemData item)
+    {
+        if (item == null) return false;
+        if (unlockedSeeds != null && unlockedSeeds.Contains(item)) return true;
+        if (unlockedItems != null && unlockedItems.Contains(item)) return true;
+        return false;
+    }
+
+    public void UnlockItem(ItemData item)
+    {
+        if (item == null) return;
+        if (unlockedItems == null) unlockedItems = new List<ItemData>();
+        if (!unlockedItems.Contains(item))
+        {
+            unlockedItems.Add(item);
+            Debug.Log("Mở khóa vật phẩm mới: " + item.itemName);
+            OnProgressionChanged?.Invoke();
+        }
     }
 
     public void StartRun(int floor = 1)

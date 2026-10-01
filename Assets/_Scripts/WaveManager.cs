@@ -148,11 +148,19 @@ public class WaveManager : MonoBehaviour
     {
         isTransitioning = true;
 
-        float delay = CurrentWave != null
+        float configuredDelay = CurrentWave != null
             ? CurrentWave.transitionDelay
             : 0f;
+        float moveDuration = Mathf.Max(configuredDelay, 1.8f);
 
-        yield return new WaitForSeconds(delay);
+        // Kích hoạt animation bước đi tiến lên của Player tạo cảm giác đang di chuyển qua màn
+        PlayerCombatVisual playerVisual = FindFirstObjectByType<PlayerCombatVisual>();
+        if (playerVisual != null)
+        {
+            playerVisual.PlayMoveTransition(moveDuration);
+        }
+
+        yield return new WaitForSeconds(moveDuration);
 
         currentWaveIndex++;
 
@@ -374,13 +382,17 @@ public class WaveManager : MonoBehaviour
                 continue;
             }
 
+            Vector3 finalPos = combatPositions[i].position;
+            // Xuất hiện từ phía bên phải và lướt sang trái về vị trí chiến đấu (kiểu Capybara Go)
+            Vector3 startPos = finalPos + new Vector3(5.5f, 0f, 0f);
+
             GameObject enemyObject = Instantiate(
                 enemiesToSpawn[i],
-                enemySpawnPoint.position,
+                startPos,
                 Quaternion.identity
             );
 
-            enemyObject.transform.position = combatPositions[i].position;
+            StartCoroutine(AnimateEnemySlideIn(enemyObject, startPos, finalPos, 0.75f));
 
             EnemyStats enemyStats = enemyObject.GetComponent<EnemyStats>();
 
@@ -426,6 +438,40 @@ public class WaveManager : MonoBehaviour
         }
 
         combatManager.StartCombat(isAmbush);
+    }
+
+    private IEnumerator AnimateEnemySlideIn(GameObject enemyObj, Vector3 fromPos, Vector3 toPos, float duration)
+    {
+        if (enemyObj == null) yield break;
+
+        Animator enemyAnim = enemyObj.GetComponent<Animator>();
+        if (enemyAnim != null && enemyAnim.isActiveAndEnabled)
+        {
+            enemyAnim.SetFloat("Horizontal", -1f);
+            enemyAnim.SetFloat("Speed", 1f);
+        }
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            if (enemyObj == null) yield break;
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            // Ease out cubic: lướt nhanh và hãm dần mượt mà
+            float smoothT = 1f - Mathf.Pow(1f - t, 3f);
+            enemyObj.transform.position = Vector3.Lerp(fromPos, toPos, smoothT);
+            yield return null;
+        }
+
+        if (enemyObj != null)
+        {
+            enemyObj.transform.position = toPos;
+            if (enemyAnim != null && enemyAnim.isActiveAndEnabled)
+            {
+                enemyAnim.SetFloat("Horizontal", 0f);
+                enemyAnim.SetFloat("Speed", 0f);
+            }
+        }
     }
 
     private void UpdateProgressBar()
