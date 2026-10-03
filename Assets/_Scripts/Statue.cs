@@ -3,8 +3,9 @@ using UnityEngine;
 
 public class Statue : MonoBehaviour, IInteractable
 {
+    #region Inspector Fields & Events
     [Header("List of Offerings")]
-    public List<Offering> offerings = new List<Offering>();
+    public List<Offering> offerings = new();
     public ItemContainer playerInventory;
 
     [Header("Interaction Settings")]
@@ -13,12 +14,16 @@ public class Statue : MonoBehaviour, IInteractable
 
     public event System.Action<Offering> OnOfferingSuccess;
     public event System.Action<string> OnOfferingFailed;
+    #endregion
 
+    #region State & References
     private bool playerInRange = false;
     private Transform playerTransform;
     private Collider2D col;
     private UnityEngine.Tilemaps.Tilemap tilemap;
+    #endregion
 
+    #region Unity Lifecycle
     private void Start()
     {
         col = GetComponent<Collider2D>();
@@ -36,40 +41,6 @@ public class Statue : MonoBehaviour, IInteractable
 
         FindPlayer();
         EnsureReferences();
-    }
-
-    private void EnsureReferences()
-    {
-        if (playerInventory == null)
-        {
-            PlayerStats ps = FindFirstObjectByType<PlayerStats>();
-            if (ps != null && ps.itemContainer != null)
-            {
-                playerInventory = ps.itemContainer;
-            }
-        }
-    }
-
-    private void FindPlayer()
-    {
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-        {
-            playerTransform = player.transform;
-        }
-    }
-
-    public Vector3 GetStatueCenter()
-    {
-        if (col != null)
-        {
-            return col.bounds.center;
-        }
-        if (tilemap != null && tilemap.cellBounds.size.x > 0)
-        {
-            return tilemap.localBounds.center + transform.position;
-        }
-        return new Vector3(40.5f, 11.25f, 0f);
     }
 
     private void Update()
@@ -120,13 +91,17 @@ public class Statue : MonoBehaviour, IInteractable
 
     private void OnMouseDown()
     {
-        if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return;
+        if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            return;
+
         if (playerInRange)
         {
             Interact();
         }
     }
+    #endregion
 
+    #region Interaction Handling
     public void Interact()
     {
         EnsureReferences();
@@ -148,6 +123,42 @@ public class Statue : MonoBehaviour, IInteractable
         }
     }
 
+    public Vector3 GetStatueCenter()
+    {
+        if (col != null)
+        {
+            return col.bounds.center;
+        }
+        if (tilemap != null && tilemap.cellBounds.size.x > 0)
+        {
+            return tilemap.localBounds.center + transform.position;
+        }
+        return new Vector3(40.5f, 11.25f, 0f);
+    }
+
+    private void FindPlayer()
+    {
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            playerTransform = player.transform;
+        }
+    }
+
+    private void EnsureReferences()
+    {
+        if (playerInventory == null)
+        {
+            PlayerStats ps = FindFirstObjectByType<PlayerStats>();
+            if (ps != null && ps.itemContainer != null)
+            {
+                playerInventory = ps.itemContainer;
+            }
+        }
+    }
+    #endregion
+
+    #region Offering Logic
     public bool CanOffer(Offering offering, ItemContainer container)
     {
         if (offering == null || container == null) return false;
@@ -222,7 +233,7 @@ public class Statue : MonoBehaviour, IInteractable
             }
         }
 
-        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        System.Text.StringBuilder sb = new();
         sb.AppendLine("=== [STATUE OF OFFERINGS] Insufficient items for any offering ===");
         for (int i = 0; i < offerings.Count; i++)
         {
@@ -267,15 +278,9 @@ public class Statue : MonoBehaviour, IInteractable
         }
         return total;
     }
+    #endregion
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-    }
-
-    private void OnTriggerExit2D(Collider2D other)
-    {
-    }
-
+    #region Gizmos & Debug
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
@@ -288,4 +293,5 @@ public class Statue : MonoBehaviour, IInteractable
             Gizmos.DrawWireSphere(GetStatueCenter(), interactDistance);
         }
     }
+    #endregion
 }

@@ -37,6 +37,10 @@ public class WaveData : ScriptableObject
     [Range(1, 3)] public int minRandomEnemies = 1;
     [Range(1, 3)] public int maxRandomEnemies = 3;
 
+    [Header("Reward Wave Settings")]
+    [Tooltip("Optional custom items dropped by the treasure chest in this reward wave.")]
+    public ItemSlot[] customRewardLoot;
+
     [Header("Transition")]
     public float transitionDelay = 1f;
 

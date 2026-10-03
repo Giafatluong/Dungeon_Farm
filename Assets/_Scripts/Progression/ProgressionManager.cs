@@ -43,6 +43,28 @@ public class ProgressionManager : MonoBehaviour
     {
         if (unlockedSeeds == null) unlockedSeeds = new List<ItemData>();
         if (unlockedItems == null) unlockedItems = new List<ItemData>();
+
+        if (unlockedSeeds.Count == 0)
+        {
+            ItemData[] allItems = Resources.FindObjectsOfTypeAll<ItemData>();
+            for (int i = 0; i < allItems.Length; i++)
+            {
+                ItemData it = allItems[i];
+                if (it == null) continue;
+                string nameLower = it.name.ToLower();
+                if (nameLower.Contains("wheat") || nameLower.Contains("carrot"))
+                {
+                    if (nameLower.Contains("seed"))
+                    {
+                        if (!unlockedSeeds.Contains(it)) unlockedSeeds.Add(it);
+                    }
+                    else
+                    {
+                        if (!unlockedItems.Contains(it)) unlockedItems.Add(it);
+                    }
+                }
+            }
+        }
     }
 
     public bool IsItemUnlocked(ItemData item)

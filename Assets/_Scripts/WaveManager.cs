@@ -1,15 +1,17 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class WaveManager : MonoBehaviour
 {
+    #region Inspector Fields & Config
     [Header("Level Design - Floor Configuration")]
     [Tooltip("FloorData being used (if set, game runs the exact sequence of stages you designed)")]
     [SerializeField] private FloorData floorData;
     [Tooltip("List of all custom designed floors (Floor 1, Floor 2, Floor 3...)")]
     [SerializeField] private FloorData[] allFloors;
 
-    [Header("Positions & Core")]
+    [Header("Positions & Core Dependencies")]
     [SerializeField] private Transform enemySpawnPoint;
     [SerializeField] private Transform[] combatPositions;
     [SerializeField] private CombatManager combatManager;
@@ -19,9 +21,12 @@ public class WaveManager : MonoBehaviour
     [Header("Encounter Managers")]
     public Camp camp;
     [SerializeField] private MerchantEvent merchantEvent;
+    [SerializeField] private RewardChest rewardChest;
     [SerializeField] private ProgressController progressController;
     [SerializeField] private FloorGenerator floorGenerator;
+    #endregion
 
+    #region Properties & State
     private WaveData[] runtimeWaves;
     private int currentWaveIndex = -1;
     private bool isTransitioning;
@@ -63,13 +68,16 @@ public class WaveManager : MonoBehaviour
             return runtimeWaves[currentWaveIndex];
         }
     }
+    #endregion
 
+    #region Unity Lifecycle
     private void Awake()
     {
         if (combatManager == null) combatManager = GetComponent<CombatManager>();
         if (healthBarManager == null) healthBarManager = GetComponent<HealthBarManager>();
         if (targetSelector == null) targetSelector = GetComponent<EnemyTargetSelector>();
         if (floorGenerator == null) floorGenerator = GetComponent<FloorGenerator>();
+        if (rewardChest == null) rewardChest = GetComponentInChildren<RewardChest>(true) ?? FindFirstObjectByType<RewardChest>(FindObjectsInactive.Include);
     }
 
     private void Start()
@@ -81,7 +89,9 @@ public class WaveManager : MonoBehaviour
 
         StartFirstWave();
     }
+    #endregion
 
+    #region Floor & Stage Navigation
     public void StartFirstWave()
     {
         FloorData activeFloor = GetActiveFloor();
@@ -89,16 +99,15 @@ public class WaveManager : MonoBehaviour
         if (floorGenerator == null)
             floorGenerator = GetComponent<FloorGenerator>() ?? FindFirstObjectByType<FloorGenerator>();
 
-        // 1. Priority 1: Hand-crafted FloorData (Level Design)
+        // 1. Hand-crafted FloorData
         if (activeFloor != null && activeFloor.waves != null && activeFloor.waves.Length > 0)
         {
-            // Each wave in FloorData is kept 1:1 (Random waves are single dynamic waves, not expanded areas)
             runtimeWaves = (WaveData[])activeFloor.waves.Clone();
             Debug.Log($"[WaveManager] Running custom designed floor: '{activeFloor.floorName ?? activeFloor.name}' with {runtimeWaves.Length} stages.");
         }
         else if (floorGenerator != null)
         {
-            // 2. Fallback: Procedurally generate floor using FloorGenerator
+            // 2. Fallback: Procedurally generated floor
             runtimeWaves = floorGenerator.GenerateFloor();
             Debug.Log($"[WaveManager] Procedurally generated random floor using FloorGenerator with {runtimeWaves?.Length ?? 0} stages.");
         }
@@ -109,15 +118,9 @@ public class WaveManager : MonoBehaviour
             return;
         }
 
-        if (combatManager == null)
+        if (combatManager == null || targetSelector == null)
         {
-            Debug.Log("Combat Manager is NULL");
-            return;
-        }
-
-        if (targetSelector == null)
-        {
-            Debug.Log("Target Selector is NULL");
+            Debug.LogWarning("[WaveManager] CombatManager or TargetSelector is missing.");
             return;
         }
 
@@ -154,9 +157,7 @@ public class WaveManager : MonoBehaviour
     {
         isTransitioning = true;
 
-        float configuredDelay = CurrentWave != null
-            ? CurrentWave.transitionDelay
-            : 0f;
+        float configuredDelay = CurrentWave != null ? CurrentWave.transitionDelay : 0f;
         float moveDuration = Mathf.Max(configuredDelay, 1.8f);
 
         // Player walking forward animation between stages
@@ -185,13 +186,12 @@ public class WaveManager : MonoBehaviour
     private void StartWave()
     {
         WaveData wave = CurrentWave;
-
         if (wave == null)
             return;
 
         WaveData.WaveType effectiveType = wave.waveType;
 
-        // If this single wave is a Random Wave, dynamically calculate current score and pick a random encounter type
+        // If this single wave is a Random Wave, dynamically calculate encounter type based on current score
         if (effectiveType == WaveData.WaveType.Random)
         {
             int minScore = wave.minTargetScore;
@@ -202,14 +202,9 @@ public class WaveManager : MonoBehaviour
                 maxScore = floorGenerator.maxTargetScore;
             }
 
-            if (floorGenerator != null)
-            {
-                effectiveType = floorGenerator.DetermineRandomWaveType(currentFloorScore, lastResolvedType, minScore, maxScore);
-            }
-            else
-            {
-                effectiveType = WaveData.WaveType.Combat;
-            }
+            effectiveType = floorGenerator != null
+                ? floorGenerator.DetermineRandomWaveType(currentFloorScore, lastResolvedType, minScore, maxScore)
+                : WaveData.WaveType.Combat;
 
             Debug.Log($"[WaveManager] Wave {currentWaveIndex + 1} is Random. Dynamically calculated encounter type: {effectiveType} (Current Score: {currentFloorScore})");
         }
@@ -220,15 +215,11 @@ public class WaveManager : MonoBehaviour
         lastResolvedType = effectiveType;
 
         Debug.Log($"[WaveManager] Starting Stage: {currentWaveIndex + 1}/{runtimeWaves.Length} | Type: {effectiveType} | Score Delta: {scoreDelta} | Floor Score: {currentFloorScore}");
-
         UpdateProgressBar();
 
         switch (effectiveType)
         {
             case WaveData.WaveType.Combat:
-                SpawnEnemies(wave, isAmbush: false);
-                break;
-
             case WaveData.WaveType.Boss:
                 SpawnEnemies(wave, isAmbush: false);
                 break;
@@ -246,7 +237,9 @@ public class WaveManager : MonoBehaviour
                 break;
         }
     }
+    #endregion
 
+    #region Encounter Stage Handlers
     private void HandleCampStage()
     {
         Debug.Log("[WaveManager] Reached Camp. Player can rest, eat, cook, or exercise.");
@@ -290,10 +283,40 @@ public class WaveManager : MonoBehaviour
 
     private void HandleEventStage()
     {
-        Debug.Log("[WaveManager] Encountered Merchant Event.");
-        if (merchantEvent != null && merchantEvent.merchantActive)
+        Debug.Log("[WaveManager] Reached Event Stage!");
+
+        DungeonEventManager eventMgr = DungeonEventManager.Instance ?? FindFirstObjectByType<DungeonEventManager>(FindObjectsInactive.Include);
+        if (eventMgr == null)
         {
-            merchantEvent.gameObject.SetActive(true);
+            GameObject emGO = new("DungeonEventManager");
+            eventMgr = emGO.AddComponent<DungeonEventManager>();
+        }
+
+        DungeonEvent evt = eventMgr.GetRandomEvent();
+
+        if (CombatUI.Instance != null && CombatUI.Instance.turnBannerText != null)
+        {
+            string title = evt != null ? evt.eventTitle.ToUpper() : "MYSTERIOUS EVENT";
+            CombatUI.Instance.turnBannerText.text = $"EVENT - {title}";
+            CombatUI.Instance.turnBannerText.color = new Color(0.9f, 0.7f, 1f);
+            if (CombatUI.Instance.turnBannerBg != null)
+            {
+                CombatUI.Instance.turnBannerBg.color = new Color(0.22f, 0.14f, 0.32f, 0.9f);
+            }
+        }
+
+        PlayerStats ps = (combatManager != null && combatManager.playerStats != null)
+            ? combatManager.playerStats
+            : FindFirstObjectByType<PlayerStats>();
+        ItemContainer backpack = ps != null ? ps.itemContainer : null;
+
+        DungeonEventUI eventUI = DungeonEventUI.EnsureInstance();
+        if (eventUI != null && evt != null)
+        {
+            eventUI.OpenEvent(evt, ps, backpack, onComplete: () =>
+            {
+                Continue();
+            });
         }
         else
         {
@@ -303,19 +326,55 @@ public class WaveManager : MonoBehaviour
 
     private void HandleRewardStage()
     {
-        Debug.Log("[WaveManager] Reached Reward Stage!");
-        string rewardDesc = "You found a treasure chest in the reward room!\nReceive recovery items to bolster your strength.";
+        Debug.Log("[WaveManager] Reached Reward Stage (Treasure Room)!");
 
-        if (CombatUI.Instance != null)
+        if (CombatUI.Instance != null && CombatUI.Instance.turnBannerText != null)
         {
-            CombatUI.Instance.ShowRewardScreen(rewardDesc);
+            CombatUI.Instance.turnBannerText.text = "STAGE REWARD - TREASURE ROOM";
+            CombatUI.Instance.turnBannerText.color = new Color(1f, 0.85f, 0.3f);
+            if (CombatUI.Instance.turnBannerBg != null)
+            {
+                CombatUI.Instance.turnBannerBg.color = new Color(0.35f, 0.25f, 0.08f, 0.9f);
+            }
+        }
+
+        if (rewardChest == null)
+        {
+            rewardChest = GetComponentInChildren<RewardChest>(true) ?? FindFirstObjectByType<RewardChest>(FindObjectsInactive.Include);
+            if (rewardChest == null)
+            {
+                GameObject chestGO = new GameObject("RewardChest");
+                chestGO.transform.SetParent(transform, false);
+                rewardChest = chestGO.AddComponent<RewardChest>();
+            }
+        }
+
+        int floorNum = ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1;
+        List<ItemSlot> loot = rewardChest != null
+            ? rewardChest.GenerateChestLoot(CurrentWave, floorNum)
+            : new List<ItemSlot>();
+
+        PlayerStats ps = (combatManager != null && combatManager.playerStats != null)
+            ? combatManager.playerStats
+            : FindFirstObjectByType<PlayerStats>();
+        ItemContainer backpack = ps != null ? ps.itemContainer : null;
+
+        RewardUI rewardUI = RewardUI.EnsureInstance();
+        if (rewardUI != null)
+        {
+            rewardUI.Open(rewardChest, loot, backpack, onComplete: () =>
+            {
+                Continue();
+            });
         }
         else
         {
             Continue();
         }
     }
+    #endregion
 
+    #region Combat & Ambush Spawning
     public void TriggerAmbush()
     {
         if (CombatUI.Instance != null)
@@ -353,37 +412,33 @@ public class WaveManager : MonoBehaviour
             return floorGenerator.combatWavePool[Random.Range(0, floorGenerator.combatWavePool.Length)];
         }
 
-        if (runtimeWaves != null)
-        {
-            for (int i = 0; i < runtimeWaves.Length; i++)
-            {
-                if (runtimeWaves[i] != null && (runtimeWaves[i].waveType == WaveData.WaveType.Combat || runtimeWaves[i].waveType == WaveData.WaveType.Boss))
-                {
-                    GameObject[] pool = runtimeWaves[i].GetEnemiesToSpawn();
-                    if (pool != null && pool.Length > 0)
-                    {
-                        return runtimeWaves[i];
-                    }
-                }
-            }
-        }
+        WaveData found = FindFirstValidCombatWave(runtimeWaves);
+        if (found != null) return found;
 
         FloorData floor = GetActiveFloor();
-        if (floor != null && floor.waves != null)
+        if (floor != null)
         {
-            for (int i = 0; i < floor.waves.Length; i++)
+            return FindFirstValidCombatWave(floor.waves);
+        }
+
+        return null;
+    }
+
+    private WaveData FindFirstValidCombatWave(IEnumerable<WaveData> waves)
+    {
+        if (waves == null) return null;
+        foreach (var w in waves)
+        {
+            if (w == null) continue;
+            if (w.waveType == WaveData.WaveType.Combat || w.waveType == WaveData.WaveType.Boss)
             {
-                if (floor.waves[i] != null && floor.waves[i].waveType == WaveData.WaveType.Combat)
+                GameObject[] pool = w.GetEnemiesToSpawn();
+                if (pool != null && pool.Length > 0)
                 {
-                    GameObject[] pool = floor.waves[i].GetEnemiesToSpawn();
-                    if (pool != null && pool.Length > 0)
-                    {
-                        return floor.waves[i];
-                    }
+                    return w;
                 }
             }
         }
-
         return null;
     }
 
@@ -406,74 +461,39 @@ public class WaveManager : MonoBehaviour
             return;
         }
 
-        if (enemySpawnPoint == null)
+        if (enemySpawnPoint == null || combatPositions == null || combatPositions.Length == 0)
         {
-            Debug.Log("Enemy Spawn Point is NULL");
+            Debug.Log("Enemy Spawn Point or Combat Positions missing");
             return;
         }
 
-        if (combatPositions == null || combatPositions.Length == 0)
-        {
-            Debug.Log("Combat Positions are NULL or empty");
-            return;
-        }
-
-        int enemyCount = Mathf.Min(
-            enemiesToSpawn.Length,
-            combatPositions.Length
-        );
-
-        EnemyStats[] newEnemies = new EnemyStats[enemyCount];
+        int enemyCount = Mathf.Min(enemiesToSpawn.Length, combatPositions.Length);
+        List<EnemyStats> validEnemies = new();
 
         for (int i = 0; i < enemyCount; i++)
         {
-            if (enemiesToSpawn[i] == null)
+            if (enemiesToSpawn[i] == null || combatPositions[i] == null)
                 continue;
-
-            if (combatPositions[i] == null)
-            {
-                Debug.Log("Combat Position " + i + " is NULL");
-                continue;
-            }
 
             Vector3 finalPos = combatPositions[i].position;
             Vector3 startPos = finalPos + new Vector3(5.5f, 0f, 0f);
 
-            GameObject enemyObject = Instantiate(
-                enemiesToSpawn[i],
-                startPos,
-                Quaternion.identity
-            );
-
+            GameObject enemyObject = Instantiate(enemiesToSpawn[i], startPos, Quaternion.identity);
             StartCoroutine(AnimateEnemySlideIn(enemyObject, startPos, finalPos, 0.75f));
 
-            EnemyStats enemyStats = enemyObject.GetComponent<EnemyStats>();
-
-            if (enemyStats == null)
+            EnemyStats stats = enemyObject.GetComponent<EnemyStats>();
+            if (stats == null)
             {
-                Debug.Log(
-                    "Enemy prefab does not contain EnemyStats: " +
-                    enemiesToSpawn[i].name
-                );
-
+                Debug.LogWarning($"Enemy prefab does not contain EnemyStats: {enemiesToSpawn[i].name}");
                 Destroy(enemyObject);
                 continue;
             }
 
-            enemyStats.targetSelector = targetSelector;
-            enemyStats.SelectIntent();
-
-            newEnemies[i] = enemyStats;
+            stats.targetSelector = targetSelector;
+            stats.SelectIntent();
+            validEnemies.Add(stats);
         }
 
-        System.Collections.Generic.List<EnemyStats> validEnemies = new System.Collections.Generic.List<EnemyStats>();
-        for (int i = 0; i < newEnemies.Length; i++)
-        {
-            if (newEnemies[i] != null)
-            {
-                validEnemies.Add(newEnemies[i]);
-            }
-        }
         EnemyStats[] enemyArray = validEnemies.ToArray();
 
         combatManager.SetEnemies(enemyArray);
@@ -491,7 +511,9 @@ public class WaveManager : MonoBehaviour
 
         combatManager.StartCombat(isAmbush);
     }
+    #endregion
 
+    #region Enemy Visual Animations
     private IEnumerator AnimateEnemySlideIn(GameObject enemyObj, Vector3 fromPos, Vector3 toPos, float duration)
     {
         if (enemyObj == null) yield break;
@@ -524,7 +546,9 @@ public class WaveManager : MonoBehaviour
             }
         }
     }
+    #endregion
 
+    #region Progress & Helpers
     private void UpdateProgressBar()
     {
         if (progressController == null) return;
@@ -544,4 +568,5 @@ public class WaveManager : MonoBehaviour
     {
         return currentWaveIndex;
     }
+    #endregion
 }

@@ -1,7 +1,9 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class CookingManager : MonoBehaviour
 {
+    #region Singleton & Fields
     private static CookingManager _instance;
     public static CookingManager Instance
     {
@@ -16,11 +18,15 @@ public class CookingManager : MonoBehaviour
     }
 
     [Header("Default Known Recipes")]
-    public System.Collections.Generic.List<RecipeData> defaultRecipes = new System.Collections.Generic.List<RecipeData>();
+    public List<RecipeData> defaultRecipes = new();
+    #endregion
 
+    #region Cooking Events
     public event System.Action<RecipeData> OnCookSuccess;
     public event System.Action<string> OnCookFailed;
+    #endregion
 
+    #region Unity Lifecycle
     private void Awake()
     {
         if (_instance != null && _instance != this)
@@ -30,10 +36,12 @@ public class CookingManager : MonoBehaviour
         }
         _instance = this;
     }
+    #endregion
 
-    public System.Collections.Generic.List<RecipeData> GetAllAvailableRecipes()
+    #region Recipe Queries
+    public List<RecipeData> GetAllAvailableRecipes()
     {
-        System.Collections.Generic.List<RecipeData> list = new System.Collections.Generic.List<RecipeData>();
+        List<RecipeData> list = new();
 
         if (defaultRecipes != null)
         {
@@ -70,8 +78,7 @@ public class CookingManager : MonoBehaviour
             ItemRequirement req = recipe.ingredients[i];
             if (req.item == null || req.amount <= 0) continue;
 
-            int count = GetItemCount(container, req.item);
-            if (count < req.amount)
+            if (GetItemCount(container, req.item) < req.amount)
             {
                 return false;
             }
@@ -79,7 +86,9 @@ public class CookingManager : MonoBehaviour
 
         return true;
     }
+    #endregion
 
+    #region Cooking Execution
     public bool Cook(RecipeData recipe, ItemContainer container)
     {
         if (recipe == null)
@@ -96,8 +105,9 @@ public class CookingManager : MonoBehaviour
 
         if (!CanCook(recipe, container))
         {
-            OnCookFailed?.Invoke("Not enough ingredients to cook: " + recipe.recipeName);
-            Debug.Log("Not enough ingredients to cook: " + recipe.recipeName);
+            string failMsg = $"Not enough ingredients to cook: {recipe.recipeName}";
+            OnCookFailed?.Invoke(failMsg);
+            Debug.Log(failMsg);
             return false;
         }
 
@@ -112,11 +122,13 @@ public class CookingManager : MonoBehaviour
 
         container.AddItem(recipe.resultFood, recipe.resultAmount);
 
-        Debug.Log("Successfully cooked: " + recipe.resultFood.itemName + " x" + recipe.resultAmount);
+        Debug.Log($"Successfully cooked: {recipe.resultFood.itemName} x{recipe.resultAmount}");
         OnCookSuccess?.Invoke(recipe);
         return true;
     }
+    #endregion
 
+    #region Inventory Helpers
     public int GetItemCount(ItemContainer container, ItemData item)
     {
         if (container == null || item == null) return 0;
@@ -130,4 +142,5 @@ public class CookingManager : MonoBehaviour
         }
         return total;
     }
+    #endregion
 }

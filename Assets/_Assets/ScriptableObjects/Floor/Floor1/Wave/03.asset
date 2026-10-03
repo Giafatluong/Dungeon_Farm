@@ -13,10 +13,14 @@ MonoBehaviour:
   m_Name: 03
   m_EditorClassIdentifier: Assembly-CSharp::WaveData
   waveType: 2
-  isRandom: 0
+  minTargetScore: 0
+  maxTargetScore: 4
+  isRandomArea: 0
+  isRandom: 1
   enemyPrefabs: []
   randomEnemyPool:
   - {fileID: 670712790704607887, guid: f1ed11da91194f64caa2fbc58ba39277, type: 3}
   minRandomEnemies: 1
   maxRandomEnemies: 3
+  customRewardLoot: []
   transitionDelay: 1

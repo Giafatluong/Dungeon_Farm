@@ -13,8 +13,15 @@ public class MerchantEvent : MonoBehaviour
     [Header("Seed Exchange")]
     public SeedTrade[] seedTrades;
 
+    [Header("Ration Supplies")]
+    public RationTrade[] rationTrades;
+
+    [Header("Encounter State")]
+    public bool recipeTradeCompleted;
+
     public event System.Action<RecipeData> OnTradeSuccess;
     public event System.Action<SeedTrade> OnSeedTradeSuccess;
+    public event System.Action<RationTrade> OnRationTradeSuccess;
     public event System.Action<string> OnTradeFailed;
 
     private void Start()
@@ -52,6 +59,8 @@ public class MerchantEvent : MonoBehaviour
     public bool CanTrade(ItemContainer container)
     {
         if (!merchantActive) return false;
+        if (recipeTradeCompleted) return false;
+        if (rewardRecipe != null && ProgressionManager.Instance != null && ProgressionManager.Instance.unlockedRecipes.Contains(rewardRecipe)) return false;
         if (container == null) return false;
         if (requiredItems == null || requiredItems.Length == 0) return false;
 
@@ -79,7 +88,7 @@ public class MerchantEvent : MonoBehaviour
 
         if (!CanTrade(container))
         {
-            OnTradeFailed?.Invoke("Not enough items required by the Merchant.");
+            OnTradeFailed?.Invoke("Not enough items required by the Merchant or recipe already unlocked.");
             return false;
         }
 
@@ -98,7 +107,7 @@ public class MerchantEvent : MonoBehaviour
         }
 
         Debug.Log("Trade successful with Merchant! Received recipe: " + (rewardRecipe != null ? rewardRecipe.recipeName : ""));
-        merchantActive = false;
+        recipeTradeCompleted = true;
         OnTradeSuccess?.Invoke(rewardRecipe);
         return true;
     }
@@ -140,6 +149,38 @@ public class MerchantEvent : MonoBehaviour
         return true;
     }
 
+    public bool CanTradeRation(RationTrade trade, ItemContainer container)
+    {
+        if (!merchantActive) return false;
+        if (trade == null || container == null) return false;
+        if (trade.inputProduce == null || trade.inputAmount <= 0) return false;
+        if (trade.outputFood == null || trade.outputAmount <= 0) return false;
+
+        return GetItemCount(container, trade.inputProduce) >= trade.inputAmount;
+    }
+
+    public bool TradeRation(RationTrade trade, ItemContainer container)
+    {
+        if (!merchantActive)
+        {
+            OnTradeFailed?.Invoke("Merchant has departed.");
+            return false;
+        }
+
+        if (!CanTradeRation(trade, container))
+        {
+            OnTradeFailed?.Invoke($"Not enough {trade.inputProduce.itemName} (need {trade.inputAmount}) for rations.");
+            return false;
+        }
+
+        container.RemoveItem(trade.inputProduce, trade.inputAmount);
+        container.AddItem(trade.outputFood, trade.outputAmount);
+
+        Debug.Log($"Ration trade successful: {trade.inputAmount}x {trade.inputProduce.itemName} -> {trade.outputAmount}x {trade.outputFood.itemName}!");
+        OnRationTradeSuccess?.Invoke(trade);
+        return true;
+    }
+
     private int GetItemCount(ItemContainer container, ItemData item)
     {
         if (container == null || item == null) return 0;
@@ -162,5 +203,15 @@ public class SeedTrade
     public ItemData inputSeed;
     public int inputAmount = 3;
     public ItemData outputSeed;
+    public int outputAmount = 1;
+}
+
+[System.Serializable]
+public class RationTrade
+{
+    public string tradeName;
+    public ItemData inputProduce;
+    public int inputAmount = 2;
+    public ItemData outputFood;
     public int outputAmount = 1;
 }

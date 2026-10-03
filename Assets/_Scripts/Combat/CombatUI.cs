@@ -5,15 +5,18 @@ using System.Collections.Generic;
 
 public class CombatUI : MonoBehaviour
 {
+    #region Singleton & Core References
     public static CombatUI Instance { get; private set; }
 
-    [Header("Core References")]
+    [Header("Core Dependencies")]
     public CombatManager combatManager;
     public PlayerStats playerStats;
     public TurnManager turnManager;
     public EnemyTargetSelector targetSelector;
     public WaveManager waveManager;
+    #endregion
 
+    #region Inspector HUD References
     [Header("Player Status HUD")]
     public TextMeshProUGUI playerNameText;
     public Image hpFillImage;
@@ -64,8 +67,10 @@ public class CombatUI : MonoBehaviour
     public TextMeshProUGUI rewardDescriptionText;
     public Button rewardClaimButton;
 
-    private List<GameObject> activeFoodButtons = new List<GameObject>();
+    private readonly List<GameObject> activeFoodButtons = new();
+    #endregion
 
+    #region Unity Lifecycle
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -95,6 +100,25 @@ public class CombatUI : MonoBehaviour
         UnsubscribeEvents();
     }
 
+    private void Update()
+    {
+        UpdateReticle();
+        HandleKeyboardShortcuts();
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (UnityEngine.EventSystems.EventSystem.current == null || !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            {
+                CheckMouseClickEnemy();
+            }
+        }
+
+        UpdatePlayerHUD();
+        UpdateActionButtons();
+    }
+    #endregion
+
+    #region Initialization & Bindings
     public void FindReferences()
     {
         if (combatManager == null) combatManager = FindFirstObjectByType<CombatManager>();
@@ -112,29 +136,10 @@ public class CombatUI : MonoBehaviour
 
     private void BindButtons()
     {
-        if (attackButton != null)
-        {
-            attackButton.onClick.RemoveAllListeners();
-            attackButton.onClick.AddListener(OnAttackClicked);
-        }
-
-        if (defendButton != null)
-        {
-            defendButton.onClick.RemoveAllListeners();
-            defendButton.onClick.AddListener(OnDefendClicked);
-        }
-
-        if (eatButton != null)
-        {
-            eatButton.onClick.RemoveAllListeners();
-            eatButton.onClick.AddListener(OnEatClicked);
-        }
-
-        if (endTurnButton != null)
-        {
-            endTurnButton.onClick.RemoveAllListeners();
-            endTurnButton.onClick.AddListener(OnEndTurnClicked);
-        }
+        BindButton(attackButton, OnAttackClicked);
+        BindButton(defendButton, OnDefendClicked);
+        BindButton(eatButton, OnEatClicked);
+        BindButton(endTurnButton, OnEndTurnClicked);
 
         if (closeFoodPanelButton != null)
         {
@@ -145,23 +150,16 @@ public class CombatUI : MonoBehaviour
             });
         }
 
-        if (victoryReturnButton != null)
-        {
-            victoryReturnButton.onClick.RemoveAllListeners();
-            victoryReturnButton.onClick.AddListener(OnReturnToBaseClicked);
-        }
+        BindButton(victoryReturnButton, OnReturnToBaseClicked);
+        BindButton(defeatReturnButton, OnReturnToBaseAfterDefeatClicked);
+        BindButton(rewardClaimButton, OnRewardClaimClicked);
+    }
 
-        if (defeatReturnButton != null)
-        {
-            defeatReturnButton.onClick.RemoveAllListeners();
-            defeatReturnButton.onClick.AddListener(OnReturnToBaseAfterDefeatClicked);
-        }
-
-        if (rewardClaimButton != null)
-        {
-            rewardClaimButton.onClick.RemoveAllListeners();
-            rewardClaimButton.onClick.AddListener(OnRewardClaimClicked);
-        }
+    private void BindButton(Button btn, UnityEngine.Events.UnityAction action)
+    {
+        if (btn == null) return;
+        btn.onClick.RemoveAllListeners();
+        btn.onClick.AddListener(action);
     }
 
     private void SubscribeEvents()
@@ -215,57 +213,48 @@ public class CombatUI : MonoBehaviour
             ProgressionManager.Instance.OnRunEnded -= HandleRunEnded;
         }
     }
+    #endregion
 
-    private void Update()
+    #region Input & Targeting
+    private void UpdateReticle()
     {
-        if (targetReticle != null)
-        {
-            if (targetSelector != null && targetSelector.selectedEnemy != null && targetSelector.selectedEnemy.currentHealth > 0)
-            {
-                targetReticle.gameObject.SetActive(true);
-                targetReticle.position = targetSelector.selectedEnemy.transform.position + new Vector3(0, 1.3f, 0);
-            }
-            else
-            {
-                targetReticle.gameObject.SetActive(false);
-            }
-        }
+        if (targetReticle == null) return;
 
+        bool hasValidTarget = targetSelector != null && targetSelector.selectedEnemy != null && targetSelector.selectedEnemy.currentHealth > 0;
+        targetReticle.gameObject.SetActive(hasValidTarget);
+
+        if (hasValidTarget)
+        {
+            targetReticle.position = targetSelector.selectedEnemy.transform.position + new Vector3(0, 1.3f, 0);
+        }
+    }
+
+    private void HandleKeyboardShortcuts()
+    {
         bool canUseShortcuts = combatManager != null && combatManager.isCombatActive && !combatManager.isPreparingCombat && combatManager.currentTurn == CombatManager.Turn.Player && playerStats != null && playerStats.currentHealth > 0;
-        if (canUseShortcuts)
-        {
-            if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
-            {
-                OnAttackClicked();
-            }
-            else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2))
-            {
-                OnDefendClicked();
-            }
-            else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3))
-            {
-                OnEatClicked();
-            }
-            else if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return))
-            {
-                OnEndTurnClicked();
-            }
-        }
+        if (!canUseShortcuts) return;
 
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
         {
-            if (UnityEngine.EventSystems.EventSystem.current == null || !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-            {
-                CheckMouseClickEnemy();
-            }
+            OnAttackClicked();
         }
-
-        UpdatePlayerHUD();
-        UpdateActionButtons();
+        else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2))
+        {
+            OnDefendClicked();
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3))
+        {
+            OnEatClicked();
+        }
+        else if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return))
+        {
+            OnEndTurnClicked();
+        }
     }
 
     private void CheckMouseClickEnemy()
     {
+        if (Camera.main == null) return;
         Vector2 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         RaycastHit2D hit = Physics2D.Raycast(mouseWorldPos, Vector2.zero);
         if (hit.collider != null)
@@ -277,7 +266,9 @@ public class CombatUI : MonoBehaviour
             }
         }
     }
+    #endregion
 
+    #region HUD Refresh & Status Display
     public void RefreshAll()
     {
         UpdatePlayerHUD();
@@ -341,7 +332,7 @@ public class CombatUI : MonoBehaviour
             }
             else
             {
-                System.Text.StringBuilder sb = new System.Text.StringBuilder("Buffs: ");
+                System.Text.StringBuilder sb = new("Buffs: ");
                 for (int i = 0; i < playerStats.activeBuffs.Count; i++)
                 {
                     ActiveBuff b = playerStats.activeBuffs[i];
@@ -363,25 +354,10 @@ public class CombatUI : MonoBehaviour
         bool hasAP = playerStats.currentAP > 0;
         bool isAlive = playerStats.currentHealth > 0;
 
-        if (attackButton != null)
-        {
-            attackButton.interactable = isPlayerTurn && hasAP && isAlive;
-        }
-
-        if (defendButton != null)
-        {
-            defendButton.interactable = isPlayerTurn && hasAP && isAlive;
-        }
-
-        if (eatButton != null)
-        {
-            eatButton.interactable = isPlayerTurn && hasAP && isAlive;
-        }
-
-        if (endTurnButton != null)
-        {
-            endTurnButton.interactable = isPlayerTurn && isAlive;
-        }
+        if (attackButton != null) attackButton.interactable = isPlayerTurn && hasAP && isAlive;
+        if (defendButton != null) defendButton.interactable = isPlayerTurn && hasAP && isAlive;
+        if (eatButton != null) eatButton.interactable = isPlayerTurn && hasAP && isAlive;
+        if (endTurnButton != null) endTurnButton.interactable = isPlayerTurn && isAlive;
     }
 
     public void UpdateTurnBanner()
@@ -480,22 +456,14 @@ public class CombatUI : MonoBehaviour
 
         if (targetIntentText != null)
         {
-            string intentDesc = "";
-            switch (enemy.currentIntent)
+            string intentDesc = enemy.currentIntent switch
             {
-                case EnemyData.EnemyIntent.Attack:
-                    intentDesc = $"Attack ({enemy.GetCurrentATK()} DMG)";
-                    break;
-                case EnemyData.EnemyIntent.Defend:
-                    intentDesc = $"Defend (+{enemy.enemyData.DEF} DEF)";
-                    break;
-                case EnemyData.EnemyIntent.Buff:
-                    intentDesc = "Buff Skill";
-                    break;
-                case EnemyData.EnemyIntent.Debuff:
-                    intentDesc = "Debuff Skill";
-                    break;
-            }
+                EnemyData.EnemyIntent.Attack => $"Attack ({enemy.GetCurrentATK()} DMG)",
+                EnemyData.EnemyIntent.Defend => $"Defend (+{enemy.enemyData.DEF} DEF)",
+                EnemyData.EnemyIntent.Buff => "Buff Skill",
+                EnemyData.EnemyIntent.Debuff => "Debuff Skill",
+                _ => ""
+            };
             targetIntentText.text = $"Intent: {intentDesc}";
         }
     }
@@ -541,9 +509,9 @@ public class CombatUI : MonoBehaviour
         UpdateTurnBanner();
         UpdateActionButtons();
     }
+    #endregion
 
-    #region Action Handlers
-
+    #region Action Button Handlers
     public void OnAttackClicked()
     {
         if (combatManager == null) return;
@@ -590,11 +558,9 @@ public class CombatUI : MonoBehaviour
         combatManager.EndTurnPlayer();
         RefreshAll();
     }
-
     #endregion
 
-    #region Food Selection
-
+    #region Food Selection Panel
     public void PopulateFoodPanel()
     {
         if (foodListContainer == null) return;
@@ -615,7 +581,7 @@ public class CombatUI : MonoBehaviour
         }
 
         ItemContainer inventory = playerStats.itemContainer;
-        List<ItemSlot> foodSlots = new List<ItemSlot>();
+        List<ItemSlot> foodSlots = new();
 
         for (int i = 0; i < inventory.itemSlots.Length; i++)
         {
@@ -655,14 +621,14 @@ public class CombatUI : MonoBehaviour
 
     private GameObject CreateFoodRow(FoodData food, int count)
     {
-        GameObject row = new GameObject($"Food_{food.itemName}", typeof(RectTransform), typeof(Image));
+        GameObject row = new($"Food_{food.itemName}", typeof(RectTransform), typeof(Image));
         RectTransform rt = row.GetComponent<RectTransform>();
         rt.sizeDelta = new Vector2(380, 50);
 
         Image bg = row.GetComponent<Image>();
         bg.color = new Color(0.15f, 0.15f, 0.2f, 0.9f);
 
-        GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+        GameObject iconGO = new("Icon", typeof(RectTransform), typeof(Image));
         iconGO.transform.SetParent(row.transform, false);
         RectTransform iconRT = iconGO.GetComponent<RectTransform>();
         iconRT.anchorMin = new Vector2(0, 0.5f);
@@ -672,7 +638,7 @@ public class CombatUI : MonoBehaviour
         Image iconImg = iconGO.GetComponent<Image>();
         if (food.itemIcon != null) iconImg.sprite = food.itemIcon;
 
-        GameObject labelGO = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+        GameObject labelGO = new("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
         labelGO.transform.SetParent(row.transform, false);
         RectTransform labelRT = labelGO.GetComponent<RectTransform>();
         labelRT.anchorMin = new Vector2(0, 0);
@@ -685,7 +651,7 @@ public class CombatUI : MonoBehaviour
         label.alignment = TextAlignmentOptions.MidlineLeft;
         label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#88FF88>+{food.healthValue} HP</color> | <color=#FFAA44>+{food.hungerValue} Full</color></size>";
 
-        GameObject btnGO = new GameObject("EatBtn", typeof(RectTransform), typeof(Image), typeof(Button));
+        GameObject btnGO = new("EatBtn", typeof(RectTransform), typeof(Image), typeof(Button));
         btnGO.transform.SetParent(row.transform, false);
         RectTransform btnRT = btnGO.GetComponent<RectTransform>();
         btnRT.anchorMin = new Vector2(1, 0.5f);
@@ -707,7 +673,7 @@ public class CombatUI : MonoBehaviour
             }
         });
 
-        GameObject btnTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        GameObject btnTextGO = new("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         btnTextGO.transform.SetParent(btnGO.transform, false);
         RectTransform btnTextRT = btnTextGO.GetComponent<RectTransform>();
         btnTextRT.anchorMin = Vector2.zero;
@@ -720,11 +686,9 @@ public class CombatUI : MonoBehaviour
 
         return row;
     }
-
     #endregion
 
-    #region Victory & Defeat
-
+    #region Victory, Defeat & Flow Screens
     public void ShowVictoryScreen(string details = "")
     {
         if (victoryPanel != null)
@@ -780,10 +744,6 @@ public class CombatUI : MonoBehaviour
         OnReturnToBaseClicked();
     }
 
-    #endregion
-
-    #region Reward Handling
-
     public void ShowRewardScreen(string rewardDesc)
     {
         if (rewardPanel != null)
@@ -808,6 +768,5 @@ public class CombatUI : MonoBehaviour
             waveManager.Continue();
         }
     }
-
     #endregion
 }

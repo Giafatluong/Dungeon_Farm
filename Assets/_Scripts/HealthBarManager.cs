@@ -3,18 +3,28 @@ using System.Collections.Generic;
 
 public class HealthBarManager : MonoBehaviour
 {
+    #region Inspector Fields & State
     [SerializeField] private GameObject healthBarPrefab;
     [SerializeField] private Transform healthBarCanvas;
     [SerializeField] private PlayerStats playerStats;
 
     private EnemyStats[] enemies;
-    private List<HealthBar> healthBars = new();
+    private readonly List<HealthBar> healthBars = new();
+    #endregion
 
+    #region Unity Lifecycle
     private void Awake()
     {
         if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
     }
 
+    private void Update()
+    {
+        ClearHealthBars();
+    }
+    #endregion
+
+    #region Health Bar Creation
     public void SetEnemies(EnemyStats[] newEnemies)
     {
         enemies = newEnemies;
@@ -28,47 +38,44 @@ public class HealthBarManager : MonoBehaviour
 
         if (playerStats != null)
         {
-            GameObject healthBarObject = Instantiate(
-                healthBarPrefab,
-                healthBarCanvas
-            );
-
-            HealthBar healthBar = healthBarObject.GetComponent<HealthBar>();
-
-            if (healthBar != null)
-            {
-                healthBar.SetPlayerTarget(playerStats);
-                healthBars.Add(healthBar);
-            }
+            SpawnHealthBar(playerStats);
         }
 
         if (enemies == null) return;
 
         for (int i = 0; i < enemies.Length; i++)
         {
-            if (enemies[i] == null) continue;
-            if (enemies[i].currentHealth <= 0) continue;
-
-            GameObject healthBarObject = Instantiate(
-                healthBarPrefab,
-                healthBarCanvas
-            );
-
-            HealthBar healthBar = healthBarObject.GetComponent<HealthBar>();
-
-            if (healthBar != null)
-            {
-                healthBar.SetEnemyTarget(enemies[i]);
-                healthBars.Add(healthBar);
-            }
+            if (enemies[i] == null || enemies[i].currentHealth <= 0) continue;
+            SpawnHealthBar(enemies[i]);
         }
     }
 
-    private void Update()
+    private void SpawnHealthBar(PlayerStats player)
     {
-        ClearHealthBars();
+        if (healthBarPrefab == null || healthBarCanvas == null) return;
+        GameObject barObject = Instantiate(healthBarPrefab, healthBarCanvas);
+        HealthBar bar = barObject.GetComponent<HealthBar>();
+        if (bar != null)
+        {
+            bar.SetPlayerTarget(player);
+            healthBars.Add(bar);
+        }
     }
 
+    private void SpawnHealthBar(EnemyStats enemy)
+    {
+        if (healthBarPrefab == null || healthBarCanvas == null) return;
+        GameObject barObject = Instantiate(healthBarPrefab, healthBarCanvas);
+        HealthBar bar = barObject.GetComponent<HealthBar>();
+        if (bar != null)
+        {
+            bar.SetEnemyTarget(enemy);
+            healthBars.Add(bar);
+        }
+    }
+    #endregion
+
+    #region Health Bar Cleanup & Management
     public void ClearHealthBars()
     {
         for (int i = healthBars.Count - 1; i >= 0; i--)
@@ -79,7 +86,7 @@ public class HealthBarManager : MonoBehaviour
                 continue;
             }
 
-            // Enemy health bar
+            // Enemy health bar validation
             if (healthBars[i].playerTarget == null)
             {
                 if (healthBars[i].enemyTarget == null ||
@@ -91,7 +98,7 @@ public class HealthBarManager : MonoBehaviour
                     continue;
                 }
             }
-            // Player health bar
+            // Player health bar validation
             else if (healthBars[i].playerTarget.currentHealth <= 0)
             {
                 Destroy(healthBars[i].gameObject);
@@ -145,4 +152,5 @@ public class HealthBarManager : MonoBehaviour
 
         healthBars.Clear();
     }
+    #endregion
 }
