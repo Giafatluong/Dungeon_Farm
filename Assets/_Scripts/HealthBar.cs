@@ -12,7 +12,7 @@ public class HealthBar : MonoBehaviour
 
     public void SetHealthBar(int currentHealth, int maxHealth)
     {
-        if (healthBar != null)
+        if (healthBar != null && maxHealth > 0)
         {
             healthBar.fillAmount = (float)currentHealth / maxHealth;
         }
@@ -40,7 +40,7 @@ public class HealthBar : MonoBehaviour
 
     private void Update()
     {
-        // Thanh máu của kẻ địch: Nếu target null, đã chết (HP <= 0) hoặc bị tắt -> Tự hủy ngay lập tức
+        // Enemy health bar: If target is null, dead (HP <= 0) or disabled, destroy health bar
         if (playerTarget == null)
         {
             if (enemyTarget == null || enemyTarget.currentHealth <= 0 || !enemyTarget.gameObject.activeInHierarchy)
@@ -64,16 +64,16 @@ public class HealthBar : MonoBehaviour
                 switch (enemyTarget.currentIntent)
                 {
                     case EnemyData.EnemyIntent.Attack:
-                        intentText.text = $"⚔️ {enemyTarget.GetCurrentATK()}";
+                        intentText.text = $"ATK {enemyTarget.GetCurrentATK()}";
                         break;
                     case EnemyData.EnemyIntent.Defend:
-                        intentText.text = "🛡️ Defend";
+                        intentText.text = "DEFEND";
                         break;
                     case EnemyData.EnemyIntent.Buff:
-                        intentText.text = "✨ Buff";
+                        intentText.text = "BUFF";
                         break;
                     case EnemyData.EnemyIntent.Debuff:
-                        intentText.text = "💀 Debuff";
+                        intentText.text = "DEBUFF";
                         break;
                 }
             }

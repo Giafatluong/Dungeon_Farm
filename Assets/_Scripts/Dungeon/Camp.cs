@@ -26,7 +26,7 @@ public class Camp : MonoBehaviour
     [Header("Camp State")]
     public bool isCampOpen = false;
     public bool ambushState = false;
-    public bool mustContinue = false; // Sau ambush thì bắt buộc phải Continue
+    public bool mustContinue = false; // After ambush, player must continue
 
     [Header("References")]
     public PlayerStats playerStats;
@@ -50,7 +50,7 @@ public class Camp : MonoBehaviour
         isCampOpen = true;
 
         gameObject.SetActive(true);
-        Debug.Log("🏕️ [Camp] Đã mở khu cắm trại an toàn!");
+        Debug.Log("[Camp] Safe camp opened!");
         OnCampOpened?.Invoke();
     }
 
@@ -66,7 +66,7 @@ public class Camp : MonoBehaviour
         {
             if (action != ActionType.Continue)
             {
-                Debug.LogWarning("Đang bị phục kích hoặc bắt buộc phải Đi tiếp!");
+                Debug.LogWarning("[Camp] Ambushed or must continue forward!");
                 return false;
             }
         }
@@ -80,13 +80,13 @@ public class Camp : MonoBehaviour
 
                     if (!itemContainer.HasItem(food))
                     {
-                        Debug.LogWarning("Không có món ăn này trong ba lô!");
+                        Debug.LogWarning("[Camp] Food not found in backpack!");
                         return false;
                     }
 
                     if (playerStats.currentHunger >= playerStats.maxHunger)
                     {
-                        Debug.LogWarning("Người chơi đã quá no, không thể ăn thêm!");
+                        Debug.LogWarning("[Camp] Player fullness is at max!");
                         return false;
                     }
 
@@ -94,7 +94,7 @@ public class Camp : MonoBehaviour
                 }
                 else
                 {
-                    Debug.LogWarning("Chưa chọn món ăn để ăn tại Camp.");
+                    Debug.LogWarning("[Camp] No food selected to eat.");
                     return false;
                 }
                 encounterChance += eatRisk;
@@ -110,13 +110,13 @@ public class Camp : MonoBehaviour
                     }
                     else
                     {
-                        Debug.LogWarning("Không tìm thấy CookingManager hoặc ba lô trống!");
+                        Debug.LogWarning("[Camp] CookingManager not found or backpack empty!");
                         return false;
                     }
                 }
                 else
                 {
-                    Debug.LogWarning("Chưa chọn công thức để nấu tại Camp.");
+                    Debug.LogWarning("[Camp] No recipe selected to cook.");
                     return false;
                 }
                 encounterChance += cookRisk;
@@ -127,11 +127,11 @@ public class Camp : MonoBehaviour
                 {
                     if (playerStats.currentHunger <= 0)
                     {
-                        Debug.LogWarning("Độ no đã bằng 0, không thể tập thể dục thêm!");
+                        Debug.LogWarning("[Camp] Fullness is already 0, cannot exercise!");
                         return false;
                     }
                     playerStats.ReduceHunger(exerciseHungerReduction);
-                    Debug.Log($"Tập thể dục tại Camp! Giảm {exerciseHungerReduction} Hunger.");
+                    Debug.Log($"[Camp] Exercised! Reduced {exerciseHungerReduction} fullness.");
                 }
                 encounterChance += exerciseRisk;
                 break;
@@ -141,11 +141,11 @@ public class Camp : MonoBehaviour
                 {
                     if (playerStats.currentHealth >= playerStats.maxHealth)
                     {
-                        Debug.LogWarning("Máu đã đầy, không cần nghỉ ngơi!");
+                        Debug.LogWarning("[Camp] Health is already full!");
                         return false;
                     }
                     playerStats.Heal(restHealAmount);
-                    Debug.Log($"Nghỉ ngơi bên đống lửa! Hồi phục {restHealAmount} HP.");
+                    Debug.Log($"[Camp] Rested by campfire! Recovered {restHealAmount} HP.");
                 }
                 encounterChance += restRisk;
                 break;
@@ -160,17 +160,17 @@ public class Camp : MonoBehaviour
         }
 
         encounterChance = Mathf.Clamp01(encounterChance);
-        Debug.Log($"Hành động Camp {action} thành công. Tỷ lệ phục kích hiện tại: {encounterChance * 100:F0}%");
+        Debug.Log($"[Camp] Action {action} succeeded. Current ambush risk: {encounterChance * 100:F0}%");
         OnCampAction?.Invoke(action, encounterChance);
 
-        // Kiểm tra phục kích (Ambush roll)
+        // Ambush roll
         CheckAmbushRoll();
         return true;
     }
 
     public void ReturnHome()
     {
-        Debug.Log("Người chơi quyết định rút lui từ Camp về Base an toàn. Giữ lại 100% đồ trong ba lô!");
+        Debug.Log("[Camp] Returning safely to Base. Keeping 100% loot!");
         encounterChance = 0f;
         ambushState = false;
         mustContinue = false;
@@ -195,7 +195,7 @@ public class Camp : MonoBehaviour
     private void CheckAmbushRoll()
     {
         float roll = Random.value;
-        Debug.Log($"[Camp Roll] Xúc xắc: {roll:F2} vs Nguy cơ: {encounterChance:F2}");
+        Debug.Log($"[Camp Roll] Roll: {roll:F2} vs Ambush Risk: {encounterChance:F2}");
         if (roll < encounterChance)
         {
             TriggerAmbush();
@@ -204,7 +204,7 @@ public class Camp : MonoBehaviour
 
     private void TriggerAmbush()
     {
-        Debug.Log("⚠️ CẢNH BÁO: Bị phục kích (Ambush) tại Camp!");
+        Debug.Log("[Camp] WARNING: Ambushed at Camp!");
         ambushState = true;
         mustContinue = true;
         encounterChance = 0f;
@@ -225,7 +225,7 @@ public class Camp : MonoBehaviour
         mustContinue = false;
 
         CloseCamp();
-        Debug.Log("Rời khỏi Camp, di chuyển sang Stage tiếp theo.");
+        Debug.Log("[Camp] Leaving Camp, proceeding to next stage.");
         OnCampAction?.Invoke(ActionType.Continue, 0f);
 
         if (waveManager != null)

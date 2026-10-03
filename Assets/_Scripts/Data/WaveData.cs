@@ -5,26 +5,34 @@ public class WaveData : ScriptableObject
 {
     public enum WaveType
     {
-        Combat,
-        Reward,
-        Camp,
-        Event,
-        Boss
+        Combat = 0,
+        Reward = 1,
+        Camp = 2,
+        Event = 3,
+        Boss = 4,
+        Random = 5 // Procedural Random Area
     }
 
     [Header("Encounter Type")]
     public WaveType waveType = WaveType.Combat;
 
-    [Header("Level Design - Cố định hay Ngẫu nhiên")]
-    [Tooltip("Bỏ tích: Màn chơi cố định 100% theo Level Design của bạn.\nTích chọn: Màn chơi ngẫu nhiên quái theo công thức/pool.")]
+    [Header("Random Wave (Dynamic Score Balance)")]
+    [Tooltip("Target floor score minimum according to GDD (Combat=+1, Event=-1, Reward=-2, Camp=0)")]
+    public int minTargetScore = 0;
+    [Tooltip("Target floor score maximum according to GDD")]
+    public int maxTargetScore = 4;
+    [HideInInspector] public bool isRandomArea = false;
+
+    [Header("Single Combat Wave - Fixed vs Random Enemies")]
+    [Tooltip("Unchecked: Fixed enemies in enemyPrefabs.\nChecked: Random enemies picked from randomEnemyPool.")]
     public bool isRandom = false;
 
-    [Header("Fixed Enemies (Dành cho isRandom = false)")]
-    [Tooltip("Danh sách quái cố định xuất hiện (tối đa 3 quái tương ứng 3 vị trí)")]
+    [Header("Fixed Enemies (For isRandom = false)")]
+    [Tooltip("List of fixed enemy prefabs to spawn (up to 3 enemies for 3 positions)")]
     public GameObject[] enemyPrefabs;
 
-    [Header("Random Enemies (Dành cho isRandom = true)")]
-    [Tooltip("Pool các loại quái để hệ thống bốc ngẫu nhiên khi vào màn này")]
+    [Header("Random Enemies (For isRandom = true)")]
+    [Tooltip("Pool of enemy prefabs to randomly draw from")]
     public GameObject[] randomEnemyPool;
     [Range(1, 3)] public int minRandomEnemies = 1;
     [Range(1, 3)] public int maxRandomEnemies = 3;
@@ -33,7 +41,7 @@ public class WaveData : ScriptableObject
     public float transitionDelay = 1f;
 
     /// <summary>
-    /// Lấy danh sách quái thực tế để spawn (xử lý cả cố định lẫn ngẫu nhiên)
+    /// Returns the array of enemy prefabs to spawn (handles both fixed and randomized encounters).
     /// </summary>
     public GameObject[] GetEnemiesToSpawn()
     {
@@ -56,7 +64,7 @@ public class WaveData : ScriptableObject
             return new GameObject[0];
         }
 
-        // Nếu là ngẫu nhiên
+        // If randomized
         GameObject[] sourcePool = (randomEnemyPool != null && randomEnemyPool.Length > 0)
             ? randomEnemyPool
             : enemyPrefabs;

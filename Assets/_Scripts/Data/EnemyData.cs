@@ -46,15 +46,15 @@ public class EnemyData : ScriptableObject
         public float dropChance = 0.5f;
         public int minAmount = 1;
         public int maxAmount = 1;
-        [Tooltip("Nếu tích chọn, người chơi phải mở khóa vật phẩm này (ví dụ hạt giống mở khóa qua Offering/Tượng) thì mới có thể rơi")]
+        [Tooltip("If checked, the player must have unlocked this item via Meta Progression for it to drop")]
         public bool requireUnlock = false;
     }
 
-    [Header("Loot Configuration (Chiến Lợi Phẩm)")]
-    [Tooltip("Danh sách các vật phẩm quái này có thể rơi, số lượng, tỉ lệ và điều kiện mở khóa")]
+    [Header("Loot Configuration")]
+    [Tooltip("List of item drops, quantities, drop chances, and unlock requirements")]
     public DropItemEntry[] lootDrops;
 
-    [Tooltip("Cho phép rơi ngẫu nhiên các loại hạt giống thông thường mà người chơi đã mở khóa")]
+    [Tooltip("Allow dropping unlocked seeds randomly")]
     public bool dropUnlockedSeeds = true;
     [Range(0f, 1f)]
     public float seedDropChance = 0.35f;
@@ -70,7 +70,6 @@ public class EnemyData : ScriptableObject
                 var entry = lootDrops[i];
                 if (entry == null || entry.item == null) continue;
 
-                // Nếu yêu cầu mở khóa, kiểm tra qua ProgressionManager
                 if (entry.requireUnlock)
                 {
                     if (ProgressionManager.Instance != null && !ProgressionManager.Instance.IsItemUnlocked(entry.item))
@@ -90,7 +89,6 @@ public class EnemyData : ScriptableObject
             }
         }
 
-        // Rơi thêm hạt giống đã mở khóa nếu được cấu hình
         if (dropUnlockedSeeds && ProgressionManager.Instance != null && ProgressionManager.Instance.unlockedSeeds != null)
         {
             var regularSeeds = new System.Collections.Generic.List<ItemData>();

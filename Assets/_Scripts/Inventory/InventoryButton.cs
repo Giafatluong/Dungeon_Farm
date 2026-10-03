@@ -24,7 +24,7 @@ public class InventoryButton : MonoBehaviour,
     private GameObject dragIcon;
     private Canvas canvas;
 
-    // Cho phép đọc từ bên ngoài (ChestUI cần biết container/index khi drop cross-container)
+    // Accessible externally (ChestUI uses container/index for cross-container drops)
     public ItemContainer SlotContainer => itemContainer;
     public int SlotIndex => slotIndex;
 
@@ -54,7 +54,6 @@ public class InventoryButton : MonoBehaviour,
 
     private void OnDisable()
     {
-        // Dọn dẹp drag icon nếu UI bị ẩn hoặc đóng giữa chừng khi đang kéo
         if (dragIcon != null)
         {
             Destroy(dragIcon);
@@ -201,14 +200,14 @@ public class InventoryButton : MonoBehaviour,
         if (draggedButton.SlotContainer == null || itemContainer == null)
             return;
 
-        // Cùng container → swap hoặc gộp stack
+        // Same container -> swap or merge stack
         if (draggedButton.SlotContainer == itemContainer)
         {
             itemContainer.SwapSlots(draggedButton.SlotIndex, slotIndex);
         }
         else
         {
-            // Khác container → cross-container transfer (Chest ↔ Backpack)
+            // Different container -> cross-container transfer (Chest <-> Backpack)
             ChestUI.TransferItem(
                 draggedButton.SlotContainer, draggedButton.SlotIndex,
                 itemContainer, slotIndex

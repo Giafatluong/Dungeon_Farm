@@ -6,11 +6,11 @@ public class MerchantEvent : MonoBehaviour
     public bool merchantActive = true;
     public int remainingDays = 5;
 
-    [Header("Trade Requirements (Công thức)")]
+    [Header("Trade Requirements (Recipe)")]
     public ItemRequirement[] requiredItems;
     public RecipeData rewardRecipe;
 
-    [Header("Seed Exchange (Đổi hạt giống cấp thấp lấy cấp cao)")]
+    [Header("Seed Exchange")]
     public SeedTrade[] seedTrades;
 
     public event System.Action<RecipeData> OnTradeSuccess;
@@ -40,12 +40,12 @@ public class MerchantEvent : MonoBehaviour
         if (!merchantActive) return;
 
         remainingDays--;
-        Debug.Log($"Merchant Event: Còn lại {remainingDays} ngày lưu trú.");
+        Debug.Log($"Merchant Event: {remainingDays} days remaining.");
 
         if (remainingDays <= 0)
         {
             merchantActive = false;
-            Debug.Log("Merchant đã rời đi vì hết thời gian lưu trú.");
+            Debug.Log("Merchant has departed as time expired.");
         }
     }
 
@@ -73,17 +73,16 @@ public class MerchantEvent : MonoBehaviour
     {
         if (!merchantActive)
         {
-            OnTradeFailed?.Invoke("Thương nhân không còn hoạt động hoặc đã rời đi.");
+            OnTradeFailed?.Invoke("Merchant is no longer active or has departed.");
             return false;
         }
 
         if (!CanTrade(container))
         {
-            OnTradeFailed?.Invoke("Chưa đủ vật phẩm theo yêu cầu của Thương nhân.");
+            OnTradeFailed?.Invoke("Not enough items required by the Merchant.");
             return false;
         }
 
-        // Trừ vật phẩm
         for (int i = 0; i < requiredItems.Length; i++)
         {
             ItemRequirement req = requiredItems[i];
@@ -93,14 +92,13 @@ public class MerchantEvent : MonoBehaviour
             }
         }
 
-        // Mở khóa công thức
         if (rewardRecipe != null && ProgressionManager.Instance != null)
         {
             ProgressionManager.Instance.UnlockRecipe(rewardRecipe);
         }
 
-        Debug.Log("Giao dịch thành công với Thương nhân! Nhận công thức: " + (rewardRecipe != null ? rewardRecipe.recipeName : ""));
-        merchantActive = false; // Thương nhân hoàn tất giao dịch và rời đi
+        Debug.Log("Trade successful with Merchant! Received recipe: " + (rewardRecipe != null ? rewardRecipe.recipeName : ""));
+        merchantActive = false;
         OnTradeSuccess?.Invoke(rewardRecipe);
         return true;
     }
@@ -119,29 +117,25 @@ public class MerchantEvent : MonoBehaviour
     {
         if (!merchantActive)
         {
-            OnTradeFailed?.Invoke("Thương nhân đã rời đi.");
+            OnTradeFailed?.Invoke("Merchant has departed.");
             return false;
         }
 
         if (!CanTradeSeed(trade, container))
         {
-            OnTradeFailed?.Invoke($"Không đủ {trade.inputSeed.itemName} (cần {trade.inputAmount}) để đổi lấy {trade.outputSeed.itemName}.");
+            OnTradeFailed?.Invoke($"Not enough {trade.inputSeed.itemName} (need {trade.inputAmount}) to exchange for {trade.outputSeed.itemName}.");
             return false;
         }
 
-        // Trừ hạt giống cấp thấp
         container.RemoveItem(trade.inputSeed, trade.inputAmount);
-
-        // Cộng hạt giống cấp cao
         container.AddItem(trade.outputSeed, trade.outputAmount);
 
-        // Mở khóa hạt giống cấp cao này vào progression (để sau này quái thường cũng có tỷ lệ rớt)
         if (ProgressionManager.Instance != null)
         {
             ProgressionManager.Instance.UnlockSeed(trade.outputSeed);
         }
 
-        Debug.Log($"Đổi hạt thành công: {trade.inputAmount}x {trade.inputSeed.itemName} ➔ {trade.outputAmount}x {trade.outputSeed.itemName}!");
+        Debug.Log($"Seed trade successful: {trade.inputAmount}x {trade.inputSeed.itemName} -> {trade.outputAmount}x {trade.outputSeed.itemName}!");
         OnSeedTradeSuccess?.Invoke(trade);
         return true;
     }

@@ -3,15 +3,18 @@ using UnityEngine;
 
 public class Statue : MonoBehaviour, IInteractable
 {
-    [Header("Danh sách các combo dâng lễ")]
+    [Header("List of Offerings")]
     public List<Offering> offerings = new List<Offering>();
     public ItemContainer playerInventory;
+
+    [Header("Interaction Settings")]
+    [Tooltip("Maximum distance from the statue collider for the player to interact")]
+    public float interactDistance = 1.8f;
 
     public event System.Action<Offering> OnOfferingSuccess;
     public event System.Action<string> OnOfferingFailed;
 
     private bool playerInRange = false;
-    private bool isTriggerActive = false;
     private Transform playerTransform;
     private Collider2D col;
     private UnityEngine.Tilemaps.Tilemap tilemap;
@@ -20,6 +23,17 @@ public class Statue : MonoBehaviour, IInteractable
     {
         col = GetComponent<Collider2D>();
         tilemap = GetComponent<UnityEngine.Tilemaps.Tilemap>();
+
+        // Ensure collider tightly bounds the statue visual instead of a giant zone
+        if (col is BoxCollider2D boxCol)
+        {
+            if (boxCol.size.x > 2.5f || boxCol.size.y > 3.5f)
+            {
+                boxCol.size = new Vector2(2f, 2.5f);
+                boxCol.offset = new Vector2(40.5f, 11.25f);
+            }
+        }
+
         FindPlayer();
         EnsureReferences();
     }
@@ -55,8 +69,7 @@ public class Statue : MonoBehaviour, IInteractable
         {
             return tilemap.localBounds.center + transform.position;
         }
-        // Tọa độ thực tế của tile Tượng Thần (40, 10)
-        return new Vector3(40.5f, 11.5f, 0f);
+        return new Vector3(40.5f, 11.25f, 0f);
     }
 
     private void Update()
@@ -68,14 +81,22 @@ public class Statue : MonoBehaviour, IInteractable
 
         if (playerTransform != null)
         {
-            Vector3 center = GetStatueCenter();
-            float dist = Vector2.Distance(center, playerTransform.position);
+            Vector2 statuePoint = col != null ? (Vector2)col.ClosestPoint(playerTransform.position) : (Vector2)GetStatueCenter();
+            float dist = Vector2.Distance(statuePoint, playerTransform.position);
             bool wasInRange = playerInRange;
-            playerInRange = isTriggerActive || (dist <= 3.5f);
+            playerInRange = (dist <= interactDistance);
 
             if (!wasInRange && playerInRange)
             {
-                Debug.Log("⛩️ [Tượng Thần] Đang đứng gần Tượng Thần! Nhấn phím E để dâng lễ.");
+                Debug.Log("[Statue] Near the Statue! Click on it or press E to make offerings.");
+            }
+
+            if (wasInRange && !playerInRange)
+            {
+                if (StatueUI.Instance != null && StatueUI.Instance.IsOpen)
+                {
+                    StatueUI.Instance.Close();
+                }
             }
         }
 
@@ -83,20 +104,54 @@ public class Statue : MonoBehaviour, IInteractable
         {
             Interact();
         }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (UnityEngine.EventSystems.EventSystem.current == null || !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            {
+                Vector2 mouseWorld = Camera.main != null ? (Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition) : Vector2.zero;
+                if (col != null && col.OverlapPoint(mouseWorld) && playerInRange)
+                {
+                    Interact();
+                }
+            }
+        }
+    }
+
+    private void OnMouseDown()
+    {
+        if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return;
+        if (playerInRange)
+        {
+            Interact();
+        }
     }
 
     public void Interact()
     {
-        Debug.Log("⛩️ [Tượng Thần] Nhấn phím E - Đang kiểm tra lễ vật dâng Tượng Thần...");
         EnsureReferences();
-        TryOfferAny();
+
+        if (StatueUI.Instance != null)
+        {
+            if (StatueUI.Instance.IsOpen)
+            {
+                StatueUI.Instance.Close();
+            }
+            else
+            {
+                StatueUI.Instance.Open(this, offerings, playerInventory);
+            }
+        }
+        else
+        {
+            TryOfferAny();
+        }
     }
 
     public bool CanOffer(Offering offering, ItemContainer container)
     {
         if (offering == null || container == null) return false;
 
-        // Kiểm tra đã hoàn thành trước đó chưa (không thể dâng lại combo đã hoàn thành)
         if (offering.completed) return false;
         if (ProgressionManager.Instance != null && ProgressionManager.Instance.IsOfferingCompleted(offering.offeringKey))
         {
@@ -126,11 +181,10 @@ public class Statue : MonoBehaviour, IInteractable
 
         if (!CanOffer(offering, container))
         {
-            OnOfferingFailed?.Invoke("Chưa đủ lễ vật hoặc combo đã hoàn thành.");
+            OnOfferingFailed?.Invoke("Not enough items or offering already completed.");
             return false;
         }
 
-        // Trừ vật phẩm
         for (int i = 0; i < offering.requiredItems.Length; i++)
         {
             ItemRequirement req = offering.requiredItems[i];
@@ -140,7 +194,6 @@ public class Statue : MonoBehaviour, IInteractable
             }
         }
 
-        // Đánh dấu hoàn thành
         offering.completed = true;
         if (ProgressionManager.Instance != null)
         {
@@ -148,7 +201,7 @@ public class Statue : MonoBehaviour, IInteractable
             ProgressionManager.Instance.AddPermanentStat(offering.rewardStat, offering.rewardAmount);
         }
 
-        Debug.Log($"Dâng lễ thành công combo: {offering.offeringName}! Nhận +{offering.rewardAmount} {offering.rewardStat} vĩnh viễn.");
+        Debug.Log($"Offering successful: {offering.offeringName}! Received +{offering.rewardAmount} {offering.rewardStat} permanently.");
         OnOfferingSuccess?.Invoke(offering);
         return true;
     }
@@ -157,11 +210,10 @@ public class Statue : MonoBehaviour, IInteractable
     {
         if (playerInventory == null)
         {
-            Debug.LogWarning("Túi đồ người chơi chưa được gán trên Tượng.");
+            Debug.LogWarning("[Statue] Player inventory is not assigned.");
             return false;
         }
 
-        // Kiểm tra xem có combo nào đủ điều kiện để dâng lễ không
         for (int i = 0; i < offerings.Count; i++)
         {
             if (CanOffer(offerings[i], playerInventory))
@@ -170,9 +222,8 @@ public class Statue : MonoBehaviour, IInteractable
             }
         }
 
-        // Nếu không đủ điều kiện, hiển thị tiến độ chi tiết từng combo để người chơi biết
         System.Text.StringBuilder sb = new System.Text.StringBuilder();
-        sb.AppendLine("=== [TƯỢNG THẦN DÂNG LỄ] Chưa đủ lễ vật để dâng ===");
+        sb.AppendLine("=== [STATUE OF OFFERINGS] Insufficient items for any offering ===");
         for (int i = 0; i < offerings.Count; i++)
         {
             Offering off = offerings[i];
@@ -180,11 +231,11 @@ public class Statue : MonoBehaviour, IInteractable
             bool isDone = off.completed || (ProgressionManager.Instance != null && ProgressionManager.Instance.IsOfferingCompleted(off.offeringKey));
             if (isDone)
             {
-                sb.AppendLine($"• {off.offeringName}: [ĐÃ HOÀN THÀNH]");
+                sb.AppendLine($"- {off.offeringName}: [COMPLETED]");
                 continue;
             }
 
-            sb.Append($"• {off.offeringName}: ");
+            sb.Append($"- {off.offeringName}: ");
             if (off.requiredItems != null)
             {
                 for (int r = 0; r < off.requiredItems.Length; r++)
@@ -219,25 +270,22 @@ public class Statue : MonoBehaviour, IInteractable
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
-        {
-            isTriggerActive = true;
-            playerInRange = true;
-            Debug.Log("⛩️ [Tượng Thần] Đã bước vào vùng dâng lễ của Tượng Thần. Nhấn phím E để dâng lễ!");
-        }
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
-        {
-            isTriggerActive = false;
-        }
     }
 
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(GetStatueCenter(), 3.5f);
+        if (col != null)
+        {
+            Gizmos.DrawWireCube(col.bounds.center, col.bounds.size + Vector3.one * (interactDistance * 2f));
+        }
+        else
+        {
+            Gizmos.DrawWireSphere(GetStatueCenter(), interactDistance);
+        }
     }
 }

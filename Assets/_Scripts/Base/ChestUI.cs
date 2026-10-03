@@ -2,8 +2,8 @@ using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
-/// UI Rương tại Base: hiển thị 2 panel song song (Chest | Backpack)
-/// Hỗ trợ kéo thả vật phẩm giữa 2 container (hoán đổi hoặc gộp stack).
+/// Chest UI at Base: displays two panels side by side (Chest | Backpack).
+/// Supports drag-and-drop between containers (swap or stack).
 /// </summary>
 public class ChestUI : MonoBehaviour
 {
@@ -21,16 +21,16 @@ public class ChestUI : MonoBehaviour
         private set => _instance = value;
     }
 
-    [Header("Chest Panel (bên trái)")]
+    [Header("Chest Panel (Left)")]
     [SerializeField] private Transform chestSlotsParent;
     [SerializeField] private GameObject slotPrefab;
 
-    [Header("Backpack Panel (bên phải)")]
+    [Header("Backpack Panel (Right)")]
     [SerializeField] private Transform backpackSlotsParent;
 
     [Header("References")]
     [SerializeField] private Canvas canvas;
-    [SerializeField] private GameObject chestPanel; // Root panel chứa toàn bộ UI Rương
+    [SerializeField] private GameObject chestPanel;
 
     private ItemContainer chestContainer;
     private ItemContainer backpackContainer;
@@ -100,7 +100,6 @@ public class ChestUI : MonoBehaviour
 
     private void Start()
     {
-        // Đảm bảo panel ẩn khi mới vào game
         if (chestPanel != null)
         {
             chestPanel.SetActive(false);
@@ -109,7 +108,6 @@ public class ChestUI : MonoBehaviour
 
     private void Update()
     {
-        // Nhấn Escape để đóng Rương nhanh
         if (IsOpen && Input.GetKeyDown(KeyCode.Escape))
         {
             Close();
@@ -140,7 +138,7 @@ public class ChestUI : MonoBehaviour
 
     private void SubscribeEvents()
     {
-        UnsubscribeEvents(); // Đảm bảo không bị lặp delegate
+        UnsubscribeEvents();
 
         if (chestContainer != null)
             chestContainer.OnInventoryChange += RefreshAll;
@@ -156,9 +154,6 @@ public class ChestUI : MonoBehaviour
             backpackContainer.OnInventoryChange -= RefreshAll;
     }
 
-    /// <summary>
-    /// Được gọi bởi HomeChest khi mở rương. Truyền 2 container vào.
-    /// </summary>
     public void Open(ItemContainer chest, ItemContainer backpack)
     {
         chestContainer = chest;
@@ -194,9 +189,6 @@ public class ChestUI : MonoBehaviour
         return canvas;
     }
 
-    /// <summary>
-    /// Tạo hoặc tái sử dụng các slot button cho một container (tránh Destroy/Instantiate liên tục)
-    /// </summary>
     private void BuildSlots(Transform parent, ItemContainer container, List<InventoryButton> slotList)
     {
         if (parent == null || container == null)
@@ -204,7 +196,6 @@ public class ChestUI : MonoBehaviour
 
         Canvas currentCanvas = GetCanvas();
 
-        // 1. Nếu danh sách đã có đủ slot và các đối tượng còn tồn tại -> tái sử dụng
         if (slotList.Count == container.maxSlots && slotList.TrueForAll(s => s != null))
         {
             for (int i = 0; i < slotList.Count; i++)
@@ -216,7 +207,6 @@ public class ChestUI : MonoBehaviour
             return;
         }
 
-        // 2. Nếu trong parent đã có sẵn các slot (được tạo trước trong Scene) -> bind trực tiếp
         InventoryButton[] existingSlots = parent.GetComponentsInChildren<InventoryButton>(true);
         if (existingSlots != null && existingSlots.Length >= container.maxSlots)
         {
@@ -228,7 +218,6 @@ public class ChestUI : MonoBehaviour
                 existingSlots[i].SetCanvas(currentCanvas);
                 slotList.Add(existingSlots[i]);
             }
-            // Ẩn slot thừa nếu có
             for (int i = container.maxSlots; i < existingSlots.Length; i++)
             {
                 existingSlots[i].gameObject.SetActive(false);
@@ -236,8 +225,6 @@ public class ChestUI : MonoBehaviour
             return;
         }
 
-        // 3. Nếu chưa đủ thì tạo từ prefab
-        // Dọn dẹp slot cũ nếu có
         foreach (InventoryButton slot in slotList)
         {
             if (slot != null)
@@ -247,7 +234,7 @@ public class ChestUI : MonoBehaviour
 
         if (slotPrefab == null)
         {
-            Debug.LogWarning("[ChestUI] slotPrefab chưa được gán và parent chưa có sẵn InventoryButton!");
+            Debug.LogWarning("[ChestUI] slotPrefab is not assigned and parent has no InventoryButton children!");
             return;
         }
 
@@ -259,7 +246,7 @@ public class ChestUI : MonoBehaviour
 
             if (btn == null)
             {
-                Debug.LogWarning("[ChestUI] slotPrefab không có component InventoryButton!");
+                Debug.LogWarning("[ChestUI] slotPrefab missing InventoryButton component!");
                 Destroy(slotObj);
                 continue;
             }
@@ -270,9 +257,6 @@ public class ChestUI : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Refresh hiển thị cả 2 panel
-    /// </summary>
     private void RefreshAll()
     {
         RefreshPanel(chestSlots, chestContainer);
@@ -300,10 +284,6 @@ public class ChestUI : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Chuyển vật phẩm từ container nguồn sang container đích (khi drop cross-container)
-    /// Hỗ trợ gộp stack nếu cùng loại item, hoặc hoán đổi nếu khác item / slot trống.
-    /// </summary>
     public static void TransferItem(ItemContainer source, int sourceIndex,
                                      ItemContainer target, int targetIndex)
     {
@@ -328,15 +308,12 @@ public class ChestUI : MonoBehaviour
             target.itemSlots[targetIndex] = targetSlot;
         }
 
-        // Nếu cùng container → swap/stack bình thường
         if (source == target)
         {
             source.SwapSlots(sourceIndex, targetIndex);
             return;
         }
 
-        // Cross-container:
-        // Trường hợp 1: Nếu cùng loại item và item đó cho phép stack -> Gộp stack
         if (targetSlot.itemData != null &&
             targetSlot.itemData == sourceSlot.itemData &&
             sourceSlot.itemData.isStackable)
@@ -350,7 +327,6 @@ public class ChestUI : MonoBehaviour
             return;
         }
 
-        // Trường hợp 2: Khác item hoặc ô đích trống -> Hoán đổi dữ liệu giữa 2 slot
         ItemData tempItem = targetSlot.itemData;
         int tempAmount = targetSlot.amount;
 
@@ -360,7 +336,6 @@ public class ChestUI : MonoBehaviour
         sourceSlot.itemData = tempItem;
         sourceSlot.amount = tempAmount;
 
-        // Thông báo cả 2 container đã thay đổi
         source.NotifyChange();
         target.NotifyChange();
     }

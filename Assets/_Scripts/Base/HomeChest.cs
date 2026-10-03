@@ -97,13 +97,13 @@ public class HomeChest : MonoBehaviour, IInteractable
     public void OpenChest()
     {
         isOpen = true;
-        Debug.Log("[HomeChest] Đã mở Rương ở nhà. Các vật phẩm cất trong rương được bảo vệ an toàn 100%!");
+        Debug.Log("[HomeChest] Opened Home Chest. Stored items are 100% safe!");
         OnChestToggled?.Invoke(true);
 
         if (chestContainer == null)
-            Debug.LogWarning("[HomeChest] chestContainer chưa được gán ScriptableObject (HomeChest.asset)!");
+            Debug.LogWarning("[HomeChest] chestContainer is not assigned!");
         if (backpackContainer == null)
-            Debug.LogWarning("[HomeChest] backpackContainer chưa được gán ScriptableObject (Inventory.asset)!");
+            Debug.LogWarning("[HomeChest] backpackContainer is not assigned!");
 
         if (ChestUI.Instance != null && chestContainer != null && backpackContainer != null)
         {
@@ -111,24 +111,22 @@ public class HomeChest : MonoBehaviour, IInteractable
         }
         else if (ChestUI.Instance == null)
         {
-            Debug.LogWarning("[HomeChest] Không tìm thấy ChestUI trong scene!");
+            Debug.LogWarning("[HomeChest] ChestUI not found in scene!");
         }
     }
 
     public void CloseChest()
     {
         isOpen = false;
-        Debug.Log("[HomeChest] Đã đóng Rương ở nhà.");
+        Debug.Log("[HomeChest] Closed Home Chest.");
         OnChestToggled?.Invoke(false);
 
-        // Đóng giao diện ChestUI
         if (ChestUI.Instance != null)
         {
             ChestUI.Instance.Close();
         }
     }
 
-    // Chuyển vật phẩm từ Ba lô vào Rương
     public bool StoreItem(ItemData item, int amount)
     {
         if (chestContainer == null || backpackContainer == null) return false;
@@ -136,23 +134,20 @@ public class HomeChest : MonoBehaviour, IInteractable
 
         if (!backpackContainer.HasItem(item)) return false;
 
-        // Kiểm tra xem rương còn chỗ chứa không trước khi trừ trong ba lô
         if (!chestContainer.CanAddItem(item))
         {
-            Debug.LogWarning("[HomeChest] Rương đã đầy, không thể cất thêm đồ!");
+            Debug.LogWarning("[HomeChest] Chest is full, cannot store more items!");
             return false;
         }
 
-        // Thêm vào rương và trừ trong ba lô
         chestContainer.AddItem(item, amount);
         backpackContainer.RemoveItem(item, amount);
 
-        Debug.Log($"[HomeChest] Đã cất {amount}x {item.itemName} vào Rương.");
+        Debug.Log($"[HomeChest] Stored {amount}x {item.itemName} into Chest.");
         OnChestContentsChanged?.Invoke();
         return true;
     }
 
-    // Lấy vật phẩm từ Rương ra Ba lô
     public bool RetrieveItem(ItemData item, int amount)
     {
         if (chestContainer == null || backpackContainer == null) return false;
@@ -160,17 +155,16 @@ public class HomeChest : MonoBehaviour, IInteractable
 
         if (!chestContainer.HasItem(item)) return false;
 
-        // Kiểm tra xem ba lô còn chỗ chứa không trước khi trừ trong rương
         if (!backpackContainer.CanAddItem(item))
         {
-            Debug.LogWarning("[HomeChest] Ba lô đã đầy, không thể lấy thêm đồ!");
+            Debug.LogWarning("[HomeChest] Backpack is full, cannot retrieve more items!");
             return false;
         }
 
         backpackContainer.AddItem(item, amount);
         chestContainer.RemoveItem(item, amount);
 
-        Debug.Log($"[HomeChest] Đã lấy {amount}x {item.itemName} từ Rương ra Ba lô.");
+        Debug.Log($"[HomeChest] Retrieved {amount}x {item.itemName} from Chest.");
         OnChestContentsChanged?.Invoke();
         return true;
     }
@@ -180,7 +174,7 @@ public class HomeChest : MonoBehaviour, IInteractable
         if (other.CompareTag("Player"))
         {
             playerInRange = true;
-            Debug.Log("[HomeChest] Đến gần Rương nhà (Home Chest). Nhấn E để cất/lấy đồ.");
+            Debug.Log("[HomeChest] Near Home Chest. Press E to open.");
         }
     }
 

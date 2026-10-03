@@ -4,9 +4,9 @@ using TMPro;
 using System.Collections.Generic;
 
 /// <summary>
-/// Quản lý giao diện và tương tác tại Khu Cắm Trại (Camp Encounter).
-/// Hỗ trợ đầy đủ: Ăn uống, Nấu ăn, Tập thể dục, Nghỉ ngơi, Đi tiếp, Rút lui về nhà an toàn,
-/// cùng hệ thống đo lường Nguy cơ bị phục kích (Ambush Risk Gauge) và cảnh báo Ambush trực quan.
+/// Manages Camp Encounter UI and interactions.
+/// Supports Eating, Cooking, Exercising, Resting, Continuing forward, and Returning Home safely,
+/// along with an Ambush Risk Gauge and alert systems.
 /// </summary>
 public class CampUI : MonoBehaviour
 {
@@ -75,28 +75,10 @@ public class CampUI : MonoBehaviour
             return Instance;
         }
 
-        // Tìm Canvas thích hợp trong scene (ưu tiên CombatCanvas hoặc ScreenSpaceOverlay)
-        Canvas targetCanvas = null;
-        Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        foreach (var c in canvases)
-        {
-            if (c.name.Contains("Combat") || c.renderMode == RenderMode.ScreenSpaceOverlay)
-            {
-                targetCanvas = c;
-                break;
-            }
-        }
-
-        if (targetCanvas == null && canvases.Length > 0)
-        {
-            targetCanvas = canvases[0];
-        }
-
-        GameObject host = targetCanvas != null ? targetCanvas.gameObject : new GameObject("CampUI_Host", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        CampUI newUI = host.AddComponent<CampUI>();
-        Instance = newUI;
-        newUI.InitializeCampUI();
-        return newUI;
+        GameObject go = new GameObject("CampUI_Runtime");
+        Instance = go.AddComponent<CampUI>();
+        Instance.InitializeCampUI();
+        return Instance;
     }
 
     private void Awake()
@@ -132,7 +114,7 @@ public class CampUI : MonoBehaviour
     {
         if (isInitialized) return;
         FindReferences();
-        EnsureUIHierarchy();
+        EnsureUIConstructed();
         BindButtons();
         SubscribeEvents();
         isInitialized = true;
@@ -176,6 +158,15 @@ public class CampUI : MonoBehaviour
             camp.OnAmbushTriggered -= HandleAmbushTriggered;
             isSubscribed = false;
         }
+    }
+
+    /// <summary>
+    /// If UI elements are not assigned in Inspector, delegates to CampUIBuilder to build the UI at runtime.
+    /// </summary>
+    private void EnsureUIConstructed()
+    {
+        if (mainCampPanel != null) return;
+        CampUIBuilder.Build(this);
     }
 
     private void BindButtons()
@@ -250,16 +241,21 @@ public class CampUI : MonoBehaviour
         if (cookModal != null) cookModal.SetActive(false);
         if (ambushAlertBanner != null) ambushAlertBanner.SetActive(false);
 
-        // Khôi phục tiêu đề và mô tả về trạng thái cắm trại bình thường
+        if (camp != null && (camp.mustContinue || camp.ambushState))
+        {
+            ShowPostAmbushCampScreen();
+            return;
+        }
+
         if (campTitleText != null)
         {
-            campTitleText.text = "🏕️ KHU CẮM TRẠI (CAMP ENCOUNTER)";
+            campTitleText.text = "CAMP ENCOUNTER";
             campTitleText.color = new Color(1f, 0.85f, 0.35f);
         }
 
         if (campDescText != null)
         {
-            campDescText.text = "Ngọn lửa trại bập bùng giữa hầm ngục. Hãy ăn uống, nấu nướng và hồi phục trước khi đi tiếp!\n<color=#FFAA55>⚠️ Chú ý: Mọi hoạt động nấu nướng, ăn uống sẽ tạo ra mùi hương và tiếng ồn thu hút quái vật!</color>";
+            campDescText.text = "A warm campfire burns in the dungeon. Rest, eat, or cook to recover.\n<color=#FFAA55>Warning: Activities create noise and aroma that attract wandering monsters!</color>";
             campDescText.color = new Color(0.85f, 0.88f, 0.95f);
         }
 
@@ -268,17 +264,16 @@ public class CampUI : MonoBehaviour
             TextMeshProUGUI continueTxt = continueButton.GetComponentInChildren<TextMeshProUGUI>();
             if (continueTxt != null)
             {
-                continueTxt.text = "🚪 ĐI TIẾP SANG STAGE TIẾP THEO";
+                continueTxt.text = "CONTINUE FORWARD\n(Next Stage)";
             }
         }
 
-        // Cập nhật turn banner của CombatUI
         if (CombatUI.Instance != null)
         {
             if (CombatUI.Instance.targetInfoPanel != null) CombatUI.Instance.targetInfoPanel.SetActive(false);
             if (CombatUI.Instance.turnBannerText != null)
             {
-                CombatUI.Instance.turnBannerText.text = "🏕️ KHU CẮM TRẠI (CAMP) - NGHỈ NGƠI & NẤU NƯỚNG";
+                CombatUI.Instance.turnBannerText.text = "CAMPFIRE - REST & RECOVER";
                 CombatUI.Instance.turnBannerText.color = new Color(1f, 0.85f, 0.3f);
             }
             if (CombatUI.Instance.turnBannerBg != null)
@@ -292,10 +287,6 @@ public class CampUI : MonoBehaviour
         UpdatePlayerStatusUI();
     }
 
-    /// <summary>
-    /// Hiển thị lại bảng Camp sau khi người chơi đánh bại quái vật phục kích.
-    /// Theo yêu cầu: Chỉ có nút Đi Tiếp được phép ấn.
-    /// </summary>
     public void ShowPostAmbushCampScreen()
     {
         InitializeCampUI();
@@ -309,23 +300,21 @@ public class CampUI : MonoBehaviour
         if (cookModal != null) cookModal.SetActive(false);
         if (ambushAlertBanner != null) ambushAlertBanner.SetActive(false);
 
-        // Cập nhật tiêu đề và mô tả trạng thái sau phục kích
         if (campTitleText != null)
         {
-            campTitleText.text = "🏕️ KHU CẮM TRẠI (ĐÃ ĐẨY LÙI PHỤC KÍCH)";
+            campTitleText.text = "CAMP (AMBUSH REPELLED)";
             campTitleText.color = new Color(1f, 0.5f, 0.3f);
         }
 
         if (campDescText != null)
         {
-            campDescText.text = "<color=#88FF88>⚔️ Bạn đã tiêu diệt toàn bộ kẻ địch phục kích thành công!</color>\n<color=#FFAA55>⚠️ Khu cắm trại này đã bị lộ và thu hút quái vật xung quanh. Bạn bắt buộc phải di chuyển tiếp!</color>";
+            campDescText.text = "<color=#88FF88>You defeated the ambushers!</color>\n<color=#FFAA55>The campsite has been compromised and attracted nearby monsters. You must advance!</color>";
             campDescText.color = Color.white;
         }
 
-        // Cập nhật thanh đo nguy cơ: 100% Đỏ
         if (ambushRiskPercentText != null)
         {
-            ambushRiskPercentText.text = "⚠️ Vị trí cắm trại đã bị lộ: <b>100%</b>";
+            ambushRiskPercentText.text = "Camp Compromised: <b>100%</b>";
             ambushRiskPercentText.color = new Color(1f, 0.4f, 0.3f);
         }
 
@@ -337,13 +326,12 @@ public class CampUI : MonoBehaviour
 
         if (ambushRiskStatusText != null)
         {
-            ambushRiskStatusText.text = "Không thể tiếp tục nghỉ lại đây. Hãy di chuyển tiếp ngay!";
+            ambushRiskStatusText.text = "Cannot rest here any longer. Move forward now!";
             ambushRiskStatusText.color = new Color(1f, 0.4f, 0.4f);
         }
 
         UpdatePlayerStatusUI();
 
-        // CHỈ CÓ NÚT ĐI TIẾP ẤN ĐƯỢC
         if (eatButton != null) eatButton.interactable = false;
         if (cookButton != null) cookButton.interactable = false;
         if (exerciseButton != null) exerciseButton.interactable = false;
@@ -356,17 +344,16 @@ public class CampUI : MonoBehaviour
             TextMeshProUGUI continueTxt = continueButton.GetComponentInChildren<TextMeshProUGUI>();
             if (continueTxt != null)
             {
-                continueTxt.text = "🚪 ĐI TIẾP SANG STAGE TIẾP THEO (BẮT BUỘC)";
+                continueTxt.text = "CONTINUE FORWARD\n(MANDATORY)";
             }
         }
 
-        // Cập nhật banner trên CombatUI
         if (CombatUI.Instance != null)
         {
             if (CombatUI.Instance.targetInfoPanel != null) CombatUI.Instance.targetInfoPanel.SetActive(false);
             if (CombatUI.Instance.turnBannerText != null)
             {
-                CombatUI.Instance.turnBannerText.text = "🚪 ĐÃ ĐẨY LÙI PHỤC KÍCH - HÃY ĐI TIẾP!";
+                CombatUI.Instance.turnBannerText.text = "AMBUSH DEFEATED - ADVANCE FORWARD";
                 CombatUI.Instance.turnBannerText.color = new Color(1f, 0.85f, 0.3f);
             }
             if (CombatUI.Instance.turnBannerBg != null)
@@ -431,12 +418,11 @@ public class CampUI : MonoBehaviour
             ambushAlertBanner.transform.SetAsLastSibling();
             if (ambushAlertText != null)
             {
-                ambushAlertText.text = "🚨 BỊ PHỤC KÍCH! KẺ ĐỊCH PHÁT HIỆN RA KHU CẮM TRẠI!";
+                ambushAlertText.text = "AMBUSH! Monsters detected your campsite!";
             }
         }
 
         UpdateAmbushRiskUI(1f);
-
         StartCoroutine(CloseCampAfterAmbushDelay());
     }
 
@@ -486,7 +472,7 @@ public class CampUI : MonoBehaviour
         {
             if (CombatUI.Instance != null)
             {
-                CombatUI.Instance.LogMessage("⚠️ Độ no đã bằng 0, không thể tập thể dục thêm!");
+                CombatUI.Instance.LogMessage("Fullness is already 0, cannot exercise further!");
             }
             return;
         }
@@ -494,7 +480,7 @@ public class CampUI : MonoBehaviour
         bool success = camp.PerformAction(Camp.ActionType.Exercise);
         if (success && CombatUI.Instance != null)
         {
-            CombatUI.Instance.LogMessage($"🏃 Bạn đã tập thể dục! Tiêu hao {camp.exerciseHungerReduction} độ no.");
+            CombatUI.Instance.LogMessage($"Exercised! Reduced {camp.exerciseHungerReduction} fullness.");
         }
     }
 
@@ -506,7 +492,7 @@ public class CampUI : MonoBehaviour
         {
             if (CombatUI.Instance != null)
             {
-                CombatUI.Instance.LogMessage("⚠️ Máu đã đầy, không cần nghỉ ngơi!");
+                CombatUI.Instance.LogMessage("Health is already full, no need to rest!");
             }
             return;
         }
@@ -514,7 +500,7 @@ public class CampUI : MonoBehaviour
         bool success = camp.PerformAction(Camp.ActionType.Rest);
         if (success && CombatUI.Instance != null)
         {
-            CombatUI.Instance.LogMessage($"⛺ Bạn nghỉ ngơi bên đống lửa! Hồi phục {camp.restHealAmount} HP.");
+            CombatUI.Instance.LogMessage($"Rested by the campfire! Recovered {camp.restHealAmount} HP.");
         }
     }
 
@@ -541,29 +527,28 @@ public class CampUI : MonoBehaviour
 
         if (ambushRiskPercentText != null)
         {
-            ambushRiskPercentText.text = $"⚠️ Nguy cơ bị phục kích: <b>{percentInt}%</b>";
+            ambushRiskPercentText.text = $"Ambush Risk: <b>{percentInt}%</b>";
         }
 
         if (ambushRiskFillImage != null)
         {
             ambushRiskFillImage.fillAmount = percent;
 
-            // Chuyển màu theo cấp độ nguy hiểm
             if (percent < 0.25f)
             {
-                ambushRiskFillImage.color = new Color(0.2f, 0.85f, 0.4f); // Xanh lá
+                ambushRiskFillImage.color = new Color(0.2f, 0.85f, 0.4f);
             }
             else if (percent < 0.50f)
             {
-                ambushRiskFillImage.color = new Color(0.95f, 0.8f, 0.15f); // Vàng
+                ambushRiskFillImage.color = new Color(0.95f, 0.8f, 0.15f);
             }
             else if (percent < 0.75f)
             {
-                ambushRiskFillImage.color = new Color(0.95f, 0.5f, 0.15f); // Cam
+                ambushRiskFillImage.color = new Color(0.95f, 0.5f, 0.15f);
             }
             else
             {
-                ambushRiskFillImage.color = new Color(0.9f, 0.2f, 0.2f); // Đỏ rực
+                ambushRiskFillImage.color = new Color(0.9f, 0.2f, 0.2f);
             }
         }
 
@@ -571,22 +556,22 @@ public class CampUI : MonoBehaviour
         {
             if (percent == 0f)
             {
-                ambushRiskStatusText.text = "Khu vực hoàn toàn yên tĩnh. Hãy chọn hành động hợp lý.";
+                ambushRiskStatusText.text = "The campsite is quiet and safe.";
                 ambushRiskStatusText.color = new Color(0.7f, 1f, 0.7f);
             }
             else if (percent < 0.35f)
             {
-                ambushRiskStatusText.text = "Mùi thức ăn và tiếng động bắt đầu lan tỏa...";
+                ambushRiskStatusText.text = "Food aroma and camp noise begin spreading...";
                 ambushRiskStatusText.color = new Color(1f, 0.9f, 0.6f);
             }
             else if (percent < 0.70f)
             {
-                ambushRiskStatusText.text = "Có tiếng bước chân và tiếng gầm gừ quái vật gần đây!";
+                ambushRiskStatusText.text = "Footsteps and monster growls heard nearby!";
                 ambushRiskStatusText.color = new Color(1f, 0.6f, 0.3f);
             }
             else
             {
-                ambushRiskStatusText.text = "CỰC KỲ NGUY HIỂM! Kẻ địch có thể xông vào bất cứ lúc nào!";
+                ambushRiskStatusText.text = "EXTREME DANGER! Monsters may ambush at any moment!";
                 ambushRiskStatusText.color = new Color(1f, 0.3f, 0.3f);
             }
         }
@@ -603,19 +588,19 @@ public class CampUI : MonoBehaviour
         {
             if (playerStatusText != null)
             {
-                playerStatusText.text = $"❤️ HP: <color=#66FF66>{playerStats.currentHealth}/{playerStats.maxHealth}</color>   |   🍗 Độ no: <color=#FFAA33>{playerStats.currentHunger}/{playerStats.maxHunger}</color>";
+                playerStatusText.text = $"HP: <color=#66FF66>{playerStats.currentHealth}/{playerStats.maxHealth}</color>   |   Fullness: <color=#FFAA33>{playerStats.currentHunger}/{playerStats.maxHunger}</color>";
             }
 
             if (playerBuffsText != null)
             {
                 if (playerStats.activeBuffs == null || playerStats.activeBuffs.Count == 0)
                 {
-                    playerBuffsText.text = "✨ Hiệu ứng: Chưa có buff";
+                    playerBuffsText.text = "Buffs: None";
                     playerBuffsText.color = new Color(0.7f, 0.7f, 0.7f);
                 }
                 else
                 {
-                    System.Text.StringBuilder sb = new System.Text.StringBuilder("✨ Buff: ");
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder("Buffs: ");
                     for (int i = 0; i < playerStats.activeBuffs.Count; i++)
                     {
                         ActiveBuff b = playerStats.activeBuffs[i];
@@ -649,7 +634,6 @@ public class CampUI : MonoBehaviour
     {
         if (foodListContainer == null) return;
 
-        // Dọn dẹp danh sách cũ
         for (int i = 0; i < activeFoodCards.Count; i++)
         {
             if (activeFoodCards[i] != null) Destroy(activeFoodCards[i]);
@@ -662,7 +646,7 @@ public class CampUI : MonoBehaviour
             if (noFoodText != null)
             {
                 noFoodText.gameObject.SetActive(true);
-                noFoodText.text = "Không tìm thấy ba lô!";
+                noFoodText.text = "Backpack not found!";
             }
             return;
         }
@@ -682,7 +666,7 @@ public class CampUI : MonoBehaviour
             if (noFoodText != null)
             {
                 noFoodText.gameObject.SetActive(true);
-                noFoodText.text = "Không có thức ăn trong ba lô!\n(Hãy nấu ăn hoặc mang theo món ăn nấu từ trang trại)";
+                noFoodText.text = "No food in backpack!\n(Cook meals or harvest food from farm)";
             }
             return;
         }
@@ -708,7 +692,7 @@ public class CampUI : MonoBehaviour
     {
         GameObject row = new GameObject($"Food_{food.itemName}", typeof(RectTransform), typeof(Image));
         RectTransform rt = row.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(420, 56);
+        rt.sizeDelta = new Vector2(440, 56);
 
         Image bg = row.GetComponent<Image>();
         bg.color = new Color(0.14f, 0.16f, 0.22f, 0.95f);
@@ -731,23 +715,23 @@ public class CampUI : MonoBehaviour
         labelRT.anchorMin = new Vector2(0, 0);
         labelRT.anchorMax = new Vector2(1, 1);
         labelRT.offsetMin = new Vector2(60, 4);
-        labelRT.offsetMax = new Vector2(-105, -4);
+        labelRT.offsetMax = new Vector2(-110, -4);
         TextMeshProUGUI label = labelGO.GetComponent<TextMeshProUGUI>();
-        label.fontSize = 14;
+        label.fontSize = 13;
         label.color = Color.white;
         label.alignment = TextAlignmentOptions.MidlineLeft;
         string buffSummary = GetFoodBuffSummary(food);
         string buffLine = !string.IsNullOrEmpty(buffSummary) ? $" | {buffSummary}" : "";
-        label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#66FF66>+{food.healthValue} HP</color> | <color=#FFAA33>+{food.hungerValue} No</color>{buffLine}</size>";
+        label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#66FF66>+{food.healthValue} HP</color> | <color=#FFAA33>+{food.hungerValue} Full</color>{buffLine}</size>";
 
-        // Button Ăn
+        // Eat Button
         GameObject btnGO = new GameObject("EatBtn", typeof(RectTransform), typeof(Image), typeof(Button));
         btnGO.transform.SetParent(row.transform, false);
         RectTransform btnRT = btnGO.GetComponent<RectTransform>();
         btnRT.anchorMin = new Vector2(1, 0.5f);
         btnRT.anchorMax = new Vector2(1, 0.5f);
         btnRT.anchoredPosition = new Vector2(-55, 0);
-        btnRT.sizeDelta = new Vector2(90, 36);
+        btnRT.sizeDelta = new Vector2(95, 36);
 
         Image btnImg = btnGO.GetComponent<Image>();
         btnImg.color = new Color(0.2f, 0.7f, 0.35f, 1f);
@@ -775,9 +759,9 @@ public class CampUI : MonoBehaviour
         btnTextRT.anchorMax = Vector2.one;
         btnTextRT.sizeDelta = Vector2.zero;
         TextMeshProUGUI btnText = btnTextGO.GetComponent<TextMeshProUGUI>();
-        btnText.fontSize = 12;
+        btnText.fontSize = 11;
         btnText.alignment = TextAlignmentOptions.Center;
-        btnText.text = canEat ? "ĂN (+15%)" : "ĐÃ NO";
+        btnText.text = canEat ? "EAT (+15%)" : "FULL";
 
         return row;
     }
@@ -790,7 +774,6 @@ public class CampUI : MonoBehaviour
     {
         if (recipeListContainer == null) return;
 
-        // Dọn dẹp danh sách cũ
         for (int i = 0; i < activeRecipeCards.Count; i++)
         {
             if (activeRecipeCards[i] != null) Destroy(activeRecipeCards[i]);
@@ -806,7 +789,7 @@ public class CampUI : MonoBehaviour
             if (noRecipeText != null)
             {
                 noRecipeText.gameObject.SetActive(true);
-                noRecipeText.text = "Chưa có công thức nấu ăn nào!\n(Gặp Thương Nhân hoặc Cúng Tế để mở khóa công thức)";
+                noRecipeText.text = "No cooking recipes unlocked!\n(Visit Merchants or Statues to unlock recipes)";
             }
             return;
         }
@@ -833,7 +816,7 @@ public class CampUI : MonoBehaviour
     {
         GameObject row = new GameObject($"Recipe_{recipe.recipeName}", typeof(RectTransform), typeof(Image));
         RectTransform rt = row.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(430, 68);
+        rt.sizeDelta = new Vector2(450, 68);
 
         Image bg = row.GetComponent<Image>();
         bg.color = new Color(0.13f, 0.15f, 0.20f, 0.95f);
@@ -852,16 +835,16 @@ public class CampUI : MonoBehaviour
             iconImg.sprite = recipe.resultFood.itemIcon;
         }
 
-        // Tên và Nguyên liệu
+        // Label Info
         GameObject labelGO = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
         labelGO.transform.SetParent(row.transform, false);
         RectTransform labelRT = labelGO.GetComponent<RectTransform>();
         labelRT.anchorMin = new Vector2(0, 0);
         labelRT.anchorMax = new Vector2(1, 1);
         labelRT.offsetMin = new Vector2(65, 4);
-        labelRT.offsetMax = new Vector2(-115, -4);
+        labelRT.offsetMax = new Vector2(-120, -4);
         TextMeshProUGUI label = labelGO.GetComponent<TextMeshProUGUI>();
-        label.fontSize = 13;
+        label.fontSize = 12;
         label.color = Color.white;
         label.alignment = TextAlignmentOptions.MidlineLeft;
 
@@ -881,17 +864,17 @@ public class CampUI : MonoBehaviour
         }
 
         string rBuff = recipe.resultFood != null ? GetFoodBuffSummary(recipe.resultFood) : "";
-        string rBuffLine = !string.IsNullOrEmpty(rBuff) ? $"\n<size=11>Hiệu ứng: {rBuff}</size>" : "";
-        label.text = $"<b>{recipe.recipeName}</b>{rBuffLine}\n<size=11>Cần: {ingSb.ToString()}</size>";
+        string rBuffLine = !string.IsNullOrEmpty(rBuff) ? $"\n<size=10>Buff: {rBuff}</size>" : "";
+        label.text = $"<b>{recipe.recipeName}</b>{rBuffLine}\n<size=10>Needs: {ingSb.ToString()}</size>";
 
-        // Button Nấu
+        // Cook Button
         GameObject btnGO = new GameObject("CookBtn", typeof(RectTransform), typeof(Image), typeof(Button));
         btnGO.transform.SetParent(row.transform, false);
         RectTransform btnRT = btnGO.GetComponent<RectTransform>();
         btnRT.anchorMin = new Vector2(1, 0.5f);
         btnRT.anchorMax = new Vector2(1, 0.5f);
         btnRT.anchoredPosition = new Vector2(-60, 0);
-        btnRT.sizeDelta = new Vector2(100, 38);
+        btnRT.sizeDelta = new Vector2(105, 38);
 
         Image btnImg = btnGO.GetComponent<Image>();
         btnImg.color = canCook ? new Color(0.85f, 0.45f, 0.1f, 1f) : new Color(0.35f, 0.35f, 0.35f, 0.6f);
@@ -918,9 +901,9 @@ public class CampUI : MonoBehaviour
         btnTextRT.anchorMax = Vector2.one;
         btnTextRT.sizeDelta = Vector2.zero;
         TextMeshProUGUI btnText = btnTextGO.GetComponent<TextMeshProUGUI>();
-        btnText.fontSize = 12;
+        btnText.fontSize = 11;
         btnText.alignment = TextAlignmentOptions.Center;
-        btnText.text = canCook ? "NẤU (+20%)" : "THIẾU ĐỒ";
+        btnText.text = canCook ? "COOK (+20%)" : "LACK ITEMS";
 
         return row;
     }
@@ -947,427 +930,11 @@ public class CampUI : MonoBehaviour
         {
             string fname = (food.itemName ?? food.name ?? "").ToLower();
             if (fname.Contains("chilli") || fname.Contains("cay") || fname.Contains("spicy") || fname.Contains("meat"))
-                return "<color=#FF6666>+3 ATK (3 Turn)</color>";
+                return "<color=#FF6666>+3 ATK (3 Turns)</color>";
             if (fname.Contains("corn") || fname.Contains("bap") || fname.Contains("speed") || fname.Contains("carrot"))
-                return "<color=#FFFF66>+2 Speed (3 Turn)</color>";
-            return "<color=#66FF66>+2 DEF (3 Turn)</color>";
+                return "<color=#FFFF66>+2 Speed (3 Turns)</color>";
+            return "<color=#66FF66>+2 DEF (3 Turns)</color>";
         }
-    }
-
-    #endregion
-
-    #region Dynamic UI Builder (Fallback if Inspector not wired)
-
-    public void EnsureUIHierarchy()
-    {
-        if (mainCampPanel != null) return;
-
-        Canvas parentCanvas = GetComponentInParent<Canvas>();
-        if (parentCanvas == null)
-        {
-            parentCanvas = GetComponent<Canvas>();
-        }
-        if (parentCanvas == null)
-        {
-            Canvas[] allCanvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            foreach (var c in allCanvases)
-            {
-                if (c.name.Contains("Combat") || c.renderMode == RenderMode.ScreenSpaceOverlay)
-                {
-                    parentCanvas = c;
-                    break;
-                }
-            }
-        }
-
-        if (parentCanvas == null) return;
-
-        // 1. Root Camp Panel
-        mainCampPanel = new GameObject("CampEncounterPanel", typeof(RectTransform), typeof(Image));
-        mainCampPanel.transform.SetParent(parentCanvas.transform, false);
-        RectTransform mainRT = mainCampPanel.GetComponent<RectTransform>();
-        mainRT.anchorMin = new Vector2(0.5f, 0.5f);
-        mainRT.anchorMax = new Vector2(0.5f, 0.5f);
-        mainRT.pivot = new Vector2(0.5f, 0.5f);
-        mainRT.sizeDelta = new Vector2(760, 560);
-
-        Image mainBg = mainCampPanel.GetComponent<Image>();
-        mainBg.color = new Color(0.08f, 0.10f, 0.15f, 0.97f);
-
-        // Header Title
-        GameObject titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
-        titleGO.transform.SetParent(mainCampPanel.transform, false);
-        RectTransform titleRT = titleGO.GetComponent<RectTransform>();
-        titleRT.anchorMin = new Vector2(0, 0.88f);
-        titleRT.anchorMax = new Vector2(1, 1);
-        titleRT.offsetMin = Vector2.zero;
-        titleRT.offsetMax = Vector2.zero;
-        campTitleText = titleGO.GetComponent<TextMeshProUGUI>();
-        campTitleText.fontSize = 24;
-        campTitleText.fontStyle = FontStyles.Bold;
-        campTitleText.alignment = TextAlignmentOptions.Center;
-        campTitleText.text = "🏕️ KHU CẮM TRẠI (CAMP ENCOUNTER)";
-        campTitleText.color = new Color(1f, 0.85f, 0.35f);
-
-        // Subtitle Lore
-        GameObject descGO = new GameObject("Desc", typeof(RectTransform), typeof(TextMeshProUGUI));
-        descGO.transform.SetParent(mainCampPanel.transform, false);
-        RectTransform descRT = descGO.GetComponent<RectTransform>();
-        descRT.anchorMin = new Vector2(0.05f, 0.79f);
-        descRT.anchorMax = new Vector2(0.95f, 0.88f);
-        descRT.offsetMin = Vector2.zero;
-        descRT.offsetMax = Vector2.zero;
-        campDescText = descGO.GetComponent<TextMeshProUGUI>();
-        campDescText.fontSize = 14;
-        campDescText.alignment = TextAlignmentOptions.Center;
-        campDescText.text = "Ngọn lửa trại bập bùng giữa hầm ngục. Hãy ăn uống, nấu nướng và hồi phục trước khi đi tiếp!\n<color=#FFAA55>⚠️ Chú ý: Mọi hoạt động nấu nướng, ăn uống sẽ tạo ra mùi hương và tiếng ồn thu hút quái vật!</color>";
-        campDescText.color = new Color(0.85f, 0.88f, 0.95f);
-
-        // Ambush Risk Gauge Root
-        GameObject riskRoot = new GameObject("AmbushGauge", typeof(RectTransform), typeof(Image));
-        riskRoot.transform.SetParent(mainCampPanel.transform, false);
-        RectTransform riskRT = riskRoot.GetComponent<RectTransform>();
-        riskRT.anchorMin = new Vector2(0.08f, 0.62f);
-        riskRT.anchorMax = new Vector2(0.92f, 0.76f);
-        riskRT.offsetMin = Vector2.zero;
-        riskRT.offsetMax = Vector2.zero;
-        Image riskBg = riskRoot.GetComponent<Image>();
-        riskBg.color = new Color(0.14f, 0.16f, 0.22f, 0.9f);
-
-        // Risk Text
-        GameObject riskTxtGO = new GameObject("RiskText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        riskTxtGO.transform.SetParent(riskRoot.transform, false);
-        RectTransform riskTxtRT = riskTxtGO.GetComponent<RectTransform>();
-        riskTxtRT.anchorMin = new Vector2(0.03f, 0.52f);
-        riskTxtRT.anchorMax = new Vector2(0.97f, 0.98f);
-        riskTxtRT.offsetMin = Vector2.zero;
-        riskTxtRT.offsetMax = Vector2.zero;
-        ambushRiskPercentText = riskTxtGO.GetComponent<TextMeshProUGUI>();
-        ambushRiskPercentText.fontSize = 16;
-        ambushRiskPercentText.fontStyle = FontStyles.Bold;
-        ambushRiskPercentText.text = "⚠️ Nguy cơ bị phục kích: 0%";
-        ambushRiskPercentText.color = new Color(1f, 0.9f, 0.3f);
-
-        // Risk Bar Background & Fill
-        GameObject barBgGO = new GameObject("BarBg", typeof(RectTransform), typeof(Image));
-        barBgGO.transform.SetParent(riskRoot.transform, false);
-        RectTransform barBgRT = barBgGO.GetComponent<RectTransform>();
-        barBgRT.anchorMin = new Vector2(0.03f, 0.15f);
-        barBgRT.anchorMax = new Vector2(0.97f, 0.45f);
-        barBgRT.offsetMin = Vector2.zero;
-        barBgRT.offsetMax = Vector2.zero;
-        Image barBg = barBgGO.GetComponent<Image>();
-        barBg.color = new Color(0.05f, 0.05f, 0.08f, 1f);
-
-        GameObject barFillGO = new GameObject("BarFill", typeof(RectTransform), typeof(Image));
-        barFillGO.transform.SetParent(barBgGO.transform, false);
-        RectTransform barFillRT = barFillGO.GetComponent<RectTransform>();
-        barFillRT.anchorMin = Vector2.zero;
-        barFillRT.anchorMax = Vector2.one;
-        barFillRT.sizeDelta = Vector2.zero;
-        ambushRiskFillImage = barFillGO.GetComponent<Image>();
-        ambushRiskFillImage.type = Image.Type.Filled;
-        ambushRiskFillImage.fillMethod = Image.FillMethod.Horizontal;
-        ambushRiskFillImage.fillAmount = 0f;
-        ambushRiskFillImage.color = new Color(0.2f, 0.85f, 0.4f);
-
-        // Status Text
-        GameObject statusTxtGO = new GameObject("StatusText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        statusTxtGO.transform.SetParent(mainCampPanel.transform, false);
-        RectTransform statusTxtRT = statusTxtGO.GetComponent<RectTransform>();
-        statusTxtRT.anchorMin = new Vector2(0.08f, 0.54f);
-        statusTxtRT.anchorMax = new Vector2(0.92f, 0.61f);
-        statusTxtRT.offsetMin = Vector2.zero;
-        statusTxtRT.offsetMax = Vector2.zero;
-        ambushRiskStatusText = statusTxtGO.GetComponent<TextMeshProUGUI>();
-        ambushRiskStatusText.fontSize = 13;
-        ambushRiskStatusText.alignment = TextAlignmentOptions.Center;
-        ambushRiskStatusText.text = "Khu vực đang yên tĩnh...";
-        ambushRiskStatusText.color = new Color(0.7f, 1f, 0.7f);
-
-        // Player Status Card
-        GameObject pCardGO = new GameObject("PlayerCard", typeof(RectTransform), typeof(Image));
-        pCardGO.transform.SetParent(mainCampPanel.transform, false);
-        RectTransform pCardRT = pCardGO.GetComponent<RectTransform>();
-        pCardRT.anchorMin = new Vector2(0.08f, 0.38f);
-        pCardRT.anchorMax = new Vector2(0.92f, 0.52f);
-        pCardRT.offsetMin = Vector2.zero;
-        pCardRT.offsetMax = Vector2.zero;
-        Image pCardBg = pCardGO.GetComponent<Image>();
-        pCardBg.color = new Color(0.12f, 0.15f, 0.20f, 0.9f);
-
-        GameObject pStatTxtGO = new GameObject("PStats", typeof(RectTransform), typeof(TextMeshProUGUI));
-        pStatTxtGO.transform.SetParent(pCardGO.transform, false);
-        RectTransform pStatTxtRT = pStatTxtGO.GetComponent<RectTransform>();
-        pStatTxtRT.anchorMin = new Vector2(0.03f, 0.5f);
-        pStatTxtRT.anchorMax = new Vector2(0.97f, 0.95f);
-        pStatTxtRT.offsetMin = Vector2.zero;
-        pStatTxtRT.offsetMax = Vector2.zero;
-        playerStatusText = pStatTxtGO.GetComponent<TextMeshProUGUI>();
-        playerStatusText.fontSize = 15;
-        playerStatusText.alignment = TextAlignmentOptions.MidlineLeft;
-        playerStatusText.text = "❤️ HP: 100/100   |   🍗 Độ no: 100/100";
-
-        GameObject pBuffTxtGO = new GameObject("PBuffs", typeof(RectTransform), typeof(TextMeshProUGUI));
-        pBuffTxtGO.transform.SetParent(pCardGO.transform, false);
-        RectTransform pBuffTxtRT = pBuffTxtGO.GetComponent<RectTransform>();
-        pBuffTxtRT.anchorMin = new Vector2(0.03f, 0.05f);
-        pBuffTxtRT.anchorMax = new Vector2(0.97f, 0.48f);
-        pBuffTxtRT.offsetMin = Vector2.zero;
-        pBuffTxtRT.offsetMax = Vector2.zero;
-        playerBuffsText = pBuffTxtGO.GetComponent<TextMeshProUGUI>();
-        playerBuffsText.fontSize = 13;
-        playerBuffsText.alignment = TextAlignmentOptions.MidlineLeft;
-        playerBuffsText.text = "✨ Hiệu ứng: Chưa có";
-        playerBuffsText.color = new Color(0.7f, 1f, 0.7f);
-
-        // 4 Action Buttons Grid (Ăn, Nấu, Tập thể dục, Nghỉ ngơi)
-        eatButton = CreateCampButton(mainCampPanel, "BtnEat", "🍖 ĂN UỐNG\n<size=11>(+15% Nguy cơ)</size>", new Vector2(-225, -95), new Vector2(140, 52), new Color(0.2f, 0.65f, 0.35f));
-        cookButton = CreateCampButton(mainCampPanel, "BtnCook", "🍳 NẤU ĂN\n<size=11>(+20% Nguy cơ)</size>", new Vector2(-75, -95), new Vector2(140, 52), new Color(0.85f, 0.45f, 0.15f));
-        exerciseButton = CreateCampButton(mainCampPanel, "BtnExercise", "🏃 TẬP THỂ DỤC\n<size=11>(-25 No, +35%)</size>", new Vector2(75, -95), new Vector2(140, 52), new Color(0.2f, 0.5f, 0.8f));
-        restButton = CreateCampButton(mainCampPanel, "BtnRest", "⛺ NGHỈ NGƠI\n<size=11>(+25 HP, +10%)</size>", new Vector2(225, -95), new Vector2(140, 52), new Color(0.55f, 0.3f, 0.75f));
-
-        // 2 Exit Buttons (Đi tiếp, Rút lui an toàn)
-        continueButton = CreateCampButton(mainCampPanel, "BtnContinue", "🚪 ĐI TIẾP SANG STAGE TIẾP THEO", new Vector2(-150, -185), new Vector2(280, 52), new Color(0.25f, 0.35f, 0.45f));
-        returnHomeButton = CreateCampButton(mainCampPanel, "BtnReturnHome", "🏠 RÚT LUI VỀ LÀNG AN TOÀN (GIỮ 100% ĐỒ)", new Vector2(150, -185), new Vector2(300, 52), new Color(0.75f, 0.55f, 0.15f));
-
-        // Ambush Warning Banner
-        ambushAlertBanner = new GameObject("AmbushAlertBanner", typeof(RectTransform), typeof(Image));
-        ambushAlertBanner.transform.SetParent(mainCampPanel.transform, false);
-        RectTransform alertRT = ambushAlertBanner.GetComponent<RectTransform>();
-        alertRT.anchorMin = new Vector2(0.05f, 0.45f);
-        alertRT.anchorMax = new Vector2(0.95f, 0.65f);
-        alertRT.offsetMin = Vector2.zero;
-        alertRT.offsetMax = Vector2.zero;
-        Image alertBg = ambushAlertBanner.GetComponent<Image>();
-        alertBg.color = new Color(0.75f, 0.1f, 0.1f, 0.98f);
-
-        GameObject alertTxtGO = new GameObject("AlertText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        alertTxtGO.transform.SetParent(ambushAlertBanner.transform, false);
-        RectTransform alertTxtRT = alertTxtGO.GetComponent<RectTransform>();
-        alertTxtRT.anchorMin = Vector2.zero;
-        alertTxtRT.anchorMax = Vector2.one;
-        alertTxtRT.sizeDelta = Vector2.zero;
-        ambushAlertText = alertTxtGO.GetComponent<TextMeshProUGUI>();
-        ambushAlertText.fontSize = 20;
-        ambushAlertText.fontStyle = FontStyles.Bold;
-        ambushAlertText.alignment = TextAlignmentOptions.Center;
-        ambushAlertText.text = "🚨 BỊ PHỤC KÍCH! KẺ ĐỊCH PHÁT HIỆN RA KHU CẮM TRẠI!";
-        ambushAlertText.color = Color.white;
-        ambushAlertBanner.SetActive(false);
-
-        // Build Modals
-        BuildFoodModal(parentCanvas.gameObject);
-        BuildCookModal(parentCanvas.gameObject);
-
-        mainCampPanel.transform.SetAsLastSibling();
-    }
-
-    private void BuildFoodModal(GameObject parentCanvas)
-    {
-        foodModal = new GameObject("CampFoodModal", typeof(RectTransform), typeof(Image));
-        foodModal.transform.SetParent(parentCanvas.transform, false);
-        RectTransform rt = foodModal.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 0.5f);
-        rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta = new Vector2(480, 480);
-        Image bg = foodModal.GetComponent<Image>();
-        bg.color = new Color(0.1f, 0.12f, 0.18f, 0.98f);
-
-        GameObject titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
-        titleGO.transform.SetParent(foodModal.transform, false);
-        RectTransform titleRT = titleGO.GetComponent<RectTransform>();
-        titleRT.anchorMin = new Vector2(0, 0.86f);
-        titleRT.anchorMax = new Vector2(1, 1);
-        titleRT.offsetMin = Vector2.zero;
-        titleRT.offsetMax = Vector2.zero;
-        TextMeshProUGUI title = titleGO.GetComponent<TextMeshProUGUI>();
-        title.fontSize = 20;
-        title.fontStyle = FontStyles.Bold;
-        title.alignment = TextAlignmentOptions.Center;
-        title.text = "🍖 CHỌN MÓN ĂN TẠI CAMP";
-        title.color = new Color(1f, 0.85f, 0.35f);
-
-        // Scroll View Container
-        GameObject scrollGO = new GameObject("ScrollView", typeof(RectTransform), typeof(ScrollRect));
-        scrollGO.transform.SetParent(foodModal.transform, false);
-        RectTransform scrollRT = scrollGO.GetComponent<RectTransform>();
-        scrollRT.anchorMin = new Vector2(0.04f, 0.14f);
-        scrollRT.anchorMax = new Vector2(0.96f, 0.85f);
-        scrollRT.offsetMin = Vector2.zero;
-        scrollRT.offsetMax = Vector2.zero;
-        ScrollRect sr = scrollGO.GetComponent<ScrollRect>();
-        sr.horizontal = false;
-        sr.vertical = true;
-        sr.scrollSensitivity = 25f;
-
-        // Viewport with Mask
-        GameObject viewportGO = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
-        viewportGO.transform.SetParent(scrollGO.transform, false);
-        RectTransform viewportRT = viewportGO.GetComponent<RectTransform>();
-        viewportRT.anchorMin = Vector2.zero;
-        viewportRT.anchorMax = Vector2.one;
-        viewportRT.sizeDelta = Vector2.zero;
-
-        // Content
-        GameObject contentGO = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-        contentGO.transform.SetParent(viewportGO.transform, false);
-        RectTransform contentRT = contentGO.GetComponent<RectTransform>();
-        contentRT.anchorMin = new Vector2(0, 1);
-        contentRT.anchorMax = new Vector2(1, 1);
-        contentRT.pivot = new Vector2(0.5f, 1);
-        contentRT.sizeDelta = new Vector2(0, 0);
-
-        VerticalLayoutGroup vlg = contentGO.GetComponent<VerticalLayoutGroup>();
-        vlg.spacing = 8;
-        vlg.childControlHeight = false;
-        vlg.childControlWidth = true;
-        vlg.childForceExpandHeight = false;
-        vlg.childForceExpandWidth = true;
-
-        ContentSizeFitter csf = contentGO.GetComponent<ContentSizeFitter>();
-        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        sr.viewport = viewportRT;
-        sr.content = contentRT;
-        foodListContainer = contentGO.transform;
-
-        GameObject noTxtGO = new GameObject("NoFoodText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        noTxtGO.transform.SetParent(foodModal.transform, false);
-        RectTransform noTxtRT = noTxtGO.GetComponent<RectTransform>();
-        noTxtRT.anchorMin = new Vector2(0.1f, 0.3f);
-        noTxtRT.anchorMax = new Vector2(0.9f, 0.7f);
-        noTxtRT.offsetMin = Vector2.zero;
-        noTxtRT.offsetMax = Vector2.zero;
-        noFoodText = noTxtGO.GetComponent<TextMeshProUGUI>();
-        noFoodText.fontSize = 16;
-        noFoodText.alignment = TextAlignmentOptions.Center;
-        noFoodText.text = "Không có món ăn trong ba lô!";
-        noFoodText.color = new Color(0.8f, 0.8f, 0.8f);
-
-        closeFoodModalButton = CreateCampButton(foodModal, "CloseBtn", "ĐÓNG", new Vector2(0, -205), new Vector2(120, 38), new Color(0.4f, 0.2f, 0.2f));
-        foodModal.SetActive(false);
-    }
-
-    private void BuildCookModal(GameObject parentCanvas)
-    {
-        cookModal = new GameObject("CampCookModal", typeof(RectTransform), typeof(Image));
-        cookModal.transform.SetParent(parentCanvas.transform, false);
-        RectTransform rt = cookModal.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 0.5f);
-        rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta = new Vector2(480, 480);
-        Image bg = cookModal.GetComponent<Image>();
-        bg.color = new Color(0.1f, 0.12f, 0.18f, 0.98f);
-
-        GameObject titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
-        titleGO.transform.SetParent(cookModal.transform, false);
-        RectTransform titleRT = titleGO.GetComponent<RectTransform>();
-        titleRT.anchorMin = new Vector2(0, 0.86f);
-        titleRT.anchorMax = new Vector2(1, 1);
-        titleRT.offsetMin = Vector2.zero;
-        titleRT.offsetMax = Vector2.zero;
-        TextMeshProUGUI title = titleGO.GetComponent<TextMeshProUGUI>();
-        title.fontSize = 20;
-        title.fontStyle = FontStyles.Bold;
-        title.alignment = TextAlignmentOptions.Center;
-        title.text = "🍳 NẤU ĂN BÊN ĐỐNG LỬA";
-        title.color = new Color(1f, 0.85f, 0.35f);
-
-        // Scroll View Container
-        GameObject scrollGO = new GameObject("ScrollView", typeof(RectTransform), typeof(ScrollRect));
-        scrollGO.transform.SetParent(cookModal.transform, false);
-        RectTransform scrollRT = scrollGO.GetComponent<RectTransform>();
-        scrollRT.anchorMin = new Vector2(0.04f, 0.14f);
-        scrollRT.anchorMax = new Vector2(0.96f, 0.85f);
-        scrollRT.offsetMin = Vector2.zero;
-        scrollRT.offsetMax = Vector2.zero;
-        ScrollRect sr = scrollGO.GetComponent<ScrollRect>();
-        sr.horizontal = false;
-        sr.vertical = true;
-        sr.scrollSensitivity = 25f;
-
-        // Viewport with Mask
-        GameObject viewportGO = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
-        viewportGO.transform.SetParent(scrollGO.transform, false);
-        RectTransform viewportRT = viewportGO.GetComponent<RectTransform>();
-        viewportRT.anchorMin = Vector2.zero;
-        viewportRT.anchorMax = Vector2.one;
-        viewportRT.sizeDelta = Vector2.zero;
-
-        // Content
-        GameObject contentGO = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-        contentGO.transform.SetParent(viewportGO.transform, false);
-        RectTransform contentRT = contentGO.GetComponent<RectTransform>();
-        contentRT.anchorMin = new Vector2(0, 1);
-        contentRT.anchorMax = new Vector2(1, 1);
-        contentRT.pivot = new Vector2(0.5f, 1);
-        contentRT.sizeDelta = new Vector2(0, 0);
-
-        VerticalLayoutGroup vlg = contentGO.GetComponent<VerticalLayoutGroup>();
-        vlg.spacing = 8;
-        vlg.childControlHeight = false;
-        vlg.childControlWidth = true;
-        vlg.childForceExpandHeight = false;
-        vlg.childForceExpandWidth = true;
-
-        ContentSizeFitter csf = contentGO.GetComponent<ContentSizeFitter>();
-        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        sr.viewport = viewportRT;
-        sr.content = contentRT;
-        recipeListContainer = contentGO.transform;
-
-        GameObject noTxtGO = new GameObject("NoRecipeText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        noTxtGO.transform.SetParent(cookModal.transform, false);
-        RectTransform noTxtRT = noTxtGO.GetComponent<RectTransform>();
-        noTxtRT.anchorMin = new Vector2(0.1f, 0.3f);
-        noTxtRT.anchorMax = new Vector2(0.9f, 0.7f);
-        noTxtRT.offsetMin = Vector2.zero;
-        noTxtRT.offsetMax = Vector2.zero;
-        noRecipeText = noTxtGO.GetComponent<TextMeshProUGUI>();
-        noRecipeText.fontSize = 16;
-        noRecipeText.alignment = TextAlignmentOptions.Center;
-        noRecipeText.text = "Chưa có công thức nấu ăn nào!";
-        noRecipeText.color = new Color(0.8f, 0.8f, 0.8f);
-
-        closeCookModalButton = CreateCampButton(cookModal, "CloseBtn", "ĐÓNG", new Vector2(0, -205), new Vector2(120, 38), new Color(0.4f, 0.2f, 0.2f));
-        cookModal.SetActive(false);
-    }
-
-    private Button CreateCampButton(GameObject parent, string name, string text, Vector2 pos, Vector2 size, Color btnColor)
-    {
-        GameObject btnGO = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
-        btnGO.transform.SetParent(parent.transform, false);
-        RectTransform rt = btnGO.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 0.5f);
-        rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = pos;
-        rt.sizeDelta = size;
-
-        Image img = btnGO.GetComponent<Image>();
-        img.color = btnColor;
-
-        Button btn = btnGO.GetComponent<Button>();
-
-        GameObject txtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
-        txtGO.transform.SetParent(btnGO.transform, false);
-        RectTransform txtRT = txtGO.GetComponent<RectTransform>();
-        txtRT.anchorMin = Vector2.zero;
-        txtRT.anchorMax = Vector2.one;
-        txtRT.sizeDelta = Vector2.zero;
-
-        TextMeshProUGUI tm = txtGO.GetComponent<TextMeshProUGUI>();
-        tm.fontSize = 13;
-        tm.fontStyle = FontStyles.Bold;
-        tm.alignment = TextAlignmentOptions.Center;
-        tm.text = text;
-        tm.color = Color.white;
-
-        return btn;
     }
 
     #endregion

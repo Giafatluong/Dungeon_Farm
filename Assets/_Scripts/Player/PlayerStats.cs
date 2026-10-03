@@ -58,23 +58,22 @@ public class PlayerStats : MonoBehaviour
 
         if (food == null)
         {
-            Debug.Log("khong phai do an");
+            Debug.Log("Item is not food");
             return;
         }
 
         if (itemContainer != null && !itemContainer.HasItem(food))
         {
-            Debug.Log("khong co do an");
+            Debug.Log("Food not found in container");
             return;
         }
 
         if (currentHunger >= maxHunger)
         {
-            Debug.Log("No qua k an dc");
+            Debug.Log("Too full to eat");
             return;
         }
 
-        bool appliedAnyBuff = false;
         if (food.foodBuff != null && food.foodBuff.Length > 0)
         {
             for (int i = 0; i < food.foodBuff.Length; i++)
@@ -87,14 +86,8 @@ public class PlayerStats : MonoBehaviour
                         food.foodBuff[i].buffDuration,
                         food.foodBuff[i].buffDurationType
                     );
-                    appliedAnyBuff = true;
                 }
             }
-        }
-
-        if (!appliedAnyBuff)
-        {
-            ApplyDefaultFoodBuff(food);
         }
 
         AddHunger(food.hungerValue);
@@ -104,53 +97,7 @@ public class PlayerStats : MonoBehaviour
             itemContainer.RemoveItem(food, 1);
         }
 
-        Debug.Log("da an : " + food.itemName);
-    }
-
-    private void ApplyDefaultFoodBuff(FoodData food)
-    {
-        if (food == null) return;
-
-        StatEffectData buffToApply = null;
-        int value = 2;
-        int duration = 3;
-
-        StatEffectData[] loadedBuffs = Resources.FindObjectsOfTypeAll<StatEffectData>();
-        string fname = (food.itemName ?? food.name ?? "").ToLower();
-
-        StatEffectData atkBuff = null, defBuff = null, spdBuff = null;
-        if (loadedBuffs != null)
-        {
-            for (int i = 0; i < loadedBuffs.Length; i++)
-            {
-                var b = loadedBuffs[i];
-                if (b == null) continue;
-                if (b.buffType == StatEffectData.BuffType.Attack) atkBuff = b;
-                else if (b.buffType == StatEffectData.BuffType.Defense) defBuff = b;
-                else if (b.buffType == StatEffectData.BuffType.Speed) spdBuff = b;
-            }
-        }
-
-        if (fname.Contains("chilli") || fname.Contains("cay") || fname.Contains("spicy") || fname.Contains("meat") || fname.Contains("thit"))
-        {
-            buffToApply = atkBuff;
-            value = 3;
-        }
-        else if (fname.Contains("corn") || fname.Contains("bap") || fname.Contains("speed") || fname.Contains("carrot") || fname.Contains("rot"))
-        {
-            buffToApply = spdBuff;
-            value = 2;
-        }
-        else
-        {
-            buffToApply = defBuff;
-            value = 2;
-        }
-
-        if (buffToApply != null)
-        {
-            AddBuff(buffToApply, value, duration, FoodData.BuffDurationType.Turn);
-        }
+        Debug.Log("Ate: " + food.itemName);
     }
 
     public void Defend()
@@ -272,7 +219,7 @@ public class PlayerStats : MonoBehaviour
                 healthBar.SetHealthBar(currentHealth, maxHealth);
             }
 
-            Debug.Log("Player đã tử trận!");
+            Debug.Log("Player has died!");
             OnPlayerDeath?.Invoke();
 
             if (ProgressionManager.Instance != null)
@@ -299,19 +246,13 @@ public class PlayerStats : MonoBehaviour
 
     public void OnStageTransition()
     {
-        // GDD: Hunger giảm khi người chơi di chuyển giữa các Stage
         ReduceHunger(5);
-
-        // GDD: Buff theo Turn cũng giảm mỗi khi người chơi di chuyển sang Stage mới
         ReduceTurnBuffDuration();
     }
 
     public void OnCombatComplete()
     {
-        // GDD: Hunger giảm sau mỗi Combat
         ReduceHunger(10);
-
-        // GDD: Buff theo Combat giảm sau khi hoàn thành một Combat
         ReduceCombatBuffDuration();
     }
 
@@ -319,7 +260,7 @@ public class PlayerStats : MonoBehaviour
     {
         if (currentHunger >= maxHunger)
         {
-            Debug.Log("Khong an dc them");
+            Debug.Log("Cannot eat more");
             return;
         }
 

@@ -22,7 +22,7 @@ public class CombatManager : MonoBehaviour
     public event System.Action OnCombatStarted;
 
     [Header("Combat Delay Settings")]
-    [Tooltip("Thời gian chờ (giây) sau khi quái xuất hiện trước khi bắt đầu lượt combat đầu tiên (tránh người chơi vào game bị mất máu bất ngờ)")]
+    [Tooltip("Preparation time (seconds) after monsters appear before first combat turn starts")]
     public float combatStartDelay = 3.0f;
 
     public bool isCombatActive { get; private set; } = false;
@@ -46,17 +46,6 @@ public class CombatManager : MonoBehaviour
     private void Awake()
     {
         if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
-        if (playerStats == null)
-        {
-            // Tự động tìm GameObject Player hoặc tạo PlayerCombat dự phòng
-            GameObject pGO = GameObject.Find("PlayerCombat");
-            if (pGO == null) pGO = GameObject.FindGameObjectWithTag("Player");
-            if (pGO != null)
-            {
-                playerStats = pGO.GetComponent<PlayerStats>();
-                if (playerStats == null) playerStats = pGO.AddComponent<PlayerStats>();
-            }
-        }
 
         if (targetSelector == null) targetSelector = FindFirstObjectByType<EnemyTargetSelector>();
         if (speedManager == null) speedManager = FindFirstObjectByType<SpeedManager>();
@@ -134,7 +123,7 @@ public class CombatManager : MonoBehaviour
 
             playerStats.TakeDamage(damage);
 
-            string logMsg = $"💀 {enemy.enemyData.enemyName} tấn công bạn gây {damage} sát thương!";
+            string logMsg = $"{enemy.enemyData.enemyName} attacks you for {damage} damage!";
             Debug.Log(logMsg);
             OnCombatLog?.Invoke(logMsg);
         }
@@ -142,7 +131,7 @@ public class CombatManager : MonoBehaviour
         {
             enemy.Defend();
 
-            string logMsg = $"🛡️ {enemy.enemyData.enemyName} vào thế phòng thủ (+{enemy.enemyData.DEF} DEF)!";
+            string logMsg = $"{enemy.enemyData.enemyName} takes a defensive stance (+{enemy.enemyData.DEF} DEF)!";
             Debug.Log(logMsg);
             OnCombatLog?.Invoke(logMsg);
         }
@@ -151,7 +140,7 @@ public class CombatManager : MonoBehaviour
             enemy.ApplyIntentBuff();
             ApplyAllyBuff(enemy);
 
-            string logMsg = $"✨ {enemy.enemyData.enemyName} kích hoạt hiệu ứng Buff!";
+            string logMsg = $"{enemy.enemyData.enemyName} casts a Buff skill!";
             Debug.Log(logMsg);
             OnCombatLog?.Invoke(logMsg);
         }
@@ -159,7 +148,7 @@ public class CombatManager : MonoBehaviour
         {
             ApplyPlayerDebuff(enemy);
 
-            string logMsg = $"☠️ {enemy.enemyData.enemyName} sử dụng chiêu thức làm suy yếu bạn!";
+            string logMsg = $"{enemy.enemyData.enemyName} casts a Debuff on you!";
             Debug.Log(logMsg);
             OnCombatLog?.Invoke(logMsg);
         }
@@ -244,7 +233,7 @@ public class CombatManager : MonoBehaviour
 
         if (playerStats.currentAP <= 0)
         {
-            OnCombatLog?.Invoke("⚠️ Không đủ AP để tấn công!");
+            OnCombatLog?.Invoke("Not enough AP to attack!");
             return;
         }
 
@@ -255,7 +244,7 @@ public class CombatManager : MonoBehaviour
 
         if (targetSelector.selectedEnemy == null)
         {
-            OnCombatLog?.Invoke("⚠️ Chưa chọn kẻ địch để tấn công!");
+            OnCombatLog?.Invoke("No enemy targeted to attack!");
             return;
         }
 
@@ -269,13 +258,12 @@ public class CombatManager : MonoBehaviour
         target.TakeDamage(damage);
         OnPlayerAttackAction?.Invoke(target, damage);
 
-        string attackMsg = $"⚔️ Bạn tấn công {target.enemyData.enemyName} gây {damage} sát thương!";
+        string attackMsg = $"You attack {target.enemyData.enemyName} for {damage} damage!";
         Debug.Log(attackMsg);
         OnCombatLog?.Invoke(attackMsg);
 
         if (target.currentHealth <= 0)
         {
-            // 1. Thu thập chiến lợi phẩm rơi từ quái dựa trên loot table (tỉ lệ, số lượng, điều kiện mở khóa)
             if (target.enemyData != null)
             {
                 List<ItemSlot> drops = target.enemyData.RollDrops();
@@ -286,7 +274,7 @@ public class CombatManager : MonoBehaviour
                         if (d != null && d.itemData != null && d.amount > 0)
                         {
                             currentCombatLoot.Add(d);
-                            string dropMsg = $"🎁 {target.enemyData.enemyName} rơi {d.amount}x {d.itemData.itemName}!";
+                            string dropMsg = $"{target.enemyData.enemyName} dropped {d.amount}x {d.itemData.itemName}!";
                             Debug.Log(dropMsg);
                             OnCombatLog?.Invoke(dropMsg);
                         }
@@ -294,7 +282,6 @@ public class CombatManager : MonoBehaviour
                 }
             }
 
-            // 2. Kiểm tra nếu là Boss
             Boss boss = target.GetComponent<Boss>();
             if (boss != null)
             {
@@ -317,10 +304,9 @@ public class CombatManager : MonoBehaviour
                     }
                 }
                 boss.isDefeated = true;
-                OnCombatLog?.Invoke($"👑 Chúc mừng! Bạn đã tiêu diệt trùm {boss.bossID}!");
+                OnCombatLog?.Invoke($"Boss Defeated! You vanquished {boss.bossID}!");
             }
 
-            // Tự động chuyển mục tiêu sang quái sống tiếp theo
             targetSelector.AutoSelectTarget(enemies);
         }
 
@@ -330,11 +316,10 @@ public class CombatManager : MonoBehaviour
 
         if (AreAllEnemiesDead())
         {
-            OnCombatLog?.Invoke("🎉 Đã quét sạch toàn bộ kẻ địch!");
+            OnCombatLog?.Invoke("All enemies defeated!");
             DestroyAllEnemies();
             isCombatActive = false;
 
-            // Mở bảng LootUI để nhặt đồ, quản lý túi đồ trước khi đi tiếp
             LootUI lootUI = LootUI.EnsureInstance();
 
             if (lootUI != null)
@@ -347,7 +332,6 @@ public class CombatManager : MonoBehaviour
             }
             else
             {
-                // Fallback nếu hoàn toàn không có UI/Canvas: tự động nhặt vào túi đồ
                 if (playerStats != null && playerStats.itemContainer != null)
                 {
                     foreach (var loot in currentCombatLoot)
@@ -372,7 +356,7 @@ public class CombatManager : MonoBehaviour
 
         if (playerStats.currentAP <= 0)
         {
-            OnCombatLog?.Invoke("⚠️ Không đủ AP để phòng thủ!");
+            OnCombatLog?.Invoke("Not enough AP to defend!");
             return;
         }
 
@@ -380,7 +364,7 @@ public class CombatManager : MonoBehaviour
         playerStats.currentAP--;
         OnPlayerDefendAction?.Invoke();
 
-        string defMsg = $"🛡️ Bạn vào thế phòng thủ! (Giảm {playerStats.defendValue * playerStats.defendCount} sát thương cho đến hết lượt địch)";
+        string defMsg = $"You take a defensive stance! (Reduces damage by {playerStats.defendValue * playerStats.defendCount} until next turn)";
         Debug.Log(defMsg);
         OnCombatLog?.Invoke(defMsg);
     }
@@ -409,7 +393,7 @@ public class CombatManager : MonoBehaviour
 
         if (playerStats.currentAP <= 0)
         {
-            OnCombatLog?.Invoke("⚠️ Không đủ AP để ăn uống!");
+            OnCombatLog?.Invoke("Not enough AP to eat!");
             return;
         }
 
@@ -420,13 +404,13 @@ public class CombatManager : MonoBehaviour
 
         if (food == null)
         {
-            OnCombatLog?.Invoke("⚠️ Vật phẩm này không phải món ăn!");
+            OnCombatLog?.Invoke("This item is not edible food!");
             return;
         }
 
         if (playerStats.currentHunger + food.hungerValue > playerStats.maxHunger)
         {
-            OnCombatLog?.Invoke("⚠️ Bạn quá no, không thể ăn thêm món này!");
+            OnCombatLog?.Invoke("You are too full to eat this food!");
             return;
         }
 
@@ -441,7 +425,7 @@ public class CombatManager : MonoBehaviour
         playerStats.currentAP--;
         isEating = false;
 
-        string eatMsg = $"🍖 Bạn đã ăn {food.itemName}! Hồi phục {food.healthValue} HP, {food.hungerValue} Độ no.";
+        string eatMsg = $"You ate {food.itemName}! Recovered {food.healthValue} HP, {food.hungerValue} Fullness.";
         Debug.Log(eatMsg);
         OnCombatLog?.Invoke(eatMsg);
     }
@@ -478,7 +462,6 @@ public class CombatManager : MonoBehaviour
             }
         }
 
-        // Xóa triệt để toàn bộ thanh máu của kẻ địch khi quét sạch quái
         if (healthBarManager != null)
         {
             healthBarManager.ClearEnemyHealthBars();
@@ -497,7 +480,6 @@ public class CombatManager : MonoBehaviour
     {
         Debug.Log("Combat End");
 
-        // Dọn dẹp thanh máu quái
         if (healthBarManager != null)
         {
             healthBarManager.ClearEnemyHealthBars();
@@ -593,8 +575,8 @@ public class CombatManager : MonoBehaviour
             preparationTimeRemaining = combatStartDelay;
 
             string initialMsg = isAmbush
-                ? $"⚠️ CẢNH BÁO: Bị phục kích! Kẻ địch sẽ hành động trước sau {Mathf.CeilToInt(combatStartDelay)}s..."
-                : $"⚔️ Kẻ địch đã xuất hiện! Trận chiến bắt đầu sau {Mathf.CeilToInt(combatStartDelay)}s...";
+                ? $"WARNING: Ambushed! Enemies attack first in {Mathf.CeilToInt(combatStartDelay)}s..."
+                : $"Enemies appeared! Battle begins in {Mathf.CeilToInt(combatStartDelay)}s...";
 
             Debug.Log(initialMsg);
             OnCombatLog?.Invoke(initialMsg);
@@ -613,7 +595,7 @@ public class CombatManager : MonoBehaviour
         isCombatActive = true;
         startCombatCoroutine = null;
 
-        OnCombatLog?.Invoke("💥 TRẬN ĐẤU CHÍNH THỨC BẮT ĐẦU!");
+        OnCombatLog?.Invoke("BATTLE HAS BEGUN!");
         OnCombatStarted?.Invoke();
 
         turnManager.StartRound(isAmbush);
@@ -632,7 +614,7 @@ public class CombatManager : MonoBehaviour
         }
 
         OnTurnChanged?.Invoke(Turn.Player);
-        OnCombatLog?.Invoke($"🌟 LƯỢT CỦA BẠN! Bạn có {playerStats.currentAP} AP để hành động.");
+        OnCombatLog?.Invoke($"YOUR TURN! You have {playerStats.currentAP} AP.");
 
         if (enemies == null)
             return;
@@ -663,7 +645,7 @@ public class CombatManager : MonoBehaviour
             return;
 
         playerStats.ReduceTurnBuffDuration();
-        OnCombatLog?.Invoke("⏳ Bạn đã kết thúc lượt.");
+        OnCombatLog?.Invoke("Turn ended.");
 
         turnManager.NextTurn();
     }

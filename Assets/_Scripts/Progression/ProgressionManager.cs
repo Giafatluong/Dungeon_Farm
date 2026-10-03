@@ -5,7 +5,7 @@ public class ProgressionManager : MonoBehaviour
 {
     public static ProgressionManager Instance { get; private set; }
 
-    [Header("Permanent Stats (Tăng vĩnh viễn từ Tượng)")]
+    [Header("Permanent Stats (From Statues)")]
     public int permanentATK = 0;
     public int permanentDEF = 0;
     public int permanentSpeed = 0;
@@ -36,7 +36,6 @@ public class ProgressionManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // Khởi tạo hạt giống cơ bản nếu danh sách còn rỗng
         InitializeDefaultUnlocks();
     }
 
@@ -44,22 +43,6 @@ public class ProgressionManager : MonoBehaviour
     {
         if (unlockedSeeds == null) unlockedSeeds = new List<ItemData>();
         if (unlockedItems == null) unlockedItems = new List<ItemData>();
-
-        if (unlockedSeeds.Count == 0)
-        {
-            // Tải các hạt giống mặc định cơ bản
-            ItemData[] allSeeds = Resources.FindObjectsOfTypeAll<ItemData>();
-            foreach (var seed in allSeeds)
-            {
-                if (seed != null && seed.itemType == ItemData.ItemType.Seed && !seed.isRare)
-                {
-                    if (seed.name.Contains("Wheat") || seed.name.Contains("Carrot"))
-                    {
-                        if (!unlockedSeeds.Contains(seed)) unlockedSeeds.Add(seed);
-                    }
-                }
-            }
-        }
     }
 
     public bool IsItemUnlocked(ItemData item)
@@ -77,7 +60,7 @@ public class ProgressionManager : MonoBehaviour
         if (!unlockedItems.Contains(item))
         {
             unlockedItems.Add(item);
-            Debug.Log("Mở khóa vật phẩm mới: " + item.itemName);
+            Debug.Log("Unlocked new item: " + item.itemName);
             OnProgressionChanged?.Invoke();
         }
     }
@@ -87,7 +70,7 @@ public class ProgressionManager : MonoBehaviour
         runActive = true;
         currentFloor = floor;
         currentStage = 0;
-        Debug.Log("Bắt đầu Run Dungeon - Tầng " + currentFloor);
+        Debug.Log("Starting Dungeon Run - Floor " + currentFloor);
     }
 
     public void AddPermanentStat(Offering.RewardStat stat, int amount)
@@ -105,7 +88,7 @@ public class ProgressionManager : MonoBehaviour
                 break;
         }
 
-        Debug.Log($"Đã tăng vĩnh viễn {stat} thêm {amount}!");
+        Debug.Log($"Permanently increased {stat} by {amount}!");
         OnProgressionChanged?.Invoke();
     }
 
@@ -115,7 +98,7 @@ public class ProgressionManager : MonoBehaviour
         if (!unlockedRecipes.Contains(recipe))
         {
             unlockedRecipes.Add(recipe);
-            Debug.Log("Mở khóa công thức mới: " + recipe.recipeName);
+            Debug.Log("Unlocked new recipe: " + recipe.recipeName);
             OnProgressionChanged?.Invoke();
         }
     }
@@ -126,7 +109,7 @@ public class ProgressionManager : MonoBehaviour
         if (!unlockedSeeds.Contains(seedItem))
         {
             unlockedSeeds.Add(seedItem);
-            Debug.Log("Mở khóa hạt giống mới: " + seedItem.itemName);
+            Debug.Log("Unlocked new seed: " + seedItem.itemName);
             OnProgressionChanged?.Invoke();
         }
     }
@@ -144,11 +127,36 @@ public class ProgressionManager : MonoBehaviour
         OnProgressionChanged?.Invoke();
     }
 
+    private readonly Dictionary<string, int> offeringContributions = new Dictionary<string, int>();
+
+    public int GetOfferingProgress(string offeringKey, int requirementIndex)
+    {
+        if (string.IsNullOrEmpty(offeringKey)) return 0;
+        string key = $"{offeringKey}_req_{requirementIndex}";
+        return offeringContributions.TryGetValue(key, out int amount) ? amount : 0;
+    }
+
+    public void SetOfferingProgress(string offeringKey, int requirementIndex, int amount)
+    {
+        if (string.IsNullOrEmpty(offeringKey)) return;
+        string key = $"{offeringKey}_req_{requirementIndex}";
+        offeringContributions[key] = Mathf.Max(0, amount);
+        OnProgressionChanged?.Invoke();
+    }
+
+    public void AddOfferingProgress(string offeringKey, int requirementIndex, int amount)
+    {
+        if (string.IsNullOrEmpty(offeringKey) || amount <= 0) return;
+        string key = $"{offeringKey}_req_{requirementIndex}";
+        int current = offeringContributions.TryGetValue(key, out int val) ? val : 0;
+        offeringContributions[key] = current + amount;
+        OnProgressionChanged?.Invoke();
+    }
+
     public void HandlePlayerDeath(ItemContainer inventory)
     {
         HandlePlayerDeathWithoutReload(inventory);
 
-        // Quay về Base
         if (SceneTransitionManager.Instance != null)
         {
             SceneTransitionManager.Instance.LoadBase();
@@ -157,10 +165,9 @@ public class ProgressionManager : MonoBehaviour
 
     public void HandlePlayerDeathWithoutReload(ItemContainer inventory)
     {
-        Debug.Log("Người chơi tử trận! Kết thúc Run.");
+        Debug.Log("Player died! Run ended.");
         runActive = false;
 
-        // Theo GDD: Mất food và loot trong run, giữ lại Seed, Recipe, Permanent Stats
         if (inventory != null)
         {
             ClearRunLoot(inventory);
@@ -171,7 +178,7 @@ public class ProgressionManager : MonoBehaviour
 
     public void CompleteRun()
     {
-        Debug.Log("Hoàn thành Run Dungeon thành công!");
+        Debug.Log("Dungeon Run completed successfully!");
         runActive = false;
         OnRunEnded?.Invoke(true);
 
@@ -183,7 +190,6 @@ public class ProgressionManager : MonoBehaviour
 
     private void ClearRunLoot(ItemContainer inventory)
     {
-        // Khi chết trong run, làm rỗng các món ăn/loot mang theo
         for (int i = 0; i < inventory.itemSlots.Length; i++)
         {
             inventory.itemSlots[i].itemData = null;

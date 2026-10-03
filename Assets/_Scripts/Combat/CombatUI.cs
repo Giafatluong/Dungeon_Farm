@@ -42,7 +42,7 @@ public class CombatUI : MonoBehaviour
     public Image targetHpFill;
     public TextMeshProUGUI targetHpText;
     public TextMeshProUGUI targetIntentText;
-    public Transform targetReticle; // Con trỏ chỉ mục tiêu trong world space
+    public Transform targetReticle;
 
     [Header("Food Selection Panel")]
     public GameObject foodPanel;
@@ -218,7 +218,6 @@ public class CombatUI : MonoBehaviour
 
     private void Update()
     {
-        // Cập nhật vị trí con trỏ mục tiêu nếu có
         if (targetReticle != null)
         {
             if (targetSelector != null && targetSelector.selectedEnemy != null && targetSelector.selectedEnemy.currentHealth > 0)
@@ -232,7 +231,6 @@ public class CombatUI : MonoBehaviour
             }
         }
 
-        // Bắt phím tắt nhanh (chỉ khi combat đang hoạt động và không trong lúc đếm ngược chuẩn bị)
         bool canUseShortcuts = combatManager != null && combatManager.isCombatActive && !combatManager.isPreparingCombat && combatManager.currentTurn == CombatManager.Turn.Player && playerStats != null && playerStats.currentHealth > 0;
         if (canUseShortcuts)
         {
@@ -254,7 +252,6 @@ public class CombatUI : MonoBehaviour
             }
         }
 
-        // Cho phép click chuột trái lên kẻ địch để chọn mục tiêu (chỉ khi không click vào UI)
         if (Input.GetMouseButtonDown(0))
         {
             if (UnityEngine.EventSystems.EventSystem.current == null || !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
@@ -299,13 +296,11 @@ public class CombatUI : MonoBehaviour
     {
         if (playerStats == null) return;
 
-        // Tên
         if (playerNameText != null)
         {
-            playerNameText.text = "DŨNG SĨ (PLAYER)";
+            playerNameText.text = "HERO (PLAYER)";
         }
 
-        // HP
         if (hpFillImage != null)
         {
             hpFillImage.fillAmount = playerStats.maxHealth > 0 ? (float)playerStats.currentHealth / playerStats.maxHealth : 0f;
@@ -315,42 +310,38 @@ public class CombatUI : MonoBehaviour
             hpText.text = $"HP: {playerStats.currentHealth} / {playerStats.maxHealth}";
         }
 
-        // Hunger
         if (hungerFillImage != null)
         {
             hungerFillImage.fillAmount = playerStats.maxHunger > 0 ? (float)playerStats.currentHunger / playerStats.maxHunger : 0f;
         }
         if (hungerText != null)
         {
-            hungerText.text = $"🍗 Độ no: {playerStats.currentHunger} / {playerStats.maxHunger}";
+            hungerText.text = $"Fullness: {playerStats.currentHunger} / {playerStats.maxHunger}";
         }
 
-        // AP
         if (apText != null)
         {
-            apText.text = $"⚡ AP: {playerStats.currentAP} / {playerStats.maxAP}";
+            apText.text = $"AP: {playerStats.currentAP} / {playerStats.maxAP}";
         }
 
-        // Stats
         if (statsText != null)
         {
             int atk = playerStats.GetCurrentATK();
             int def = playerStats.GetCurrentDEF();
             int spd = playerStats.GetCurrentSpeed();
-            string shieldStr = playerStats.defendCount > 0 ? $" (+{playerStats.defendValue * playerStats.defendCount} Khiên)" : "";
-            statsText.text = $"⚔️ ATK: {atk}    🛡️ DEF: {def}{shieldStr}    💨 SPD: {spd}";
+            string shieldStr = playerStats.defendCount > 0 ? $" (+{playerStats.defendValue * playerStats.defendCount} Shield)" : "";
+            statsText.text = $"ATK: {atk}    DEF: {def}{shieldStr}    SPD: {spd}";
         }
 
-        // Buffs
         if (buffsText != null)
         {
             if (playerStats.activeBuffs == null || playerStats.activeBuffs.Count == 0)
             {
-                buffsText.text = "Hiệu ứng: Không có";
+                buffsText.text = "Buffs: None";
             }
             else
             {
-                System.Text.StringBuilder sb = new System.Text.StringBuilder("Hiệu ứng: ");
+                System.Text.StringBuilder sb = new System.Text.StringBuilder("Buffs: ");
                 for (int i = 0; i < playerStats.activeBuffs.Count; i++)
                 {
                     ActiveBuff b = playerStats.activeBuffs[i];
@@ -403,8 +394,8 @@ public class CombatUI : MonoBehaviour
             if (turnBannerText != null)
             {
                 turnBannerText.text = combatManager.isAmbushCurrent
-                    ? $"⚠️ BỊ PHỤC KÍCH! ĐỊCH SẼ TẤN CÔNG SAU {secs}s"
-                    : $"⚔️ CHUẨN BỊ CHIẾN ĐẤU ({secs}s)";
+                    ? $"AMBUSH! ENEMIES ATTACK IN {secs}s"
+                    : $"PREPARING COMBAT ({secs}s)";
                 turnBannerText.color = combatManager.isAmbushCurrent
                     ? new Color(1f, 0.4f, 0.2f)
                     : new Color(1f, 0.85f, 0.2f);
@@ -425,7 +416,7 @@ public class CombatUI : MonoBehaviour
             {
                 if (turnBannerText != null)
                 {
-                    turnBannerText.text = "🏕️ KHU CẮM TRẠI (CAMP) - NGHỈ NGƠI & NẤU NƯỚNG";
+                    turnBannerText.text = "CAMPFIRE - REST & RECOVER";
                     turnBannerText.color = new Color(1f, 0.85f, 0.3f);
                 }
                 if (turnBannerBg != null)
@@ -437,7 +428,7 @@ public class CombatUI : MonoBehaviour
 
             if (turnBannerText != null)
             {
-                turnBannerText.text = "AN TOÀN (KHÔNG CÓ KẺ ĐỊCH)";
+                turnBannerText.text = "SAFE (NO ENEMIES)";
                 turnBannerText.color = new Color(0.7f, 0.9f, 0.7f);
             }
             if (turnBannerBg != null)
@@ -450,7 +441,7 @@ public class CombatUI : MonoBehaviour
         bool isPlayer = combatManager.currentTurn == CombatManager.Turn.Player;
         if (turnBannerText != null)
         {
-            turnBannerText.text = isPlayer ? "LƯỢT CỦA BẠN (PLAYER TURN)" : "LƯỢT KẺ ĐỊCH (ENEMY TURN)";
+            turnBannerText.text = isPlayer ? "YOUR TURN (PLAYER TURN)" : "ENEMY TURN";
             turnBannerText.color = isPlayer ? new Color(0.2f, 0.9f, 1f) : new Color(1f, 0.3f, 0.3f);
         }
 
@@ -474,7 +465,7 @@ public class CombatUI : MonoBehaviour
 
         if (targetNameText != null)
         {
-            targetNameText.text = $"🎯 {enemy.enemyData.enemyName}";
+            targetNameText.text = $"TARGET: {enemy.enemyData.enemyName}";
         }
 
         if (targetHpFill != null)
@@ -493,19 +484,19 @@ public class CombatUI : MonoBehaviour
             switch (enemy.currentIntent)
             {
                 case EnemyData.EnemyIntent.Attack:
-                    intentDesc = $"⚔️ Tấn công ({enemy.GetCurrentATK()} DMG)";
+                    intentDesc = $"Attack ({enemy.GetCurrentATK()} DMG)";
                     break;
                 case EnemyData.EnemyIntent.Defend:
-                    intentDesc = $"🛡️ Phòng thủ (+{enemy.enemyData.DEF} DEF)";
+                    intentDesc = $"Defend (+{enemy.enemyData.DEF} DEF)";
                     break;
                 case EnemyData.EnemyIntent.Buff:
-                    intentDesc = "✨ Kỹ năng Buff";
+                    intentDesc = "Buff Skill";
                     break;
                 case EnemyData.EnemyIntent.Debuff:
-                    intentDesc = "💀 Kỹ năng Làm suy yếu";
+                    intentDesc = "Debuff Skill";
                     break;
             }
-            targetIntentText.text = $"Ý định: {intentDesc}";
+            targetIntentText.text = $"Intent: {intentDesc}";
         }
     }
 
@@ -514,7 +505,7 @@ public class CombatUI : MonoBehaviour
         if (stageProgressText != null && waveManager != null)
         {
             int current = waveManager.GetCurrentWaveIndex() + 1;
-            stageProgressText.text = $"🚩 Stage: {current}";
+            stageProgressText.text = $"Stage: {current}";
         }
     }
 
@@ -557,7 +548,6 @@ public class CombatUI : MonoBehaviour
     {
         if (combatManager == null) return;
 
-        // Tự động chọn mục tiêu nếu chưa chọn
         if (targetSelector != null && (targetSelector.selectedEnemy == null || targetSelector.selectedEnemy.currentHealth <= 0))
         {
             targetSelector.AutoSelectTarget(combatManager.enemies);
@@ -565,7 +555,7 @@ public class CombatUI : MonoBehaviour
 
         if (targetSelector == null || targetSelector.selectedEnemy == null)
         {
-            LogMessage("⚠️ Không có kẻ địch nào trong tầm ngắm!");
+            LogMessage("No enemy in target!");
             return;
         }
 
@@ -609,7 +599,6 @@ public class CombatUI : MonoBehaviour
     {
         if (foodListContainer == null) return;
 
-        // Xóa danh sách cũ
         for (int i = 0; i < activeFoodButtons.Count; i++)
         {
             if (activeFoodButtons[i] != null)
@@ -642,7 +631,7 @@ public class CombatUI : MonoBehaviour
             if (noFoodText != null)
             {
                 noFoodText.gameObject.SetActive(true);
-                noFoodText.text = "Không có món ăn nào trong ba lô!\n(Hãy nấu ăn trước khi vào Dungeon)";
+                noFoodText.text = "No food in backpack!\n(Cook meals before entering Dungeon)";
             }
             return;
         }
@@ -673,7 +662,6 @@ public class CombatUI : MonoBehaviour
         Image bg = row.GetComponent<Image>();
         bg.color = new Color(0.15f, 0.15f, 0.2f, 0.9f);
 
-        // Icon
         GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
         iconGO.transform.SetParent(row.transform, false);
         RectTransform iconRT = iconGO.GetComponent<RectTransform>();
@@ -684,7 +672,6 @@ public class CombatUI : MonoBehaviour
         Image iconImg = iconGO.GetComponent<Image>();
         if (food.itemIcon != null) iconImg.sprite = food.itemIcon;
 
-        // Label Info
         GameObject labelGO = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
         labelGO.transform.SetParent(row.transform, false);
         RectTransform labelRT = labelGO.GetComponent<RectTransform>();
@@ -693,12 +680,11 @@ public class CombatUI : MonoBehaviour
         labelRT.offsetMin = new Vector2(60, 5);
         labelRT.offsetMax = new Vector2(-90, -5);
         TextMeshProUGUI label = labelGO.GetComponent<TextMeshProUGUI>();
-        label.fontSize = 15;
+        label.fontSize = 13;
         label.color = Color.white;
         label.alignment = TextAlignmentOptions.MidlineLeft;
-        label.text = $"<b>{food.itemName}</b> x{count}\n<size=12><color=#88FF88>+{food.healthValue} HP</color> | <color=#FFAA44>+{food.hungerValue} No</color></size>";
+        label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#88FF88>+{food.healthValue} HP</color> | <color=#FFAA44>+{food.hungerValue} Full</color></size>";
 
-        // Button Ăn
         GameObject btnGO = new GameObject("EatBtn", typeof(RectTransform), typeof(Image), typeof(Button));
         btnGO.transform.SetParent(row.transform, false);
         RectTransform btnRT = btnGO.GetComponent<RectTransform>();
@@ -728,9 +714,9 @@ public class CombatUI : MonoBehaviour
         btnTextRT.anchorMax = Vector2.one;
         btnTextRT.sizeDelta = Vector2.zero;
         TextMeshProUGUI btnText = btnTextGO.GetComponent<TextMeshProUGUI>();
-        btnText.fontSize = 14;
+        btnText.fontSize = 11;
         btnText.alignment = TextAlignmentOptions.Center;
-        btnText.text = "ĂN (1 AP)";
+        btnText.text = "EAT (1 AP)";
 
         return row;
     }
@@ -747,7 +733,7 @@ public class CombatUI : MonoBehaviour
             if (victoryText != null)
             {
                 victoryText.text = string.IsNullOrEmpty(details)
-                    ? "🏆 CHIẾN THẮNG HẦM NGỤC!\n\nBạn đã dọn sạch hầm ngục và đánh bại Boss!\nToàn bộ chiến lợi phẩm và hạt giống đã được bảo toàn an toàn."
+                    ? "DUNGEON VICTORY!\n\nYou cleared the dungeon and defeated the Boss!\nAll loot and crops have been secured."
                     : details;
             }
         }
@@ -760,7 +746,7 @@ public class CombatUI : MonoBehaviour
             defeatPanel.SetActive(true);
             if (defeatText != null)
             {
-                defeatText.text = "💀 BẠN ĐÃ TỬ TRẬN!\n\nBạn đã bị đánh bại trong hầm ngục.\nToàn bộ thức ăn và chiến lợi phẩm nhặt được trong chuyến đi đã rơi mất.";
+                defeatText.text = "DEFEATED IN BATTLE!\n\nYou were defeated in the dungeon.\nLoot collected during this expedition has been lost.";
             }
         }
     }
@@ -791,12 +777,6 @@ public class CombatUI : MonoBehaviour
 
     public void OnReturnToBaseAfterDefeatClicked()
     {
-        // Xóa loot theo quy tắc Roguelite
-        if (playerStats != null && playerStats.itemContainer != null && ProgressionManager.Instance != null)
-        {
-            // ProgressionManager đã trừ loot khi chết
-        }
-
         OnReturnToBaseClicked();
     }
 
@@ -811,7 +791,7 @@ public class CombatUI : MonoBehaviour
             rewardPanel.SetActive(true);
             if (rewardDescriptionText != null)
             {
-                rewardDescriptionText.text = $"🎁 PHÒNG THƯỞNG!\n\n{rewardDesc}";
+                rewardDescriptionText.text = $"TREASURE ROOM!\n\n{rewardDesc}";
             }
         }
     }

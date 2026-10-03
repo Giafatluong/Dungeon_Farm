@@ -79,7 +79,7 @@ public class HealthBarManager : MonoBehaviour
                 continue;
             }
 
-            // Thanh máu của Enemy
+            // Enemy health bar
             if (healthBars[i].playerTarget == null)
             {
                 if (healthBars[i].enemyTarget == null ||
@@ -91,7 +91,7 @@ public class HealthBarManager : MonoBehaviour
                     continue;
                 }
             }
-            // Thanh máu của Player
+            // Player health bar
             else if (healthBars[i].playerTarget.currentHealth <= 0)
             {
                 Destroy(healthBars[i].gameObject);
@@ -101,7 +101,7 @@ public class HealthBarManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Xóa toàn bộ thanh máu của kẻ địch (khi tiêu diệt hết hoặc kết thúc wave)
+    /// Clear all enemy health bars (when wave is cleared or combat ends)
     /// </summary>
     public void ClearEnemyHealthBars()
     {
@@ -120,7 +120,6 @@ public class HealthBarManager : MonoBehaviour
             }
         }
 
-        // Quét thêm trên healthBarCanvas phòng trường hợp có thanh máu mồ côi
         if (healthBarCanvas != null)
         {
             HealthBar[] allBars = healthBarCanvas.GetComponentsInChildren<HealthBar>(true);

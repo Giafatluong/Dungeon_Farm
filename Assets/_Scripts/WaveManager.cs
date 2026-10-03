@@ -4,9 +4,9 @@ using System.Collections;
 public class WaveManager : MonoBehaviour
 {
     [Header("Level Design - Floor Configuration")]
-    [Tooltip("FloorData đang được sử dụng (nếu có, game sẽ chạy CHÍNH XÁC theo thứ tự các stage bạn thiết kế)")]
+    [Tooltip("FloorData being used (if set, game runs the exact sequence of stages you designed)")]
     [SerializeField] private FloorData floorData;
-    [Tooltip("Danh sách tất cả các Floor do bạn tự thiết kế (Floor 1, Floor 2, Floor 3...)")]
+    [Tooltip("List of all custom designed floors (Floor 1, Floor 2, Floor 3...)")]
     [SerializeField] private FloorData[] allFloors;
 
     [Header("Positions & Core")]
@@ -25,6 +25,8 @@ public class WaveManager : MonoBehaviour
     private WaveData[] runtimeWaves;
     private int currentWaveIndex = -1;
     private bool isTransitioning;
+    private int currentFloorScore = 0;
+    private WaveData.WaveType lastResolvedType = (WaveData.WaveType)(-1);
 
     public FloorData GetActiveFloor()
     {
@@ -84,22 +86,26 @@ public class WaveManager : MonoBehaviour
     {
         FloorData activeFloor = GetActiveFloor();
 
-        // 1. Ưu tiên hàng đầu: Chạy theo FloorData do bạn tự sắp xếp (Level Design)
+        if (floorGenerator == null)
+            floorGenerator = GetComponent<FloorGenerator>() ?? FindFirstObjectByType<FloorGenerator>();
+
+        // 1. Priority 1: Hand-crafted FloorData (Level Design)
         if (activeFloor != null && activeFloor.waves != null && activeFloor.waves.Length > 0)
         {
-            runtimeWaves = activeFloor.waves;
-            Debug.Log($"🎮 [WaveManager] Đang chạy Floor do bạn thiết kế: '{activeFloor.floorName ?? activeFloor.name}' với {runtimeWaves.Length} stages.");
+            // Each wave in FloorData is kept 1:1 (Random waves are single dynamic waves, not expanded areas)
+            runtimeWaves = (WaveData[])activeFloor.waves.Clone();
+            Debug.Log($"[WaveManager] Running custom designed floor: '{activeFloor.floorName ?? activeFloor.name}' with {runtimeWaves.Length} stages.");
         }
         else if (floorGenerator != null)
         {
-            // 2. Chỉ khi bạn không gán FloorData nào thì mới sinh tự động hoàn toàn bằng FloorGenerator
+            // 2. Fallback: Procedurally generate floor using FloorGenerator
             runtimeWaves = floorGenerator.GenerateFloor();
-            Debug.Log($"🎲 [WaveManager] Tự động sinh Floor ngẫu nhiên bằng FloorGenerator.");
+            Debug.Log($"[WaveManager] Procedurally generated random floor using FloorGenerator with {runtimeWaves?.Length ?? 0} stages.");
         }
 
         if (runtimeWaves == null || runtimeWaves.Length == 0)
         {
-            Debug.LogWarning("⚠️ Floor không có Wave/Stage nào.");
+            Debug.LogWarning("[WaveManager] Floor has no stages/waves configured.");
             return;
         }
 
@@ -129,10 +135,10 @@ public class WaveManager : MonoBehaviour
 
         if (currentWaveIndex >= totalStages - 1)
         {
-            Debug.Log("Hoàn thành toàn bộ Floor!");
+            Debug.Log("[WaveManager] Completed entire Floor!");
             if (CombatUI.Instance != null)
             {
-                CombatUI.Instance.ShowVictoryScreen("🏆 CHIẾN THẮNG HẦM NGỤC!\n\nBạn đã dọn sạch toàn bộ các tầng và đánh bại Boss!\nChiến lợi phẩm và hạt giống đã được bảo vệ an toàn.");
+                CombatUI.Instance.ShowVictoryScreen("DUNGEON VICTORY!\n\nYou cleared all stages and defeated the Boss!\nAll loot and crops have been secured.");
             }
             else if (ProgressionManager.Instance != null)
             {
@@ -153,7 +159,7 @@ public class WaveManager : MonoBehaviour
             : 0f;
         float moveDuration = Mathf.Max(configuredDelay, 1.8f);
 
-        // Kích hoạt animation bước đi tiến lên của Player tạo cảm giác đang di chuyển qua màn
+        // Player walking forward animation between stages
         PlayerCombatVisual playerVisual = FindFirstObjectByType<PlayerCombatVisual>();
         if (playerVisual != null)
         {
@@ -164,15 +170,13 @@ public class WaveManager : MonoBehaviour
 
         currentWaveIndex++;
 
-        // Theo GDD: Giảm Hunger và giảm buff theo Turn khi di chuyển giữa các Stage
+        // Reduce hunger and decrement turn buffs on stage transition
         if (combatManager != null && combatManager.playerStats != null)
         {
             combatManager.playerStats.OnStageTransition();
         }
 
-        // Cập nhật thanh tiến trình Stage trên UI
         UpdateProgressBar();
-
         StartWave();
 
         isTransitioning = false;
@@ -185,11 +189,41 @@ public class WaveManager : MonoBehaviour
         if (wave == null)
             return;
 
-        Debug.Log($"Bắt đầu Stage: {currentWaveIndex + 1} | Loại: {wave.waveType}");
+        WaveData.WaveType effectiveType = wave.waveType;
+
+        // If this single wave is a Random Wave, dynamically calculate current score and pick a random encounter type
+        if (effectiveType == WaveData.WaveType.Random)
+        {
+            int minScore = wave.minTargetScore;
+            int maxScore = wave.maxTargetScore;
+            if (minScore == 0 && maxScore == 0 && floorGenerator != null)
+            {
+                minScore = floorGenerator.minTargetScore;
+                maxScore = floorGenerator.maxTargetScore;
+            }
+
+            if (floorGenerator != null)
+            {
+                effectiveType = floorGenerator.DetermineRandomWaveType(currentFloorScore, lastResolvedType, minScore, maxScore);
+            }
+            else
+            {
+                effectiveType = WaveData.WaveType.Combat;
+            }
+
+            Debug.Log($"[WaveManager] Wave {currentWaveIndex + 1} is Random. Dynamically calculated encounter type: {effectiveType} (Current Score: {currentFloorScore})");
+        }
+
+        // Update score balance tracking
+        int scoreDelta = floorGenerator != null ? floorGenerator.GetScoreForWaveType(effectiveType) : 0;
+        currentFloorScore += scoreDelta;
+        lastResolvedType = effectiveType;
+
+        Debug.Log($"[WaveManager] Starting Stage: {currentWaveIndex + 1}/{runtimeWaves.Length} | Type: {effectiveType} | Score Delta: {scoreDelta} | Floor Score: {currentFloorScore}");
 
         UpdateProgressBar();
 
-        switch (wave.waveType)
+        switch (effectiveType)
         {
             case WaveData.WaveType.Combat:
                 SpawnEnemies(wave, isAmbush: false);
@@ -215,18 +249,17 @@ public class WaveManager : MonoBehaviour
 
     private void HandleCampStage()
     {
-        Debug.Log("🏕️ Đã đến khu cắm trại (Camp). Người chơi có thể nghỉ ngơi, ăn, nấu ăn hoặc tập thể dục.");
+        Debug.Log("[WaveManager] Reached Camp. Player can rest, eat, cook, or exercise.");
         if (camp == null) camp = FindFirstObjectByType<Camp>(FindObjectsInactive.Include);
         if (camp == null)
         {
-            GameObject campGO = new GameObject("Camp_Runtime", typeof(Camp));
-            camp = campGO.GetComponent<Camp>();
+            Debug.LogWarning("[WaveManager] Camp component not found in Scene!");
+            return;
         }
 
         PlayerStats pStats = (combatManager != null && combatManager.playerStats != null) ? combatManager.playerStats : FindFirstObjectByType<PlayerStats>();
         ItemContainer container = pStats != null ? pStats.itemContainer : null;
 
-        // Đảm bảo CampUI đã tồn tại trên Canvas và mở giao diện Camp
         CampUI campUI = CampUI.EnsureInstance();
         camp.OpenCamp(pStats, container, this);
         if (campUI != null)
@@ -237,7 +270,7 @@ public class WaveManager : MonoBehaviour
 
     public void HandlePostAmbushCamp()
     {
-        Debug.Log("🏕️ Đã đẩy lùi phục kích tại Camp! Mở lại bảng Camp nhưng chỉ cho phép Đi Tiếp.");
+        Debug.Log("[WaveManager] Repelled ambush at Camp! Re-opening Camp in mandatory continue mode.");
         isTransitioning = false;
 
         if (camp == null) camp = FindFirstObjectByType<Camp>(FindObjectsInactive.Include);
@@ -257,22 +290,21 @@ public class WaveManager : MonoBehaviour
 
     private void HandleEventStage()
     {
-        Debug.Log("Gặp sự kiện đặc biệt (Merchant Event).");
+        Debug.Log("[WaveManager] Encountered Merchant Event.");
         if (merchantEvent != null && merchantEvent.merchantActive)
         {
             merchantEvent.gameObject.SetActive(true);
         }
         else
         {
-            // Nếu không có event hoặc merchant đã hết hạn, tự động tiếp tục
             Continue();
         }
     }
 
     private void HandleRewardStage()
     {
-        Debug.Log("Đến phòng thưởng (Reward Stage)!");
-        string rewardDesc = "Bạn đã tìm thấy rương kho báu trong phòng thưởng!\nNhận thêm vật phẩm hồi phục sức mạnh.";
+        Debug.Log("[WaveManager] Reached Reward Stage!");
+        string rewardDesc = "You found a treasure chest in the reward room!\nReceive recovery items to bolster your strength.";
 
         if (CombatUI.Instance != null)
         {
@@ -288,13 +320,12 @@ public class WaveManager : MonoBehaviour
     {
         if (CombatUI.Instance != null)
         {
-            CombatUI.Instance.LogMessage("⚠️ CẢNH BÁO: Bị phục kích! Kẻ địch sẽ hành động trước!");
+            CombatUI.Instance.LogMessage("WARNING: Ambushed! Enemies attack first!");
         }
 
         WaveData wave = CurrentWave;
         GameObject[] enemiesToSpawn = wave != null ? wave.GetEnemiesToSpawn() : null;
 
-        // Nếu wave hiện tại không có quái (ví dụ đang ở Camp), lấy từ pool quái chiến đấu
         if (enemiesToSpawn == null || enemiesToSpawn.Length == 0)
         {
             wave = GetFallbackCombatWave();
@@ -310,7 +341,7 @@ public class WaveManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("Bị Ambush nhưng không tìm thấy quái để spawn. Tiếp tục...");
+            Debug.Log("[WaveManager] Ambush triggered but no enemies to spawn. Continuing...");
             Continue();
         }
     }
@@ -320,6 +351,21 @@ public class WaveManager : MonoBehaviour
         if (floorGenerator != null && floorGenerator.combatWavePool != null && floorGenerator.combatWavePool.Length > 0)
         {
             return floorGenerator.combatWavePool[Random.Range(0, floorGenerator.combatWavePool.Length)];
+        }
+
+        if (runtimeWaves != null)
+        {
+            for (int i = 0; i < runtimeWaves.Length; i++)
+            {
+                if (runtimeWaves[i] != null && (runtimeWaves[i].waveType == WaveData.WaveType.Combat || runtimeWaves[i].waveType == WaveData.WaveType.Boss))
+                {
+                    GameObject[] pool = runtimeWaves[i].GetEnemiesToSpawn();
+                    if (pool != null && pool.Length > 0)
+                    {
+                        return runtimeWaves[i];
+                    }
+                }
+            }
         }
 
         FloorData floor = GetActiveFloor();
@@ -343,8 +389,16 @@ public class WaveManager : MonoBehaviour
 
     public void SpawnEnemies(WaveData wave, bool isAmbush = false)
     {
-        // Lấy danh sách quái (hỗ trợ cả cố định lẫn bốc ngẫu nhiên từ pool)
-        GameObject[] enemiesToSpawn = wave.GetEnemiesToSpawn();
+        GameObject[] enemiesToSpawn = wave != null ? wave.GetEnemiesToSpawn() : null;
+
+        if (enemiesToSpawn == null || enemiesToSpawn.Length == 0)
+        {
+            WaveData fallbackWave = GetFallbackCombatWave();
+            if (fallbackWave != null)
+            {
+                enemiesToSpawn = fallbackWave.GetEnemiesToSpawn();
+            }
+        }
 
         if (enemiesToSpawn == null || enemiesToSpawn.Length == 0)
         {
@@ -383,7 +437,6 @@ public class WaveManager : MonoBehaviour
             }
 
             Vector3 finalPos = combatPositions[i].position;
-            // Xuất hiện từ phía bên phải và lướt sang trái về vị trí chiến đấu (kiểu Capybara Go)
             Vector3 startPos = finalPos + new Vector3(5.5f, 0f, 0f);
 
             GameObject enemyObject = Instantiate(
@@ -413,7 +466,6 @@ public class WaveManager : MonoBehaviour
             newEnemies[i] = enemyStats;
         }
 
-        // Lọc các kẻ địch hợp lệ
         System.Collections.Generic.List<EnemyStats> validEnemies = new System.Collections.Generic.List<EnemyStats>();
         for (int i = 0; i < newEnemies.Length; i++)
         {
@@ -457,7 +509,6 @@ public class WaveManager : MonoBehaviour
             if (enemyObj == null) yield break;
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
-            // Ease out cubic: lướt nhanh và hãm dần mượt mà
             float smoothT = 1f - Mathf.Pow(1f - t, 3f);
             enemyObj.transform.position = Vector3.Lerp(fromPos, toPos, smoothT);
             yield return null;

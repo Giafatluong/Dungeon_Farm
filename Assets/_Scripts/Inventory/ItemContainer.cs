@@ -58,8 +58,8 @@ public class ItemContainer : ScriptableObject
                 if (itemSlots[slot] == null) itemSlots[slot] = new ItemSlot();
                 itemSlots[slot].itemData = itemData;
                 itemSlots[slot].amount = amount;
-
                 OnInventoryChange?.Invoke();
+                return;
             }
         }
         else
@@ -68,14 +68,12 @@ public class ItemContainer : ScriptableObject
             {
                 int slot = GetEmptySlot();
 
-                if (slot == -1)
+                if (slot != -1)
                 {
-                    return;
+                    if (itemSlots[slot] == null) itemSlots[slot] = new ItemSlot();
+                    itemSlots[slot].itemData = itemData;
+                    itemSlots[slot].amount = 1;
                 }
-
-                if (itemSlots[slot] == null) itemSlots[slot] = new ItemSlot();
-                itemSlots[slot].itemData = itemData;
-                itemSlots[slot].amount = 1;
             }
 
             OnInventoryChange?.Invoke();
@@ -87,14 +85,22 @@ public class ItemContainer : ScriptableObject
         if (itemData == null || amount <= 0)
             return;
 
+        if (!HasItem(itemData))
+            return;
+
         for (int i = 0; i < maxSlots; i++)
         {
             if (itemSlots[i] != null && itemSlots[i].itemData == itemData)
             {
-                itemSlots[i].amount -= amount;
-
-                if (itemSlots[i].amount <= 0)
+                if (itemSlots[i].amount > amount)
                 {
+                    itemSlots[i].amount -= amount;
+                    OnInventoryChange?.Invoke();
+                    return;
+                }
+                else
+                {
+                    amount -= itemSlots[i].amount;
                     itemSlots[i].itemData = null;
                     itemSlots[i].amount = 0;
 
@@ -162,7 +168,7 @@ public class ItemContainer : ScriptableObject
         if (itemSlots[indexA] == null) itemSlots[indexA] = new ItemSlot();
         if (itemSlots[indexB] == null) itemSlots[indexB] = new ItemSlot();
 
-        // Nếu cùng loại item và stack được -> Gộp stack vào slot B thay vì hoán đổi
+        // If same item and stackable -> Merge stack into slot B instead of swapping
         if (itemSlots[indexA].itemData != null &&
             itemSlots[indexA].itemData == itemSlots[indexB].itemData &&
             itemSlots[indexA].itemData.isStackable)
@@ -188,7 +194,7 @@ public class ItemContainer : ScriptableObject
     }
 
     /// <summary>
-    /// Gọi thủ công khi dữ liệu slot bị thay đổi từ bên ngoài (ví dụ: cross-container transfer)
+    /// Notify listeners when slot contents are modified externally (e.g. cross-container transfer)
     /// </summary>
     public void NotifyChange()
     {

@@ -42,7 +42,7 @@ public class SpeedManager : MonoBehaviour
 
         if (isAmbush)
         {
-            // Trong Ambush: Enemy hành động trước theo thứ tự Speed; sau đó mới đến Player
+            // In Ambush: Enemies act first sorted by Speed; Player acts last
             for (int i = 0; i < enemies.Count; i++)
             {
                 if (enemies[i] == null) continue;
@@ -69,7 +69,7 @@ public class SpeedManager : MonoBehaviour
             return;
         }
 
-        // Lượt bình thường: thêm cả Player và Enemy rồi sắp xếp theo Speed
+        // Normal turn order: Add both Player and Enemies, then sort by Speed
         if (playerStats != null)
         {
             speedOrder.Add(new SpeedEntry
@@ -122,12 +122,15 @@ public class SpeedManager : MonoBehaviour
                 end++;
             }
 
-            for (int i = end; i > start; i--)
+            if (end > start)
             {
-                int randomIndex = Random.Range(start, i + 1);
-                SpeedEntry tmp = speedOrder[i];
-                speedOrder[i] = speedOrder[randomIndex];
-                speedOrder[randomIndex] = tmp;
+                for (int i = start; i <= end; i++)
+                {
+                    int randomIndex = Random.Range(start, end + 1);
+                    SpeedEntry temp = speedOrder[i];
+                    speedOrder[i] = speedOrder[randomIndex];
+                    speedOrder[randomIndex] = temp;
+                }
             }
 
             start = end + 1;

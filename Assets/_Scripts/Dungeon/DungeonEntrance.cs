@@ -73,7 +73,7 @@ public class DungeonEntrance : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             playerInRange = true;
-            Debug.Log("Nhấn E để vào Dungeon");
+            Debug.Log("Press E to enter Dungeon");
         }
     }
 

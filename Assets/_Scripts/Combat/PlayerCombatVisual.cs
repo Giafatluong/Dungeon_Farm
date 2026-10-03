@@ -2,8 +2,8 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Quản lý hình ảnh, animation và hiệu ứng chiến đấu (lunge, hurt flash, defend, heal) của Player trong combat.
-/// Luôn đảm bảo Player hiển thị rõ ràng, hướng mặt sang phải về phía kẻ địch.
+/// Manages combat visual effects (lunge, hurt flash, defend, heal) and animations for Player.
+/// Ensures Player faces right toward enemies.
 /// </summary>
 public class PlayerCombatVisual : MonoBehaviour
 {
@@ -32,22 +32,7 @@ public class PlayerCombatVisual : MonoBehaviour
         if (spriteRenderer != null)
         {
             originalColor = spriteRenderer.color;
-            // Đảm bảo sorting layer và order luôn nổi trên nền dungeon
             spriteRenderer.sortingOrder = Mathf.Max(spriteRenderer.sortingOrder, 10);
-
-            // Dự phòng: nếu sprite bị null, tự động tìm sprite Player trong bộ tài nguyên
-            if (spriteRenderer.sprite == null)
-            {
-                Sprite[] allSprites = Resources.FindObjectsOfTypeAll<Sprite>();
-                foreach (Sprite s in allSprites)
-                {
-                    if (s != null && (s.name == "Player_0" || s.name.StartsWith("Player_") || s.name.Contains("PlayerIdle")))
-                    {
-                        spriteRenderer.sprite = s;
-                        break;
-                    }
-                }
-            }
         }
 
         FaceRight();
@@ -77,7 +62,6 @@ public class PlayerCombatVisual : MonoBehaviour
         if (isMovingTransition)
             return;
 
-        // Giữ cho Animator luôn phát BlendTree Idle quay sang phải
         if (animator != null && animator.isActiveAndEnabled)
         {
             animator.SetFloat("LastHorizontal", 1f);
@@ -88,10 +72,6 @@ public class PlayerCombatVisual : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Kích hoạt animation bước đi/chạy và di chuyển Player tiến về phía trước trong lúc chuyển Wave
-    /// Tạo cảm giác người chơi đang di chuyển tiến sâu vào hầm ngục.
-    /// </summary>
     public void PlayMoveTransition(float duration, System.Action onComplete = null)
     {
         if (currentVisualRoutine != null)
@@ -120,7 +100,6 @@ public class PlayerCombatVisual : MonoBehaviour
                 animator.SetFloat("Speed", 1f);
             }
 
-            // Player giữ nguyên vị trí ban đầu (chạy tại chỗ kiểu Capybara Go)
             transform.position = originalPosition;
             yield return null;
         }
@@ -158,9 +137,6 @@ public class PlayerCombatVisual : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Đảm bảo nhân vật luôn quay mặt sang phải hướng về phía quái vật
-    /// </summary>
     public void FaceRight()
     {
         if (spriteRenderer != null)
@@ -214,7 +190,6 @@ public class PlayerCombatVisual : MonoBehaviour
         Vector3 targetPos = startPos + new Vector3(lungeDistance, 0f, 0f);
         float halfDuration = lungeDuration * 0.5f;
 
-        // Lao tới trước về phía kẻ địch
         float t = 0f;
         while (t < halfDuration)
         {
@@ -223,7 +198,6 @@ public class PlayerCombatVisual : MonoBehaviour
             yield return null;
         }
 
-        // Lùi về vị trí ban đầu
         t = 0f;
         while (t < halfDuration)
         {
@@ -242,7 +216,6 @@ public class PlayerCombatVisual : MonoBehaviour
             spriteRenderer.color = new Color(1f, 0.35f, 0.35f, 1f);
         }
 
-        // Rung nhẹ khi trúng đòn
         Vector3 startPos = originalPosition;
         for (int i = 0; i < 4; i++)
         {

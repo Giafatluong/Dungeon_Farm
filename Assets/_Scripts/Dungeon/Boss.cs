@@ -39,12 +39,12 @@ public class Boss : MonoBehaviour
         if (!isDefeated) return;
 
         daysUntilReset--;
-        Debug.Log($"Boss {bossID}: Còn {daysUntilReset} ngày nữa để reset.");
+        Debug.Log($"Boss {bossID}: {daysUntilReset} days until respawn.");
 
         if (daysUntilReset <= 0)
         {
             isDefeated = false;
-            Debug.Log($"Boss {bossID} đã hồi sinh sau thời gian nghỉ ngơi!");
+            Debug.Log($"Boss {bossID} has respawned!");
             OnBossReset?.Invoke();
         }
     }
@@ -54,9 +54,8 @@ public class Boss : MonoBehaviour
         isDefeated = true;
         daysUntilReset = resetDaysRequired;
 
-        Debug.Log($"Boss {bossID} đã bị tiêu diệt!");
+        Debug.Log($"Boss {bossID} defeated!");
 
-        // Trao thưởng vật phẩm
         if (playerContainer != null && rewardItems != null)
         {
             for (int i = 0; i < rewardItems.Length; i++)
@@ -68,13 +67,11 @@ public class Boss : MonoBehaviour
             }
         }
 
-        // Mở khóa hạt giống hiếm nếu có
         if (rareSeedReward != null && ProgressionManager.Instance != null)
         {
             ProgressionManager.Instance.UnlockSeed(rareSeedReward);
         }
 
-        // Hoàn thành Floor / Run
         if (ProgressionManager.Instance != null)
         {
             ProgressionManager.Instance.CompleteRun();
