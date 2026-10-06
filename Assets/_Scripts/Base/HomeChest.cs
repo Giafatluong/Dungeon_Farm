@@ -10,7 +10,11 @@ public class HomeChest : MonoBehaviour, IInteractable
 
     [Header("Interaction")]
     public bool playerInRange;
-    public bool isOpen;
+    public bool isOpen
+    {
+        get => ChestUI.Instance != null && ChestUI.Instance.IsOpen;
+        set { }
+    }
 
     public event System.Action<bool> OnChestToggled;
     public event System.Action OnChestContentsChanged;
@@ -73,12 +77,33 @@ public class HomeChest : MonoBehaviour, IInteractable
 
         if (playerInRange && Input.GetKeyDown(KeyCode.E))
         {
+            if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return;
+            if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return;
+
+            if (KitchenStation.Instance != null && KitchenStation.Instance.playerInRange)
+            {
+                float distToChest = Vector2.Distance(transform.position, playerTransform.position);
+                float distToKitchen = Vector2.Distance(KitchenStation.Instance.transform.position, playerTransform.position);
+                if (distToKitchen < distToChest) return;
+            }
+
             Interact();
         }
 
         if (isOpen && Input.GetKeyDown(KeyCode.Escape))
         {
             CloseChest();
+        }
+    }
+
+    private void OnMouseDown()
+    {
+        if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            return;
+
+        if (playerInRange)
+        {
+            Interact();
         }
     }
 
@@ -96,14 +121,26 @@ public class HomeChest : MonoBehaviour, IInteractable
 
     public void OpenChest()
     {
-        isOpen = true;
+        if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen)
+        {
+            KitchenUI.Instance.Close();
+        }
+        if (StatueUI.Instance != null && StatueUI.Instance.IsOpen)
+        {
+            StatueUI.Instance.Close();
+        }
+
+        if (backpackContainer == null)
+        {
+            InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+            if (invPanel != null)
+            {
+                backpackContainer = invPanel.ItemContainer;
+            }
+        }
+
         Debug.Log("[HomeChest] Opened Home Chest. Stored items are 100% safe!");
         OnChestToggled?.Invoke(true);
-
-        if (chestContainer == null)
-            Debug.LogWarning("[HomeChest] chestContainer is not assigned!");
-        if (backpackContainer == null)
-            Debug.LogWarning("[HomeChest] backpackContainer is not assigned!");
 
         if (ChestUI.Instance != null && chestContainer != null && backpackContainer != null)
         {
@@ -113,15 +150,19 @@ public class HomeChest : MonoBehaviour, IInteractable
         {
             Debug.LogWarning("[HomeChest] ChestUI not found in scene!");
         }
+        else
+        {
+            if (chestContainer == null) Debug.LogWarning("[HomeChest] chestContainer is not assigned!");
+            if (backpackContainer == null) Debug.LogWarning("[HomeChest] backpackContainer is not assigned!");
+        }
     }
 
     public void CloseChest()
     {
-        isOpen = false;
         Debug.Log("[HomeChest] Closed Home Chest.");
         OnChestToggled?.Invoke(false);
 
-        if (ChestUI.Instance != null)
+        if (ChestUI.Instance != null && ChestUI.Instance.IsOpen)
         {
             ChestUI.Instance.Close();
         }

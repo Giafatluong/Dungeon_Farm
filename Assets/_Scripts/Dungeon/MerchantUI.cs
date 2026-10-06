@@ -60,7 +60,8 @@ public class MerchantUI : MonoBehaviour
 
     private readonly List<InventoryButton> backpackSlots = new List<InventoryButton>();
 
-    public bool IsOpen => merchantPanel != null && merchantPanel.activeSelf;
+    private bool isExplicitlyOpened = false;
+    public bool IsOpen => isExplicitlyOpened && merchantPanel != null && merchantPanel.activeSelf;
 
     private void Awake()
     {
@@ -74,7 +75,7 @@ public class MerchantUI : MonoBehaviour
 
     private void Start()
     {
-        if (merchantPanel != null)
+        if (!isExplicitlyOpened && merchantPanel != null)
         {
             merchantPanel.SetActive(false);
         }
@@ -138,6 +139,7 @@ public class MerchantUI : MonoBehaviour
             merchant = FindFirstObjectByType<MerchantEvent>(FindObjectsInactive.Include);
         }
 
+        isExplicitlyOpened = true;
         currentMerchant = merchant;
         backpackContainer = backpack;
         onContinueCallback = onContinue;
@@ -177,6 +179,7 @@ public class MerchantUI : MonoBehaviour
 
     public void Close()
     {
+        isExplicitlyOpened = false;
         UnsubscribeEvents();
 
         if (merchantPanel != null)

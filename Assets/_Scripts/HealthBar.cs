@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class HealthBar : MonoBehaviour
+public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHandler
 {
     [SerializeField] private Image healthBar;
     [SerializeField] private TextMeshProUGUI intentText;
@@ -14,6 +14,22 @@ public class HealthBar : MonoBehaviour
     private int lastMaxHealth = -1;
     private EnemyData.EnemyIntent? lastIntent = null;
     private int lastAtk = -1;
+
+    public void OnPointerClick(UnityEngine.EventSystems.PointerEventData eventData)
+    {
+        if (enemyTarget != null && enemyTarget.currentHealth > 0)
+        {
+            if (enemyTarget.targetSelector != null)
+            {
+                enemyTarget.targetSelector.SelectEnemy(enemyTarget);
+            }
+            else
+            {
+                EnemyTargetSelector sel = FindFirstObjectByType<EnemyTargetSelector>();
+                if (sel != null) sel.SelectEnemy(enemyTarget);
+            }
+        }
+    }
 
     public void SetHealthBar(int currentHealth, int maxHealth)
     {
@@ -81,31 +97,43 @@ public class HealthBar : MonoBehaviour
 
             if (intentText != null)
             {
-                int curAtk = enemyTarget.GetCurrentATK();
-                EnemyData.EnemyIntent curIntent = enemyTarget.currentIntent;
-
-                if (curIntent != lastIntent || curAtk != lastAtk)
+                if (enemyTarget.hasActedThisRound)
                 {
-                    lastIntent = curIntent;
-                    lastAtk = curAtk;
-
-                    switch (curIntent)
+                    if (lastIntent != null)
                     {
-                        case EnemyData.EnemyIntent.Attack:
-                            intentText.text = $"<color=#FF5555>ATK {curAtk}</color>";
-                            break;
-                        case EnemyData.EnemyIntent.Defend:
-                            intentText.text = "<color=#55AAFF>DEFEND</color>";
-                            break;
-                        case EnemyData.EnemyIntent.Buff:
-                            intentText.text = "<color=#FFDD44>BUFF</color>";
-                            break;
-                        case EnemyData.EnemyIntent.Debuff:
-                            intentText.text = "<color=#DD55FF>DEBUFF</color>";
-                            break;
-                        default:
-                            intentText.text = $"<color=#FF5555>ATK {curAtk}</color>";
-                            break;
+                        lastIntent = null;
+                        lastAtk = -1;
+                        intentText.text = "<color=#999999>WAITING</color>";
+                    }
+                }
+                else
+                {
+                    int curAtk = enemyTarget.GetCurrentATK();
+                    EnemyData.EnemyIntent curIntent = enemyTarget.currentIntent;
+
+                    if (curIntent != lastIntent || curAtk != lastAtk)
+                    {
+                        lastIntent = curIntent;
+                        lastAtk = curAtk;
+
+                        switch (curIntent)
+                        {
+                            case EnemyData.EnemyIntent.Attack:
+                                intentText.text = $"<color=#FF5555>ATK {curAtk}</color>";
+                                break;
+                            case EnemyData.EnemyIntent.Defend:
+                                intentText.text = "<color=#55AAFF>DEFEND</color>";
+                                break;
+                            case EnemyData.EnemyIntent.Buff:
+                                intentText.text = "<color=#FFDD44>BUFF</color>";
+                                break;
+                            case EnemyData.EnemyIntent.Debuff:
+                                intentText.text = "<color=#DD55FF>DEBUFF</color>";
+                                break;
+                            default:
+                                intentText.text = $"<color=#FF5555>ATK {curAtk}</color>";
+                                break;
+                        }
                     }
                 }
             }

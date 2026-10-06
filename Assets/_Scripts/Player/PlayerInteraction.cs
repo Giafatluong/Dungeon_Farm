@@ -46,8 +46,11 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
+    private Camera mainCam;
+
     private void Awake()
     {
+        mainCam = Camera.main;
         if (inventoryController == null)
         {
             inventoryController = FindFirstObjectByType<InventoryController>();
@@ -59,6 +62,9 @@ public class PlayerInteraction : MonoBehaviour
         if (inventoryController != null && !inventoryController.isInteractable) return;
         if (Input.GetMouseButtonDown(0))
         {
+            if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+                return;
+
             InteractFarmPlot();
         }
 
@@ -70,8 +76,9 @@ public class PlayerInteraction : MonoBehaviour
 
     private void InteractFarmPlot()
     {
-        if (Camera.main == null) return;
-        Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        if (mainCam == null) mainCam = Camera.main;
+        if (mainCam == null) return;
+        Vector2 mousePosition = mainCam.ScreenToWorldPoint(Input.mousePosition);
         Collider2D hit = Physics2D.OverlapPoint(mousePosition, farmPlotLayer);
 
         if (hit == null)

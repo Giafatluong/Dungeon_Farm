@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: "Salad B\u1EAFp C\u1EA3i T\u01B0\u01A1i (Fresh Salad)"
   ingredients:
-  - item: {fileID: 11400000, guid: 4b7a8e6b75a48144b849bf42fe69e38d, type: 2}
+  - item: {fileID: 11400000, guid: 5aac5a38adcb69d4d8122b9760c16186, type: 2}
     amount: 2
   resultFood: {fileID: 11400000, guid: 5aac5a38adcb69d4d8122b9760c16186, type: 2}
   resultAmount: 1

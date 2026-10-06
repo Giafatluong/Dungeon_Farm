@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c63989b7d70655d4eb98239d5836f0e2, type: 3}
   m_Name: Recipe_Grilled Corn
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
-  recipeName: 
-  ingredients: []
-  resultFood: {fileID: 0}
+  recipeName: "B\u1EAFp N\u01B0\u1EDBng Th\u01A1m (Grilled Corn)"
+  ingredients:
+  - item: {fileID: 11400000, guid: 6f0551175f3de074a948a8c67a7e7dce, type: 2}
+    amount: 2
+  resultFood: {fileID: 11400000, guid: 6f0551175f3de074a948a8c67a7e7dce, type: 2}
   resultAmount: 1

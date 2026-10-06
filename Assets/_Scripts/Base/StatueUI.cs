@@ -56,7 +56,8 @@ public class StatueUI : MonoBehaviour
     private readonly List<InventoryButton> backpackSlots = new List<InventoryButton>();
     private readonly List<OfferingSlot> activeOfferingSlots = new List<OfferingSlot>();
 
-    public bool IsOpen => statuePanel != null && statuePanel.activeSelf;
+    private bool isExplicitlyOpened = false;
+    public bool IsOpen => isExplicitlyOpened && statuePanel != null && statuePanel.activeSelf;
     public ItemContainer PlayerBackpack => backpackContainer;
 
     private void Awake()
@@ -71,7 +72,8 @@ public class StatueUI : MonoBehaviour
 
     private void Start()
     {
-        if (statuePanel != null)
+        // Only hide on start if not already opened by player interaction
+        if (!isExplicitlyOpened && statuePanel != null)
         {
             statuePanel.SetActive(false);
         }
@@ -109,6 +111,7 @@ public class StatueUI : MonoBehaviour
 
     public void Open(Statue statue, List<Offering> offerings, ItemContainer backpack)
     {
+        isExplicitlyOpened = true;
         currentStatue = statue;
         currentOfferings = offerings;
         backpackContainer = backpack;
@@ -118,6 +121,7 @@ public class StatueUI : MonoBehaviour
         if (statuePanel != null)
         {
             statuePanel.SetActive(true);
+            statuePanel.transform.SetAsLastSibling();
         }
 
         SubscribeEvents();
@@ -130,6 +134,7 @@ public class StatueUI : MonoBehaviour
 
     public void Close()
     {
+        isExplicitlyOpened = false;
         UnsubscribeEvents();
 
         if (statuePanel != null)

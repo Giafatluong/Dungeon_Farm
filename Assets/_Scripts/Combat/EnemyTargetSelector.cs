@@ -50,4 +50,37 @@ public class EnemyTargetSelector : MonoBehaviour
 
         ClearTarget();
     }
+
+    public void CycleTarget(EnemyStats[] enemies, bool forward = true)
+    {
+        if (enemies == null || enemies.Length == 0) return;
+
+        System.Collections.Generic.List<EnemyStats> aliveEnemies = new();
+        for (int i = 0; i < enemies.Length; i++)
+        {
+            if (enemies[i] != null && enemies[i].currentHealth > 0)
+            {
+                aliveEnemies.Add(enemies[i]);
+            }
+        }
+
+        if (aliveEnemies.Count == 0)
+        {
+            ClearTarget();
+            return;
+        }
+
+        int curIdx = aliveEnemies.IndexOf(selectedEnemy);
+        if (curIdx < 0)
+        {
+            SelectEnemy(aliveEnemies[0]);
+            return;
+        }
+
+        int nextIdx = forward
+            ? (curIdx + 1) % aliveEnemies.Count
+            : (curIdx - 1 + aliveEnemies.Count) % aliveEnemies.Count;
+
+        SelectEnemy(aliveEnemies[nextIdx]);
+    }
 }

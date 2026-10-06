@@ -39,6 +39,23 @@ public class InventoryButton : MonoBehaviour,
         {
             itemAmount = GetComponentInChildren<TextMeshProUGUI>(true);
         }
+        FixTextLayout();
+    }
+
+    private void FixTextLayout()
+    {
+        if (itemAmount != null)
+        {
+            RectTransform rt = itemAmount.rectTransform;
+            rt.anchorMin = new Vector2(1f, 0f);
+            rt.anchorMax = new Vector2(1f, 0f);
+            rt.pivot = new Vector2(1f, 0f);
+            rt.anchoredPosition = new Vector2(-3f, 3f);
+            rt.sizeDelta = new Vector2(35f, 18f);
+            itemAmount.alignment = TextAlignmentOptions.BottomRight;
+            itemAmount.characterSpacing = 0f;
+            itemAmount.transform.SetAsLastSibling();
+        }
     }
 
     public void SetSlotData(ItemContainer container, int index)
@@ -64,6 +81,7 @@ public class InventoryButton : MonoBehaviour,
     {
         itemIcon = icon;
         itemAmount = amount;
+        FixTextLayout();
     }
 
     public void SetItem(ItemData itemData, int amount)
@@ -91,6 +109,7 @@ public class InventoryButton : MonoBehaviour,
         {
             if (itemData.isStackable)
             {
+                FixTextLayout();
                 itemAmount.gameObject.SetActive(true);
                 itemAmount.text = amount.ToString();
             }

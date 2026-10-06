@@ -93,46 +93,46 @@ public class DungeonEntranceUI : MonoBehaviour
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 1,
-            floorName = "FLOOR 1: TRIAL DUNGEON (8 WAVES)",
+            floorName = "TẦNG 1",
             bossName = "Skeleton King",
-            subTitle = "8 Complete Stages - Difficulty: Balanced",
-            description = "Trial floor with 8 Waves: Monsters (Slime/Skeleton/Bowman), Dungeon Events, Traveling Merchant, Treasure Chests, Campfire Cooking & Floor Boss."
+            subTitle = "",
+            description = ""
         });
 
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 2,
-            floorName = "FLOOR 2: ANCIENT CRYPT",
+            floorName = "TẦNG 2",
             bossName = "Immortal Skeleton General",
-            subTitle = "Requires Floor 1 Boss - Difficulty: Medium",
-            description = "Underground crypt with immortal skeleton warriors and archers. Monsters are faster and more dangerous."
+            subTitle = "",
+            description = ""
         });
 
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 3,
-            floorName = "FLOOR 3: TOXIC SPORE FOREST",
+            floorName = "TẦNG 3",
             bossName = "Spore Demon Fungus",
-            subTitle = "Requires Floor 2 Boss - Difficulty: Hard",
-            description = "Subterranean toxic mushroom forest. Creatures can self-destruct and emit continuous poison spores."
+            subTitle = "",
+            description = ""
         });
 
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 4,
-            floorName = "FLOOR 4: MAGMA CHASM",
+            floorName = "TẦNG 4",
             bossName = "Abyssal Fire Dragon",
-            subTitle = "Requires Floor 3 Boss - Difficulty: Very Hard",
-            description = "Boiling magma chasm with scorching heat. Requires abundant recovery food and careful tactics."
+            subTitle = "",
+            description = ""
         });
 
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 5,
-            floorName = "FLOOR 5: THRONE OF THE ABYSS",
+            floorName = "TẦNG 5",
             bossName = "Lord of Darkness",
-            subTitle = "Requires Floor 4 Boss - Difficulty: Extreme",
-            description = "Highest pinnacle of the thousand-year dungeon. Defeat the Abyssal Lord to uncover ultimate secrets and treasures."
+            subTitle = "",
+            description = ""
         });
     }
 
@@ -312,46 +312,53 @@ public class DungeonEntranceUI : MonoBehaviour
             // Status Badge
             if (isDefeated)
             {
-                card.statusBadgeText.text = "* CLEARED";
+                card.statusBadgeText.text = "* DA VUOT";
                 card.statusBadgeText.color = ColorStatusDefeatedText;
                 card.statusBadgeBg.color = ColorStatusDefeatedBg;
             }
             else if (isSelected)
             {
-                card.statusBadgeText.text = "> SELECTED";
+                card.statusBadgeText.text = "> CHON";
                 card.statusBadgeText.color = ColorStatusSelectedText;
                 card.statusBadgeBg.color = ColorStatusSelectedBg;
             }
             else if (isUnlocked)
             {
-                card.statusBadgeText.text = "READY";
+                card.statusBadgeText.text = "SAN SANG";
                 card.statusBadgeText.color = ColorStatusUnlockedText;
                 card.statusBadgeBg.color = ColorStatusUnlockedBg;
             }
             else
             {
-                card.statusBadgeText.text = "LOCKED";
+                card.statusBadgeText.text = "KHOA";
                 card.statusBadgeText.color = ColorStatusLockedText;
                 card.statusBadgeBg.color = ColorStatusLockedBg;
             }
         }
 
-        // Details Panel & Enter button text
-        FloorDisplayData selData = GetFloorData(selectedFloor);
+        // Details / Hint Text & Enter button text
         bool selUnlocked = IsFloorUnlocked(selectedFloor);
         bool selDefeated = IsBossDefeated(selectedFloor);
 
-        string statusTag = selDefeated
-            ? "<color=#69F0AE>[* Cleared]</color>"
-            : (selUnlocked ? "<color=#81D4FA>[Ready]</color>" : "<color=#FF5252>[Locked]</color>");
-
-        detailsText.text = $"<b><color=#FFD54F>{selData.floorName}</color> {statusTag}</b>\n" +
-                           $"<size=11><color=#B0BEC5>Boss: <color=#FFE082>{selData.bossName}</color> | {selData.subTitle}</color></size>\n" +
-                           $"<size=11><color=#ECEFF1>{selData.description}</color></size>";
+        if (detailsText != null && feedbackFlashCoroutine == null)
+        {
+            if (!selUnlocked)
+            {
+                detailsText.text = $"<color=#FF5252>Chưa mở khóa: Hạ gục Boss Tầng {selectedFloor - 1} để mở</color>";
+            }
+            else if (selDefeated)
+            {
+                detailsText.text = $"<color=#69F0AE>Đã vượt qua tầng này (Có thể khiêu chiến lại)</color>";
+            }
+            else
+            {
+                detailsText.text = $"<color=#FFE082>Tầng đã sẵn sàng. Nhấn [VÀO TẦNG] hoặc phím Enter để xuất phát</color>";
+            }
+        }
 
         if (enterButtonText != null)
         {
-            enterButtonText.text = $"ENTER DUNGEON (FLOOR {selectedFloor})";
+            enterButtonText.text = selUnlocked ? $"VÀO TẦNG {selectedFloor} (ENTER)" : $"TẦNG {selectedFloor} (ĐÃ KHÓA)";
         }
 
         if (enterButton != null)
@@ -374,12 +381,12 @@ public class DungeonEntranceUI : MonoBehaviour
 
     private System.Collections.IEnumerator FlashWarningRoutine(string warning)
     {
-        detailsText.text = $"<b><color=#FF5252>[!] {warning}</color></b>\n<size=11><color=#FF8A80>You need to defeat the previous floor boss before challenging this floor!</color></size>";
+        detailsText.text = $"<b><color=#FF5252>[!] {warning}</color></b>";
 
-        yield return new WaitForSeconds(2.8f);
+        yield return new WaitForSeconds(2.2f);
 
-        RefreshUI();
         feedbackFlashCoroutine = null;
+        RefreshUI();
     }
 
     #region Procedural UI Builder
@@ -406,19 +413,14 @@ public class DungeonEntranceUI : MonoBehaviour
             }
         }
 
-        // Check if our modal is already built and populated
-        if (dialogPanel != null && floorCards.Count > 0)
-        {
-            return;
-        }
-
+        // Always clean up existing modal to rebuild fresh with latest layout and scrollbar
         Transform existingModal = enterDungeonPanel.transform.Find("FloorSelectionModal");
         if (existingModal != null)
         {
-            dialogPanel = existingModal.gameObject;
-            if (floorCards.Count > 0)
-                return;
+            Destroy(existingModal.gameObject);
         }
+        dialogPanel = null;
+        floorCards.Clear();
 
         // Hide legacy unstyled Yes/No buttons in the scene so they don't overlap
         for (int i = 0; i < enterDungeonPanel.transform.childCount; i++)
@@ -447,7 +449,7 @@ public class DungeonEntranceUI : MonoBehaviour
         dialogRT.anchorMin = new Vector2(0.5f, 0.5f);
         dialogRT.anchorMax = new Vector2(0.5f, 0.5f);
         dialogRT.pivot = new Vector2(0.5f, 0.5f);
-        dialogRT.sizeDelta = new Vector2(560, 620);
+        dialogRT.sizeDelta = new Vector2(560, 560);
         dialogRT.anchoredPosition = Vector2.zero;
 
         Image dialogBg = dialogPanel.GetComponent<Image>();
@@ -457,36 +459,36 @@ public class DungeonEntranceUI : MonoBehaviour
         GameObject titleGO = new GameObject("TitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
         titleGO.transform.SetParent(dialogPanel.transform, false);
         RectTransform titleRT = titleGO.GetComponent<RectTransform>();
-        titleRT.anchorMin = new Vector2(0, 1);
-        titleRT.anchorMax = new Vector2(1, 1);
+        titleRT.anchorMin = new Vector2(0.5f, 1);
+        titleRT.anchorMax = new Vector2(0.5f, 1);
         titleRT.pivot = new Vector2(0.5f, 1);
         titleRT.anchoredPosition = new Vector2(0, -16);
-        titleRT.sizeDelta = new Vector2(-40, 32);
+        titleRT.sizeDelta = new Vector2(500, 26);
 
         titleText = titleGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(titleText);
         titleText.fontSize = 20;
         titleText.fontStyle = FontStyles.Bold;
         titleText.alignment = TextAlignmentOptions.Center;
-        titleText.text = "SELECT DUNGEON FLOOR";
+        titleText.text = "CHỌN TẦNG DUNGEON";
         titleText.color = new Color(1f, 0.85f, 0.35f);
 
         // 3. Subtitle / Prompt
         GameObject subtitleGO = new GameObject("SubtitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
         subtitleGO.transform.SetParent(dialogPanel.transform, false);
         RectTransform subRT = subtitleGO.GetComponent<RectTransform>();
-        subRT.anchorMin = new Vector2(0, 1);
-        subRT.anchorMax = new Vector2(1, 1);
+        subRT.anchorMin = new Vector2(0.5f, 1);
+        subRT.anchorMax = new Vector2(0.5f, 1);
         subRT.pivot = new Vector2(0.5f, 1);
-        subRT.anchoredPosition = new Vector2(0, -48);
-        subRT.sizeDelta = new Vector2(-40, 20);
+        subRT.anchoredPosition = new Vector2(0, -42);
+        subRT.sizeDelta = new Vector2(500, 18);
 
         subtitleText = subtitleGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(subtitleText);
-        subtitleText.fontSize = 11;
+        subtitleText.fontSize = 11.5f;
         subtitleText.fontStyle = FontStyles.Italic;
         subtitleText.alignment = TextAlignmentOptions.Center;
-        subtitleText.text = "Defeat the previous floor boss to advance to higher floors";
+        subtitleText.text = "Hạ gục Boss tầng trước để mở khóa tầng tiếp theo";
         subtitleText.color = new Color(0.70f, 0.75f, 0.85f);
 
         // 4. Decorative divider
@@ -496,110 +498,138 @@ public class DungeonEntranceUI : MonoBehaviour
         divRT.anchorMin = new Vector2(0.5f, 1);
         divRT.anchorMax = new Vector2(0.5f, 1);
         divRT.pivot = new Vector2(0.5f, 1);
-        divRT.anchoredPosition = new Vector2(0, -72);
-        divRT.sizeDelta = new Vector2(490, 2);
-        divGO.GetComponent<Image>().color = new Color(0.85f, 0.70f, 0.25f, 0.5f);
+        divRT.anchoredPosition = new Vector2(0, -64);
+        divRT.sizeDelta = new Vector2(500, 2);
+        divGO.GetComponent<Image>().color = new Color(0.85f, 0.70f, 0.25f, 0.45f);
 
-        // 5. Tower Floors Container
-        // Ordered with Floor 1 at the bottom, Floor 2 above, and so on!
-        GameObject towerGO = new GameObject("TowerFloorsContainer", typeof(RectTransform), typeof(VerticalLayoutGroup));
-        towerGO.transform.SetParent(dialogPanel.transform, false);
-        RectTransform towerRT = towerGO.GetComponent<RectTransform>();
-        towerRT.anchorMin = new Vector2(0.5f, 1);
-        towerRT.anchorMax = new Vector2(0.5f, 1);
-        towerRT.pivot = new Vector2(0.5f, 1);
-        towerRT.anchoredPosition = new Vector2(0, -80);
-        towerRT.sizeDelta = new Vector2(510, 325);
+        // 5. Scroll View Container for Tower Floors
+        GameObject scrollGO = new GameObject("FloorScrollView", typeof(RectTransform), typeof(ScrollRect));
+        scrollGO.transform.SetParent(dialogPanel.transform, false);
+        RectTransform scrollRT = scrollGO.GetComponent<RectTransform>();
+        scrollRT.anchorMin = new Vector2(0, 0);
+        scrollRT.anchorMax = new Vector2(1, 1);
+        scrollRT.offsetMin = new Vector2(24, 78); // Reserved space for Hint and Footer at bottom
+        scrollRT.offsetMax = new Vector2(-24, -70); // Reserved space for Header at top
 
-        VerticalLayoutGroup vlg = towerGO.GetComponent<VerticalLayoutGroup>();
-        vlg.padding = new RectOffset(6, 6, 4, 4);
-        vlg.spacing = 7;
+        ScrollRect sRect = scrollGO.GetComponent<ScrollRect>();
+        sRect.horizontal = false;
+        sRect.vertical = true;
+        sRect.scrollSensitivity = 28f;
+        sRect.movementType = ScrollRect.MovementType.Clamped;
+
+        // Viewport with RectMask2D
+        GameObject vpGO = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
+        vpGO.transform.SetParent(scrollGO.transform, false);
+        RectTransform vpRT = vpGO.GetComponent<RectTransform>();
+        vpRT.anchorMin = Vector2.zero;
+        vpRT.anchorMax = Vector2.one;
+        vpRT.offsetMin = Vector2.zero;
+        vpRT.offsetMax = new Vector2(-16, 0); // Leave space for slider scrollbar on the right
+
+        // Content Container
+        GameObject contentGO = new GameObject("TowerFloorsContainer", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        contentGO.transform.SetParent(vpGO.transform, false);
+        RectTransform contentRT = contentGO.GetComponent<RectTransform>();
+        contentRT.anchorMin = new Vector2(0, 1);
+        contentRT.anchorMax = new Vector2(1, 1);
+        contentRT.pivot = new Vector2(0.5f, 1);
+        contentRT.anchoredPosition = Vector2.zero;
+        contentRT.sizeDelta = Vector2.zero;
+
+        VerticalLayoutGroup vlg = contentGO.GetComponent<VerticalLayoutGroup>();
+        vlg.padding = new RectOffset(4, 4, 4, 4);
+        vlg.spacing = 8;
         vlg.childControlWidth = true;
         vlg.childControlHeight = false;
         vlg.childForceExpandWidth = true;
         vlg.childForceExpandHeight = false;
 
+        ContentSizeFitter csf = contentGO.GetComponent<ContentSizeFitter>();
+        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        // Vertical Slider / Scrollbar
+        GameObject sbGO = new GameObject("VerticalScrollbar", typeof(RectTransform), typeof(Image), typeof(Scrollbar));
+        sbGO.transform.SetParent(scrollGO.transform, false);
+        RectTransform sbRT = sbGO.GetComponent<RectTransform>();
+        sbRT.anchorMin = new Vector2(1, 0);
+        sbRT.anchorMax = new Vector2(1, 1);
+        sbRT.pivot = new Vector2(1, 0.5f);
+        sbRT.anchoredPosition = Vector2.zero;
+        sbRT.sizeDelta = new Vector2(12, 0);
+
+        Image sbBg = sbGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlotImage(sbBg, new Color(0.10f, 0.12f, 0.18f, 0.95f));
+
+        Scrollbar sb = sbGO.GetComponent<Scrollbar>();
+        sb.direction = Scrollbar.Direction.BottomToTop;
+
+        GameObject saGO = new GameObject("SlidingArea", typeof(RectTransform));
+        saGO.transform.SetParent(sbGO.transform, false);
+        RectTransform saRT = saGO.GetComponent<RectTransform>();
+        saRT.anchorMin = Vector2.zero;
+        saRT.anchorMax = Vector2.one;
+        saRT.offsetMin = new Vector2(0, 4);
+        saRT.offsetMax = new Vector2(0, -4);
+
+        GameObject handleGO = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+        handleGO.transform.SetParent(saGO.transform, false);
+        RectTransform handleRT = handleGO.GetComponent<RectTransform>();
+        handleRT.sizeDelta = Vector2.zero;
+
+        Image handleImg = handleGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(handleImg, new Color(1f, 0.78f, 0.25f, 1f));
+
+        sb.handleRect = handleRT;
+        sb.targetGraphic = handleImg;
+
+        sRect.viewport = vpRT;
+        sRect.content = contentRT;
+        sRect.verticalScrollbar = sb;
+
         floorCards.Clear();
 
-        // Add floors in descending order: 5 at the top, down to 1 at the bottom!
+        // Add floors in descending order: 5 at top down to 1 at bottom
         int numFloors = Mathf.Max(totalFloors, floorList.Count);
         for (int f = numFloors; f >= 1; f--)
         {
-            CreateFloorCard(towerGO.transform, f);
+            CreateFloorCard(contentGO.transform, f);
         }
 
-        // 6. Selected Floor Details Panel
-        GameObject detailsBox = new GameObject("DetailsPanel", typeof(RectTransform), typeof(Image));
-        detailsBox.transform.SetParent(dialogPanel.transform, false);
-        RectTransform detailsBoxRT = detailsBox.GetComponent<RectTransform>();
-        detailsBoxRT.anchorMin = new Vector2(0.5f, 0);
-        detailsBoxRT.anchorMax = new Vector2(0.5f, 0);
-        detailsBoxRT.pivot = new Vector2(0.5f, 0);
-        detailsBoxRT.anchoredPosition = new Vector2(0, 78);
-        detailsBoxRT.sizeDelta = new Vector2(500, 78);
-
-        Image detailsBg = detailsBox.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(detailsBg, new Color(0.07f, 0.08f, 0.12f, 0.95f));
-
-        // Boss Preview Box with Slot Frame
-        GameObject bossBoxGO = new GameObject("BossPreviewBox", typeof(RectTransform), typeof(Image));
-        bossBoxGO.transform.SetParent(detailsBox.transform, false);
-        RectTransform bossBoxRT = bossBoxGO.GetComponent<RectTransform>();
-        bossBoxRT.anchorMin = new Vector2(0, 0.5f);
-        bossBoxRT.anchorMax = new Vector2(0, 0.5f);
-        bossBoxRT.pivot = new Vector2(0, 0.5f);
-        bossBoxRT.anchoredPosition = new Vector2(10, 0);
-        bossBoxRT.sizeDelta = new Vector2(58, 58);
-        Image bossBoxBg = bossBoxGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlotImage(bossBoxBg, new Color(0.24f, 0.28f, 0.38f, 1f));
-
-        GameObject bossIconGO = new GameObject("BossIcon", typeof(RectTransform), typeof(Image));
-        bossIconGO.transform.SetParent(bossBoxGO.transform, false);
-        RectTransform biRT = bossIconGO.GetComponent<RectTransform>();
-        biRT.anchorMin = new Vector2(0.5f, 0.5f);
-        biRT.anchorMax = new Vector2(0.5f, 0.5f);
-        biRT.sizeDelta = new Vector2(46, 46);
-        Image bossIcon = bossIconGO.GetComponent<Image>();
-        bossIcon.preserveAspect = true;
-        Sprite bSprite = DungeonUIAssetHelper.GetBossSprite();
-        if (bSprite != null)
-        {
-            bossIcon.sprite = bSprite;
-        }
-
-        GameObject detailsTextGO = new GameObject("DetailsText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        detailsTextGO.transform.SetParent(detailsBox.transform, false);
+        // 6. Hint / Warning Status Line (Outside ScrollView, safely above Footer)
+        GameObject detailsTextGO = new GameObject("HintText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        detailsTextGO.transform.SetParent(dialogPanel.transform, false);
         RectTransform dtRT = detailsTextGO.GetComponent<RectTransform>();
-        dtRT.anchorMin = Vector2.zero;
-        dtRT.anchorMax = Vector2.one;
-        dtRT.offsetMin = new Vector2(76, 6);
-        dtRT.offsetMax = new Vector2(-12, -6);
+        dtRT.anchorMin = new Vector2(0.5f, 0);
+        dtRT.anchorMax = new Vector2(0.5f, 0);
+        dtRT.pivot = new Vector2(0.5f, 0);
+        dtRT.anchoredPosition = new Vector2(0, 56);
+        dtRT.sizeDelta = new Vector2(500, 20);
 
         detailsText = detailsTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(detailsText);
         detailsText.fontSize = 11.5f;
-        detailsText.alignment = TextAlignmentOptions.TopLeft;
+        detailsText.alignment = TextAlignmentOptions.Center;
         detailsText.textWrappingMode = TextWrappingModes.Normal;
-        detailsText.text = "Select a floor to view details.";
+        detailsText.text = "";
 
-        // 7. Footer Action Buttons (Enter Dungeon & Back)
+        // 7. Footer Action Buttons (Fixed at bottom outside ScrollView)
         GameObject footerGO = new GameObject("FooterButtons", typeof(RectTransform), typeof(HorizontalLayoutGroup));
         footerGO.transform.SetParent(dialogPanel.transform, false);
         RectTransform footerRT = footerGO.GetComponent<RectTransform>();
         footerRT.anchorMin = new Vector2(0.5f, 0);
         footerRT.anchorMax = new Vector2(0.5f, 0);
         footerRT.pivot = new Vector2(0.5f, 0);
-        footerRT.anchoredPosition = new Vector2(0, 16);
-        footerRT.sizeDelta = new Vector2(500, 48);
+        footerRT.anchoredPosition = new Vector2(0, 12);
+        footerRT.sizeDelta = new Vector2(500, 42);
 
         HorizontalLayoutGroup hlg = footerGO.GetComponent<HorizontalLayoutGroup>();
-        hlg.spacing = 16;
+        hlg.spacing = 14;
         hlg.childControlWidth = true;
         hlg.childControlHeight = true;
         hlg.childForceExpandWidth = true;
         hlg.childForceExpandHeight = true;
 
-        // "Enter Dungeon" (YES) Button
+        // "Enter Dungeon" Button
         GameObject enterBtnGO = new GameObject("BtnEnterDungeon", typeof(RectTransform), typeof(Image), typeof(Button));
         enterBtnGO.transform.SetParent(footerGO.transform, false);
         Image enterImg = enterBtnGO.GetComponent<Image>();
@@ -615,13 +645,13 @@ public class DungeonEntranceUI : MonoBehaviour
         etRT.sizeDelta = Vector2.zero;
         enterButtonText = enterTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(enterButtonText);
-        enterButtonText.fontSize = 14;
+        enterButtonText.fontSize = 13.5f;
         enterButtonText.fontStyle = FontStyles.Bold;
         enterButtonText.alignment = TextAlignmentOptions.Center;
-        enterButtonText.text = "ENTER DUNGEON (FLOOR 1)";
+        enterButtonText.text = "VÀO TẦNG 1 (ENTER)";
         enterButtonText.color = Color.white;
 
-        // "Back" (NO) Button
+        // "Back" Button
         GameObject closeBtnGO = new GameObject("BtnCancel", typeof(RectTransform), typeof(Image), typeof(Button));
         closeBtnGO.transform.SetParent(footerGO.transform, false);
         Image closeImg = closeBtnGO.GetComponent<Image>();
@@ -640,7 +670,7 @@ public class DungeonEntranceUI : MonoBehaviour
         closeText.fontSize = 13;
         closeText.fontStyle = FontStyles.Bold;
         closeText.alignment = TextAlignmentOptions.Center;
-        closeText.text = "BACK";
+        closeText.text = "QUAY LẠI";
         closeText.color = new Color(0.9f, 0.9f, 0.9f);
 
         // Top-right 'X' close button
@@ -680,8 +710,8 @@ public class DungeonEntranceUI : MonoBehaviour
         cardGO.transform.SetParent(parent, false);
 
         LayoutElement le = cardGO.GetComponent<LayoutElement>();
-        le.preferredHeight = 56;
-        le.minHeight = 54;
+        le.preferredHeight = 58;
+        le.minHeight = 58;
 
         Image cardBg = cardGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(cardBg, new Color(0.12f, 0.16f, 0.23f, 0.95f));
@@ -698,7 +728,7 @@ public class DungeonEntranceUI : MonoBehaviour
         int capturedFloor = floorNum;
         cardBtn.onClick.AddListener(() => SelectFloor(capturedFloor));
 
-        // 1. Left Badge (e.g. "FLOOR 1")
+        // 1. Left Badge (e.g. "T1", "T2")
         GameObject badgeGO = new GameObject("BadgeBox", typeof(RectTransform), typeof(Image));
         badgeGO.transform.SetParent(cardGO.transform, false);
         RectTransform bRT = badgeGO.GetComponent<RectTransform>();
@@ -706,7 +736,7 @@ public class DungeonEntranceUI : MonoBehaviour
         bRT.anchorMax = new Vector2(0, 0.5f);
         bRT.pivot = new Vector2(0, 0.5f);
         bRT.anchoredPosition = new Vector2(8, 0);
-        bRT.sizeDelta = new Vector2(64, 40);
+        bRT.sizeDelta = new Vector2(46, 42);
         Image badgeBg = badgeGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlotImage(badgeBg, new Color(0.18f, 0.22f, 0.32f, 1f));
 
@@ -718,10 +748,10 @@ public class DungeonEntranceUI : MonoBehaviour
         btRT.sizeDelta = Vector2.zero;
         TextMeshProUGUI bText = bTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(bText);
-        bText.fontSize = 12;
+        bText.fontSize = 13.5f;
         bText.fontStyle = FontStyles.Bold;
         bText.alignment = TextAlignmentOptions.Center;
-        bText.text = $"FLOOR {floorNum}";
+        bText.text = $"T{floorNum}";
         bText.color = new Color(0.7f, 0.85f, 1f);
 
         // 2. Middle Content (Floor Name & Boss)
@@ -731,8 +761,8 @@ public class DungeonEntranceUI : MonoBehaviour
         cRT.anchorMin = new Vector2(0, 0);
         cRT.anchorMax = new Vector2(1, 1);
         cRT.pivot = new Vector2(0, 0.5f);
-        cRT.offsetMin = new Vector2(80, 4);
-        cRT.offsetMax = new Vector2(-140, -4);
+        cRT.offsetMin = new Vector2(62, 3);
+        cRT.offsetMax = new Vector2(-130, -3);
 
         // Floor Name
         GameObject nameGO = new GameObject("FloorName", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -742,10 +772,10 @@ public class DungeonEntranceUI : MonoBehaviour
         nRT.anchorMax = new Vector2(1, 1);
         nRT.pivot = new Vector2(0, 0.5f);
         nRT.anchoredPosition = new Vector2(0, 2);
-        nRT.sizeDelta = new Vector2(0, 22);
+        nRT.sizeDelta = new Vector2(0, 24);
         TextMeshProUGUI nameText = nameGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(nameText);
-        nameText.fontSize = 13;
+        nameText.fontSize = 14;
         nameText.fontStyle = FontStyles.Bold;
         nameText.alignment = TextAlignmentOptions.Left;
         nameText.text = data.floorName;
@@ -762,7 +792,7 @@ public class DungeonEntranceUI : MonoBehaviour
         bossRT.sizeDelta = new Vector2(0, 18);
         TextMeshProUGUI bossText = bossGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(bossText);
-        bossText.fontSize = 10;
+        bossText.fontSize = 10.5f;
         bossText.alignment = TextAlignmentOptions.Left;
         bossText.text = $"Boss: {data.bossName}";
         bossText.color = new Color(0.6f, 0.72f, 0.82f);
@@ -774,8 +804,8 @@ public class DungeonEntranceUI : MonoBehaviour
         sRT.anchorMin = new Vector2(1, 0.5f);
         sRT.anchorMax = new Vector2(1, 0.5f);
         sRT.pivot = new Vector2(1, 0.5f);
-        sRT.anchoredPosition = new Vector2(-8, 0);
-        sRT.sizeDelta = new Vector2(120, 32);
+        sRT.anchoredPosition = new Vector2(-10, 0);
+        sRT.sizeDelta = new Vector2(116, 32);
 
         Image statusBg = statusBoxGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(statusBg, new Color(0.15f, 0.25f, 0.4f, 0.85f));
@@ -791,7 +821,7 @@ public class DungeonEntranceUI : MonoBehaviour
         sText.fontSize = 11;
         sText.fontStyle = FontStyles.Bold;
         sText.alignment = TextAlignmentOptions.Center;
-        sText.text = "READY";
+        sText.text = "SẴN SÀNG";
         sText.color = Color.white;
 
         FloorCardUI cardUI = new FloorCardUI

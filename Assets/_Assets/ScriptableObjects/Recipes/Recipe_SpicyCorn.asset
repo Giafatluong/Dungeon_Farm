@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: "B\u1EAFp N\u01B0\u1EDBng Cay (Spicy Corn)"
   ingredients:
-  - item: {fileID: 11400000, guid: 1e020026f91a85541b11bd8e9a9d5221, type: 2}
+  - item: {fileID: 11400000, guid: 6f0551175f3de074a948a8c67a7e7dce, type: 2}
     amount: 1
-  - item: {fileID: 11400000, guid: f60f6a8d1006791458c801e045769b06, type: 2}
+  - item: {fileID: 11400000, guid: 3df971529d87e11458e9cca160be2dad, type: 2}
     amount: 1
   resultFood: {fileID: 11400000, guid: 6f0551175f3de074a948a8c67a7e7dce, type: 2}
   resultAmount: 1

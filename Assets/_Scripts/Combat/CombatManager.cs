@@ -42,12 +42,20 @@ public class CombatManager : MonoBehaviour
     private Coroutine preparationCoroutine;
     private Coroutine enemyTurnCoroutine;
 
+    public static CombatManager Instance { get; private set; }
+
     private void Awake()
     {
+        Instance = this;
         if (turnManager == null) turnManager = GetComponent<TurnManager>();
         if (speedManager == null) speedManager = GetComponent<SpeedManager>();
         if (targetSelector == null) targetSelector = GetComponent<EnemyTargetSelector>();
         if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     #region Setup
@@ -66,7 +74,12 @@ public class CombatManager : MonoBehaviour
 
         foreach (var e in enemies)
         {
-            if (e != null) e.OnEnemyDeath += HandleEnemyDeath;
+            if (e != null)
+            {
+                e.OnEnemyDeath += HandleEnemyDeath;
+                e.hasActedThisRound = false;
+                e.SelectNextIntent();
+            }
         }
 
         if (speedManager != null)
@@ -86,6 +99,18 @@ public class CombatManager : MonoBehaviour
         if (playerStats != null)
         {
             playerStats.defendCount = 0;
+        }
+
+        if (enemies != null)
+        {
+            foreach (var e in enemies)
+            {
+                if (e != null && e.currentHealth > 0)
+                {
+                    e.hasActedThisRound = false;
+                    e.SelectNextIntent();
+                }
+            }
         }
 
         if (turnManager != null)

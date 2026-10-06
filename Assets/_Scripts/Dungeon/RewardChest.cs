@@ -29,7 +29,7 @@ public class RewardChest : MonoBehaviour
     {
         List<ItemSlot> result = new List<ItemSlot>();
 
-        // 1. Use custom wave loot if specified
+        // 1. Use custom wave loot if specified and non-empty
         if (waveData != null && waveData.customRewardLoot != null && waveData.customRewardLoot.Length > 0)
         {
             foreach (var slot in waveData.customRewardLoot)
@@ -40,37 +40,81 @@ public class RewardChest : MonoBehaviour
                 }
             }
 
-            Debug.Log($"[RewardChest] Using custom wave loot: {result.Count} item(s).");
-            currentChestLoot = result;
-            return result;
-        }
-
-        // 2. Fall back to default loot pool
-        ItemSlot[] pool = defaultLootPool;
-        if (pool == null || pool.Length == 0)
-        {
-            Debug.LogWarning("[RewardChest] No loot pool configured for this chest.");
-            currentChestLoot = result;
-            return result;
-        }
-
-        int rolls = Mathf.Clamp(Random.Range(minLootItems, maxLootItems + 1) + (bonusRollsPerFloor * (floorNumber - 1)), 1, 10);
-
-        List<ItemSlot> shuffledPool = new List<ItemSlot>(pool);
-        ShuffleList(shuffledPool);
-
-        for (int i = 0; i < shuffledPool.Count && result.Count < rolls; i++)
-        {
-            ItemSlot entry = shuffledPool[i];
-            if (entry == null || entry.itemData == null) continue;
-
-            if (Random.value <= dropChance)
+            if (result.Count > 0)
             {
-                result.Add(new ItemSlot { itemData = entry.itemData, amount = Mathf.Max(1, entry.amount) });
+                Debug.Log($"[RewardChest] Using custom wave loot: {result.Count} item(s).");
+                currentChestLoot = result;
+                return result;
             }
         }
 
-        Debug.Log($"[RewardChest] Generated {result.Count} loot item(s) for Floor {floorNumber}.");
+        // 2. Try configured default pool if valid
+        List<ItemData> candidateItems = new List<ItemData>();
+        if (defaultLootPool != null && defaultLootPool.Length > 0)
+        {
+            foreach (var s in defaultLootPool)
+            {
+                if (s != null && s.itemData != null && !candidateItems.Contains(s.itemData))
+                {
+                    candidateItems.Add(s.itemData);
+                }
+            }
+        }
+
+        // 3. Fallback: Automatically gather all available project items (seeds, crops, provisions)
+        if (candidateItems.Count == 0)
+        {
+            ItemData[] allItems = Resources.FindObjectsOfTypeAll<ItemData>();
+            for (int i = 0; i < allItems.Length; i++)
+            {
+                ItemData it = allItems[i];
+                if (it == null) continue;
+                if (!candidateItems.Contains(it))
+                {
+                    candidateItems.Add(it);
+                }
+            }
+        }
+
+        if (candidateItems.Count == 0)
+        {
+            Debug.LogWarning("[RewardChest] No items found in project to generate loot!");
+            currentChestLoot = result;
+            return result;
+        }
+
+        // 4. Procedurally roll a randomized assortment of 2 to 4 distinct items
+        ShuffleList(candidateItems);
+        int rolls = Mathf.Clamp(Random.Range(2, 5) + (bonusRollsPerFloor * Mathf.Max(0, floorNumber - 1)), 2, 6);
+        int itemsToPick = Mathf.Min(rolls, candidateItems.Count);
+
+        for (int i = 0; i < itemsToPick; i++)
+        {
+            ItemData it = candidateItems[i];
+            if (it == null) continue;
+
+            string n = it.name.ToLower();
+            int amount = 1;
+            if (n.Contains("seed") || it.itemName.ToLower().Contains("seed"))
+            {
+                // Seeds drop in stacks of 2 to 5
+                amount = Random.Range(2, 6);
+            }
+            else if (it is FoodData)
+            {
+                // Prepared food drops in stacks of 1 to 2
+                amount = Random.Range(1, 3);
+            }
+            else
+            {
+                // Harvest crops/materials drop in stacks of 2 to 4
+                amount = Random.Range(2, 5);
+            }
+
+            result.Add(new ItemSlot { itemData = it, amount = amount });
+        }
+
+        Debug.Log($"[RewardChest] Procedurally generated {result.Count} randomized reward items for Floor {floorNumber}.");
         currentChestLoot = result;
         return result;
     }

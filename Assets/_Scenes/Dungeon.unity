@@ -7366,12 +7366,14 @@ MonoBehaviour:
   eventScore: -1
   rewardScore: -2
   campScore: 0
+  merchantScore: -1
   minTargetScore: 0
   maxTargetScore: 4
   combatWavePool: []
   campWavePool: []
   eventWavePool: []
   rewardWavePool: []
+  merchantWavePool: []
   bossWave: {fileID: 0}
 --- !u!114 &1363399719
 MonoBehaviour:
@@ -7430,6 +7432,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TurnManager
   speedManager: {fileID: 1363399721}
   combatManager: {fileID: 1363399723}
+  currentRoundNumber: 0
 --- !u!114 &1363399723
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7443,15 +7446,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CombatManager
   playerStats: {fileID: 1429561004}
-  enemyStats: {fileID: 0}
-  targetSelector: {fileID: 1363399720}
-  enemies: []
-  speedManager: {fileID: 1363399721}
   turnManager: {fileID: 1363399722}
-  healthBarManager: {fileID: 1363399719}
-  waveManager: {fileID: 1363399724}
-  combatStartDelay: 3
+  speedManager: {fileID: 1363399721}
+  targetSelector: {fileID: 1363399720}
+  isCombatActive: 0
+  isPreparingCombat: 0
+  isAmbushCurrent: 0
+  preparationTimeRemaining: 0
   currentTurn: 0
+  enemies: []
+  preparationTime: 3
+  enemyTurnDelay: 1.2
 --- !u!114 &1363399724
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7479,6 +7484,8 @@ MonoBehaviour:
   rewardChest: {fileID: 1718459992}
   progressController: {fileID: 0}
   floorGenerator: {fileID: 1363399718}
+  roguelikeMerchantSpawnChance: 0.65
+  enableDynamicRoguelikeMerchant: 1
 --- !u!4 &1363399725
 Transform:
   m_ObjectHideFlags: 0
@@ -8607,6 +8614,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MerchantEvent
   merchantActive: 1
   remainingDays: 5
+  stayDurationDays: 5
+  cooldownDurationDays: 3
   requiredItems:
   - item: {fileID: 0}
     amount: 3
@@ -8688,29 +8697,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c0c4c3a62a74473836b944bfab62634, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RewardChest
-  chestTitle: Ancient Dungeon Chest
-  chestDescription: You discovered an ancient treasure chest! Collect rare seeds
-    and survival rations for your expedition.
-  seedPool:
-  - {fileID: 11400000, guid: 7fbf6b6fc33a6a24aa6ccfb21298e0fd, type: 2}
-  - {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
-  - {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
-  - {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
-  - {fileID: 11400000, guid: ea2db54ad97c8e94e968dd42f17c610f, type: 2}
-  - {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
-  - {fileID: 11400000, guid: 42b4889df87d85948a0ccdcad13f6420, type: 2}
-  foodPool:
-  - {fileID: 11400000, guid: 5aac5a38adcb69d4d8122b9760c16186, type: 2}
-  - {fileID: 11400000, guid: bebc2ac43f68ce44d89cca458fd002c8, type: 2}
-  - {fileID: 11400000, guid: 3df971529d87e11458e9cca160be2dad, type: 2}
-  - {fileID: 11400000, guid: 6f0551175f3de074a948a8c67a7e7dce, type: 2}
-  - {fileID: 11400000, guid: aaf3001eed98e2443b500d28635dfb36, type: 2}
-  - {fileID: 11400000, guid: 87d1b2164c734434682f1fc6e72fba3a, type: 2}
-  - {fileID: 11400000, guid: f19d79014c20725448aa9f587e9a9650, type: 2}
-  cropPool:
-  - {fileID: 11400000, guid: bebc2ac43f68ce44d89cca458fd002c8, type: 2}
-  - {fileID: 11400000, guid: 6f0551175f3de074a948a8c67a7e7dce, type: 2}
-  - {fileID: 11400000, guid: 87d1b2164c734434682f1fc6e72fba3a, type: 2}
+  defaultLootPool: []
+  minLootItems: 1
+  maxLootItems: 3
+  dropChance: 0.75
+  bonusRollsPerFloor: 0
   currentChestLoot: []
 --- !u!4 &1718459993
 Transform:

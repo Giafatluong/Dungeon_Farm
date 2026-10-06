@@ -80,6 +80,14 @@ public class ItemContainer : ScriptableObject
         }
     }
 
+    public static bool IsItemMatch(ItemData a, ItemData b)
+    {
+        if (a == null || b == null) return false;
+        if (ReferenceEquals(a, b) || a == b) return true;
+        if (!string.IsNullOrEmpty(a.itemName) && !string.IsNullOrEmpty(b.itemName) && a.itemName.Equals(b.itemName, System.StringComparison.OrdinalIgnoreCase)) return true;
+        return a.name.Equals(b.name, System.StringComparison.OrdinalIgnoreCase);
+    }
+
     public void RemoveItem(ItemData itemData, int amount)
     {
         if (itemData == null || amount <= 0)
@@ -89,7 +97,7 @@ public class ItemContainer : ScriptableObject
 
         for (int i = 0; i < maxSlots; i++)
         {
-            if (itemSlots[i] != null && itemSlots[i].itemData == itemData && itemSlots[i].amount > 0)
+            if (itemSlots[i] != null && IsItemMatch(itemSlots[i].itemData, itemData) && itemSlots[i].amount > 0)
             {
                 if (itemSlots[i].amount > amount)
                 {
@@ -127,7 +135,7 @@ public class ItemContainer : ScriptableObject
         int total = 0;
         for (int i = 0; i < maxSlots; i++)
         {
-            if (itemSlots[i] != null && itemSlots[i].itemData == itemData && itemSlots[i].amount > 0)
+            if (itemSlots[i] != null && IsItemMatch(itemSlots[i].itemData, itemData) && itemSlots[i].amount > 0)
             {
                 total += itemSlots[i].amount;
             }
@@ -150,7 +158,7 @@ public class ItemContainer : ScriptableObject
             for (int i = 0; i < maxSlots; i++)
             {
                 if (itemSlots[i] != null &&
-                    itemSlots[i].itemData == itemData &&
+                    IsItemMatch(itemSlots[i].itemData, itemData) &&
                     itemSlots[i].amount > 0)
                 {
                     return true;

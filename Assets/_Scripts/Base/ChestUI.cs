@@ -38,7 +38,8 @@ public class ChestUI : MonoBehaviour
     private readonly List<InventoryButton> chestSlots = new List<InventoryButton>();
     private readonly List<InventoryButton> backpackSlots = new List<InventoryButton>();
 
-    public bool IsOpen => chestPanel != null && chestPanel.activeSelf;
+    private bool isExplicitlyOpened = false;
+    public bool IsOpen => isExplicitlyOpened && chestPanel != null && chestPanel.activeSelf;
 
     private void Awake()
     {
@@ -100,7 +101,9 @@ public class ChestUI : MonoBehaviour
 
     private void Start()
     {
-        if (chestPanel != null)
+        // Only hide on start if not already opened by player interaction.
+        // If Open() was called on an inactive GameObject, Unity invokes Start() afterward; do not close it!
+        if (!isExplicitlyOpened && chestPanel != null)
         {
             chestPanel.SetActive(false);
         }
@@ -156,13 +159,17 @@ public class ChestUI : MonoBehaviour
 
     public void Open(ItemContainer chest, ItemContainer backpack)
     {
+        isExplicitlyOpened = true;
         chestContainer = chest;
         backpackContainer = backpack;
 
         AutoBindReferences();
 
         if (chestPanel != null)
+        {
             chestPanel.SetActive(true);
+            chestPanel.transform.SetAsLastSibling();
+        }
 
         SubscribeEvents();
 
@@ -174,6 +181,7 @@ public class ChestUI : MonoBehaviour
 
     public void Close()
     {
+        isExplicitlyOpened = false;
         UnsubscribeEvents();
 
         if (chestPanel != null)

@@ -68,6 +68,7 @@ public class CombatUI : MonoBehaviour
     public Button rewardClaimButton;
 
     private readonly List<GameObject> activeFoodButtons = new();
+    private EnemyStats currentlyBoundTarget = null;
     #endregion
 
     #region Unity Lifecycle
@@ -107,10 +108,7 @@ public class CombatUI : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
-            if (UnityEngine.EventSystems.EventSystem.current == null || !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-            {
-                CheckMouseClickEnemy();
-            }
+            CheckMouseClickEnemy();
         }
 
         UpdatePlayerHUD();
@@ -212,6 +210,12 @@ public class CombatUI : MonoBehaviour
         {
             ProgressionManager.Instance.OnRunEnded -= HandleRunEnded;
         }
+
+        if (currentlyBoundTarget != null)
+        {
+            currentlyBoundTarget.OnIntentChanged -= HandleTargetIntentChanged;
+            currentlyBoundTarget = null;
+        }
     }
     #endregion
 
@@ -231,6 +235,20 @@ public class CombatUI : MonoBehaviour
 
     private void HandleKeyboardShortcuts()
     {
+        // Target cycling is allowed whenever combat is active or preparing
+        if (targetSelector != null && combatManager != null && combatManager.enemies != null && combatManager.enemies.Length > 1)
+        {
+            if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
+            {
+                bool reverse = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+                targetSelector.CycleTarget(combatManager.enemies, !reverse);
+            }
+            else if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
+            {
+                targetSelector.CycleTarget(combatManager.enemies, forward: false);
+            }
+        }
+
         bool canUseShortcuts = combatManager != null && combatManager.isCombatActive && !combatManager.isPreparingCombat && combatManager.currentTurn == CombatManager.Turn.Player && playerStats != null && playerStats.currentHealth > 0;
         if (!canUseShortcuts) return;
 
@@ -254,15 +272,70 @@ public class CombatUI : MonoBehaviour
 
     private void CheckMouseClickEnemy()
     {
-        if (Camera.main == null) return;
-        Vector2 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        RaycastHit2D hit = Physics2D.Raycast(mouseWorldPos, Vector2.zero);
-        if (hit.collider != null)
+        if (targetSelector == null) return;
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
+        Vector3 mouseScreen = Input.mousePosition;
+        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreen);
+
+        // 1. Direct point collider check
+        Collider2D[] colliders = Physics2D.OverlapPointAll(mouseWorldPos);
+        for (int i = 0; i < colliders.Length; i++)
         {
-            EnemyStats enemy = hit.collider.GetComponent<EnemyStats>();
-            if (enemy != null && enemy.currentHealth > 0 && targetSelector != null)
+            if (colliders[i] == null) continue;
+            EnemyStats enemy = colliders[i].GetComponentInParent<EnemyStats>();
+            if (enemy != null && enemy.currentHealth > 0)
             {
                 targetSelector.SelectEnemy(enemy);
+                return;
+            }
+        }
+
+        // 2. Generous circle area check around mouse position (1.5 units)
+        Collider2D[] circleHits = Physics2D.OverlapCircleAll(mouseWorldPos, 1.5f);
+        EnemyStats nearestEnemy = null;
+        float nearestDist = float.MaxValue;
+        for (int i = 0; i < circleHits.Length; i++)
+        {
+            if (circleHits[i] == null) continue;
+            EnemyStats enemy = circleHits[i].GetComponentInParent<EnemyStats>();
+            if (enemy != null && enemy.currentHealth > 0)
+            {
+                float dist = Vector2.Distance(mouseWorldPos, enemy.transform.position);
+                if (dist < nearestDist)
+                {
+                    nearestDist = dist;
+                    nearestEnemy = enemy;
+                }
+            }
+        }
+
+        if (nearestEnemy != null)
+        {
+            targetSelector.SelectEnemy(nearestEnemy);
+            return;
+        }
+
+        // 3. Direct distance fallback against all known combat enemies (within 1.8 units)
+        if (combatManager != null && combatManager.enemies != null)
+        {
+            for (int i = 0; i < combatManager.enemies.Length; i++)
+            {
+                EnemyStats e = combatManager.enemies[i];
+                if (e != null && e.currentHealth > 0)
+                {
+                    float dist = Vector2.Distance(mouseWorldPos, e.transform.position);
+                    if (dist < 1.8f && dist < nearestDist)
+                    {
+                        nearestDist = dist;
+                        nearestEnemy = e;
+                    }
+                }
+            }
+            if (nearestEnemy != null)
+            {
+                targetSelector.SelectEnemy(nearestEnemy);
             }
         }
     }
@@ -500,9 +573,30 @@ public class CombatUI : MonoBehaviour
         }
     }
 
+    private void HandleTargetIntentChanged(EnemyStats enemy, EnemyData.EnemyIntent intent)
+    {
+        if (targetSelector != null && targetSelector.selectedEnemy == enemy)
+        {
+            UpdateTargetInfo(enemy);
+        }
+    }
+
     public void UpdateTargetInfo(EnemyStats enemy)
     {
         if (targetInfoPanel == null) return;
+
+        if (currentlyBoundTarget != enemy)
+        {
+            if (currentlyBoundTarget != null)
+            {
+                currentlyBoundTarget.OnIntentChanged -= HandleTargetIntentChanged;
+            }
+            currentlyBoundTarget = enemy;
+            if (currentlyBoundTarget != null)
+            {
+                currentlyBoundTarget.OnIntentChanged += HandleTargetIntentChanged;
+            }
+        }
 
         if (enemy == null || enemy.currentHealth <= 0)
         {

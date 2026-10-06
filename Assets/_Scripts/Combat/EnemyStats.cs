@@ -18,6 +18,7 @@ public class EnemyStats : MonoBehaviour
     public EnemyTargetSelector targetSelector;
 
     public event System.Action<EnemyStats> OnEnemyDeath;
+    public event System.Action<EnemyStats, EnemyData.EnemyIntent> OnIntentChanged;
 
     protected virtual void Awake()
     {
@@ -25,6 +26,8 @@ public class EnemyStats : MonoBehaviour
         {
             currentHealth = enemyData.maxHealth;
         }
+
+        SelectNextIntent();
     }
 
     protected virtual void Start()
@@ -34,7 +37,25 @@ public class EnemyStats : MonoBehaviour
             currentHealth = enemyData.maxHealth;
         }
 
-        SelectNextIntent();
+        if (targetSelector == null)
+        {
+            targetSelector = FindFirstObjectByType<EnemyTargetSelector>();
+        }
+    }
+
+    private void OnMouseDown()
+    {
+        if (currentHealth <= 0) return;
+
+        if (targetSelector == null)
+        {
+            targetSelector = FindFirstObjectByType<EnemyTargetSelector>();
+        }
+
+        if (targetSelector != null)
+        {
+            targetSelector.SelectEnemy(this);
+        }
     }
 
     #region Stats
@@ -91,11 +112,13 @@ public class EnemyStats : MonoBehaviour
         if (enemyData == null || enemyData.possibleIntents == null || enemyData.possibleIntents.Length == 0)
         {
             currentIntent = EnemyData.EnemyIntent.Attack;
+            OnIntentChanged?.Invoke(this, currentIntent);
             return;
         }
 
         int index = Random.Range(0, enemyData.possibleIntents.Length);
         currentIntent = enemyData.possibleIntents[index];
+        OnIntentChanged?.Invoke(this, currentIntent);
     }
 
     #endregion

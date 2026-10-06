@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: "S\xFAp C\xE0 Chua (Tomato Soup)"
   ingredients:
-  - item: {fileID: 11400000, guid: 24d50eb236d912048b08475f98b0e46a, type: 2}
+  - item: {fileID: 11400000, guid: 87d1b2164c734434682f1fc6e72fba3a, type: 2}
     amount: 2
   resultFood: {fileID: 11400000, guid: 87d1b2164c734434682f1fc6e72fba3a, type: 2}
   resultAmount: 1

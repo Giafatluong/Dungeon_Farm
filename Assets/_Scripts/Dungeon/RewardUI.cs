@@ -723,20 +723,87 @@ public class RewardUI : MonoBehaviour
         backpackHeaderTitle.alignment = TextAlignmentOptions.Center;
         backpackHeaderTitle.text = "YOUR BACKPACK";
 
-        // Backpack Grid Container
-        GameObject bpSlotsGO = new("BackpackSlots", typeof(RectTransform), typeof(GridLayoutGroup));
-        bpSlotsGO.transform.SetParent(rightPanel.transform, false);
+        // Scroll Area for Backpack
+        GameObject bpScrollGO = new("BackpackScrollArea", typeof(RectTransform), typeof(ScrollRect));
+        bpScrollGO.transform.SetParent(rightPanel.transform, false);
+        RectTransform bpScrollRT = bpScrollGO.GetComponent<RectTransform>();
+        bpScrollRT.anchorMin = Vector2.zero;
+        bpScrollRT.anchorMax = Vector2.one;
+        bpScrollRT.offsetMin = new Vector2(10, 10);
+        bpScrollRT.offsetMax = new Vector2(-10, -34);
+
+        ScrollRect bpScrollRect = bpScrollGO.GetComponent<ScrollRect>();
+        bpScrollRect.horizontal = false;
+        bpScrollRect.vertical = true;
+        bpScrollRect.movementType = ScrollRect.MovementType.Clamped;
+        bpScrollRect.scrollSensitivity = 25f;
+
+        // Viewport
+        GameObject bpViewportGO = new("Viewport", typeof(RectTransform), typeof(RectMask2D));
+        bpViewportGO.transform.SetParent(bpScrollGO.transform, false);
+        RectTransform bpVpRT = bpViewportGO.GetComponent<RectTransform>();
+        bpVpRT.anchorMin = Vector2.zero;
+        bpVpRT.anchorMax = Vector2.one;
+        bpVpRT.offsetMin = Vector2.zero;
+        bpVpRT.offsetMax = new Vector2(-16, 0); // leave space for scrollbar on the right
+
+        // Backpack Grid Container (Content)
+        GameObject bpSlotsGO = new("BackpackSlots", typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter));
+        bpSlotsGO.transform.SetParent(bpViewportGO.transform, false);
         backpackSlotsParent = bpSlotsGO.GetComponent<RectTransform>();
-        backpackSlotsParent.anchorMin = Vector2.zero;
-        backpackSlotsParent.anchorMax = Vector2.one;
-        backpackSlotsParent.offsetMin = new Vector2(14, 14);
-        backpackSlotsParent.offsetMax = new Vector2(-14, -36);
+        backpackSlotsParent.anchorMin = new Vector2(0, 1);
+        backpackSlotsParent.anchorMax = new Vector2(1, 1);
+        backpackSlotsParent.pivot = new Vector2(0.5f, 1);
+        backpackSlotsParent.anchoredPosition = Vector2.zero;
+        backpackSlotsParent.sizeDelta = new Vector2(0, 0);
 
         GridLayoutGroup glg = bpSlotsGO.GetComponent<GridLayoutGroup>();
-        glg.cellSize = new Vector2(52, 52);
-        glg.spacing = new Vector2(8, 8);
+        glg.cellSize = new Vector2(50, 50);
+        glg.spacing = new Vector2(6, 6);
+        glg.padding = new RectOffset(4, 4, 4, 4);
         glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         glg.constraintCount = 5;
+
+        ContentSizeFitter csf = bpSlotsGO.GetComponent<ContentSizeFitter>();
+        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        bpScrollRect.viewport = bpVpRT;
+        bpScrollRect.content = backpackSlotsParent;
+
+        // Vertical Scrollbar / Slider
+        GameObject sbGO = new("VerticalScrollbar", typeof(RectTransform), typeof(Image), typeof(Scrollbar));
+        sbGO.transform.SetParent(bpScrollGO.transform, false);
+        RectTransform sbRT = sbGO.GetComponent<RectTransform>();
+        sbRT.anchorMin = new Vector2(1, 0);
+        sbRT.anchorMax = new Vector2(1, 1);
+        sbRT.pivot = new Vector2(1, 0.5f);
+        sbRT.sizeDelta = new Vector2(12, 0);
+        sbRT.anchoredPosition = Vector2.zero;
+
+        Image sbBg = sbGO.GetComponent<Image>();
+        sbBg.color = new Color(0.04f, 0.06f, 0.09f, 0.8f);
+
+        Scrollbar sb = sbGO.GetComponent<Scrollbar>();
+        sb.direction = Scrollbar.Direction.BottomToTop;
+
+        GameObject slideAreaGO = new("SlidingArea", typeof(RectTransform));
+        slideAreaGO.transform.SetParent(sbGO.transform, false);
+        RectTransform saRT = slideAreaGO.GetComponent<RectTransform>();
+        saRT.anchorMin = Vector2.zero;
+        saRT.anchorMax = Vector2.one;
+        saRT.sizeDelta = Vector2.zero;
+
+        GameObject handleGO = new("Handle", typeof(RectTransform), typeof(Image));
+        handleGO.transform.SetParent(slideAreaGO.transform, false);
+        RectTransform handleRT = handleGO.GetComponent<RectTransform>();
+        handleRT.sizeDelta = new Vector2(0, 0);
+
+        Image handleImg = handleGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(handleImg, new Color(0.25f, 0.42f, 0.65f, 1f));
+
+        sb.handleRect = handleRT;
+        sb.targetGraphic = handleImg;
+        bpScrollRect.verticalScrollbar = sb;
 
         // 5. Bottom Action Bar
         GameObject footerGO = new("Footer", typeof(RectTransform));

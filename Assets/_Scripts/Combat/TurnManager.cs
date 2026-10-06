@@ -41,6 +41,7 @@ public class TurnManager : MonoBehaviour
                 {
                     enemy.ResetDefend();
                     enemy.hasActedThisRound = false;
+                    enemy.SelectNextIntent();
                 }
             }
         }
