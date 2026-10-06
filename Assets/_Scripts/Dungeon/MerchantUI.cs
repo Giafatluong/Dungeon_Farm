@@ -154,8 +154,25 @@ public class MerchantUI : MonoBehaviour
 
         BuildWaresList();
         BuildBackpackSlots(backpackContainer);
-        UpdateBackpackHeader();
-        SetFeedback("Welcome, brave traveler! Browse my rare recipes, barter seeds, or stock up on hot travel rations.");
+        bool isMerchantActive = currentMerchant == null || (currentMerchant.merchantActive && currentMerchant.remainingDays > 0);
+        if (isMerchantActive)
+        {
+            int daysLeft = currentMerchant != null ? currentMerchant.remainingDays : 5;
+            if (subtitleText != null)
+            {
+                subtitleText.text = $"Traveling Merchant Camp | Remaining stay: {daysLeft} days";
+                subtitleText.color = new Color(0.78f, 0.82f, 0.92f);
+            }
+            SetFeedback("Welcome, brave traveler! Browse my rare recipes, barter seeds, or stock up on hot travel rations.");
+        }
+        else
+        {
+            if (subtitleText != null)
+            {
+                subtitleText.text = "<color=#FF7777>Merchant has departed! Trade counter is temporarily closed.</color>";
+            }
+            SetFeedback("The merchant packed up and departed to a new land. You can rest for a moment then continue your journey.");
+        }
     }
 
     public void Close()
@@ -188,11 +205,23 @@ public class MerchantUI : MonoBehaviour
             Destroy(child.gameObject);
         }
 
+        bool isMerchantActive = currentMerchant == null || (currentMerchant.merchantActive && currentMerchant.remainingDays > 0);
+        if (!isMerchantActive)
+        {
+            CreateSectionHeader("REST STOP - MERCHANT DEPARTED", new Color(0.6f, 0.8f, 1f));
+            CreateDepartedRestCard();
+            return;
+        }
+
         // 1. Rare Cooking Recipe Section
+        CreateSectionHeader("EXOTIC COOKING RECIPE", new Color(1f, 0.82f, 0.35f));
         if (currentMerchant.rewardRecipe != null)
         {
-            CreateSectionHeader("EXOTIC COOKING RECIPE", new Color(1f, 0.82f, 0.35f));
             CreateRecipeTradeCard(currentMerchant.rewardRecipe, currentMerchant.requiredItems);
+        }
+        else
+        {
+            CreateAllRecipesUnlockedCard();
         }
 
         // 2. Seed Barter Section
@@ -224,6 +253,64 @@ public class MerchantUI : MonoBehaviour
         }
     }
 
+    private void CreateDepartedRestCard()
+    {
+        GameObject cardGO = new GameObject("DepartedRestCard", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
+        cardGO.transform.SetParent(waresContainer, false);
+        RectTransform cardRT = cardGO.GetComponent<RectTransform>();
+        cardRT.sizeDelta = new Vector2(490, 140);
+
+        Image bg = cardGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.12f, 0.16f, 0.22f, 0.98f));
+
+        VerticalLayoutGroup vlg = cardGO.GetComponent<VerticalLayoutGroup>();
+        vlg.padding = new RectOffset(16, 16, 16, 16);
+        vlg.spacing = 10;
+        vlg.childControlWidth = true;
+        vlg.childControlHeight = false;
+
+        // Info message
+        GameObject textGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        textGO.transform.SetParent(cardGO.transform, false);
+        TextMeshProUGUI textTMP = textGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(textTMP);
+        textTMP.fontSize = 12;
+        textTMP.lineSpacing = 4;
+        textTMP.color = new Color(0.85f, 0.9f, 0.95f);
+        textTMP.text = "The merchant caravan packed up and departed after their dungeon stay ended.\nThey left some warm coals and pure spring water for passing travelers.";
+
+        // Rest / Continue Button
+        GameObject btnGO = new GameObject("BtnRest", typeof(RectTransform), typeof(Image), typeof(Button));
+        btnGO.transform.SetParent(cardGO.transform, false);
+        btnGO.GetComponent<RectTransform>().sizeDelta = new Vector2(458, 40);
+
+        Image btnBg = btnGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(btnBg, new Color(0.2f, 0.45f, 0.35f, 1f));
+
+        Button btn = btnGO.GetComponent<Button>();
+        btn.onClick.AddListener(() =>
+        {
+            PlayerStats ps = FindFirstObjectByType<PlayerStats>();
+            if (ps != null)
+            {
+                ps.currentHealth = Mathf.Min(ps.maxHealth, ps.currentHealth + 20);
+                ps.currentHunger = Mathf.Min(ps.maxHunger, ps.currentHunger + 10);
+            }
+            Close();
+        });
+
+        GameObject btnTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        btnTextGO.transform.SetParent(btnGO.transform, false);
+        TextMeshProUGUI btnTMP = btnTextGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(btnTMP);
+        btnTMP.fontSize = 13;
+        btnTMP.fontStyle = FontStyles.Bold;
+        btnTMP.alignment = TextAlignmentOptions.Center;
+        btnTMP.text = "[Rest & Recover 20 HP -> Continue]";
+        btnTMP.color = Color.white;
+        btnTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(458, 40);
+    }
+
     private void CreateSectionHeader(string title, Color color)
     {
         GameObject headerGO = new GameObject("SectionHeader", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -236,7 +323,32 @@ public class MerchantUI : MonoBehaviour
         tmp.fontSize = 12;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = color;
-        tmp.text = $"• {title} •";
+        tmp.text = $"[ {title} ]";
+    }
+
+    private void CreateAllRecipesUnlockedCard()
+    {
+        GameObject cardGO = new GameObject("AllRecipesUnlockedCard", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
+        cardGO.transform.SetParent(waresContainer, false);
+        RectTransform cardRT = cardGO.GetComponent<RectTransform>();
+        cardRT.sizeDelta = new Vector2(490, 50);
+
+        Image bg = cardGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.12f, 0.18f, 0.15f, 0.95f));
+
+        HorizontalLayoutGroup hlg = cardGO.GetComponent<HorizontalLayoutGroup>();
+        hlg.padding = new RectOffset(14, 14, 8, 8);
+        hlg.childControlWidth = true;
+        hlg.childControlHeight = true;
+
+        GameObject textGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        textGO.transform.SetParent(cardGO.transform, false);
+        TextMeshProUGUI tmp = textGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(tmp);
+        tmp.fontSize = 12;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = new Color(0.45f, 0.95f, 0.65f);
+        tmp.text = "<b>ALL RECIPES UNLOCKED!</b> (Mastered all cooking techniques)";
     }
 
     private void CreateRecipeTradeCard(RecipeData recipe, ItemRequirement[] requiredItems)
@@ -353,7 +465,7 @@ public class MerchantUI : MonoBehaviour
                 bool success = currentMerchant.Trade(backpackContainer);
                 if (success)
                 {
-                    SetFeedback($"<color=#55FF88>★ Learned new recipe: {recipe.recipeName}!</color>");
+                    SetFeedback($"<color=#55FF88>[UNLOCKED] Learned new recipe: {recipe.recipeName}!</color>");
                     backpackContainer?.NotifyChange();
                 }
                 else
@@ -427,7 +539,7 @@ public class MerchantUI : MonoBehaviour
         string inText = trade.inputSeed != null ? trade.inputSeed.itemName : "Seed";
         string outText = trade.outputSeed != null ? trade.outputSeed.itemName : "Seed";
 
-        descTMP.text = $"<b>{trade.inputAmount}x {inText}</b> (<color={inColor}>have: {haveInput}</color>)\n➔ Receive: <color=#FFD700><b>{trade.outputAmount}x {outText}</b></color>";
+        descTMP.text = $"<b>{trade.inputAmount}x {inText}</b> (<color={inColor}>have: {haveInput}</color>)\n-> Receive: <color=#FFD700><b>{trade.outputAmount}x {outText}</b></color>";
 
         // Output Seed Slot Box
         GameObject outSlotGO = new GameObject("OutSlot", typeof(RectTransform), typeof(Image));
@@ -533,7 +645,7 @@ public class MerchantUI : MonoBehaviour
         string inText = trade.inputProduce != null ? trade.inputProduce.itemName : "Crop";
         string outText = trade.outputFood != null ? trade.outputFood.itemName : "Ration";
 
-        descTMP.text = $"<b>{trade.inputAmount}x {inText}</b> (<color={inColor}>have: {haveInput}</color>)\n➔ Rations: <color=#77CCFF><b>{trade.outputAmount}x {outText}</b></color>";
+        descTMP.text = $"<b>{trade.inputAmount}x {inText}</b> (<color={inColor}>have: {haveInput}</color>)\n-> Rations: <color=#77CCFF><b>{trade.outputAmount}x {outText}</b></color>";
 
         // Output Food Slot Box
         GameObject outSlotGO = new GameObject("OutSlot", typeof(RectTransform), typeof(Image));
@@ -792,9 +904,8 @@ public class MerchantUI : MonoBehaviour
         closeRT.sizeDelta = new Vector2(30, 30);
 
         Image closeBg = closeGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(closeBg, new Color(0.6f, 0.18f, 0.18f, 1f));
-
         closeButton = closeGO.GetComponent<Button>();
+        DungeonUIAssetHelper.StyleButton(closeButton, closeBg, new Color(0.6f, 0.18f, 0.18f, 1f), new Color(0.85f, 0.25f, 0.25f, 1f));
         closeButton.onClick.AddListener(Close);
 
         GameObject xTextGO = new GameObject("X", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -920,9 +1031,8 @@ public class MerchantUI : MonoBehaviour
         continueRT.sizeDelta = new Vector2(290, 38);
 
         Image continueBg = continueGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(continueBg, new Color(0.18f, 0.55f, 0.32f, 1f));
-
         continueButton = continueGO.GetComponent<Button>();
+        DungeonUIAssetHelper.StyleButton(continueButton, continueBg, new Color(0.18f, 0.55f, 0.32f, 1f), new Color(0.24f, 0.70f, 0.40f, 1f));
         continueButton.onClick.AddListener(Close);
 
         GameObject continueTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -932,18 +1042,18 @@ public class MerchantUI : MonoBehaviour
         continueTMP.fontSize = 13;
         continueTMP.fontStyle = FontStyles.Bold;
         continueTMP.alignment = TextAlignmentOptions.Center;
-        continueTMP.text = "Continue Journey ➔";
+        continueTMP.text = "CONTINUE EXPEDITION >>";
         continueTMP.color = Color.white;
         continueTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(290, 38);
     }
 
     private int GetItemCount(ItemContainer container, ItemData item)
     {
-        if (container == null || item == null) return 0;
+        if (container == null || item == null || container.itemSlots == null) return 0;
         int count = 0;
         for (int i = 0; i < container.itemSlots.Length; i++)
         {
-            if (container.itemSlots[i].itemData == item)
+            if (container.itemSlots[i] != null && container.itemSlots[i].itemData == item)
             {
                 count += container.itemSlots[i].amount;
             }

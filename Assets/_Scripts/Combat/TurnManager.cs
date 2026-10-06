@@ -7,6 +7,12 @@ public class TurnManager : MonoBehaviour
 
     private int currentIndex;
     private bool isAmbushRound;
+    public int currentRoundNumber = 0;
+
+    public void ResetCombatRounds()
+    {
+        currentRoundNumber = 0;
+    }
 
     private void Awake()
     {
@@ -21,9 +27,23 @@ public class TurnManager : MonoBehaviour
             Awake();
         }
 
+        currentRoundNumber++;
         isAmbushRound = isAmbush;
         speedManager.CreateSpeedOrder(isAmbushRound);
         currentIndex = 0;
+
+        // Reset round state for all active enemies
+        if (combatManager != null && combatManager.enemies != null)
+        {
+            foreach (var enemy in combatManager.enemies)
+            {
+                if (enemy != null && enemy.currentHealth > 0)
+                {
+                    enemy.ResetDefend();
+                    enemy.hasActedThisRound = false;
+                }
+            }
+        }
 
         StartCurrentTurn();
     }

@@ -8,9 +8,11 @@ public class DungeonEventManager : MonoBehaviour
 
     [Header("Event Configuration")]
     [SerializeField] private List<DungeonEvent> customEvents = new();
+    [Tooltip("If true, specialized merchant archetypes (Botanist, Chef, Quartermaster) can also appear dynamically in the random Event pool when the merchant calendar cycle is active.")]
+    [SerializeField] private bool includeMerchantInRandomEvents = true;
 
     private readonly List<DungeonEvent> runtimeEvents = new();
-    private int lastEventIndex = -1;
+    private string lastEventID = string.Empty;
 
     private void Awake()
     {
@@ -61,51 +63,147 @@ public class DungeonEventManager : MonoBehaviour
             }
         }
 
-        // 1. EVENT: The Wandering Merchant
-        DungeonEvent merchantEvt = new()
+        // 1. DIVERSE MERCHANT ARCHETYPES (Appears in Random Events when merchant calendar is active)
+        if (includeMerchantInRandomEvents)
         {
-            eventID = "Event_Merchant",
-            eventTitle = "The Wandering Merchant",
-            eventCategory = "MERCHANT",
-            narrativeStory = "A hooded merchant sits beside a glowing lantern amidst the dungeon rubble.\n\"Greetings, traveler. Deep in these halls, seeds and rations are worth more than gold. Shall we trade?\""
-        };
-        merchantEvt.choices.Add(new DungeonEventChoice
-        {
-            choiceLabel = "[Open Full Shop]",
-            choiceDetails = "Browse rare recipes, exchange seeds, and buy travel rations",
-            opensMerchantShop = true,
-            outcomeNarrative = "The merchant unrolls a thick velvet cloth revealing rare cooking recipes and seeds."
-        });
-        merchantEvt.choices.Add(new DungeonEventChoice
-        {
-            choiceLabel = "[Barter Seeds]",
-            choiceDetails = "Give 2x Wheat Seed -> Receive 1x Tomato Seed & 1x Corn Seed",
-            requiredItem = wheatSeed,
-            requiredItemAmount = 2,
-            rewardItem = tomatoSeed != null ? tomatoSeed : carrotSeed,
-            rewardItemAmount = 2,
-            outcomeNarrative = "The merchant inspects your seeds with approval.\n\"A fair exchange! Cultivate these well on your farm surface.\""
-        });
-        merchantEvt.choices.Add(new DungeonEventChoice
-        {
-            choiceLabel = "[Buy Hot Rations]",
-            choiceDetails = "Give 2x Harvested Crops -> Receive warm food & recover 25 HP",
-            requiredItem = carrot != null ? carrot : wheat,
-            requiredItemAmount = 2,
-            rewardItem = freshSalad != null ? freshSalad : cabbage,
-            rewardItemAmount = 1,
-            hpRecovery = 25,
-            hungerRecovery = 15,
-            outcomeNarrative = "The merchant hands you a steaming meal wrapped in fresh parchment.\nYour vitality returns as you enjoy the warm food."
-        });
-        merchantEvt.choices.Add(new DungeonEventChoice
-        {
-            choiceLabel = "[Leave]",
-            choiceDetails = "Politely decline and continue forward",
-            isLeaveChoice = true,
-            outcomeNarrative = "\"May fortune smile upon your blade, traveler.\" The merchant nods as you step away."
-        });
-        runtimeEvents.Add(merchantEvt);
+            // Archetype A: The Mystic Seed Botanist
+            DungeonEvent botanistEvt = new()
+            {
+                eventID = "Event_Merchant_Seeds",
+                eventTitle = "The Seed Botanist",
+                eventCategory = "MERCHANT",
+                narrativeStory = "An eccentric botanist in a moss-lined cloak inspects bioluminescent sprouts in the dungeon fissures.\n\"Greetings, farmer! Surface seeds adapt wonderfully to dungeon essence. Barter your common seeds with me!\""
+            };
+            botanistEvt.choices.Add(new DungeonEventChoice
+            {
+                choiceLabel = "[Barter Rare Seeds]",
+                choiceDetails = "Give 2x Wheat Seeds -> Receive 2x Rare Tomato/Corn Seeds",
+                requiredItem = wheatSeed != null ? wheatSeed : carrotSeed,
+                requiredItemAmount = 2,
+                rewardItem = tomatoSeed != null ? tomatoSeed : (cornSeed != null ? cornSeed : wheatSeed),
+                rewardItemAmount = 2,
+                outcomeNarrative = "\"Splendid quality! Cultivate these well on your surface soil for higher yields.\""
+            });
+            botanistEvt.choices.Add(new DungeonEventChoice
+            {
+                choiceLabel = "[Herbal Bark Extract]",
+                choiceDetails = "Give 1x Crop -> Drink invigorating botanical draught (+3 DEF for 6 turns, +15 Fullness)",
+                requiredItem = wheat != null ? wheat : (carrot != null ? carrot : cabbage),
+                requiredItemAmount = 1,
+                defBuff = 3,
+                buffDuration = 6,
+                hungerRecovery = 15,
+                outcomeNarrative = "You drink the earthy concoction. Your skin feels resilient as ancient oak bark!"
+            });
+            botanistEvt.choices.Add(new DungeonEventChoice
+            {
+                choiceLabel = "[Open Trade Ledger]",
+                choiceDetails = "Browse full wares (Recipes, Seeds, and Rations)",
+                opensMerchantShop = true,
+                outcomeNarrative = "The botanist unfolds his travel pack, revealing rare seed packets and recipes."
+            });
+            botanistEvt.choices.Add(new DungeonEventChoice
+            {
+                choiceLabel = "[Leave]",
+                choiceDetails = "Bid farewell and continue onward",
+                isLeaveChoice = true,
+                outcomeNarrative = "\"May the harvest spirits guide your blade, adventurer!\""
+            });
+            runtimeEvents.Add(botanistEvt);
+
+            // Archetype B: The Wandering Dungeon Gourmet
+            DungeonEvent chefEvt = new()
+            {
+                eventID = "Event_Merchant_Chef",
+                eventTitle = "The Wandering Chef",
+                eventCategory = "MERCHANT",
+                narrativeStory = "The mouth-watering aroma of roasted herbs and boiling broth warms the damp corridor.\nA cheerful chef stirs an oversized cast-iron pot over a glowing stove.\n\"Never explore on an empty stomach, friend! Trade some produce for a hot feast!\""
+            };
+            chefEvt.choices.Add(new DungeonEventChoice
+            {
+                choiceLabel = "[Hot Gourmet Feast]",
+                choiceDetails = "Give 2x Harvested Crops -> Savor a hot meal (Restore 40 HP & 30 Fullness)",
+                requiredItem = carrot != null ? carrot : (wheat != null ? wheat : cabbage),
+                requiredItemAmount = 2,
+                rewardItem = freshSalad != null ? freshSalad : (tomatoSoup != null ? tomatoSoup : cabbage),
+                rewardItemAmount = 1,
+                hpRecovery = 40,
+                hungerRecovery = 30,
+                outcomeNarrative = "The rich, hot stew restores your stamina and warms you to the bone! Vitality surges back."
+            });
+            chefEvt.choices.Add(new DungeonEventChoice
+            {
+                choiceLabel = "[Fiery Combat Broth]",
+                choiceDetails = "Give 1x Crop -> Drink spicy dragon pepper broth (+4 ATK for 6 turns, restore 15 HP)",
+                requiredItem = carrot != null ? carrot : (wheat != null ? wheat : cabbage),
+                requiredItemAmount = 1,
+                atkBuff = 4,
+                buffDuration = 6,
+                hpRecovery = 15,
+                outcomeNarrative = "A burst of fiery spice invigorates your muscles! You feel ready to shatter stone!"
+            });
+            chefEvt.choices.Add(new DungeonEventChoice
+            {
+                choiceLabel = "[Check Recipes & Wares]",
+                choiceDetails = "Open the chef's culinary trade book (Open Shop)",
+                opensMerchantShop = true,
+                outcomeNarrative = "The chef happily demonstrates his cooking repertoire and ingredients."
+            });
+            chefEvt.choices.Add(new DungeonEventChoice
+            {
+                choiceLabel = "[Leave]",
+                choiceDetails = "Decline politely and keep moving",
+                isLeaveChoice = true,
+                outcomeNarrative = "\"Bon appetit and safe travels, brave farmer!\""
+            });
+            runtimeEvents.Add(chefEvt);
+
+            // Archetype C: Dungeon Quartermaster
+            DungeonEvent quartermasterEvt = new()
+            {
+                eventID = "Event_Merchant_Quartermaster",
+                eventTitle = "Dungeon Quartermaster",
+                eventCategory = "MERCHANT",
+                narrativeStory = "A veteran quartermaster in plate mail guards stacked supply crates.\n\"The guild's forward detachment needs farm produce for rations. Sell your crops, and we'll supply you with tactical provisions.\""
+            };
+            quartermasterEvt.choices.Add(new DungeonEventChoice
+            {
+                choiceLabel = "[Tactical Rations Requisition]",
+                choiceDetails = "Deliver 2x Crops -> Receive 2x Preserved Meals & +2 Speed (5 turns)",
+                requiredItem = wheat != null ? wheat : (carrot != null ? carrot : cabbage),
+                requiredItemAmount = 2,
+                rewardItem = tomatoSoup != null ? tomatoSoup : freshSalad,
+                rewardItemAmount = 2,
+                speedBuff = 2,
+                buffDuration = 5,
+                hpRecovery = 20,
+                outcomeNarrative = "The quartermaster stamps your voucher and hands over packed military provisions. You feel swift on your feet!"
+            });
+            quartermasterEvt.choices.Add(new DungeonEventChoice
+            {
+                choiceLabel = "[Emergency Field Dressings]",
+                choiceDetails = "Trade 1x Crop -> Clean and bandage wounds (Restore 30 HP)",
+                requiredItem = carrot != null ? carrot : (wheat != null ? wheat : cabbage),
+                requiredItemAmount = 1,
+                hpRecovery = 30,
+                outcomeNarrative = "Using sterile battlefield bandages, you staunch your cuts and soothe aching muscles."
+            });
+            quartermasterEvt.choices.Add(new DungeonEventChoice
+            {
+                choiceLabel = "[Open Quartermaster Depot]",
+                choiceDetails = "Access full trading depot (Open Shop)",
+                opensMerchantShop = true,
+                outcomeNarrative = "The quartermaster unbolts his master supply locker for inspection."
+            });
+            quartermasterEvt.choices.Add(new DungeonEventChoice
+            {
+                choiceLabel = "[Leave]",
+                choiceDetails = "Salute and proceed into the dungeon",
+                isLeaveChoice = true,
+                outcomeNarrative = "\"Keep your guard up, recruit. Don't let your training fail you.\""
+            });
+            runtimeEvents.Add(quartermasterEvt);
+        }
 
         // 2. EVENT: The Ancient Altar (Shrine)
         DungeonEvent shrineEvt = new()
@@ -228,7 +326,7 @@ public class DungeonEventManager : MonoBehaviour
             requiredItemAmount = 1,
             rewardItem = cornSeed != null ? cornSeed : wheatSeed,
             rewardItemAmount = 3,
-            outcomeNarrative = "Tears fill the adventurer's eyes. \"Thank you, friend! Take this seed pouch I saved—it will serve you better!\""
+            outcomeNarrative = "Tears fill the adventurer's eyes. \"Thank you, friend! Take this seed pouch I saved - it will serve you better!\""
         });
         foragerEvt.choices.Add(new DungeonEventChoice
         {
@@ -259,14 +357,37 @@ public class DungeonEventManager : MonoBehaviour
 
         if (runtimeEvents == null || runtimeEvents.Count == 0) return null;
 
-        int pick = Random.Range(0, runtimeEvents.Count);
-        if (pick == lastEventIndex && runtimeEvents.Count > 1)
+        // Check if merchant cycle is currently active via DayManager
+        bool isMerchantActive = MerchantEvent.IsMerchantActive();
+
+        List<DungeonEvent> candidateEvents = new();
+        for (int i = 0; i < runtimeEvents.Count; i++)
         {
-            pick = (pick + 1) % runtimeEvents.Count;
+            DungeonEvent evt = runtimeEvents[i];
+            if (evt == null) continue;
+
+            // When merchant has departed (stay duration expired), exclude all merchant archetypes
+            if (!isMerchantActive && evt.eventCategory == "MERCHANT")
+            {
+                continue;
+            }
+
+            candidateEvents.Add(evt);
         }
 
-        lastEventIndex = pick;
-        return runtimeEvents[pick];
+        if (candidateEvents.Count == 0)
+        {
+            candidateEvents.AddRange(runtimeEvents);
+        }
+
+        int pick = Random.Range(0, candidateEvents.Count);
+        if (candidateEvents.Count > 1 && candidateEvents[pick].eventID == lastEventID)
+        {
+            pick = (pick + 1) % candidateEvents.Count;
+        }
+
+        lastEventID = candidateEvents[pick].eventID;
+        return candidateEvents[pick];
     }
 
     public bool ExecuteChoice(
@@ -361,12 +482,12 @@ public class DungeonEventManager : MonoBehaviour
         {
             if (backpack == null)
             {
-                Debug.LogWarning("[DungeonEventManager] Backpack is null — reward item could not be granted.");
+                Debug.LogWarning("[DungeonEventManager] Backpack is null - reward item could not be granted.");
                 resultNarrative += "\n<color=#FF9900>(Reward lost: no backpack found!)</color>";
             }
             else if (!backpack.CanAddItem(choice.rewardItem))
             {
-                Debug.LogWarning($"[DungeonEventManager] Backpack is full — '{choice.rewardItem.itemName}' could not be added.");
+                Debug.LogWarning($"[DungeonEventManager] Backpack is full - '{choice.rewardItem.itemName}' could not be added.");
                 resultNarrative += $"\n<color=#FF9900>(Inventory full! Could not receive {choice.rewardItem.itemName} x{choice.rewardItemAmount}.)</color>";
             }
             else

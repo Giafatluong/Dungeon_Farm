@@ -91,6 +91,21 @@ public class RewardUI : MonoBehaviour
         EnsureUIBuilt();
 
         currentChest = chest;
+        if (currentChest == null)
+        {
+            currentChest = GetComponent<RewardChest>();
+            if (currentChest == null) currentChest = gameObject.AddComponent<RewardChest>();
+        }
+
+        if (loot != null && (currentChest.currentChestLoot == null || currentChest.currentChestLoot.Count == 0))
+        {
+            currentChest.currentChestLoot = new List<ItemSlot>(loot);
+        }
+        else if (currentChest.currentChestLoot == null)
+        {
+            currentChest.currentChestLoot = new List<ItemSlot>();
+        }
+
         backpackContainer = backpack;
         onCompleteCallback = onComplete;
 
@@ -187,7 +202,7 @@ public class RewardUI : MonoBehaviour
     {
         if (chestItemsContainer == null) return;
 
-        // Background frame — Image only, NO TMP on same object (causes null GetComponent)
+        // Background frame - Image only, NO TMP on same object (causes null GetComponent)
         GameObject emptyNotice = new("EmptyNotice", typeof(RectTransform), typeof(Image));
         emptyNotice.transform.SetParent(chestItemsContainer, false);
         RectTransform rt = emptyNotice.GetComponent<RectTransform>();

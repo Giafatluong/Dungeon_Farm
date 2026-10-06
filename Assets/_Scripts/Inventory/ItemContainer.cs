@@ -85,53 +85,81 @@ public class ItemContainer : ScriptableObject
         if (itemData == null || amount <= 0)
             return;
 
-        if (!HasItem(itemData))
-            return;
+        bool changed = false;
 
         for (int i = 0; i < maxSlots; i++)
         {
-            if (itemSlots[i] != null && itemSlots[i].itemData == itemData)
+            if (itemSlots[i] != null && itemSlots[i].itemData == itemData && itemSlots[i].amount > 0)
             {
                 if (itemSlots[i].amount > amount)
                 {
                     itemSlots[i].amount -= amount;
-                    OnInventoryChange?.Invoke();
-                    return;
+                    changed = true;
+                    amount = 0;
+                    break;
                 }
                 else
                 {
                     amount -= itemSlots[i].amount;
                     itemSlots[i].itemData = null;
                     itemSlots[i].amount = 0;
+                    changed = true;
 
-                    if (InventoryButton.selectedItem == itemData)
-                    {
-                        InventoryButton.selectedItem = null;
-                    }
+                    if (amount <= 0)
+                        break;
                 }
-
-                OnInventoryChange?.Invoke();
-                return;
             }
         }
+
+        if (changed)
+        {
+            if (!HasItem(itemData) && InventoryButton.selectedItem == itemData)
+            {
+                InventoryButton.selectedItem = null;
+            }
+            OnInventoryChange?.Invoke();
+        }
+    }
+
+    public int GetItemCount(ItemData itemData)
+    {
+        if (itemData == null || itemSlots == null) return 0;
+        int total = 0;
+        for (int i = 0; i < maxSlots; i++)
+        {
+            if (itemSlots[i] != null && itemSlots[i].itemData == itemData && itemSlots[i].amount > 0)
+            {
+                total += itemSlots[i].amount;
+            }
+        }
+        return total;
     }
 
     public bool HasItem(ItemData itemData)
     {
-        if (itemData == null)
+        return HasItem(itemData, 1);
+    }
+
+    public bool HasItem(ItemData itemData, int requiredAmount)
+    {
+        if (itemData == null || requiredAmount <= 0)
             return false;
 
-        for (int i = 0; i < maxSlots; i++)
+        if (requiredAmount == 1)
         {
-            if (itemSlots[i] != null &&
-                itemSlots[i].itemData == itemData &&
-                itemSlots[i].amount > 0)
+            for (int i = 0; i < maxSlots; i++)
             {
-                return true;
+                if (itemSlots[i] != null &&
+                    itemSlots[i].itemData == itemData &&
+                    itemSlots[i].amount > 0)
+                {
+                    return true;
+                }
             }
+            return false;
         }
 
-        return false;
+        return GetItemCount(itemData) >= requiredAmount;
     }
 
     public int GetEmptySlot()

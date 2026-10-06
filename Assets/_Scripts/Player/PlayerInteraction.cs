@@ -46,9 +46,17 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
+    private void Awake()
+    {
+        if (inventoryController == null)
+        {
+            inventoryController = FindFirstObjectByType<InventoryController>();
+        }
+    }
+
     private void Update()
     {
-        if(inventoryController.isInteractable == false) return;
+        if (inventoryController != null && !inventoryController.isInteractable) return;
         if (Input.GetMouseButtonDown(0))
         {
             InteractFarmPlot();
@@ -62,6 +70,7 @@ public class PlayerInteraction : MonoBehaviour
 
     private void InteractFarmPlot()
     {
+        if (Camera.main == null) return;
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Collider2D hit = Physics2D.OverlapPoint(mousePosition, farmPlotLayer);
 

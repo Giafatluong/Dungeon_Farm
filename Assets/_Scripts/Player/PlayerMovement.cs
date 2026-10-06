@@ -12,10 +12,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
-        anim = GetComponent<Animator>();
-        
-        spriteRenderer = GetComponent<SpriteRenderer>(); 
+        if (rb == null) rb = GetComponent<Rigidbody2D>();
+        if (anim == null) anim = GetComponent<Animator>() ?? GetComponentInChildren<Animator>();
+        if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>() ?? GetComponentInChildren<SpriteRenderer>();
     }
 
     private void Update()
@@ -25,28 +24,37 @@ public class PlayerMovement : MonoBehaviour
 
         movement = movement.normalized;
 
-        anim.SetFloat("Horizontal", movement.x);
-        anim.SetFloat("Vertical", movement.y);
-        anim.SetFloat("Speed", movement.sqrMagnitude);
-
-        if (movement != Vector2.zero)
+        if (anim != null)
         {
-            anim.SetFloat("LastHorizontal", movement.x);
-            anim.SetFloat("LastVertical", movement.y);
+            anim.SetFloat("Horizontal", movement.x);
+            anim.SetFloat("Vertical", movement.y);
+            anim.SetFloat("Speed", movement.sqrMagnitude);
+
+            if (movement != Vector2.zero)
+            {
+                anim.SetFloat("LastHorizontal", movement.x);
+                anim.SetFloat("LastVertical", movement.y);
+            }
         }
 
-        if (movement.x > 0)
+        if (spriteRenderer != null)
         {
-            spriteRenderer.flipX = false; 
-        }
-        else if (movement.x < 0)
-        {
-            spriteRenderer.flipX = true; 
+            if (movement.x > 0)
+            {
+                spriteRenderer.flipX = false; 
+            }
+            else if (movement.x < 0)
+            {
+                spriteRenderer.flipX = true; 
+            }
         }
     }
 
     private void FixedUpdate()
     {
-        rb.MovePosition(rb.position + movement * speed * Time.fixedDeltaTime);
+        if (rb != null)
+        {
+            rb.MovePosition(rb.position + movement * speed * Time.fixedDeltaTime);
+        }
     }
 }

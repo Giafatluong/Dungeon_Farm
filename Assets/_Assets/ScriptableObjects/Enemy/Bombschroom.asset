@@ -14,13 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Bombschroom
   maxHealth: 0
-  currentHealth: 0
   ATK: 0
   DEF: 0
   speed: 0
   possibleIntents: 00000000010000000300000002000000
-  currentIntent: 0
-  intentValue: 0
   lootDrops:
   - item: {fileID: 11400000, guid: f60f6a8d1006791458c801e045769b06, type: 2}
     dropChance: 0.55

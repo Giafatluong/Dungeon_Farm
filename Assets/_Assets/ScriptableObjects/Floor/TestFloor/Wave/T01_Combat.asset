@@ -17,7 +17,6 @@ MonoBehaviour:
   maxTargetScore: 4
   isRandom: 0
   enemyPrefabs:
-  - {fileID: 670712790704607887, guid: f1ed11da91194f64caa2fbc58ba39277, type: 3}
   - {fileID: 7002984327749960086, guid: 21b13d0ed8bdf224dae074a2c4e6b905, type: 3}
   randomEnemyPool: []
   minRandomEnemies: 1

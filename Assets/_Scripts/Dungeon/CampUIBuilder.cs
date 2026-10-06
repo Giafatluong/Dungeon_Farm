@@ -34,7 +34,24 @@ public static class CampUIBuilder
         panelRT.pivot = new Vector2(0.5f, 0.5f);
         panelRT.sizeDelta = new Vector2(760, 520);
         Image panelBg = ui.mainCampPanel.GetComponent<Image>();
-        panelBg.color = new Color(0.10f, 0.12f, 0.17f, 0.96f);
+        DungeonUIAssetHelper.StyleSlicedFrame(panelBg, new Color(0.10f, 0.12f, 0.17f, 0.98f));
+
+        // Camp Icon
+        Sprite tentSprite = DungeonUIAssetHelper.GetTentSprite();
+        if (tentSprite != null)
+        {
+            GameObject iconGO = new GameObject("CampIcon", typeof(RectTransform), typeof(Image));
+            iconGO.transform.SetParent(ui.mainCampPanel.transform, false);
+            RectTransform iconRT = iconGO.GetComponent<RectTransform>();
+            iconRT.anchorMin = new Vector2(0.5f, 1);
+            iconRT.anchorMax = new Vector2(0.5f, 1);
+            iconRT.pivot = new Vector2(0.5f, 1);
+            iconRT.anchoredPosition = new Vector2(-190, -14);
+            iconRT.sizeDelta = new Vector2(38, 38);
+            Image iconImg = iconGO.GetComponent<Image>();
+            iconImg.sprite = tentSprite;
+            iconImg.preserveAspect = true;
+        }
 
         // Title
         GameObject titleGO = new GameObject("CampTitle", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -46,6 +63,7 @@ public static class CampUIBuilder
         titleRT.anchoredPosition = new Vector2(0, -18);
         titleRT.sizeDelta = new Vector2(-40, 36);
         ui.campTitleText = titleGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(ui.campTitleText);
         ui.campTitleText.fontSize = 22;
         ui.campTitleText.fontStyle = FontStyles.Bold;
         ui.campTitleText.alignment = TextAlignmentOptions.Center;
@@ -62,6 +80,7 @@ public static class CampUIBuilder
         descRT.anchoredPosition = new Vector2(0, -56);
         descRT.sizeDelta = new Vector2(-60, 48);
         ui.campDescText = descGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(ui.campDescText);
         ui.campDescText.fontSize = 12;
         ui.campDescText.alignment = TextAlignmentOptions.Center;
         ui.campDescText.text = "A warm campfire burns in the dungeon. Rest, eat, or cook to recover.\n<color=#FFAA55>Warning: Activities create noise and aroma that attract wandering monsters!</color>";
@@ -199,9 +218,8 @@ public static class CampUIBuilder
         rt.sizeDelta = size;
 
         Image img = go.GetComponent<Image>();
-        img.color = color;
-
         Button btn = go.GetComponent<Button>();
+        DungeonUIAssetHelper.StyleButton(btn, img, color, color * 1.15f, color * 0.85f);
 
         GameObject textGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         textGO.transform.SetParent(go.transform, false);
@@ -210,6 +228,7 @@ public static class CampUIBuilder
         textRT.anchorMax = Vector2.one;
         textRT.sizeDelta = Vector2.zero;
         TextMeshProUGUI tmp = textGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(tmp);
         tmp.fontSize = 11;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
@@ -228,7 +247,7 @@ public static class CampUIBuilder
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.sizeDelta = new Vector2(500, 420);
         Image bg = ui.foodModal.GetComponent<Image>();
-        bg.color = new Color(0.12f, 0.14f, 0.2f, 0.98f);
+        DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.10f, 0.12f, 0.18f, 0.98f));
 
         // Title
         GameObject titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -239,6 +258,7 @@ public static class CampUIBuilder
         titleRT.anchoredPosition = new Vector2(0, -18);
         titleRT.sizeDelta = new Vector2(0, 30);
         TextMeshProUGUI tmp = titleGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(tmp);
         tmp.fontSize = 16;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
@@ -289,6 +309,7 @@ public static class CampUIBuilder
         noFoodRT.anchoredPosition = new Vector2(0, 10);
         noFoodRT.sizeDelta = new Vector2(400, 60);
         ui.noFoodText = noFoodGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(ui.noFoodText);
         ui.noFoodText.fontSize = 13;
         ui.noFoodText.alignment = TextAlignmentOptions.Center;
         ui.noFoodText.text = "No food in backpack!\n(Cook meals or harvest food from farm)";
@@ -308,7 +329,7 @@ public static class CampUIBuilder
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.sizeDelta = new Vector2(500, 440);
         Image bg = ui.cookModal.GetComponent<Image>();
-        bg.color = new Color(0.12f, 0.14f, 0.2f, 0.98f);
+        DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.10f, 0.12f, 0.18f, 0.98f));
 
         // Title
         GameObject titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -319,6 +340,7 @@ public static class CampUIBuilder
         titleRT.anchoredPosition = new Vector2(0, -18);
         titleRT.sizeDelta = new Vector2(0, 30);
         TextMeshProUGUI tmp = titleGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(tmp);
         tmp.fontSize = 16;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;

@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1299bd6f3aba8a44b45af74a9e3af52, type: 3}
   m_Name: IncreaseATK
   m_EditorClassIdentifier: Assembly-CSharp::StatEffectData
-  buffName: IncreaseATK
+  buffName: "T\u0103ng ATK"
   buffType: 0
   stackable: 0

@@ -19,7 +19,6 @@ public class PlayerCombatVisual : MonoBehaviour
     private Vector3 originalPosition;
     private Color originalColor = Color.white;
     private Coroutine currentVisualRoutine;
-    private bool isMovingTransition = false;
 
     private void Awake()
     {
@@ -57,20 +56,6 @@ public class PlayerCombatVisual : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        if (isMovingTransition)
-            return;
-
-        if (animator != null && animator.isActiveAndEnabled)
-        {
-            animator.SetFloat("LastHorizontal", 1f);
-            animator.SetFloat("LastVertical", 0f);
-            animator.SetFloat("Horizontal", 0f);
-            animator.SetFloat("Vertical", 0f);
-            animator.SetFloat("Speed", 0f);
-        }
-    }
 
     public void PlayMoveTransition(float duration, System.Action onComplete = null)
     {
@@ -83,7 +68,6 @@ public class PlayerCombatVisual : MonoBehaviour
 
     private IEnumerator MoveTransitionRoutine(float duration, System.Action onComplete)
     {
-        isMovingTransition = true;
         FaceRight();
         float elapsed = 0f;
 
@@ -105,7 +89,6 @@ public class PlayerCombatVisual : MonoBehaviour
         }
 
         transform.position = originalPosition;
-        isMovingTransition = false;
 
         if (animator != null && animator.isActiveAndEnabled)
         {

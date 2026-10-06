@@ -232,11 +232,11 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
 
     private int GetTotalItemCount(ItemContainer container, ItemData item)
     {
-        if (container == null || item == null) return 0;
+        if (container == null || item == null || container.itemSlots == null) return 0;
         int count = 0;
         for (int i = 0; i < container.itemSlots.Length; i++)
         {
-            if (container.itemSlots[i].itemData == item)
+            if (container.itemSlots[i] != null && container.itemSlots[i].itemData == item)
             {
                 count += container.itemSlots[i].amount;
             }

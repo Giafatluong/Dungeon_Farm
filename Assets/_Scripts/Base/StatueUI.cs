@@ -187,7 +187,7 @@ public class StatueUI : MonoBehaviour
                 ProgressionManager.Instance.AddPermanentStat(offering.rewardStat, offering.rewardAmount);
             }
 
-            SetFeedback($"<color=#FFD700>★ DIVINE BLESSING! Completed {GetOfferingDisplayName(offering)}! (+{offering.rewardAmount} {offering.rewardStat} permanently)</color>");
+            SetFeedback($"<color=#FFD700>[BLESSING] DIVINE BLESSING! Completed {GetOfferingDisplayName(offering)}! (+{offering.rewardAmount} {offering.rewardStat} permanently)</color>");
             Debug.Log($"[StatueUI] Offering completed: {offering.offeringName}! Rewarded permanent +{offering.rewardAmount} {offering.rewardStat}");
 
             RefreshAllOfferingSlots();
@@ -860,11 +860,11 @@ public class StatueUI : MonoBehaviour
 
     private int GetTotalItemCount(ItemContainer container, ItemData item)
     {
-        if (container == null || item == null) return 0;
+        if (container == null || item == null || container.itemSlots == null) return 0;
         int count = 0;
         for (int i = 0; i < container.itemSlots.Length; i++)
         {
-            if (container.itemSlots[i].itemData == item)
+            if (container.itemSlots[i] != null && container.itemSlots[i].itemData == item)
             {
                 count += container.itemSlots[i].amount;
             }

@@ -606,7 +606,15 @@ public class CampUI : MonoBehaviour
                         ActiveBuff b = playerStats.activeBuffs[i];
                         if (b != null && b.buff != null)
                         {
-                            sb.Append($"[{b.buff.buffName} +{b.buffValue} ({b.remainingDuration} {b.buffDurationType})] ");
+                            string sign = b.buffValue > 0 ? "+" : "";
+                            string durType = b.buffDurationType switch
+                            {
+                                FoodData.BuffDurationType.Turn => "Turn",
+                                FoodData.BuffDurationType.Combat => "Battle",
+                                FoodData.BuffDurationType.Floor => "Floor",
+                                _ => b.buffDurationType.ToString()
+                            };
+                            sb.Append($"[{b.buff.buffName} {sign}{b.buffValue} ({b.remainingDuration} {durType})] ");
                         }
                     }
                     playerBuffsText.text = sb.ToString();
@@ -921,7 +929,20 @@ public class CampUI : MonoBehaviour
                 {
                     string bName = fb.buffs.buffName;
                     if (string.IsNullOrEmpty(bName)) bName = fb.buffs.buffType.ToString();
-                    sb.Append($"<color=#66CCFF>+{fb.buffValue} {bName} ({fb.buffDuration} {fb.buffDurationType})</color> ");
+
+                    string statLabel = bName;
+                    if (statLabel.StartsWith("Tang ")) statLabel = statLabel.Substring(5);
+                    else if (statLabel.StartsWith("Increase ")) statLabel = statLabel.Substring(9);
+
+                    string sign = fb.buffValue > 0 ? "+" : "";
+                    string durType = fb.buffDurationType switch
+                    {
+                        FoodData.BuffDurationType.Turn => "Turn",
+                        FoodData.BuffDurationType.Combat => "Battle",
+                        FoodData.BuffDurationType.Floor => "Floor",
+                        _ => fb.buffDurationType.ToString()
+                    };
+                    sb.Append($"<color=#66CCFF>{sign}{fb.buffValue} {statLabel} ({fb.buffDuration} {durType})</color> ");
                 }
             }
             return sb.ToString().Trim();

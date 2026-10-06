@@ -1,5 +1,5 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class PlayerStats : MonoBehaviour
 {
@@ -33,13 +33,16 @@ public class PlayerStats : MonoBehaviour
     public event System.Action<int> OnPlayerHealed;
     public event System.Action OnPlayerDefended;
 
+    private int baseMaxHealth;
+
+    private void Awake()
+    {
+        baseMaxHealth = maxHealth;
+    }
+
     private void Start()
     {
-        if (ProgressionManager.Instance != null)
-        {
-            maxHealth += ProgressionManager.Instance.permanentMaxHP;
-        }
-
+        maxHealth = baseMaxHealth + (ProgressionManager.Instance != null ? ProgressionManager.Instance.permanentMaxHP : 0);
         currentHealth = maxHealth;
         currentHunger = maxHunger;
         currentAP = maxAP;
@@ -185,10 +188,12 @@ public class PlayerStats : MonoBehaviour
     {
         if (buff == null) return;
 
+        int finalValue = (buff.IsDebuff && value > 0) ? -value : value;
+
         ActiveBuff newBuff = new()
         {
             buff = buff,
-            buffValue = value,
+            buffValue = finalValue,
             remainingDuration = duration,
             buffDurationType = durationType
         };
@@ -196,11 +201,23 @@ public class PlayerStats : MonoBehaviour
         for (int i = activeBuffs.Count - 1; i >= 0; i--)
         {
             if (activeBuffs[i] == null || activeBuffs[i].buff == null) continue;
-            if (activeBuffs[i].buff.buffType != newBuff.buff.buffType) continue;
+            if (activeBuffs[i].buff != newBuff.buff) continue;
             if (activeBuffs[i].buffDurationType != newBuff.buffDurationType) continue;
 
-            activeBuffs[i].remainingDuration += newBuff.remainingDuration;
-            activeBuffs[i].buffValue = Mathf.Max(activeBuffs[i].buffValue, newBuff.buffValue);
+            if (buff.stackable == StatEffectData.Stackable.Yes)
+            {
+                activeBuffs[i].buffValue += newBuff.buffValue;
+                activeBuffs[i].remainingDuration = Mathf.Max(activeBuffs[i].remainingDuration, newBuff.remainingDuration);
+            }
+            else
+            {
+                if (newBuff.buffValue >= 0)
+                    activeBuffs[i].buffValue = Mathf.Max(activeBuffs[i].buffValue, newBuff.buffValue);
+                else
+                    activeBuffs[i].buffValue = Mathf.Min(activeBuffs[i].buffValue, newBuff.buffValue);
+
+                activeBuffs[i].remainingDuration = Mathf.Max(activeBuffs[i].remainingDuration, newBuff.remainingDuration);
+            }
             return;
         }
 
@@ -210,6 +227,9 @@ public class PlayerStats : MonoBehaviour
     public void TakeDamage(int damage)
     {
         currentHealth -= damage;
+
+        // Damage Popup above player
+        DamagePopupManager.ShowDamage(transform.position + Vector3.up * 1.1f, damage, isPlayer: true);
 
         if (currentHealth <= 0)
         {
@@ -284,15 +304,19 @@ public class PlayerStats : MonoBehaviour
 
     public void Heal(int amount)
     {
+        if (amount <= 0) return;
         currentHealth += amount;
-        if (healthBar != null)
-        {
-            healthBar.SetHealthBar(currentHealth, maxHealth);
-        }
-
         if (currentHealth > maxHealth)
         {
             currentHealth = maxHealth;
+        }
+
+        // Heal Popup above player
+        DamagePopupManager.ShowHeal(transform.position + Vector3.up * 1.1f, amount);
+
+        if (healthBar != null)
+        {
+            healthBar.SetHealthBar(currentHealth, maxHealth);
         }
 
         OnPlayerHealed?.Invoke(amount);
@@ -306,6 +330,12 @@ public class PlayerStats : MonoBehaviour
     {
         for (int i = activeBuffs.Count - 1; i >= 0; i--)
         {
+            if (activeBuffs[i] == null)
+            {
+                activeBuffs.RemoveAt(i);
+                continue;
+            }
+
             if (activeBuffs[i].buffDurationType != FoodData.BuffDurationType.Turn)
                 continue;
 
@@ -322,6 +352,12 @@ public class PlayerStats : MonoBehaviour
     {
         for (int i = activeBuffs.Count - 1; i >= 0; i--)
         {
+            if (activeBuffs[i] == null)
+            {
+                activeBuffs.RemoveAt(i);
+                continue;
+            }
+
             if (activeBuffs[i].buffDurationType != FoodData.BuffDurationType.Combat)
                 continue;
 
@@ -338,6 +374,12 @@ public class PlayerStats : MonoBehaviour
     {
         for (int i = activeBuffs.Count - 1; i >= 0; i--)
         {
+            if (activeBuffs[i] == null)
+            {
+                activeBuffs.RemoveAt(i);
+                continue;
+            }
+
             if (activeBuffs[i].buffDurationType != FoodData.BuffDurationType.Floor)
                 continue;
 
@@ -349,6 +391,5 @@ public class PlayerStats : MonoBehaviour
             }
         }
     }
-
     #endregion
 }

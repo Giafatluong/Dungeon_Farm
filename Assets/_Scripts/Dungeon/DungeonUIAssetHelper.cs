@@ -12,6 +12,8 @@ public static class DungeonUIAssetHelper
     private static Sprite _slotSprite;
     private static Sprite _toolbarSprite;
     private static Sprite _chestSprite;
+    private static Sprite _bossSprite;
+    private static Sprite _tentSprite;
     private static GameObject _slotPrefab;
     private static TMP_FontAsset _fontAsset;
 
@@ -45,6 +47,26 @@ public static class DungeonUIAssetHelper
                     ?? FindSprite("Chest_Anim_0");
         return _chestSprite;
     }
+
+    public static Sprite GetBossSprite()
+    {
+        if (_bossSprite != null) return _bossSprite;
+        _bossSprite = FindSprite("Boss_Idle_0")
+                   ?? FindSprite("Boss_Idle")
+                   ?? FindSprite("FE_Idle_0")
+                   ?? FindSprite("Boss_Roar_0");
+        return _bossSprite;
+    }
+
+    public static Sprite GetTentSprite()
+    {
+        if (_tentSprite != null) return _tentSprite;
+        _tentSprite = FindSprite("Tent_Small")
+                   ?? FindSprite("Tent_Big")
+                   ?? FindSprite("Campfire");
+        return _tentSprite;
+    }
+
 
     public static GameObject GetSlotPrefab()
     {
@@ -145,12 +167,39 @@ public static class DungeonUIAssetHelper
         }
     }
 
+    public static void StyleButton(Button btn, Image img, Color normalColor, Color? hoverColor = null, Color? pressedColor = null)
+    {
+        if (btn == null) return;
+        if (img != null)
+        {
+            StyleSlicedFrame(img, normalColor);
+            btn.targetGraphic = img;
+        }
+
+        ColorBlock cb = btn.colors;
+        cb.normalColor = Color.white;
+        cb.highlightedColor = hoverColor ?? new Color(1.15f, 1.15f, 1.15f, 1f);
+        cb.pressedColor = pressedColor ?? new Color(0.85f, 0.85f, 0.85f, 1f);
+        cb.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
+        cb.colorMultiplier = 1f;
+        btn.colors = cb;
+    }
+
     private static Sprite FindSprite(string spriteName)
     {
         Sprite[] sprites = Resources.FindObjectsOfTypeAll<Sprite>();
+        // 1. Exact match
         for (int i = 0; i < sprites.Length; i++)
         {
             if (sprites[i] != null && sprites[i].name.Equals(spriteName, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return sprites[i];
+            }
+        }
+        // 2. Fallback prefix/contains match
+        for (int i = 0; i < sprites.Length; i++)
+        {
+            if (sprites[i] != null && sprites[i].name.IndexOf(spriteName, System.StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return sprites[i];
             }

@@ -130,7 +130,7 @@ public class DungeonEventUI : MonoBehaviour
 
         if (categoryText != null)
         {
-            categoryText.text = $"• {currentEvent.eventCategory.ToUpper()} •";
+            categoryText.text = $"[ {currentEvent.eventCategory.ToUpper()} ]";
             categoryText.color = GetCategoryColor(currentEvent.eventCategory);
         }
 
@@ -198,14 +198,20 @@ public class DungeonEventUI : MonoBehaviour
         rt.sizeDelta = new Vector2(700, 52);
 
         Image img = btnGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(
-            img,
-            canSelect ? new Color(0.15f, 0.18f, 0.25f, 0.98f) : new Color(0.10f, 0.11f, 0.14f, 0.75f)
-        );
-
         Button btn = btnGO.GetComponent<Button>();
         btn.interactable = canSelect;
         btn.onClick.AddListener(() => OnChoiceSelected(choice));
+
+        if (canSelect)
+        {
+            Color baseCol = new Color(0.15f, 0.18f, 0.25f, 0.98f);
+            DungeonUIAssetHelper.StyleButton(btn, img, baseCol, new Color(0.22f, 0.28f, 0.38f, 1f), new Color(0.12f, 0.14f, 0.20f, 1f));
+        }
+        else
+        {
+            Color disabledCol = new Color(0.10f, 0.11f, 0.14f, 0.75f);
+            DungeonUIAssetHelper.StyleButton(btn, img, disabledCol);
+        }
 
         // Text Content
         GameObject textGO = new("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -306,7 +312,7 @@ public class DungeonEventUI : MonoBehaviour
                 : "<color=#FF6666>The risk did not pay off!</color>";
         }
 
-        // 3. Reveal Continue button — create one on the fly if it was never built
+        // 3. Reveal Continue button - create one on the fly if it was never built
         if (continueButton != null)
         {
             continueButton.gameObject.SetActive(true);
@@ -314,7 +320,7 @@ public class DungeonEventUI : MonoBehaviour
         else
         {
             // Fallback: make the whole panel clickable to close
-            Debug.LogWarning("[DungeonEventUI] continueButton is null — using panel click fallback.");
+            Debug.LogWarning("[DungeonEventUI] continueButton is null - using panel click fallback.");
             if (eventPanel != null)
             {
                 var clickClose = eventPanel.GetComponent<UnityEngine.UI.Button>();
@@ -412,7 +418,7 @@ public class DungeonEventUI : MonoBehaviour
         categoryText.fontStyle = FontStyles.Bold;
         categoryText.alignment = TextAlignmentOptions.Center;
         categoryText.color = new Color(1f, 0.85f, 0.35f);
-        categoryText.text = "• ENCOUNTER •";
+        categoryText.text = "[ ENCOUNTER ]";
 
         // Title Text
         GameObject titleGO = new("TitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -510,9 +516,8 @@ public class DungeonEventUI : MonoBehaviour
         contRT.anchoredPosition = new Vector2(-120, 0);
 
         Image contImg = contGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(contImg, new Color(0.2f, 0.55f, 0.35f, 1f));
-
         continueButton = contGO.GetComponent<Button>();
+        DungeonUIAssetHelper.StyleButton(continueButton, contImg, new Color(0.2f, 0.55f, 0.35f, 1f), new Color(0.26f, 0.70f, 0.42f, 1f));
         continueButton.onClick.AddListener(OnContinueClicked);
 
         GameObject contTextGO = new("Text", typeof(RectTransform), typeof(TextMeshProUGUI));

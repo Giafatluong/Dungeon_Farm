@@ -131,11 +131,11 @@ public class CookingManager : MonoBehaviour
     #region Inventory Helpers
     public int GetItemCount(ItemContainer container, ItemData item)
     {
-        if (container == null || item == null) return 0;
+        if (container == null || item == null || container.itemSlots == null) return 0;
         int total = 0;
         for (int i = 0; i < container.itemSlots.Length; i++)
         {
-            if (container.itemSlots[i].itemData == item)
+            if (container.itemSlots[i] != null && container.itemSlots[i].itemData == item)
             {
                 total += container.itemSlots[i].amount;
             }

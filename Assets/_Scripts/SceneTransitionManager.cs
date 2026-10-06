@@ -3,25 +3,39 @@ using UnityEngine.SceneManagement;
 
 public class SceneTransitionManager : MonoBehaviour
 {
-    public static SceneTransitionManager Instance;
+    private static SceneTransitionManager _instance;
+    public static SceneTransitionManager Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = FindFirstObjectByType<SceneTransitionManager>();
+            }
+            return _instance;
+        }
+        private set => _instance = value;
+    }
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        if (_instance != null && _instance != this)
         {
             Destroy(gameObject);
             return;
         }
 
-        Instance = this;
+        _instance = this;
         DontDestroyOnLoad(gameObject);
     }
 
-    public void LoadDungeon()
+    public void LoadDungeon(int floor = -1)
     {
-        if (ProgressionManager.Instance != null && !ProgressionManager.Instance.runActive)
+        if (ProgressionManager.Instance != null)
         {
-            ProgressionManager.Instance.StartRun(1);
+            int targetFloor = floor > 0 ? floor : ProgressionManager.Instance.currentFloor;
+            if (targetFloor <= 0) targetFloor = 1;
+            ProgressionManager.Instance.StartRun(targetFloor);
         }
         SceneManager.LoadScene("Dungeon");
     }

@@ -1,34 +1,32 @@
-
 using UnityEngine;
 
-public class BedInteraction : MonoBehaviour
+public class BedInteraction : MonoBehaviour, IInteractable
 {
-    [SerializeField] private DayManager dayManager;
+    [Header("References")]
+    public DayManager dayManager;
 
-    private bool isSleeping;
+    private void Start()
+    {
+        if (dayManager == null)
+        {
+            dayManager = DayManager.Instance ?? FindFirstObjectByType<DayManager>();
+        }
+    }
 
     public void Interact()
     {
-        if (isSleeping)
-            return;
-
         if (dayManager == null)
         {
-            dayManager = FindFirstObjectByType<DayManager>();
+            dayManager = DayManager.Instance ?? FindFirstObjectByType<DayManager>();
         }
 
-        if (dayManager == null)
+        if (dayManager != null)
         {
-            Debug.Log("Day Manager is NULL");
-            return;
+            dayManager.Sleep();
         }
-
-        isSleeping = true;
-
-        dayManager.NextDay();
-
-        Debug.Log("New Day: " + dayManager.currentday);
-
-        isSleeping = false;
+        else
+        {
+            Debug.LogWarning("[BedInteraction] DayManager not found! Cannot sleep.");
+        }
     }
 }

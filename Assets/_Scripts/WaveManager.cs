@@ -32,19 +32,46 @@ public class WaveManager : MonoBehaviour
     private bool isTransitioning;
     private int currentFloorScore = 0;
     private WaveData.WaveType lastResolvedType = (WaveData.WaveType)(-1);
+    private FloorData cachedActiveFloor;
 
     public FloorData GetActiveFloor()
     {
-        if (floorData != null) return floorData;
+        if (cachedActiveFloor != null) return cachedActiveFloor;
+
+        int currentFloorNum = ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1;
 
         if (allFloors != null && allFloors.Length > 0)
         {
-            int floorIndex = 0;
-            if (ProgressionManager.Instance != null)
+            for (int i = 0; i < allFloors.Length; i++)
             {
-                floorIndex = Mathf.Clamp(ProgressionManager.Instance.currentFloor - 1, 0, allFloors.Length - 1);
+                if (allFloors[i] != null && allFloors[i].floorNumber == currentFloorNum)
+                {
+                    cachedActiveFloor = allFloors[i];
+                    return cachedActiveFloor;
+                }
             }
-            return allFloors[floorIndex];
+            int floorIndex = Mathf.Clamp(currentFloorNum - 1, 0, allFloors.Length - 1);
+            if (allFloors[floorIndex] != null)
+            {
+                cachedActiveFloor = allFloors[floorIndex];
+                return cachedActiveFloor;
+            }
+        }
+
+        if (floorData != null)
+        {
+            cachedActiveFloor = floorData;
+            return cachedActiveFloor;
+        }
+
+        FloorData[] loadedFloors = Resources.FindObjectsOfTypeAll<FloorData>();
+        for (int i = 0; i < loadedFloors.Length; i++)
+        {
+            if (loadedFloors[i] != null && loadedFloors[i].floorNumber == currentFloorNum)
+            {
+                cachedActiveFloor = loadedFloors[i];
+                return cachedActiveFloor;
+            }
         }
 
         return null;
@@ -73,6 +100,7 @@ public class WaveManager : MonoBehaviour
     #region Unity Lifecycle
     private void Awake()
     {
+        cachedActiveFloor = null;
         if (combatManager == null) combatManager = GetComponent<CombatManager>();
         if (healthBarManager == null) healthBarManager = GetComponent<HealthBarManager>();
         if (targetSelector == null) targetSelector = GetComponent<EnemyTargetSelector>();
@@ -82,9 +110,10 @@ public class WaveManager : MonoBehaviour
 
     private void Start()
     {
-        if (ProgressionManager.Instance != null)
+        if (ProgressionManager.Instance != null && !ProgressionManager.Instance.runActive)
         {
-            ProgressionManager.Instance.StartRun(1);
+            int floorToRun = ProgressionManager.Instance.currentFloor > 0 ? ProgressionManager.Instance.currentFloor : 1;
+            ProgressionManager.Instance.StartRun(floorToRun);
         }
 
         StartFirstWave();
@@ -124,9 +153,85 @@ public class WaveManager : MonoBehaviour
             return;
         }
 
+        // Hand-crafted or procedural runtime waves established
+        ApplyRoguelikeMerchantEncounter();
+
         currentWaveIndex = 0;
         StartWave();
     }
+
+    #region Roguelike Merchant Encounter
+    [Header("Roguelike Merchant Encounter")]
+    [Tooltip("Probability (0.0 to 1.0) that a dedicated Wandering Merchant stage will spawn in this run if the floor doesn't already have one.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float roguelikeMerchantSpawnChance = 0.65f;
+    [Tooltip("If true, dynamically places a Merchant stage at a randomized mid-floor stage on each expedition run.")]
+    [SerializeField] private bool enableDynamicRoguelikeMerchant = true;
+
+    private void ApplyRoguelikeMerchantEncounter()
+    {
+        if (runtimeWaves == null || runtimeWaves.Length < 3)
+            return;
+
+        // Synchronize merchant calendar state with current Farm Day (never hardcode reset to 5)
+        if (merchantEvent == null) merchantEvent = FindFirstObjectByType<MerchantEvent>(FindObjectsInactive.Include);
+        if (merchantEvent != null)
+        {
+            merchantEvent.RefreshCalendarStatus();
+        }
+
+        if (!enableDynamicRoguelikeMerchant)
+            return;
+
+        // Check if floor already explicitly contains a Merchant wave
+        for (int i = 0; i < runtimeWaves.Length; i++)
+        {
+            if (runtimeWaves[i] != null && runtimeWaves[i].waveType == WaveData.WaveType.Merchant)
+            {
+                Debug.Log($"[WaveManager] Floor already has a designated Merchant stage at Stage {i + 1}.");
+                return;
+            }
+        }
+
+        // If merchant has departed on supply run, do not roll dynamic merchant stage
+        if (merchantEvent != null && !merchantEvent.merchantActive)
+        {
+            Debug.Log("[WaveManager] Merchant is currently departed on supply cooldown. No dynamic merchant stage for this run.");
+            return;
+        }
+
+        // Roll chance for Merchant to appear in this run
+        if (Random.value <= roguelikeMerchantSpawnChance)
+        {
+            // Pick a random middle stage (exclude stage 0 and final boss stage)
+            List<int> candidateIndices = new();
+            for (int i = 1; i < runtimeWaves.Length - 1; i++)
+            {
+                if (runtimeWaves[i] == null) continue;
+                if (runtimeWaves[i].waveType == WaveData.WaveType.Combat || runtimeWaves[i].waveType == WaveData.WaveType.Random)
+                {
+                    candidateIndices.Add(i);
+                }
+            }
+
+            if (candidateIndices.Count > 0)
+            {
+                int chosenIndex = candidateIndices[Random.Range(0, candidateIndices.Count)];
+                WaveData merchantWave = ScriptableObject.CreateInstance<WaveData>();
+                merchantWave.name = $"Roguelike_Merchant_Stage_{chosenIndex + 1}";
+                merchantWave.waveType = WaveData.WaveType.Merchant;
+                merchantWave.enemyPrefabs = new GameObject[0];
+                merchantWave.transitionDelay = 1.8f;
+                runtimeWaves[chosenIndex] = merchantWave;
+                Debug.Log($"[WaveManager] Roguelike Roll: Wandering Merchant successfully stationed at Stage {chosenIndex + 1}/{runtimeWaves.Length} for this run!");
+            }
+        }
+        else
+        {
+            Debug.Log("[WaveManager] Roguelike Roll: Merchant is wandering elsewhere for this expedition.");
+        }
+    }
+    #endregion
 
     public void Continue()
     {
@@ -139,6 +244,11 @@ public class WaveManager : MonoBehaviour
         if (currentWaveIndex >= totalStages - 1)
         {
             Debug.Log("[WaveManager] Completed entire Floor!");
+            int floorNum = activeFloor != null ? activeFloor.floorNumber : (ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1);
+            if (ProgressionManager.Instance != null)
+            {
+                ProgressionManager.Instance.RecordBossDefeated(floorNum);
+            }
             if (CombatUI.Instance != null)
             {
                 CombatUI.Instance.ShowVictoryScreen("DUNGEON VICTORY!\n\nYou cleared all stages and defeated the Boss!\nAll loot and crops have been secured.");
@@ -228,6 +338,10 @@ public class WaveManager : MonoBehaviour
                 HandleCampStage();
                 break;
 
+            case WaveData.WaveType.Merchant:
+                HandleMerchantStage();
+                break;
+
             case WaveData.WaveType.Event:
                 HandleEventStage();
                 break;
@@ -314,6 +428,63 @@ public class WaveManager : MonoBehaviour
         if (eventUI != null && evt != null)
         {
             eventUI.OpenEvent(evt, ps, backpack, onComplete: () =>
+            {
+                Continue();
+            });
+        }
+        else
+        {
+            Continue();
+        }
+    }
+
+    private void HandleMerchantStage()
+    {
+        Debug.Log("[WaveManager] Reached Merchant Stage. Opening Wandering Merchant Encounter!");
+
+        if (merchantEvent == null)
+        {
+            merchantEvent = FindFirstObjectByType<MerchantEvent>(FindObjectsInactive.Include);
+            if (merchantEvent == null)
+            {
+                GameObject mGO = new GameObject("MerchantEvent");
+                merchantEvent = mGO.AddComponent<MerchantEvent>();
+            }
+        }
+
+        PlayerStats ps = (combatManager != null && combatManager.playerStats != null)
+            ? combatManager.playerStats
+            : FindFirstObjectByType<PlayerStats>();
+        ItemContainer backpack = ps != null ? ps.itemContainer : null;
+
+        bool isMerchantActive = merchantEvent != null && merchantEvent.merchantActive && merchantEvent.remainingDays > 0;
+
+        if (CombatUI.Instance != null && CombatUI.Instance.turnBannerText != null)
+        {
+            if (isMerchantActive)
+            {
+                CombatUI.Instance.turnBannerText.text = $"MERCHANT - WANDERING TRADER ({merchantEvent.remainingDays}D LEFT)";
+                CombatUI.Instance.turnBannerText.color = new Color(1f, 0.85f, 0.35f);
+                if (CombatUI.Instance.turnBannerBg != null)
+                {
+                    CombatUI.Instance.turnBannerBg.color = new Color(0.32f, 0.22f, 0.08f, 0.9f);
+                }
+            }
+            else
+            {
+                CombatUI.Instance.turnBannerText.text = "MERCHANT POST - DEPARTED (SAFE REST)";
+                CombatUI.Instance.turnBannerText.color = new Color(0.65f, 0.82f, 1f);
+                if (CombatUI.Instance.turnBannerBg != null)
+                {
+                    CombatUI.Instance.turnBannerBg.color = new Color(0.12f, 0.20f, 0.28f, 0.9f);
+                }
+            }
+        }
+
+        MerchantUI merchantUI = MerchantUI.EnsureInstance();
+        if (merchantUI != null)
+        {
+            merchantUI.Open(merchantEvent, backpack, onContinue: () =>
             {
                 Continue();
             });
@@ -490,7 +661,6 @@ public class WaveManager : MonoBehaviour
             }
 
             stats.targetSelector = targetSelector;
-            stats.SelectIntent();
             validEnemies.Add(stats);
         }
 
@@ -539,6 +709,9 @@ public class WaveManager : MonoBehaviour
         if (enemyObj != null)
         {
             enemyObj.transform.position = toPos;
+            EnemyCombatVisual visual = enemyObj.GetComponent<EnemyCombatVisual>() ?? enemyObj.AddComponent<EnemyCombatVisual>();
+            visual.SetOriginalPosition(toPos);
+
             if (enemyAnim != null && enemyAnim.isActiveAndEnabled)
             {
                 enemyAnim.SetFloat("Horizontal", 0f);

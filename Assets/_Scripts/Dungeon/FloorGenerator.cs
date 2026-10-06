@@ -14,6 +14,7 @@ public class FloorGenerator : MonoBehaviour
     public int eventScore = -1;
     public int rewardScore = -2;
     public int campScore = 0;
+    public int merchantScore = -1;
 
     public int minTargetScore = 0;
     public int maxTargetScore = 4;
@@ -23,11 +24,12 @@ public class FloorGenerator : MonoBehaviour
     public WaveData[] campWavePool;
     public WaveData[] eventWavePool;
     public WaveData[] rewardWavePool;
+    public WaveData[] merchantWavePool;
     public WaveData bossWave;
 
     /// <summary>
     /// Returns the score delta for a given wave type according to GDD:
-    /// Combat = +1, Event = -1, Reward = -2, Camp = 0.
+    /// Combat = +1, Event = -1, Reward = -2, Camp = 0, Merchant = -1.
     /// </summary>
     public int GetScoreForWaveType(WaveData.WaveType type)
     {
@@ -37,6 +39,7 @@ public class FloorGenerator : MonoBehaviour
             case WaveData.WaveType.Event: return eventScore;
             case WaveData.WaveType.Reward: return rewardScore;
             case WaveData.WaveType.Camp: return campScore;
+            case WaveData.WaveType.Merchant: return merchantScore;
             default: return 0;
         }
     }
@@ -70,6 +73,12 @@ public class FloorGenerator : MonoBehaviour
         if (previousType != WaveData.WaveType.Camp)
         {
             allCandidates.Add(WaveData.WaveType.Camp);
+        }
+
+        // Constraint: no consecutive Merchant, and Merchant must be active in town/dungeon schedule
+        if (previousType != WaveData.WaveType.Merchant && MerchantEvent.IsMerchantActive())
+        {
+            allCandidates.Add(WaveData.WaveType.Merchant);
         }
 
         // Filter candidates whose projected score falls within [minScore, maxScore]
@@ -126,6 +135,8 @@ public class FloorGenerator : MonoBehaviour
             int combatCount = 0;
             int consecutiveReward = 0;
             int consecutiveCamp = 0;
+            int consecutiveMerchant = 0;
+            int merchantCount = 0;
             bool valid = true;
 
             // Generate stages from 0 to totalStages - 2
@@ -143,6 +154,11 @@ public class FloorGenerator : MonoBehaviour
                     allowedTypes.Add(WaveData.WaveType.Camp);
                 }
 
+                if (consecutiveMerchant < 1 && merchantCount < 2 && MerchantEvent.IsMerchantActive())
+                {
+                    allowedTypes.Add(WaveData.WaveType.Merchant);
+                }
+
                 WaveData.WaveType chosen = allowedTypes[Random.Range(0, allowedTypes.Count)];
                 stageTypes.Add(chosen);
 
@@ -152,24 +168,36 @@ public class FloorGenerator : MonoBehaviour
                     currentScore += combatScore;
                     consecutiveReward = 0;
                     consecutiveCamp = 0;
+                    consecutiveMerchant = 0;
                 }
                 else if (chosen == WaveData.WaveType.Reward)
                 {
                     currentScore += rewardScore;
                     consecutiveReward++;
                     consecutiveCamp = 0;
+                    consecutiveMerchant = 0;
                 }
                 else if (chosen == WaveData.WaveType.Camp)
                 {
                     currentScore += campScore;
                     consecutiveCamp++;
                     consecutiveReward = 0;
+                    consecutiveMerchant = 0;
+                }
+                else if (chosen == WaveData.WaveType.Merchant)
+                {
+                    merchantCount++;
+                    currentScore += merchantScore;
+                    consecutiveMerchant++;
+                    consecutiveReward = 0;
+                    consecutiveCamp = 0;
                 }
                 else if (chosen == WaveData.WaveType.Event)
                 {
                     currentScore += eventScore;
                     consecutiveReward = 0;
                     consecutiveCamp = 0;
+                    consecutiveMerchant = 0;
                 }
             }
 
@@ -264,7 +292,19 @@ public class FloorGenerator : MonoBehaviour
                 }
                 if (resolved == null)
                 {
-                    resolved = CreateDefaultWave(WaveData.WaveType.Event, "Merchant Event Stage", sourceWave);
+                    resolved = CreateDefaultWave(WaveData.WaveType.Event, "Dungeon Event Stage", sourceWave);
+                }
+                break;
+
+            case WaveData.WaveType.Merchant:
+                resolved = GetRandomFromPool(merchantWavePool);
+                if (resolved == null && activeFloor != null && activeFloor.waves != null)
+                {
+                    resolved = FindWaveOfType(activeFloor.waves, WaveData.WaveType.Merchant);
+                }
+                if (resolved == null)
+                {
+                    resolved = CreateDefaultWave(WaveData.WaveType.Merchant, "Wandering Merchant Stage", sourceWave);
                 }
                 break;
 

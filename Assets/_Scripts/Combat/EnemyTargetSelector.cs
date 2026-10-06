@@ -13,7 +13,7 @@ public class EnemyTargetSelector : MonoBehaviour
         selectedEnemy = enemy;
         OnTargetChanged?.Invoke(selectedEnemy);
 
-        Debug.Log("Selected Enemy: " + enemy.enemyData.enemyName);
+        Debug.Log("Selected Enemy: " + (enemy.enemyData != null ? enemy.enemyData.enemyName : enemy.name));
     }
 
     public void ClearTarget()

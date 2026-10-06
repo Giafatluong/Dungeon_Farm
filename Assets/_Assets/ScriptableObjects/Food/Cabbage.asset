@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 284236d205486aa4c8e049821338417f, type: 3}
   m_Name: Cabbage
   m_EditorClassIdentifier: Assembly-CSharp::FoodData
-  itemName: Carbbage
+  itemName: Cabbage
   itemIcon: {fileID: -1319298885, guid: 338eb9325b511bf4dbf0184fff5f5d9c, type: 3}
   dropPrefab: {fileID: 5550669561113499368, guid: dec6e8f944157a342916cb281b59d60a, type: 3}
   itemType: 2

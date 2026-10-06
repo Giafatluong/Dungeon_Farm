@@ -38,14 +38,7 @@ public class DungeonEntrance : MonoBehaviour
         {
             Vector3 center = col != null ? col.bounds.center : transform.position;
             float dist = Vector2.Distance(center, playerTransform.position);
-            if (dist <= 2.2f)
-            {
-                playerInRange = true;
-            }
-            else if (col == null)
-            {
-                playerInRange = false;
-            }
+            playerInRange = dist <= 2.2f;
         }
 
         if (!playerInRange)

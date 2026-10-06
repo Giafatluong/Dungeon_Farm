@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1299bd6f3aba8a44b45af74a9e3af52, type: 3}
   m_Name: DecreaseDEF
   m_EditorClassIdentifier: Assembly-CSharp::StatEffectData
-  buffName: DecreaseDEF
+  buffName: "Gi\u1EA3m DEF"
   buffType: 1
   stackable: 0
+  isDebuff: 1

@@ -22,6 +22,11 @@ public class ProgressionManager : MonoBehaviour
     public int currentFloor = 1;
     public int currentStage = 0;
 
+    [Header("Floor Progression")]
+    public int highestUnlockedFloor = 1;
+    public List<int> defeatedBossFloors = new List<int>();
+    public int selectedFloor = 1;
+
     public event System.Action OnProgressionChanged;
     public event System.Action<bool> OnRunEnded; // true: victory, false: defeat
 
@@ -36,6 +41,7 @@ public class ProgressionManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
+        LoadFloorProgression();
         InitializeDefaultUnlocks();
     }
 
@@ -90,7 +96,8 @@ public class ProgressionManager : MonoBehaviour
     public void StartRun(int floor = 1)
     {
         runActive = true;
-        currentFloor = floor;
+        currentFloor = floor > 0 ? floor : 1;
+        selectedFloor = currentFloor;
         currentStage = 0;
         Debug.Log("Starting Dungeon Run - Floor " + currentFloor);
     }
@@ -202,6 +209,7 @@ public class ProgressionManager : MonoBehaviour
     {
         Debug.Log("Dungeon Run completed successfully!");
         runActive = false;
+        RecordBossDefeated(currentFloor);
         OnRunEnded?.Invoke(true);
 
         if (SceneTransitionManager.Instance != null)
@@ -210,13 +218,126 @@ public class ProgressionManager : MonoBehaviour
         }
     }
 
+    #region Floor Progression Management
+    public bool IsFloorUnlocked(int floor)
+    {
+        if (floor <= 1) return true;
+        // Floor N requires defeating the boss of floor N - 1
+        return (defeatedBossFloors != null && defeatedBossFloors.Contains(floor - 1)) || highestUnlockedFloor >= floor;
+    }
+
+    public bool IsBossDefeated(int floor)
+    {
+        return defeatedBossFloors != null && defeatedBossFloors.Contains(floor);
+    }
+
+    public void RecordBossDefeated(int floor)
+    {
+        if (floor < 1) floor = 1;
+        if (defeatedBossFloors == null) defeatedBossFloors = new List<int>();
+
+        bool changed = false;
+        if (!defeatedBossFloors.Contains(floor))
+        {
+            defeatedBossFloors.Add(floor);
+            changed = true;
+        }
+
+        if (floor + 1 > highestUnlockedFloor)
+        {
+            highestUnlockedFloor = floor + 1;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            SaveFloorProgression();
+            Debug.Log($"[ProgressionManager] Boss of Floor {floor} defeated! Floor {floor + 1} is now unlocked! (Highest: {highestUnlockedFloor})");
+            OnProgressionChanged?.Invoke();
+        }
+    }
+
+    public void UnlockFloor(int floor)
+    {
+        if (floor > highestUnlockedFloor)
+        {
+            highestUnlockedFloor = floor;
+            SaveFloorProgression();
+            OnProgressionChanged?.Invoke();
+        }
+    }
+
+    public void SaveFloorProgression()
+    {
+        PlayerPrefs.SetInt("Dungeon_HighestUnlockedFloor", highestUnlockedFloor);
+        if (defeatedBossFloors != null)
+        {
+            PlayerPrefs.SetString("Dungeon_DefeatedBossFloors", string.Join(",", defeatedBossFloors));
+        }
+        PlayerPrefs.Save();
+    }
+
+    public void LoadFloorProgression()
+    {
+        highestUnlockedFloor = PlayerPrefs.GetInt("Dungeon_HighestUnlockedFloor", 1);
+        if (highestUnlockedFloor < 1) highestUnlockedFloor = 1;
+
+        if (defeatedBossFloors == null) defeatedBossFloors = new List<int>();
+        defeatedBossFloors.Clear();
+
+        string savedBosses = PlayerPrefs.GetString("Dungeon_DefeatedBossFloors", "");
+        if (!string.IsNullOrEmpty(savedBosses))
+        {
+            string[] parts = savedBosses.Split(',');
+            for (int i = 0; i < parts.Length; i++)
+            {
+                if (int.TryParse(parts[i].Trim(), out int f) && !defeatedBossFloors.Contains(f))
+                {
+                    defeatedBossFloors.Add(f);
+                }
+            }
+        }
+    }
+
+    [ContextMenu("Cheat: Unlock All Floors (Up to 5)")]
+    public void CheatUnlockAllFloors()
+    {
+        if (defeatedBossFloors == null) defeatedBossFloors = new List<int>();
+        for (int i = 1; i <= 4; i++)
+        {
+            if (!defeatedBossFloors.Contains(i)) defeatedBossFloors.Add(i);
+        }
+        highestUnlockedFloor = 5;
+        SaveFloorProgression();
+        OnProgressionChanged?.Invoke();
+        Debug.Log("[ProgressionManager] Cheat: Unlocked all floors up to 5!");
+    }
+
+    [ContextMenu("Cheat: Reset Floor Progression")]
+    public void ResetFloorProgression()
+    {
+        if (defeatedBossFloors == null) defeatedBossFloors = new List<int>();
+        defeatedBossFloors.Clear();
+        highestUnlockedFloor = 1;
+        selectedFloor = 1;
+        SaveFloorProgression();
+        OnProgressionChanged?.Invoke();
+        Debug.Log("[ProgressionManager] Reset floor progression back to Floor 1.");
+    }
+    #endregion
+
     private void ClearRunLoot(ItemContainer inventory)
     {
+        if (inventory == null || inventory.itemSlots == null) return;
         for (int i = 0; i < inventory.itemSlots.Length; i++)
         {
-            inventory.itemSlots[i].itemData = null;
-            inventory.itemSlots[i].amount = 0;
+            if (inventory.itemSlots[i] != null)
+            {
+                inventory.itemSlots[i].itemData = null;
+                inventory.itemSlots[i].amount = 0;
+            }
         }
         InventoryButton.selectedItem = null;
+        inventory.NotifyChange();
     }
 }

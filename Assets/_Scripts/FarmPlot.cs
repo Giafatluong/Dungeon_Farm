@@ -35,11 +35,15 @@ public class FarmPlot : MonoBehaviour
         if (selectedItem == null)
             return false;
 
+        if (itemContainer == null || itemContainer.itemSlots == null)
+            return false;
+
         int slotIndex = -1;
 
         for (int i = 0; i < itemContainer.itemSlots.Length; i++)
         {
-            if (itemContainer.itemSlots[i].itemData == selectedItem &&
+            if (itemContainer.itemSlots[i] != null &&
+                itemContainer.itemSlots[i].itemData == selectedItem &&
                 itemContainer.itemSlots[i].amount > 0)
             {
                 slotIndex = i;

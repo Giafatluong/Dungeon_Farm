@@ -25,7 +25,7 @@ public class ProgressController : MonoBehaviour
     public void NextProgress()
     {
         currentStage += 1;
-        scale = currentStage/totalStage;
-        image.fillAmount = scale;
+        scale = totalStage > 0 ? currentStage / totalStage : 0f;
+        if (image != null) image.fillAmount = scale;
     }
 }

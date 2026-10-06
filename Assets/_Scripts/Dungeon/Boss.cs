@@ -1,80 +1,79 @@
 using UnityEngine;
+using System.Collections.Generic;
 
-public class Boss : MonoBehaviour
+public class Boss : EnemyStats
 {
-    public string bossID = "Boss_Floor_1";
-    public int floorIndex = 1;
-    public bool isDefeated = false;
+    [Header("Boss Configuration")]
+    public string bossName = "Dungeon Boss";
+    public int phaseCount = 2;
 
-    [Header("Reset Logic")]
-    public int resetDaysRequired = 3;
-    public int daysUntilReset = 0;
+    [Header("Phase Thresholds (% of max HP)")]
+    public float[] phaseThresholds = { 0.5f }; // e.g. 50% HP triggers phase 2
 
-    [Header("Rewards")]
-    public ItemRequirement[] rewardItems;
-    public ItemData rareSeedReward;
+    [Header("Phase Buff Effects")]
+    public StatEffectData phaseATKBuff;
+    public int phaseATKBuffValue = 5;
+    public StatEffectData phaseSPDBuff;
+    public int phaseSPDBuffValue = 2;
 
-    public event System.Action OnBossReset;
+    private int currentPhase = 1;
+    private bool[] phaseTriggered;
 
-    private void Start()
+    protected override void Awake()
     {
-        DayManager dayManager = FindFirstObjectByType<DayManager>();
-        if (dayManager != null)
-        {
-            dayManager.OnNewDay += HandleNewDay;
-        }
+        base.Awake();
+        phaseTriggered = new bool[phaseThresholds != null ? phaseThresholds.Length : 0];
+        currentPhase = 1;
     }
 
-    private void OnDestroy()
+    protected override void Start()
     {
-        DayManager dayManager = FindFirstObjectByType<DayManager>();
-        if (dayManager != null)
-        {
-            dayManager.OnNewDay -= HandleNewDay;
-        }
+        base.Start();
     }
 
-    private void HandleNewDay()
+    public override void TakeDamage(int damage)
     {
-        if (!isDefeated) return;
-
-        daysUntilReset--;
-        Debug.Log($"Boss {bossID}: {daysUntilReset} days until respawn.");
-
-        if (daysUntilReset <= 0)
-        {
-            isDefeated = false;
-            Debug.Log($"Boss {bossID} has respawned!");
-            OnBossReset?.Invoke();
-        }
+        base.TakeDamage(damage);
+        CheckPhaseTransition();
     }
 
-    public void OnBossDefeated(ItemContainer playerContainer)
+    private void CheckPhaseTransition()
     {
-        isDefeated = true;
-        daysUntilReset = resetDaysRequired;
+        if (enemyData == null || enemyData.maxHealth <= 0) return;
+        if (phaseThresholds == null) return;
 
-        Debug.Log($"Boss {bossID} defeated!");
+        float hpRatio = (float)currentHealth / enemyData.maxHealth;
 
-        if (playerContainer != null && rewardItems != null)
+        for (int i = 0; i < phaseThresholds.Length; i++)
         {
-            for (int i = 0; i < rewardItems.Length; i++)
+            if (!phaseTriggered[i] && hpRatio <= phaseThresholds[i])
             {
-                if (rewardItems[i].item != null && rewardItems[i].amount > 0)
-                {
-                    playerContainer.AddItem(rewardItems[i].item, rewardItems[i].amount);
-                }
+                phaseTriggered[i] = true;
+                TriggerPhase(i + 2);
             }
         }
+    }
 
-        if (rareSeedReward != null && ProgressionManager.Instance != null)
+    private void TriggerPhase(int phase)
+    {
+        currentPhase = phase;
+        Debug.Log($"[Boss] {bossName} entered Phase {phase}!");
+
+        if (phaseATKBuff != null)
         {
-            ProgressionManager.Instance.UnlockSeed(rareSeedReward);
+            AddBuff(phaseATKBuff, phaseATKBuffValue, 999, FoodData.BuffDurationType.Combat);
         }
 
-        if (ProgressionManager.Instance != null)
+        if (phaseSPDBuff != null)
         {
-            ProgressionManager.Instance.CompleteRun();
+            AddBuff(phaseSPDBuff, phaseSPDBuffValue, 999, FoodData.BuffDurationType.Combat);
+        }
+
+        if (CombatUI.Instance != null)
+        {
+            CombatUI.Instance.LogMessage($"{bossName} enters Phase {phase}! It's enraged!");
         }
     }
+
+    public int GetCurrentPhase() => currentPhase;
 }

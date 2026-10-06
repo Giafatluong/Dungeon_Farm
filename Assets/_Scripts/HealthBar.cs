@@ -10,6 +10,11 @@ public class HealthBar : MonoBehaviour
     public EnemyStats enemyTarget;
     public PlayerStats playerTarget;
 
+    private int lastHealth = -1;
+    private int lastMaxHealth = -1;
+    private EnemyData.EnemyIntent? lastIntent = null;
+    private int lastAtk = -1;
+
     public void SetHealthBar(int currentHealth, int maxHealth)
     {
         if (healthBar != null && maxHealth > 0)
@@ -22,6 +27,11 @@ public class HealthBar : MonoBehaviour
     {
         enemyTarget = enemy;
         playerTarget = null;
+        lastHealth = -1;
+        lastMaxHealth = -1;
+        lastIntent = null;
+        lastAtk = -1;
+
         if (intentText != null)
         {
             intentText.gameObject.SetActive(true);
@@ -32,6 +42,11 @@ public class HealthBar : MonoBehaviour
     {
         playerTarget = player;
         enemyTarget = null;
+        lastHealth = -1;
+        lastMaxHealth = -1;
+        lastIntent = null;
+        lastAtk = -1;
+
         if (intentText != null)
         {
             intentText.gameObject.SetActive(false);
@@ -54,27 +69,44 @@ public class HealthBar : MonoBehaviour
         {
             transform.position = enemyTarget.transform.position + offset;
 
-            SetHealthBar(
-                enemyTarget.currentHealth,
-                enemyTarget.enemyData.maxHealth
-            );
+            int curHp = enemyTarget.currentHealth;
+            int maxHp = enemyTarget.enemyData != null ? enemyTarget.enemyData.maxHealth : 1;
+
+            if (curHp != lastHealth || maxHp != lastMaxHealth)
+            {
+                lastHealth = curHp;
+                lastMaxHealth = maxHp;
+                SetHealthBar(curHp, maxHp);
+            }
 
             if (intentText != null)
             {
-                switch (enemyTarget.currentIntent)
+                int curAtk = enemyTarget.GetCurrentATK();
+                EnemyData.EnemyIntent curIntent = enemyTarget.currentIntent;
+
+                if (curIntent != lastIntent || curAtk != lastAtk)
                 {
-                    case EnemyData.EnemyIntent.Attack:
-                        intentText.text = $"ATK {enemyTarget.GetCurrentATK()}";
-                        break;
-                    case EnemyData.EnemyIntent.Defend:
-                        intentText.text = "DEFEND";
-                        break;
-                    case EnemyData.EnemyIntent.Buff:
-                        intentText.text = "BUFF";
-                        break;
-                    case EnemyData.EnemyIntent.Debuff:
-                        intentText.text = "DEBUFF";
-                        break;
+                    lastIntent = curIntent;
+                    lastAtk = curAtk;
+
+                    switch (curIntent)
+                    {
+                        case EnemyData.EnemyIntent.Attack:
+                            intentText.text = $"<color=#FF5555>ATK {curAtk}</color>";
+                            break;
+                        case EnemyData.EnemyIntent.Defend:
+                            intentText.text = "<color=#55AAFF>DEFEND</color>";
+                            break;
+                        case EnemyData.EnemyIntent.Buff:
+                            intentText.text = "<color=#FFDD44>BUFF</color>";
+                            break;
+                        case EnemyData.EnemyIntent.Debuff:
+                            intentText.text = "<color=#DD55FF>DEBUFF</color>";
+                            break;
+                        default:
+                            intentText.text = $"<color=#FF5555>ATK {curAtk}</color>";
+                            break;
+                    }
                 }
             }
         }
@@ -89,10 +121,15 @@ public class HealthBar : MonoBehaviour
 
             transform.position = playerTarget.transform.position + offset;
 
-            SetHealthBar(
-                playerTarget.currentHealth,
-                playerTarget.maxHealth
-            );
+            int curHp = playerTarget.currentHealth;
+            int maxHp = playerTarget.maxHealth;
+
+            if (curHp != lastHealth || maxHp != lastMaxHealth)
+            {
+                lastHealth = curHp;
+                lastMaxHealth = maxHp;
+                SetHealthBar(curHp, maxHp);
+            }
         }
     }
 }

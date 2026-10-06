@@ -21,6 +21,13 @@ public class StatEffectData : ScriptableObject
     }
 
     public Stackable stackable;
+
+    [Tooltip("Explicitly set whether this effect is a debuff. If left false, name heuristics are used as fallback.")]
+    public bool isDebuff = false;
+
+    public bool IsDebuff => isDebuff
+                         || (buffName != null && (buffName.IndexOf("Giam", System.StringComparison.OrdinalIgnoreCase) >= 0 || buffName.IndexOf("Decrease", System.StringComparison.OrdinalIgnoreCase) >= 0 || buffName.IndexOf("Debuff", System.StringComparison.OrdinalIgnoreCase) >= 0))
+                         || (name != null && (name.StartsWith("Decrease", System.StringComparison.OrdinalIgnoreCase) || name.IndexOf("Debuff", System.StringComparison.OrdinalIgnoreCase) >= 0));
 }
 
 [System.Serializable]

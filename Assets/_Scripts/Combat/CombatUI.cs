@@ -269,8 +269,31 @@ public class CombatUI : MonoBehaviour
     #endregion
 
     #region HUD Refresh & Status Display
+    private int cachedHp = -1, cachedMaxHp = -1;
+    private int cachedHunger = -1, cachedMaxHunger = -1;
+    private int cachedAP = -1, cachedMaxAP = -1;
+    private int cachedAtk = -1, cachedDef = -1, cachedSpd = -1, cachedDefendCount = -1;
+    private int cachedBuffCount = -1;
+
+    private bool? cachedIsPlayerTurn = null;
+    private bool? cachedHasAP = null;
+    private bool? cachedIsAlive = null;
+
+    public void InvalidateHUDCache()
+    {
+        cachedHp = -1; cachedMaxHp = -1;
+        cachedHunger = -1; cachedMaxHunger = -1;
+        cachedAP = -1; cachedMaxAP = -1;
+        cachedAtk = -1; cachedDef = -1; cachedSpd = -1; cachedDefendCount = -1;
+        cachedBuffCount = -1;
+        cachedIsPlayerTurn = null;
+        cachedHasAP = null;
+        cachedIsAlive = null;
+    }
+
     public void RefreshAll()
     {
+        InvalidateHUDCache();
         UpdatePlayerHUD();
         UpdateActionButtons();
         UpdateTurnBanner();
@@ -287,61 +310,103 @@ public class CombatUI : MonoBehaviour
     {
         if (playerStats == null) return;
 
-        if (playerNameText != null)
+        if (playerNameText != null && playerNameText.text != "HERO (PLAYER)")
         {
             playerNameText.text = "HERO (PLAYER)";
         }
 
-        if (hpFillImage != null)
+        int curHp = playerStats.currentHealth;
+        int maxHp = playerStats.maxHealth;
+        if (curHp != cachedHp || maxHp != cachedMaxHp)
         {
-            hpFillImage.fillAmount = playerStats.maxHealth > 0 ? (float)playerStats.currentHealth / playerStats.maxHealth : 0f;
-        }
-        if (hpText != null)
-        {
-            hpText.text = $"HP: {playerStats.currentHealth} / {playerStats.maxHealth}";
-        }
-
-        if (hungerFillImage != null)
-        {
-            hungerFillImage.fillAmount = playerStats.maxHunger > 0 ? (float)playerStats.currentHunger / playerStats.maxHunger : 0f;
-        }
-        if (hungerText != null)
-        {
-            hungerText.text = $"Fullness: {playerStats.currentHunger} / {playerStats.maxHunger}";
+            cachedHp = curHp;
+            cachedMaxHp = maxHp;
+            if (hpFillImage != null) hpFillImage.fillAmount = maxHp > 0 ? (float)curHp / maxHp : 0f;
+            if (hpText != null) hpText.text = $"HP: {curHp} / {maxHp}";
         }
 
-        if (apText != null)
+        int curHunger = playerStats.currentHunger;
+        int maxHunger = playerStats.maxHunger;
+        if (curHunger != cachedHunger || maxHunger != cachedMaxHunger)
         {
-            apText.text = $"AP: {playerStats.currentAP} / {playerStats.maxAP}";
+            cachedHunger = curHunger;
+            cachedMaxHunger = maxHunger;
+            if (hungerFillImage != null) hungerFillImage.fillAmount = maxHunger > 0 ? (float)curHunger / maxHunger : 0f;
+            if (hungerText != null) hungerText.text = $"Fullness: {curHunger} / {maxHunger}";
         }
 
-        if (statsText != null)
+        int curAP = playerStats.currentAP;
+        int maxAP = playerStats.maxAP;
+        if (curAP != cachedAP || maxAP != cachedMaxAP)
         {
-            int atk = playerStats.GetCurrentATK();
-            int def = playerStats.GetCurrentDEF();
-            int spd = playerStats.GetCurrentSpeed();
-            string shieldStr = playerStats.defendCount > 0 ? $" (+{playerStats.defendValue * playerStats.defendCount} Shield)" : "";
-            statsText.text = $"ATK: {atk}    DEF: {def}{shieldStr}    SPD: {spd}";
+            cachedAP = curAP;
+            cachedMaxAP = maxAP;
+            if (apText != null) apText.text = $"AP: {curAP} / {maxAP}";
         }
 
-        if (buffsText != null)
+        int atk = playerStats.GetCurrentATK();
+        int def = playerStats.GetCurrentDEF();
+        int spd = playerStats.GetCurrentSpeed();
+        int defCount = playerStats.defendCount;
+        if (atk != cachedAtk || def != cachedDef || spd != cachedSpd || defCount != cachedDefendCount)
         {
-            if (playerStats.activeBuffs == null || playerStats.activeBuffs.Count == 0)
+            cachedAtk = atk;
+            cachedDef = def;
+            cachedSpd = spd;
+            cachedDefendCount = defCount;
+            if (statsText != null)
             {
-                buffsText.text = "Buffs: None";
+                string shieldStr = defCount > 0 ? $" (+{playerStats.defendValue * defCount} Shield)" : "";
+                statsText.text = $"ATK: {atk}    DEF: {def}{shieldStr}    SPD: {spd}";
             }
-            else
+        }
+
+        int buffHash = 0;
+        int buffCount = 0;
+        if (playerStats.activeBuffs != null)
+        {
+            buffCount = playerStats.activeBuffs.Count;
+            for (int i = 0; i < playerStats.activeBuffs.Count; i++)
             {
-                System.Text.StringBuilder sb = new("Buffs: ");
-                for (int i = 0; i < playerStats.activeBuffs.Count; i++)
+                ActiveBuff b = playerStats.activeBuffs[i];
+                if (b != null && b.buff != null)
                 {
-                    ActiveBuff b = playerStats.activeBuffs[i];
-                    if (b != null && b.buff != null)
-                    {
-                        sb.Append($"[{b.buff.buffName} +{b.buffValue} ({b.remainingDuration} {b.buffDurationType})] ");
-                    }
+                    buffHash = unchecked(buffHash * 397 ^ (b.buffValue * 17 + b.remainingDuration * 31 + (int)b.buffDurationType));
                 }
-                buffsText.text = sb.ToString();
+            }
+        }
+
+        if (buffHash != cachedBuffCount)
+        {
+            cachedBuffCount = buffHash;
+            if (buffsText != null)
+            {
+                if (buffCount == 0)
+                {
+                    buffsText.text = "Buffs: None";
+                }
+                else
+                {
+                    System.Text.StringBuilder sb = new("Buffs: ");
+                    for (int i = 0; i < playerStats.activeBuffs.Count; i++)
+                    {
+                        ActiveBuff b = playerStats.activeBuffs[i];
+                        if (b != null && b.buff != null)
+                        {
+                            string sign = b.buffValue > 0 ? "+" : "";
+                            string durType = b.buffDurationType switch
+                            {
+                                FoodData.BuffDurationType.Turn => "Turn",
+                                FoodData.BuffDurationType.Combat => "Battle",
+                                FoodData.BuffDurationType.Floor => "Floor",
+                                _ => b.buffDurationType.ToString()
+                            };
+                            string bColor = b.buffValue >= 0 ? "#66CCFF" : "#FF7777";
+                            sb.Append($"<color={bColor}>[{b.buff.buffName} {sign}{b.buffValue} ({b.remainingDuration} {durType})]</color> ");
+                        }
+                    }
+                    buffsText.text = sb.ToString().TrimEnd();
+                }
             }
         }
     }
@@ -354,9 +419,17 @@ public class CombatUI : MonoBehaviour
         bool hasAP = playerStats.currentAP > 0;
         bool isAlive = playerStats.currentHealth > 0;
 
-        if (attackButton != null) attackButton.interactable = isPlayerTurn && hasAP && isAlive;
-        if (defendButton != null) defendButton.interactable = isPlayerTurn && hasAP && isAlive;
-        if (eatButton != null) eatButton.interactable = isPlayerTurn && hasAP && isAlive;
+        if (isPlayerTurn == cachedIsPlayerTurn && hasAP == cachedHasAP && isAlive == cachedIsAlive)
+            return;
+
+        cachedIsPlayerTurn = isPlayerTurn;
+        cachedHasAP = hasAP;
+        cachedIsAlive = isAlive;
+
+        bool canAct = isPlayerTurn && hasAP && isAlive;
+        if (attackButton != null) attackButton.interactable = canAct;
+        if (defendButton != null) defendButton.interactable = canAct;
+        if (eatButton != null) eatButton.interactable = canAct;
         if (endTurnButton != null) endTurnButton.interactable = isPlayerTurn && isAlive;
     }
 
@@ -456,15 +529,57 @@ public class CombatUI : MonoBehaviour
 
         if (targetIntentText != null)
         {
+            int defValue = (enemy.enemyData != null) ? Mathf.Max(5, enemy.enemyData.DEF) : 5;
+            string buffSkillInfo = "";
+            string debuffSkillInfo = "";
+            if (enemy.enemyData != null && enemy.enemyData.intentEffects != null)
+            {
+                foreach (var eff in enemy.enemyData.intentEffects)
+                {
+                    if (eff == null || eff.effect == null) continue;
+                    string effName = !string.IsNullOrEmpty(eff.effect.buffName) ? eff.effect.buffName : eff.effect.buffType.ToString();
+                    if (eff.target == EnemyData.EffectTarget.Player)
+                    {
+                        int v = (eff.effect.IsDebuff && eff.value > 0) ? -eff.value : eff.value;
+                        string sign = v > 0 ? "+" : "";
+                        debuffSkillInfo = $" ({sign}{v} {effName})";
+                    }
+                    else
+                    {
+                        string sign = eff.value > 0 ? "+" : "";
+                        buffSkillInfo = $" ({sign}{eff.value} {effName})";
+                    }
+                }
+            }
+
             string intentDesc = enemy.currentIntent switch
             {
-                EnemyData.EnemyIntent.Attack => $"Attack ({enemy.GetCurrentATK()} DMG)",
-                EnemyData.EnemyIntent.Defend => $"Defend (+{enemy.enemyData.DEF} DEF)",
-                EnemyData.EnemyIntent.Buff => "Buff Skill",
-                EnemyData.EnemyIntent.Debuff => "Debuff Skill",
-                _ => ""
+                EnemyData.EnemyIntent.Attack => $"<color=#FF7777>Attack ({enemy.GetCurrentATK()} DMG)</color>",
+                EnemyData.EnemyIntent.Defend => $"<color=#77B5FE>Defend (+{defValue} DEF)</color>",
+                EnemyData.EnemyIntent.Buff => $"<color=#FFD700>Buff{buffSkillInfo}</color>",
+                EnemyData.EnemyIntent.Debuff => $"<color=#DA70D6>Debuff{debuffSkillInfo}</color>",
+                _ => "<color=#AAAAAA>Attack</color>"
             };
-            targetIntentText.text = $"Intent: {intentDesc}";
+
+            string activeBuffsDesc = "";
+            if (enemy.activeBuffs != null && enemy.activeBuffs.Count > 0)
+            {
+                System.Text.StringBuilder ebSb = new("\n<size=10><color=#B0BEC5>Effects: ");
+                for (int i = 0; i < enemy.activeBuffs.Count; i++)
+                {
+                    ActiveBuff eb = enemy.activeBuffs[i];
+                    if (eb != null && eb.buff != null)
+                    {
+                        string sign = eb.buffValue > 0 ? "+" : "";
+                        string ebColor = eb.buffValue >= 0 ? "#66CCFF" : "#FF7777";
+                        ebSb.Append($"<color={ebColor}>[{sign}{eb.buffValue} {eb.buff.buffType} ({eb.remainingDuration}T)]</color> ");
+                    }
+                }
+                ebSb.Append("</color></size>");
+                activeBuffsDesc = ebSb.ToString();
+            }
+
+            targetIntentText.text = $"Intent: {intentDesc}{activeBuffsDesc}";
         }
     }
 

@@ -10,7 +10,8 @@ public class WaveData : ScriptableObject
         Camp = 2,
         Event = 3,
         Boss = 4,
-        Random = 5 // Procedural Random Area
+        Random = 5, // Procedural Random Area
+        Merchant = 6 // Dedicated Wandering Merchant Encounter
     }
 
     [Header("Encounter Type")]

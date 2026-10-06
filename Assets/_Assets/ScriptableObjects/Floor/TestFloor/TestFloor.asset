@@ -12,11 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b361ef3d9b53cdd41b30d69a54936c4a, type: 3}
   m_Name: TestFloor
   m_EditorClassIdentifier: Assembly-CSharp::FloorData
-  floorName: Test Floor (All Stages)
+  floorName: Test Floor (8 Waves)
   floorNumber: 1
   waves:
   - {fileID: 11400000, guid: a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4, type: 2}
   - {fileID: 11400000, guid: b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5, type: 2}
+  - {fileID: 11400000, guid: c1d2e3f4a5b6c1d2e3f4a5b6c1d2e3f4, type: 2}
+  - {fileID: 11400000, guid: d2e3f4a5b6c1d2e3f4a5b6c1d2e3f4a5, type: 2}
   - {fileID: 11400000, guid: c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6, type: 2}
   - {fileID: 11400000, guid: d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1, type: 2}
+  - {fileID: 11400000, guid: e3f4a5b6c1d2e3f4a5b6c1d2e3f4a5b6, type: 2}
   - {fileID: 11400000, guid: e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2, type: 2}

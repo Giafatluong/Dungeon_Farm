@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1299bd6f3aba8a44b45af74a9e3af52, type: 3}
   m_Name: IncreaseSpeed
   m_EditorClassIdentifier: Assembly-CSharp::StatEffectData
-  buffName: IncreaseSpeed
+  buffName: "T\u0103ng T\u1ED1c \u0110\u1ED9"
   buffType: 2
   stackable: 0

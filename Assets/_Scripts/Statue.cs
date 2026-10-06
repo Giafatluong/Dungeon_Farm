@@ -268,15 +268,7 @@ public class Statue : MonoBehaviour, IInteractable
     private int GetItemCount(ItemContainer container, ItemData item)
     {
         if (container == null || item == null) return 0;
-        int total = 0;
-        for (int i = 0; i < container.itemSlots.Length; i++)
-        {
-            if (container.itemSlots[i].itemData == item)
-            {
-                total += container.itemSlots[i].amount;
-            }
-        }
-        return total;
+        return container.GetItemCount(item);
     }
     #endregion
 

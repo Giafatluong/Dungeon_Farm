@@ -9,7 +9,8 @@ public class Floor : MonoBehaviour
         Camp,
         Event,
         Reward,
-        Boss
+        Boss,
+        Merchant
     }
     public bool isFixed; 
     public int weughtScore;
