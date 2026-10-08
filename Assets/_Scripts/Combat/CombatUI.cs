@@ -235,6 +235,16 @@ public class CombatUI : MonoBehaviour
 
     private void HandleKeyboardShortcuts()
     {
+        // When wave victory / continue panel is active, Space or Enter triggers Continue
+        if (rewardPanel != null && rewardPanel.activeSelf)
+        {
+            if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return))
+            {
+                OnRewardClaimClicked();
+                return;
+            }
+        }
+
         // Target cycling is allowed whenever combat is active or preparing
         if (targetSelector != null && combatManager != null && combatManager.enemies != null && combatManager.enemies.Length > 1)
         {
@@ -958,11 +968,159 @@ public class CombatUI : MonoBehaviour
         if (rewardPanel != null)
         {
             rewardPanel.SetActive(true);
+            rewardPanel.transform.SetAsLastSibling();
+
+            TextMeshProUGUI titleText = rewardPanel.transform.Find("Box/Title")?.GetComponent<TextMeshProUGUI>();
+            if (titleText != null)
+            {
+                titleText.text = "PHÒNG THƯỞNG KHO BÁU!";
+            }
+
             if (rewardDescriptionText != null)
             {
                 rewardDescriptionText.text = $"TREASURE ROOM!\n\n{rewardDesc}";
             }
         }
+    }
+
+    public void ShowWaveVictoryScreen(int waveIndex, List<ItemSlot> waveLoot)
+    {
+        if (rewardPanel == null)
+        {
+            CreateFallbackWaveVictoryPanel();
+        }
+
+        if (rewardPanel != null)
+        {
+            rewardPanel.SetActive(true);
+            rewardPanel.transform.SetAsLastSibling();
+
+            TextMeshProUGUI titleText = rewardPanel.transform.Find("Box/Title")?.GetComponent<TextMeshProUGUI>();
+            if (titleText != null)
+            {
+                titleText.text = $"HOÀN THÀNH WAVE {waveIndex + 1}!";
+            }
+
+            if (rewardDescriptionText != null)
+            {
+                System.Text.StringBuilder sb = new();
+                sb.AppendLine("<size=18><color=#B0BEC5>Đã tiêu diệt toàn bộ kẻ địch!</color></size>\n");
+
+                if (waveLoot != null && waveLoot.Count > 0)
+                {
+                    sb.AppendLine("<size=20><color=#FFD700>Vật phẩm rơi từ quái:</color></size>");
+                    Dictionary<ItemData, int> combined = new();
+                    foreach (var slot in waveLoot)
+                    {
+                        if (slot == null || slot.itemData == null || slot.amount <= 0) continue;
+                        if (combined.ContainsKey(slot.itemData)) combined[slot.itemData] += slot.amount;
+                        else combined[slot.itemData] = slot.amount;
+                    }
+
+                    foreach (var kvp in combined)
+                    {
+                        sb.AppendLine($"• <color=#FFFFFF>{kvp.Key.itemName}</color> <color=#A8E6CF>x{kvp.Value}</color>");
+                    }
+                }
+                else
+                {
+                    sb.AppendLine("<color=#888888>(Không có vật phẩm rơi trong đợt này)</color>");
+                }
+
+                rewardDescriptionText.text = sb.ToString();
+            }
+
+            if (rewardClaimButton != null)
+            {
+                TextMeshProUGUI btnText = rewardClaimButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (btnText != null)
+                {
+                    btnText.text = "TIẾP TỤC";
+                }
+            }
+        }
+        else
+        {
+            if (waveManager == null) waveManager = FindFirstObjectByType<WaveManager>();
+            if (waveManager != null) waveManager.Continue();
+        }
+    }
+
+    private void CreateFallbackWaveVictoryPanel()
+    {
+        Canvas canvas = GetComponentInParent<Canvas>() ?? FindFirstObjectByType<Canvas>();
+        if (canvas == null) return;
+
+        GameObject overlayGO = new("WaveVictoryFallbackPanel", typeof(RectTransform), typeof(Image));
+        overlayGO.transform.SetParent(canvas.transform, false);
+        RectTransform overlayRT = overlayGO.GetComponent<RectTransform>();
+        overlayRT.anchorMin = Vector2.zero;
+        overlayRT.anchorMax = Vector2.one;
+        overlayRT.sizeDelta = Vector2.zero;
+        Image overlayImg = overlayGO.GetComponent<Image>();
+        overlayImg.color = new Color(0, 0, 0, 0.78f);
+
+        GameObject boxGO = new("Box", typeof(RectTransform), typeof(Image));
+        boxGO.transform.SetParent(overlayGO.transform, false);
+        RectTransform boxRT = boxGO.GetComponent<RectTransform>();
+        boxRT.anchorMin = new Vector2(0.5f, 0.5f);
+        boxRT.anchorMax = new Vector2(0.5f, 0.5f);
+        boxRT.sizeDelta = new Vector2(580, 320);
+        Image boxImg = boxGO.GetComponent<Image>();
+        boxImg.color = new Color(0.12f, 0.14f, 0.18f, 0.95f);
+
+        GameObject titleGO = new("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
+        titleGO.transform.SetParent(boxGO.transform, false);
+        RectTransform titleRT = titleGO.GetComponent<RectTransform>();
+        titleRT.anchorMin = new Vector2(0, 0.75f);
+        titleRT.anchorMax = new Vector2(1, 1);
+        titleRT.sizeDelta = Vector2.zero;
+        TextMeshProUGUI titleTMP = titleGO.GetComponent<TextMeshProUGUI>();
+        titleTMP.alignment = TextAlignmentOptions.Center;
+        titleTMP.fontSize = 24;
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.color = new Color(1f, 0.85f, 0.2f);
+        titleTMP.text = "HOÀN THÀNH WAVE!";
+
+        GameObject descGO = new("Description", typeof(RectTransform), typeof(TextMeshProUGUI));
+        descGO.transform.SetParent(boxGO.transform, false);
+        RectTransform descRT = descGO.GetComponent<RectTransform>();
+        descRT.anchorMin = new Vector2(0.08f, 0.25f);
+        descRT.anchorMax = new Vector2(0.92f, 0.75f);
+        descRT.sizeDelta = Vector2.zero;
+        TextMeshProUGUI descTMP = descGO.GetComponent<TextMeshProUGUI>();
+        descTMP.alignment = TextAlignmentOptions.Center;
+        descTMP.fontSize = 17;
+        descTMP.color = Color.white;
+        rewardDescriptionText = descTMP;
+
+        GameObject btnGO = new("ActionBtn", typeof(RectTransform), typeof(Image), typeof(Button));
+        btnGO.transform.SetParent(boxGO.transform, false);
+        RectTransform btnRT = btnGO.GetComponent<RectTransform>();
+        btnRT.anchorMin = new Vector2(0.5f, 0f);
+        btnRT.anchorMax = new Vector2(0.5f, 0f);
+        btnRT.anchoredPosition = new Vector2(0, 25);
+        btnRT.sizeDelta = new Vector2(260, 52);
+        Image btnImg = btnGO.GetComponent<Image>();
+        btnImg.color = new Color(0.85f, 0.65f, 0.15f, 1f);
+        Button btn = btnGO.GetComponent<Button>();
+        rewardClaimButton = btn;
+        BindButton(rewardClaimButton, OnRewardClaimClicked);
+
+        GameObject btnTextGO = new("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        btnTextGO.transform.SetParent(btnGO.transform, false);
+        RectTransform btnTextRT = btnTextGO.GetComponent<RectTransform>();
+        btnTextRT.anchorMin = Vector2.zero;
+        btnTextRT.anchorMax = Vector2.one;
+        btnTextRT.sizeDelta = Vector2.zero;
+        TextMeshProUGUI btnTextTMP = btnTextGO.GetComponent<TextMeshProUGUI>();
+        btnTextTMP.alignment = TextAlignmentOptions.Center;
+        btnTextTMP.fontSize = 20;
+        btnTextTMP.fontStyle = FontStyles.Bold;
+        btnTextTMP.color = Color.white;
+        btnTextTMP.text = "TIẾP TỤC";
+
+        rewardPanel = overlayGO;
     }
 
     public void OnRewardClaimClicked()
@@ -972,6 +1130,7 @@ public class CombatUI : MonoBehaviour
             rewardPanel.SetActive(false);
         }
 
+        if (waveManager == null) waveManager = FindFirstObjectByType<WaveManager>();
         if (waveManager != null)
         {
             waveManager.Continue();

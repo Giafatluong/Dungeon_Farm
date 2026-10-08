@@ -15,20 +15,12 @@ public class MerchantEvent : MonoBehaviour
     [Tooltip("How many days the merchant is away exploring/restocking before returning.")]
     public int cooldownDurationDays = 3;
 
-    [Header("Trade Requirements (Recipe)")]
-    public ItemRequirement[] requiredItems;
-    public RecipeData rewardRecipe;
-
     [Header("Seed Exchange")]
     public SeedTrade[] seedTrades;
 
     [Header("Ration Supplies")]
     public RationTrade[] rationTrades;
 
-    [Header("Encounter State")]
-    public bool recipeTradeCompleted;
-
-    public event System.Action<RecipeData> OnTradeSuccess;
     public event System.Action<SeedTrade> OnSeedTradeSuccess;
     public event System.Action<RationTrade> OnRationTradeSuccess;
     public event System.Action<string> OnTradeFailed;
@@ -107,18 +99,17 @@ public class MerchantEvent : MonoBehaviour
     {
         merchantActive = true;
         remainingDays = days;
-        recipeTradeCompleted = false;
         EnsureDefaultTrades();
         Debug.Log($"[MerchantEvent] Merchant has arrived for this run! Active for {days} days.");
     }
 
     public void EnsureDefaultTrades()
     {
-        ItemData wheatSeed = null, carrotSeed = null, tomatoSeed = null, cornSeed = null;
-        ItemData wheat = null, carrot = null, cabbage = null;
+        ItemData wheatSeed = null, carrotSeed = null, tomatoSeed = null, cornSeed = null, cucumberSeed = null, cabbageSeed = null, chilliSeed = null;
+        ItemData wheat = null, carrot = null, cabbage = null, cucumber = null, tomato = null, corn = null, chilli = null;
         FoodData tomatoSoup = null, freshSalad = null;
 
-        ItemData[] allItems = Resources.FindObjectsOfTypeAll<ItemData>();
+        ItemData[] allItems = GameAssetHelper.LoadAll<ItemData>();
         for (int i = 0; i < allItems.Length; i++)
         {
             ItemData it = allItems[i];
@@ -128,9 +119,16 @@ public class MerchantEvent : MonoBehaviour
             else if (n.Contains("carrotseed")) carrotSeed = it;
             else if (n.Contains("tomatoseed")) tomatoSeed = it;
             else if (n.Contains("cornseed")) cornSeed = it;
+            else if (n.Contains("cucumberseed")) cucumberSeed = it;
+            else if (n.Contains("cabbageseed")) cabbageSeed = it;
+            else if (n.Contains("chilli") && n.Contains("seed")) chilliSeed = it;
             else if (n == "wheat") wheat = it;
             else if (n == "carrot") carrot = it;
             else if (n == "cabbage") cabbage = it;
+            else if (n == "cucumber") cucumber = it;
+            else if (n == "tomato") tomato = it;
+            else if (n == "corn") corn = it;
+            else if (n == "chilli" || n == "chili") chilli = it;
             else if (it is FoodData fd)
             {
                 if (n.Contains("soup")) tomatoSoup = fd;
@@ -139,10 +137,10 @@ public class MerchantEvent : MonoBehaviour
         }
 
         // 1. Default seed trades if empty
-        if ((seedTrades == null || seedTrades.Length == 0) && wheatSeed != null)
+        if (seedTrades == null || seedTrades.Length == 0)
         {
             List<SeedTrade> trades = new();
-            if (tomatoSeed != null)
+            if (wheatSeed != null && tomatoSeed != null)
             {
                 trades.Add(new SeedTrade
                 {
@@ -164,11 +162,33 @@ public class MerchantEvent : MonoBehaviour
                     outputAmount = 1
                 });
             }
+            if (cabbageSeed != null && cucumberSeed != null)
+            {
+                trades.Add(new SeedTrade
+                {
+                    tradeName = "Cabbage Seed -> Cucumber Seed",
+                    inputSeed = cabbageSeed,
+                    inputAmount = 3,
+                    outputSeed = cucumberSeed,
+                    outputAmount = 1
+                });
+            }
+            if (cornSeed != null && chilliSeed != null)
+            {
+                trades.Add(new SeedTrade
+                {
+                    tradeName = "Corn Seed -> Chilli Seed",
+                    inputSeed = cornSeed,
+                    inputAmount = 3,
+                    outputSeed = chilliSeed,
+                    outputAmount = 1
+                });
+            }
             seedTrades = trades.ToArray();
         }
 
-        // 2. Default ration trades if empty
-        if ((rationTrades == null || rationTrades.Length == 0) && (carrot != null || wheat != null))
+        // 2. Default ration trades if empty or missing inputProduce
+        if (rationTrades == null || rationTrades.Length == 0)
         {
             List<RationTrade> rTrades = new();
             if (freshSalad != null && carrot != null)
@@ -193,34 +213,35 @@ public class MerchantEvent : MonoBehaviour
                     outputAmount = 1
                 });
             }
+            if (freshSalad != null && cabbage != null)
+            {
+                rTrades.Add(new RationTrade
+                {
+                    tradeName = "Cabbage -> Fresh Salad",
+                    inputProduce = cabbage,
+                    inputAmount = 2,
+                    outputFood = freshSalad,
+                    outputAmount = 1
+                });
+            }
             rationTrades = rTrades.ToArray();
         }
-
-        // 3. Default recipe if not set or already unlocked in progression
-        bool needsNewRecipe = rewardRecipe == null || (ProgressionManager.Instance != null && ProgressionManager.Instance.unlockedRecipes.Contains(rewardRecipe));
-        if (needsNewRecipe)
+        else
         {
-            recipeTradeCompleted = false;
-            rewardRecipe = null;
-            RecipeData[] allRecipes = Resources.FindObjectsOfTypeAll<RecipeData>();
-            for (int i = 0; i < allRecipes.Length; i++)
+            // Auto-heal missing references in scene-configured ration trades
+            for (int i = 0; i < rationTrades.Length; i++)
             {
-                if (allRecipes[i] != null && (ProgressionManager.Instance == null || !ProgressionManager.Instance.unlockedRecipes.Contains(allRecipes[i])))
+                if (rationTrades[i] == null) continue;
+                if (rationTrades[i].inputProduce == null)
                 {
-                    rewardRecipe = allRecipes[i];
-                    break;
-                }
-            }
-
-            if (rewardRecipe != null && (requiredItems == null || requiredItems.Length == 0))
-            {
-                ItemData barterCrop = carrot != null ? carrot : (wheat != null ? wheat : cabbage);
-                if (barterCrop != null)
-                {
-                    requiredItems = new ItemRequirement[]
-                    {
-                        new ItemRequirement { item = barterCrop, amount = 2 }
-                    };
+                    string tn = (rationTrades[i].tradeName ?? "").ToLower();
+                    if (tn.Contains("wheat") && wheat != null) rationTrades[i].inputProduce = wheat;
+                    else if (tn.Contains("tomato") && tomato != null) rationTrades[i].inputProduce = tomato;
+                    else if (tn.Contains("carrot") && carrot != null) rationTrades[i].inputProduce = carrot;
+                    else if (tn.Contains("cabbage") && cabbage != null) rationTrades[i].inputProduce = cabbage;
+                    else if (tn.Contains("cucumber") && cucumber != null) rationTrades[i].inputProduce = cucumber;
+                    else if (tn.Contains("corn") && corn != null) rationTrades[i].inputProduce = corn;
+                    else if (wheat != null) rationTrades[i].inputProduce = wheat;
                 }
             }
         }
@@ -249,62 +270,6 @@ public class MerchantEvent : MonoBehaviour
     private void HandleNewDay()
     {
         RefreshCalendarStatus();
-    }
-
-    public bool CanTrade(ItemContainer container)
-    {
-        if (!merchantActive) return false;
-        if (recipeTradeCompleted) return false;
-        if (rewardRecipe != null && ProgressionManager.Instance != null && ProgressionManager.Instance.unlockedRecipes.Contains(rewardRecipe)) return false;
-        if (container == null) return false;
-        if (requiredItems == null || requiredItems.Length == 0) return false;
-
-        for (int i = 0; i < requiredItems.Length; i++)
-        {
-            ItemRequirement req = requiredItems[i];
-            if (req.item == null || req.amount <= 0) continue;
-
-            if (GetItemCount(container, req.item) < req.amount)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    public bool Trade(ItemContainer container)
-    {
-        if (!merchantActive)
-        {
-            OnTradeFailed?.Invoke("Merchant is no longer active or has departed.");
-            return false;
-        }
-
-        if (!CanTrade(container))
-        {
-            OnTradeFailed?.Invoke("Not enough items required by the Merchant or recipe already unlocked.");
-            return false;
-        }
-
-        for (int i = 0; i < requiredItems.Length; i++)
-        {
-            ItemRequirement req = requiredItems[i];
-            if (req.item != null && req.amount > 0)
-            {
-                container.RemoveItem(req.item, req.amount);
-            }
-        }
-
-        if (rewardRecipe != null && ProgressionManager.Instance != null)
-        {
-            ProgressionManager.Instance.UnlockRecipe(rewardRecipe);
-        }
-
-        Debug.Log("Trade successful with Merchant! Received recipe: " + (rewardRecipe != null ? rewardRecipe.recipeName : ""));
-        recipeTradeCompleted = true;
-        OnTradeSuccess?.Invoke(rewardRecipe);
-        return true;
     }
 
     public bool CanTradeSeed(SeedTrade trade, ItemContainer container)

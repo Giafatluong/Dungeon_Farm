@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 284236d205486aa4c8e049821338417f, type: 3}
+  m_Name: Cabbage Salad
+  m_EditorClassIdentifier: Assembly-CSharp::FoodData
+  itemName: Cabbage Salad
+  itemIcon: {fileID: -7485641194555586583, guid: 5105259deaef4924abf20b858a5e2c2e, type: 3}
+  dropPrefab: {fileID: 6556944407274689072, guid: 57dbc85795f311544aa7535ae58232f3, type: 3}
+  itemType: 2
+  isStackable: 1
+  isRare: 0
+  hungerValue: 0
+  healthValue: 0
+  foodBuff: []

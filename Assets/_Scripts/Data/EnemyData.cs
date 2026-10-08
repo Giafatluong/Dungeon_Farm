@@ -91,19 +91,23 @@ public class EnemyData : ScriptableObject
 
         if (dropUnlockedSeeds && ProgressionManager.Instance != null && ProgressionManager.Instance.unlockedSeeds != null)
         {
-            var regularSeeds = new System.Collections.Generic.List<ItemData>();
+            int currentFloor = ProgressionManager.Instance.currentFloor;
+            var eligibleSeeds = new System.Collections.Generic.List<ItemData>();
             for (int i = 0; i < ProgressionManager.Instance.unlockedSeeds.Count; i++)
             {
                 var s = ProgressionManager.Instance.unlockedSeeds[i];
                 if (s != null && !s.isRare)
                 {
-                    regularSeeds.Add(s);
+                    if (currentFloor >= ProgressionManager.GetSeedMinFloor(s))
+                    {
+                        eligibleSeeds.Add(s);
+                    }
                 }
             }
 
-            if (regularSeeds.Count > 0 && Random.value <= seedDropChance)
+            if (eligibleSeeds.Count > 0 && Random.value <= seedDropChance)
             {
-                ItemData chosen = regularSeeds[Random.Range(0, regularSeeds.Count)];
+                ItemData chosen = eligibleSeeds[Random.Range(0, eligibleSeeds.Count)];
                 drops.Add(new ItemSlot { itemData = chosen, amount = 1 });
             }
         }

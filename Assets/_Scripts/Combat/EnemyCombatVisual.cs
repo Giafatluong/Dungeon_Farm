@@ -276,10 +276,17 @@ public class EnemyCombatVisual : MonoBehaviour
 
     public void PlayDeathEffect()
     {
+        Collider2D col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
+
         TryPlayAnimatorState("SkeletonBow_dead", "Skeleton_dead", "Dead");
         if (gameObject.activeInHierarchy)
         {
             StartCoroutine(FadeOutRoutine());
+        }
+        else
+        {
+            Destroy(gameObject);
         }
     }
 
@@ -297,6 +304,8 @@ public class EnemyCombatVisual : MonoBehaviour
             }
             yield return null;
         }
+
+        Destroy(gameObject);
     }
 
     public void PlayHitAnimation() => PlayHurtFlash();

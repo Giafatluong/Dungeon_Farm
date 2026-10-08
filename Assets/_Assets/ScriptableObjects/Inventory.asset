@@ -14,38 +14,38 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ItemContainer
   maxSlots: 33
   itemSlots:
-  - itemData: {fileID: 11400000, guid: 3df971529d87e11458e9cca160be2dad, type: 2}
-    amount: 10
+  - itemData: {fileID: 0}
+    amount: 0
   - itemData: {fileID: 11400000, guid: 6f0551175f3de074a948a8c67a7e7dce, type: 2}
-    amount: 8
-  - itemData: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
-    amount: 6
-  - itemData: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
-    amount: 18
-  - itemData: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
-    amount: 16
+    amount: 1
+  - itemData: {fileID: 11400000, guid: 44e0ea967df46ab40801462a3092738b, type: 2}
+    amount: 1
+  - itemData: {fileID: 11400000, guid: 90c8846f9ae7d4a4fb3425fb40027a06, type: 2}
+    amount: 1
+  - itemData: {fileID: 11400000, guid: 201e1a44e5f1a8f4fbd2ca66d074144b, type: 2}
+    amount: 1
   - itemData: {fileID: 11400000, guid: 87d1b2164c734434682f1fc6e72fba3a, type: 2}
-    amount: 13
+    amount: 2
   - itemData: {fileID: 11400000, guid: 42b4889df87d85948a0ccdcad13f6420, type: 2}
-    amount: 6
+    amount: 8
   - itemData: {fileID: 11400000, guid: 87d1b2164c734434682f1fc6e72fba3a, type: 2}
     amount: 10
-  - itemData: {fileID: 0}
-    amount: 0
-  - itemData: {fileID: 0}
-    amount: 0
-  - itemData: {fileID: 0}
-    amount: 0
-  - itemData: {fileID: 0}
-    amount: 0
-  - itemData: {fileID: 0}
-    amount: 0
-  - itemData: {fileID: 0}
-    amount: 0
-  - itemData: {fileID: 0}
-    amount: 0
-  - itemData: {fileID: 0}
-    amount: 0
+  - itemData: {fileID: 11400000, guid: bebc2ac43f68ce44d89cca458fd002c8, type: 2}
+    amount: 2
+  - itemData: {fileID: 11400000, guid: 5aac5a38adcb69d4d8122b9760c16186, type: 2}
+    amount: 5
+  - itemData: {fileID: 11400000, guid: 6f0551175f3de074a948a8c67a7e7dce, type: 2}
+    amount: 10
+  - itemData: {fileID: 11400000, guid: dc74547fa89c38848bb7b0475edefbcf, type: 2}
+    amount: 1
+  - itemData: {fileID: 11400000, guid: aaf3001eed98e2443b500d28635dfb36, type: 2}
+    amount: 7
+  - itemData: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
+    amount: 15
+  - itemData: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
+    amount: 10
+  - itemData: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
+    amount: 22
   - itemData: {fileID: 0}
     amount: 0
   - itemData: {fileID: 0}

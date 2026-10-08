@@ -49,6 +49,12 @@ public class StatueUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI permanentStatsText;
     [SerializeField] private Button closeButton;
 
+    [Header("Blessing UI (Phước Lành & Hướng Build)")]
+    [SerializeField] private TextMeshProUGUI blessingStatusText;
+    [SerializeField] private Button blessingSelectButton;
+    [SerializeField] private TextMeshProUGUI blessingButtonText;
+    private GameObject blessingModalGO;
+
     private Statue currentStatue;
     private List<Offering> currentOfferings;
     private ItemContainer backpackContainer;
@@ -99,6 +105,10 @@ public class StatueUI : MonoBehaviour
         {
             backpackContainer.OnInventoryChange += RefreshBackpackSlots;
         }
+        if (ProgressionManager.Instance != null)
+        {
+            ProgressionManager.Instance.OnBlessingChanged += OnBlessingStateChanged;
+        }
     }
 
     private void UnsubscribeEvents()
@@ -107,6 +117,15 @@ public class StatueUI : MonoBehaviour
         {
             backpackContainer.OnInventoryChange -= RefreshBackpackSlots;
         }
+        if (ProgressionManager.Instance != null)
+        {
+            ProgressionManager.Instance.OnBlessingChanged -= OnBlessingStateChanged;
+        }
+    }
+
+    private void OnBlessingStateChanged(BlessingType newBlessing)
+    {
+        UpdateBlessingDisplay();
     }
 
     public void Open(Statue statue, List<Offering> offerings, ItemContainer backpack)
@@ -129,6 +148,7 @@ public class StatueUI : MonoBehaviour
         BuildOfferingsList();
         BuildBackpackSlots(backpackContainer);
         UpdatePermanentStatsDisplay();
+        UpdateBlessingDisplay();
         SetFeedback("Drag items from backpack or click a requirement slot to make an offering.");
     }
 
@@ -136,6 +156,7 @@ public class StatueUI : MonoBehaviour
     {
         isExplicitlyOpened = false;
         UnsubscribeEvents();
+        CloseBlessingSelectionModal();
 
         if (statuePanel != null)
         {
@@ -276,6 +297,320 @@ public class StatueUI : MonoBehaviour
 
         permanentStatsText.text = $"<b>Permanent Blessings:</b>   <color=#FF7777>ATK +{atk}</color>   |   <color=#77AAFF>DEF +{def}</color>   |   <color=#FFFF77>Speed +{spd}</color>";
     }
+
+    #region Run Blessings UI (Phước Lành Thần Linh & Hướng Build)
+    public void UpdateBlessingDisplay()
+    {
+        if (blessingStatusText == null) return;
+
+        bool isStarter = ProgressionManager.Instance != null && ProgressionManager.Instance.IsStarterProtectionActive();
+        BlessingType currentType = ProgressionManager.Instance != null ? ProgressionManager.Instance.activeBlessing : BlessingType.None;
+
+        if (isStarter)
+        {
+            blessingStatusText.text = "<b><color=#55CCFF>[TÂN THỦ] 🛡️ Bảo Hộ Thần Linh:</color></b> Đang tự động bảo vệ hành trang (không rơi đồ khi thua tại Tầng 1-2)!";
+            if (blessingButtonText != null) blessingButtonText.text = "✨ Đổi Phước Lành";
+        }
+        else if (currentType != BlessingType.None)
+        {
+            BlessingInfo info = BlessingDatabase.GetBlessingInfo(currentType);
+            string hex = info != null ? ColorUtility.ToHtmlStringRGB(info.color) : "55CCFF";
+            string title = info != null ? info.title : currentType.ToString();
+            string icon = info != null ? info.iconSymbol : "✨";
+            string desc = info != null ? info.description : "";
+            blessingStatusText.text = $"<b><color=#{hex}>[HIỆN TẠI] {icon} {title}:</color></b> {desc} <i><color=#AAAAAA>(Mất khi qua ngày, thua, hoặc xong run)</color></i>";
+            if (blessingButtonText != null) blessingButtonText.text = "✨ Đổi Phước Lành";
+        }
+        else
+        {
+            blessingStatusText.text = "<b><color=#FFCC44>[CHƯA NHẬN PHƯỚC LÀNH]</color></b> Hãy chọn 1 phước lành trợ chiến trước khi bước vào Dungeon!";
+            if (blessingButtonText != null) blessingButtonText.text = "✨ Thỉnh Phước Lành";
+        }
+    }
+
+    public void ShowBlessingSelectionModal()
+    {
+        CloseBlessingSelectionModal();
+
+        Canvas parentCanvas = GetCanvas();
+        if (parentCanvas == null) return;
+
+        // Container phủ modal
+        blessingModalGO = new GameObject("BlessingModal", typeof(RectTransform), typeof(Image));
+        blessingModalGO.transform.SetParent(parentCanvas.transform, false);
+        blessingModalGO.transform.SetAsLastSibling();
+
+        RectTransform modalRT = blessingModalGO.GetComponent<RectTransform>();
+        modalRT.anchorMin = Vector2.zero;
+        modalRT.anchorMax = Vector2.one;
+        modalRT.sizeDelta = Vector2.zero;
+
+        Image modalOverlay = blessingModalGO.GetComponent<Image>();
+        modalOverlay.color = new Color(0.02f, 0.03f, 0.05f, 0.85f);
+
+        // Hộp thoại trung tâm
+        GameObject boxGO = new GameObject("DialogBox", typeof(RectTransform), typeof(Image));
+        boxGO.transform.SetParent(blessingModalGO.transform, false);
+        RectTransform boxRT = boxGO.GetComponent<RectTransform>();
+        boxRT.anchorMin = new Vector2(0.5f, 0.5f);
+        boxRT.anchorMax = new Vector2(0.5f, 0.5f);
+        boxRT.sizeDelta = new Vector2(960, 560);
+
+        Image boxBg = boxGO.GetComponent<Image>();
+        boxBg.color = new Color(0.09f, 0.11f, 0.15f, 0.98f);
+
+        Outline boxOutline = boxGO.AddComponent<Outline>();
+        boxOutline.effectColor = new Color(0.85f, 0.72f, 0.35f, 0.95f);
+        boxOutline.effectDistance = new Vector2(2, -2);
+
+        // Header
+        GameObject mTitleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
+        mTitleGO.transform.SetParent(boxGO.transform, false);
+        RectTransform mTitleRT = mTitleGO.GetComponent<RectTransform>();
+        mTitleRT.anchorMin = new Vector2(0, 1);
+        mTitleRT.anchorMax = new Vector2(1, 1);
+        mTitleRT.pivot = new Vector2(0.5f, 1);
+        mTitleRT.anchoredPosition = new Vector2(0, -16);
+        mTitleRT.sizeDelta = new Vector2(-60, 32);
+
+        TextMeshProUGUI mTitleTMP = mTitleGO.GetComponent<TextMeshProUGUI>();
+        mTitleTMP.fontSize = 21;
+        mTitleTMP.fontStyle = FontStyles.Bold;
+        mTitleTMP.alignment = TextAlignmentOptions.Center;
+        mTitleTMP.text = "PHƯỚC LÀNH THẦN LINH (CHỌN HƯỚNG BUILD CHIẾN THUẬT)";
+        mTitleTMP.color = new Color(1f, 0.88f, 0.45f);
+
+        GameObject mSubGO = new GameObject("Subtitle", typeof(RectTransform), typeof(TextMeshProUGUI));
+        mSubGO.transform.SetParent(boxGO.transform, false);
+        RectTransform mSubRT = mSubGO.GetComponent<RectTransform>();
+        mSubRT.anchorMin = new Vector2(0, 1);
+        mSubRT.anchorMax = new Vector2(1, 1);
+        mSubRT.pivot = new Vector2(0.5f, 1);
+        mSubRT.anchoredPosition = new Vector2(0, -48);
+        mSubRT.sizeDelta = new Vector2(-60, 32);
+
+        TextMeshProUGUI mSubTMP = mSubGO.GetComponent<TextMeshProUGUI>();
+        mSubTMP.fontSize = 11;
+        mSubTMP.alignment = TextAlignmentOptions.Center;
+        mSubTMP.text = "Tự do chọn lối chơi đã mở khóa để khắc chế quái vật tầng cao. Mở khóa thêm bằng cách Vượt Tầng Dungeon hoặc Cúng Dường tại Tượng Thần!";
+        mSubTMP.color = new Color(0.75f, 0.85f, 0.95f);
+
+        // Nút Đóng Modal
+        GameObject mCloseBtnGO = new GameObject("BtnCloseModal", typeof(RectTransform), typeof(Image), typeof(Button));
+        mCloseBtnGO.transform.SetParent(boxGO.transform, false);
+        RectTransform mCloseRT = mCloseBtnGO.GetComponent<RectTransform>();
+        mCloseRT.anchorMin = new Vector2(1, 1);
+        mCloseRT.anchorMax = new Vector2(1, 1);
+        mCloseRT.pivot = new Vector2(1, 1);
+        mCloseRT.anchoredPosition = new Vector2(-14, -14);
+        mCloseRT.sizeDelta = new Vector2(30, 30);
+
+        Image mCloseBg = mCloseBtnGO.GetComponent<Image>();
+        mCloseBg.color = new Color(0.5f, 0.15f, 0.15f, 0.9f);
+
+        Button mCloseBtn = mCloseBtnGO.GetComponent<Button>();
+        mCloseBtn.onClick.AddListener(CloseBlessingSelectionModal);
+
+        GameObject mCloseTextGO = new GameObject("X", typeof(RectTransform), typeof(TextMeshProUGUI));
+        mCloseTextGO.transform.SetParent(mCloseBtnGO.transform, false);
+        TextMeshProUGUI mCloseTMP = mCloseTextGO.GetComponent<TextMeshProUGUI>();
+        mCloseTMP.fontSize = 16;
+        mCloseTMP.fontStyle = FontStyles.Bold;
+        mCloseTMP.alignment = TextAlignmentOptions.Center;
+        mCloseTMP.text = "X";
+        mCloseTMP.color = Color.white;
+        mCloseTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(30, 30);
+
+        // Khung chứa 8 Card dạng Grid 2 hàng x 4 cột
+        GameObject cardsContainer = new GameObject("CardsContainer", typeof(RectTransform), typeof(GridLayoutGroup));
+        cardsContainer.transform.SetParent(boxGO.transform, false);
+        RectTransform cRT = cardsContainer.GetComponent<RectTransform>();
+        cRT.anchorMin = new Vector2(0, 0);
+        cRT.anchorMax = new Vector2(1, 1);
+        cRT.anchoredPosition = new Vector2(0, -28);
+        cRT.sizeDelta = new Vector2(-40, -96);
+
+        GridLayoutGroup glg = cardsContainer.GetComponent<GridLayoutGroup>();
+        glg.cellSize = new Vector2(215, 210);
+        glg.spacing = new Vector2(14, 12);
+        glg.padding = new RectOffset(16, 16, 6, 6);
+        glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        glg.constraintCount = 4;
+        glg.childAlignment = TextAnchor.UpperCenter;
+
+        // Hiển thị toàn bộ danh sách 8 phước lành (7 hướng build + Bảo hộ không rơi đồ)
+        List<BlessingInfo> allBlessings = BlessingDatabase.GetAllBlessings();
+        for (int i = 0; i < allBlessings.Count; i++)
+        {
+            BlessingInfo info = allBlessings[i];
+            CreateBlessingCard(info, cardsContainer.transform);
+        }
+    }
+
+    private void CreateBlessingCard(BlessingInfo info, Transform parent)
+    {
+        if (info == null) return;
+
+        bool isUnlocked = ProgressionManager.Instance != null ? ProgressionManager.Instance.IsBlessingUnlocked(info.type) : true;
+        bool isCurrentActive = isUnlocked && ProgressionManager.Instance != null && ProgressionManager.Instance.activeBlessing == info.type;
+
+        GameObject cardGO = new GameObject($"Card_{info.type}", typeof(RectTransform), typeof(Image));
+        cardGO.transform.SetParent(parent, false);
+
+        Image cardBg = cardGO.GetComponent<Image>();
+        if (!isUnlocked)
+        {
+            cardBg.color = new Color(0.07f, 0.08f, 0.11f, 0.88f);
+        }
+        else
+        {
+            cardBg.color = isCurrentActive ? new Color(0.16f, 0.22f, 0.32f, 0.98f) : new Color(0.11f, 0.13f, 0.18f, 0.95f);
+        }
+
+        Outline cardBorder = cardGO.AddComponent<Outline>();
+        if (!isUnlocked)
+        {
+            cardBorder.effectColor = new Color(0.35f, 0.38f, 0.45f, 0.5f);
+            cardBorder.effectDistance = new Vector2(1.5f, -1.5f);
+        }
+        else
+        {
+            cardBorder.effectColor = isCurrentActive ? new Color(1f, 0.85f, 0.3f, 1f) : info.color;
+            cardBorder.effectDistance = isCurrentActive ? new Vector2(3, -3) : new Vector2(1.5f, -1.5f);
+        }
+
+        // Icon
+        GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(TextMeshProUGUI));
+        iconGO.transform.SetParent(cardGO.transform, false);
+        RectTransform iconRT = iconGO.GetComponent<RectTransform>();
+        iconRT.anchorMin = new Vector2(0.5f, 1);
+        iconRT.anchorMax = new Vector2(0.5f, 1);
+        iconRT.pivot = new Vector2(0.5f, 1);
+        iconRT.anchoredPosition = new Vector2(0, -10);
+        iconRT.sizeDelta = new Vector2(50, 36);
+
+        TextMeshProUGUI iconTMP = iconGO.GetComponent<TextMeshProUGUI>();
+        iconTMP.fontSize = 28;
+        iconTMP.alignment = TextAlignmentOptions.Center;
+        iconTMP.text = isUnlocked ? info.iconSymbol : "🔒";
+
+        // Title
+        GameObject tGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
+        tGO.transform.SetParent(cardGO.transform, false);
+        RectTransform tRT = tGO.GetComponent<RectTransform>();
+        tRT.anchorMin = new Vector2(0, 1);
+        tRT.anchorMax = new Vector2(1, 1);
+        tRT.pivot = new Vector2(0.5f, 1);
+        tRT.anchoredPosition = new Vector2(0, -48);
+        tRT.sizeDelta = new Vector2(-12, 26);
+
+        TextMeshProUGUI tTMP = tGO.GetComponent<TextMeshProUGUI>();
+        tTMP.fontSize = 12.5f;
+        tTMP.fontStyle = FontStyles.Bold;
+        tTMP.alignment = TextAlignmentOptions.Center;
+        if (!isUnlocked)
+        {
+            tTMP.text = $"<color=#888888>{info.title}</color> <color=#FF6666>[KHÓA]</color>";
+            tTMP.color = new Color(0.6f, 0.62f, 0.68f);
+        }
+        else
+        {
+            tTMP.text = isCurrentActive ? $"{info.title} <color=#FFDD55>[ĐANG CHỌN]</color>" : info.title;
+            tTMP.color = isCurrentActive ? new Color(1f, 0.85f, 0.4f) : info.color;
+        }
+
+        // Description
+        GameObject descGO = new GameObject("Desc", typeof(RectTransform), typeof(TextMeshProUGUI));
+        descGO.transform.SetParent(cardGO.transform, false);
+        RectTransform descRT = descGO.GetComponent<RectTransform>();
+        descRT.anchorMin = new Vector2(0, 0);
+        descRT.anchorMax = new Vector2(1, 1);
+        descRT.anchoredPosition = new Vector2(0, -4);
+        descRT.sizeDelta = new Vector2(-16, -120);
+
+        TextMeshProUGUI descTMP = descGO.GetComponent<TextMeshProUGUI>();
+        descTMP.fontSize = 9.5f;
+        descTMP.lineSpacing = 1.5f;
+        descTMP.alignment = TextAlignmentOptions.TopLeft;
+
+        if (!isUnlocked)
+        {
+            descTMP.text = $"{info.description}\n\n<color=#FFB833><b>🔓 Điều kiện mở khóa:</b>\n{info.unlockRequirement}</color>";
+            descTMP.color = new Color(0.7f, 0.72f, 0.78f);
+        }
+        else
+        {
+            descTMP.text = info.description;
+            descTMP.color = new Color(0.85f, 0.9f, 0.98f);
+        }
+
+        // Select Button
+        GameObject btnGO = new GameObject("BtnSelect", typeof(RectTransform), typeof(Image), typeof(Button));
+        btnGO.transform.SetParent(cardGO.transform, false);
+        RectTransform btnRT = btnGO.GetComponent<RectTransform>();
+        btnRT.anchorMin = new Vector2(0, 0);
+        btnRT.anchorMax = new Vector2(1, 0);
+        btnRT.pivot = new Vector2(0.5f, 0);
+        btnRT.anchoredPosition = new Vector2(0, 8);
+        btnRT.sizeDelta = new Vector2(-18, 30);
+
+        Image btnBg = btnGO.GetComponent<Image>();
+        Button btn = btnGO.GetComponent<Button>();
+
+        if (!isUnlocked)
+        {
+            btnBg.color = new Color(0.2f, 0.22f, 0.26f, 0.7f);
+            btn.interactable = false;
+        }
+        else
+        {
+            btnBg.color = isCurrentActive ? new Color(0.2f, 0.5f, 0.7f, 0.95f) : new Color(0.22f, 0.55f, 0.35f, 0.95f);
+            btn.interactable = !isCurrentActive;
+            btn.onClick.AddListener(() =>
+            {
+                if (ProgressionManager.Instance != null)
+                {
+                    ProgressionManager.Instance.SetBlessing(info.type);
+                }
+                CloseBlessingSelectionModal();
+                UpdateBlessingDisplay();
+                SetFeedback($"Đã kích hoạt lối chơi: {info.title}!");
+            });
+        }
+
+        GameObject btnTxtGO = new GameObject("BtnText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        btnTxtGO.transform.SetParent(btnGO.transform, false);
+        RectTransform btnTxtRT = btnTxtGO.GetComponent<RectTransform>();
+        btnTxtRT.anchorMin = Vector2.zero;
+        btnTxtRT.anchorMax = Vector2.one;
+        btnTxtRT.sizeDelta = Vector2.zero;
+
+        TextMeshProUGUI btnTxtTMP = btnTxtGO.GetComponent<TextMeshProUGUI>();
+        btnTxtTMP.fontSize = 11;
+        btnTxtTMP.fontStyle = FontStyles.Bold;
+        btnTxtTMP.alignment = TextAlignmentOptions.Center;
+
+        if (!isUnlocked)
+        {
+            btnTxtTMP.text = "🔒 CHƯA MỞ KHÓA";
+            btnTxtTMP.color = new Color(0.7f, 0.7f, 0.7f);
+        }
+        else
+        {
+            btnTxtTMP.text = isCurrentActive ? "ĐANG SỬ DỤNG" : "CHỌN LỐI CHƠI NÀY";
+            btnTxtTMP.color = Color.white;
+        }
+    }
+
+    public void CloseBlessingSelectionModal()
+    {
+        if (blessingModalGO != null)
+        {
+            Destroy(blessingModalGO);
+            blessingModalGO = null;
+        }
+    }
+    #endregion
 
     private void BuildOfferingsList()
     {
@@ -726,6 +1061,66 @@ public class StatueUI : MonoBehaviour
         xTMP.color = Color.white;
         xTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(28, 28);
 
+        // 5b. Blessing Banner (Khu vực Phước Lành Thần Linh)
+        GameObject blessingBannerGO = new GameObject("BlessingBanner", typeof(RectTransform), typeof(Image));
+        blessingBannerGO.transform.SetParent(windowGO.transform, false);
+        RectTransform bannerRT = blessingBannerGO.GetComponent<RectTransform>();
+        bannerRT.anchorMin = new Vector2(0, 1);
+        bannerRT.anchorMax = new Vector2(1, 1);
+        bannerRT.pivot = new Vector2(0.5f, 1);
+        bannerRT.anchoredPosition = new Vector2(0, -88);
+        bannerRT.sizeDelta = new Vector2(-40, 32);
+
+        Image bannerBg = blessingBannerGO.GetComponent<Image>();
+        bannerBg.color = new Color(0.06f, 0.1f, 0.15f, 0.95f);
+
+        Outline bannerOutline = blessingBannerGO.AddComponent<Outline>();
+        bannerOutline.effectColor = new Color(0.3f, 0.65f, 0.95f, 0.7f);
+        bannerOutline.effectDistance = new Vector2(1, -1);
+
+        // Status Text bên trái
+        GameObject bStatusGO = new GameObject("BlessingStatusText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        bStatusGO.transform.SetParent(blessingBannerGO.transform, false);
+        RectTransform bStatusRT = bStatusGO.GetComponent<RectTransform>();
+        bStatusRT.anchorMin = new Vector2(0, 0);
+        bStatusRT.anchorMax = new Vector2(0.76f, 1);
+        bStatusRT.offsetMin = new Vector2(12, 0);
+        bStatusRT.offsetMax = new Vector2(-6, 0);
+
+        blessingStatusText = bStatusGO.GetComponent<TextMeshProUGUI>();
+        blessingStatusText.fontSize = 11;
+        blessingStatusText.alignment = TextAlignmentOptions.MidlineLeft;
+        blessingStatusText.color = new Color(0.9f, 0.95f, 1f);
+
+        // Nút Thỉnh Phước Lành bên phải
+        GameObject bBtnGO = new GameObject("BtnSelectBlessing", typeof(RectTransform), typeof(Image), typeof(Button));
+        bBtnGO.transform.SetParent(blessingBannerGO.transform, false);
+        RectTransform bBtnRT = bBtnGO.GetComponent<RectTransform>();
+        bBtnRT.anchorMin = new Vector2(0.77f, 0);
+        bBtnRT.anchorMax = new Vector2(1, 1);
+        bBtnRT.offsetMin = new Vector2(4, 4);
+        bBtnRT.offsetMax = new Vector2(-6, -4);
+
+        Image bBtnBg = bBtnGO.GetComponent<Image>();
+        bBtnBg.color = new Color(0.22f, 0.45f, 0.65f, 0.95f);
+
+        blessingSelectButton = bBtnGO.GetComponent<Button>();
+        blessingSelectButton.onClick.AddListener(ShowBlessingSelectionModal);
+
+        GameObject bBtnTxtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        bBtnTxtGO.transform.SetParent(bBtnGO.transform, false);
+        RectTransform bBtnTxtRT = bBtnTxtGO.GetComponent<RectTransform>();
+        bBtnTxtRT.anchorMin = Vector2.zero;
+        bBtnTxtRT.anchorMax = Vector2.one;
+        bBtnTxtRT.sizeDelta = Vector2.zero;
+
+        blessingButtonText = bBtnTxtGO.GetComponent<TextMeshProUGUI>();
+        blessingButtonText.fontSize = 12;
+        blessingButtonText.fontStyle = FontStyles.Bold;
+        blessingButtonText.alignment = TextAlignmentOptions.Center;
+        blessingButtonText.text = "✨ Thỉnh Phước Lành";
+        blessingButtonText.color = Color.white;
+
         // 6. Left Column: Offerings Container
         GameObject offeringsColGO = new GameObject("OfferingsColumn", typeof(RectTransform), typeof(Image));
         offeringsColGO.transform.SetParent(windowGO.transform, false);
@@ -733,8 +1128,8 @@ public class StatueUI : MonoBehaviour
         offColRT.anchorMin = new Vector2(0, 0);
         offColRT.anchorMax = new Vector2(0, 1);
         offColRT.pivot = new Vector2(0, 0.5f);
-        offColRT.anchoredPosition = new Vector2(20, -18);
-        offColRT.sizeDelta = new Vector2(520, -135);
+        offColRT.anchoredPosition = new Vector2(20, -28);
+        offColRT.sizeDelta = new Vector2(520, -155);
 
         Image offColBg = offeringsColGO.GetComponent<Image>();
         offColBg.color = new Color(0.08f, 0.09f, 0.13f, 0.8f);
@@ -764,8 +1159,8 @@ public class StatueUI : MonoBehaviour
         bpColRT.anchorMin = new Vector2(1, 0);
         bpColRT.anchorMax = new Vector2(1, 1);
         bpColRT.pivot = new Vector2(1, 0.5f);
-        bpColRT.anchoredPosition = new Vector2(-20, -18);
-        bpColRT.sizeDelta = new Vector2(380, -135);
+        bpColRT.anchoredPosition = new Vector2(-20, -28);
+        bpColRT.sizeDelta = new Vector2(380, -155);
 
         Image bpColBg = backpackColGO.GetComponent<Image>();
         bpColBg.color = new Color(0.08f, 0.09f, 0.13f, 0.8f);

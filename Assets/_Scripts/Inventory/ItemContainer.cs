@@ -38,16 +38,13 @@ public class ItemContainer : ScriptableObject
 
         if (itemData.isStackable)
         {
-            if (HasItem(itemData))
+            for (int i = 0; i < maxSlots; i++)
             {
-                for (int i = 0; i < maxSlots; i++)
+                if (itemSlots[i] != null && IsItemMatch(itemSlots[i].itemData, itemData))
                 {
-                    if (itemSlots[i] != null && itemSlots[i].itemData == itemData)
-                    {
-                        itemSlots[i].amount += amount;
-                        OnInventoryChange?.Invoke();
-                        return;
-                    }
+                    itemSlots[i].amount += amount;
+                    OnInventoryChange?.Invoke();
+                    return;
                 }
             }
 
@@ -206,7 +203,7 @@ public class ItemContainer : ScriptableObject
 
         // If same item and stackable -> Merge stack into slot B instead of swapping
         if (itemSlots[indexA].itemData != null &&
-            itemSlots[indexA].itemData == itemSlots[indexB].itemData &&
+            IsItemMatch(itemSlots[indexA].itemData, itemSlots[indexB].itemData) &&
             itemSlots[indexA].itemData.isStackable)
         {
             itemSlots[indexB].amount += itemSlots[indexA].amount;

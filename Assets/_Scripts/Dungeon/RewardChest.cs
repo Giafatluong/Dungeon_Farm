@@ -64,14 +64,53 @@ public class RewardChest : MonoBehaviour
         // 3. Fallback: Automatically gather all available project items (seeds, crops, provisions)
         if (candidateItems.Count == 0)
         {
-            ItemData[] allItems = Resources.FindObjectsOfTypeAll<ItemData>();
+            ItemData[] allItems = GameAssetHelper.LoadAll<ItemData>();
             for (int i = 0; i < allItems.Length; i++)
             {
                 ItemData it = allItems[i];
                 if (it == null) continue;
+
+                // Lọc hạt giống theo tầng: Hạt cao cấp chỉ xuất hiện ở tầng cao
+                if (it.itemType == ItemData.ItemType.Seed || it.name.ToLower().Contains("seed"))
+                {
+                    int minFloor = ProgressionManager.GetSeedMinFloor(it);
+                    if (floorNumber < minFloor)
+                    {
+                        continue; // Chưa đủ tầng, không cho rơi
+                    }
+                }
+
                 if (!candidateItems.Contains(it))
                 {
                     candidateItems.Add(it);
+                }
+            }
+        }
+        else
+        {
+            // Lọc danh sách candidateItems đã nạp nếu có hạt chưa đủ điều kiện tầng
+            for (int i = candidateItems.Count - 1; i >= 0; i--)
+            {
+                ItemData it = candidateItems[i];
+                if (it != null && (it.itemType == ItemData.ItemType.Seed || it.name.ToLower().Contains("seed")))
+                {
+                    if (floorNumber < ProgressionManager.GetSeedMinFloor(it))
+                    {
+                        candidateItems.RemoveAt(i);
+                    }
+                }
+            }
+        }
+
+        // If strict floor filter left no candidate items, load all items without restriction as guaranteed fallback
+        if (candidateItems.Count == 0)
+        {
+            ItemData[] allItems = GameAssetHelper.LoadAll<ItemData>();
+            for (int i = 0; i < allItems.Length; i++)
+            {
+                if (allItems[i] != null && !candidateItems.Contains(allItems[i]))
+                {
+                    candidateItems.Add(allItems[i]);
                 }
             }
         }

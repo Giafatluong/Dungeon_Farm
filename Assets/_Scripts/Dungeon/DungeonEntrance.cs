@@ -50,12 +50,31 @@ public class DungeonEntrance : MonoBehaviour
         }
     }
 
+    private void OnMouseDown()
+    {
+        if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            return;
+
+        if (playerInRange)
+        {
+            OpenDungeonUI();
+        }
+    }
+
     private void OpenDungeonUI()
     {
+        if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return;
+        if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return;
+        if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return;
+
         if (dungeonEntranceUI == null)
         {
-            Debug.Log("Dungeon Entrance UI is NULL");
-            return;
+            dungeonEntranceUI = FindFirstObjectByType<DungeonEntranceUI>(FindObjectsInactive.Include);
+            if (dungeonEntranceUI == null)
+            {
+                Debug.Log("Dungeon Entrance UI is NULL");
+                return;
+            }
         }
 
         dungeonEntranceUI.Open();

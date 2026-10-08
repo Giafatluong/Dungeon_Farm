@@ -2129,7 +2129,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\U0001F3C6 CHI\u1EBEN TH\u1EAENG H\u1EA6M NG\u1EE4C!"
+  m_text: "CHI\u1EBEN TH\u1EAENG H\u1EA6M NG\u1EE4C!"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -7482,7 +7482,6 @@ MonoBehaviour:
   camp: {fileID: 1067987254}
   merchantEvent: {fileID: 1718459988}
   rewardChest: {fileID: 1718459992}
-  progressController: {fileID: 0}
   floorGenerator: {fileID: 1363399718}
   roguelikeMerchantSpawnChance: 0.65
   enableDynamicRoguelikeMerchant: 1
@@ -8616,10 +8615,6 @@ MonoBehaviour:
   remainingDays: 5
   stayDurationDays: 5
   cooldownDurationDays: 3
-  requiredItems:
-  - item: {fileID: 0}
-    amount: 3
-  rewardRecipe: {fileID: 11400000, guid: a31b0e5170d14878a87b2234001a1111, type: 2}
   seedTrades:
   - tradeName: Wheat Seed -> Tomato Seed
     inputSeed: {fileID: 11400000, guid: 42b4889df87d85948a0ccdcad13f6420, type: 2}
@@ -8652,7 +8647,6 @@ MonoBehaviour:
     inputAmount: 2
     outputFood: {fileID: 11400000, guid: 87d1b2164c734434682f1fc6e72fba3a, type: 2}
     outputAmount: 1
-  recipeTradeCompleted: 0
 --- !u!4 &1718459989
 Transform:
   m_ObjectHideFlags: 0
@@ -9099,7 +9093,6 @@ GameObject:
   - component: {fileID: 1873114112}
   - component: {fileID: 1873114111}
   - component: {fileID: 1873114117}
-  - component: {fileID: 1873114116}
   - component: {fileID: 1873114120}
   - component: {fileID: 1873114121}
   - component: {fileID: 1873114122}
@@ -9248,36 +9241,7 @@ RectTransform:
   - {fileID: 951522621}
   - {fileID: 1108441162}
   - {fileID: 243383271}
-  - {fileID: 1028639359}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0, y: 0}
---- !u!114 &1873114116
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1873114110}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ecec90c1f2b5ba49a3cd8cdc3cb03a8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LootUI
-  lootPanel: {fileID: 1028639358}
-  lootSlotsParent: {fileID: 984875113}
-  backpackSlotsParent: {fileID: 324621281}
-  canvas: {fileID: 1873114114}
-  slotPrefab: {fileID: 3631650896398165525, guid: 02cead57d3ffaca44b4e995473eaea19, type: 3}
-  lootAllButton: {fileID: 174942085}
-  continueButton: {fileID: 1001222235}
-  titleText: {fileID: 1294699707}
-  subtitleText: {fileID: 0}
-  hintText: {fileID: 526788290}
 --- !u!114 &1873114117
 MonoBehaviour:
   m_ObjectHideFlags: 0

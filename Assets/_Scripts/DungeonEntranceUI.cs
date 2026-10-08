@@ -54,9 +54,24 @@ public class DungeonEntranceUI : MonoBehaviour
         public int floorNumber;
     }
 
+    public static DungeonEntranceUI Instance { get; private set; }
+    public bool IsOpen => enterDungeonPanel != null && enterDungeonPanel.activeSelf;
+
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+
         InitializeFloorData();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     private void Start()

@@ -45,6 +45,19 @@ public class HomeChest : MonoBehaviour, IInteractable
                 backpackContainer = invPanel.ItemContainer;
             }
         }
+
+        if (chestContainer == null)
+        {
+            ItemContainer[] containers = GameAssetHelper.LoadAll<ItemContainer>();
+            for (int i = 0; i < containers.Length; i++)
+            {
+                if (containers[i] != null && containers[i].name.ToLower().Contains("homechest"))
+                {
+                    chestContainer = containers[i];
+                    break;
+                }
+            }
+        }
     }
 
     private void FindPlayer()

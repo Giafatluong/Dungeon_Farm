@@ -3,7 +3,24 @@ using System.Collections;
 
 public class DayManager : MonoBehaviour
 {
-    public static DayManager Instance { get; private set; }
+    private static DayManager _instance;
+    public static DayManager Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = FindFirstObjectByType<DayManager>();
+                if (_instance == null)
+                {
+                    GameObject go = new GameObject("DayManager_Runtime");
+                    _instance = go.AddComponent<DayManager>();
+                }
+            }
+            return _instance;
+        }
+        private set => _instance = value;
+    }
 
     [Header("Day Settings")]
     public int currentDay = 1;
@@ -45,7 +62,12 @@ public class DayManager : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(dayDuration);
-            AdvanceDay();
+
+            // Chỉ tự động qua ngày khi người chơi đang ở Base (không trong Dungeon Run)
+            if (ProgressionManager.Instance == null || !ProgressionManager.Instance.runActive)
+            {
+                AdvanceDay();
+            }
         }
     }
 
@@ -77,6 +99,12 @@ public class DayManager : MonoBehaviour
         if (playerStats != null)
         {
             playerStats.ReduceHunger(5);
+        }
+
+        // Reset temporary run blessings when day advances
+        if (ProgressionManager.Instance != null)
+        {
+            ProgressionManager.Instance.ClearRunBlessing();
         }
 
         Debug.Log($"[DayManager] Day {currentDay} has begun!");

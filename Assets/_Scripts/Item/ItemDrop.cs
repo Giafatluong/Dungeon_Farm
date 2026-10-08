@@ -73,7 +73,25 @@ public class ItemDrop : MonoBehaviour
 
     private void Collect()
     {
-        itemContainer.AddItem(itemData, amount);
+        if (itemContainer == null)
+        {
+            if (player != null)
+            {
+                PlayerStats ps = player.GetComponent<PlayerStats>();
+                if (ps != null) itemContainer = ps.itemContainer;
+            }
+            if (itemContainer == null)
+            {
+                PlayerStats ps = FindFirstObjectByType<PlayerStats>();
+                if (ps != null) itemContainer = ps.itemContainer;
+            }
+        }
+
+        if (itemContainer != null && itemData != null)
+        {
+            itemContainer.AddItem(itemData, amount);
+        }
+
         Destroy(gameObject);
     }
 }

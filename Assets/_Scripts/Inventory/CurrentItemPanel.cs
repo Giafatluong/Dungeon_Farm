@@ -6,6 +6,14 @@ public class CurrentItemPanel : MonoBehaviour
     [SerializeField] private InventoryPanel inventoryPanel;
     [SerializeField] private List<InventoryButton> inventoryButtons;
 
+    private void Awake()
+    {
+        if (inventoryPanel == null)
+        {
+            inventoryPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+        }
+    }
+
     private void Start()
     {
         SetCurrentItem();
@@ -13,18 +21,38 @@ public class CurrentItemPanel : MonoBehaviour
 
     private void OnEnable()
     {
-        inventoryPanel.ItemContainer.OnInventoryChange += SetCurrentItem;
+        if (inventoryPanel == null)
+        {
+            inventoryPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+        }
+
+        if (inventoryPanel != null && inventoryPanel.ItemContainer != null)
+        {
+            inventoryPanel.ItemContainer.OnInventoryChange += SetCurrentItem;
+        }
     }
+
     private void OnDisable()
     {
-        inventoryPanel.ItemContainer.OnInventoryChange -= SetCurrentItem;
+        if (inventoryPanel != null && inventoryPanel.ItemContainer != null)
+        {
+            inventoryPanel.ItemContainer.OnInventoryChange -= SetCurrentItem;
+        }
     }
 
     public void SetCurrentItem()
     {
-        for (int i = 0; i < 11; i++)
+        if (inventoryPanel == null || inventoryPanel.ItemContainer == null || inventoryButtons == null)
+            return;
+
+        int count = Mathf.Min(11, inventoryButtons.Count);
+        for (int i = 0; i < count; i++)
         {
-            if (i < inventoryPanel.ItemContainer.itemSlots.Length && inventoryPanel.ItemContainer.itemSlots[i].itemData != null)
+            if (inventoryButtons[i] == null) continue;
+
+            if (i < inventoryPanel.ItemContainer.itemSlots.Length &&
+                inventoryPanel.ItemContainer.itemSlots[i] != null &&
+                inventoryPanel.ItemContainer.itemSlots[i].itemData != null)
             {
                 inventoryButtons[i].SetItem(inventoryPanel.ItemContainer.itemSlots[i].itemData, inventoryPanel.ItemContainer.itemSlots[i].amount);
             }

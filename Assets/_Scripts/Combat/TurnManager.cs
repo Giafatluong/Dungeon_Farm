@@ -22,15 +22,25 @@ public class TurnManager : MonoBehaviour
 
     public void StartRound(bool isAmbush = false)
     {
-        if (speedManager == null || combatManager == null)
+        if (combatManager != null && (!combatManager.isCombatActive && !combatManager.isPreparingCombat))
         {
-            Awake();
+            return;
+        }
+
+        if (combatManager != null && combatManager.playerStats != null && combatManager.playerStats.currentHealth <= 0)
+        {
+            return;
         }
 
         currentRoundNumber++;
         isAmbushRound = isAmbush;
         speedManager.CreateSpeedOrder(isAmbushRound);
         currentIndex = 0;
+
+        if (speedManager.speedOrder == null || speedManager.speedOrder.Count == 0)
+        {
+            return;
+        }
 
         // Reset round state for all active enemies
         if (combatManager != null && combatManager.enemies != null)
@@ -51,7 +61,9 @@ public class TurnManager : MonoBehaviour
 
     public void StartCurrentTurn()
     {
-        if (speedManager == null || speedManager.speedOrder == null) return;
+        if (speedManager == null || speedManager.speedOrder == null || speedManager.speedOrder.Count == 0) return;
+        if (combatManager != null && !combatManager.isCombatActive && !combatManager.isPreparingCombat) return;
+        if (combatManager != null && combatManager.playerStats != null && combatManager.playerStats.currentHealth <= 0) return;
 
         if (currentIndex >= speedManager.speedOrder.Count)
         {
@@ -70,6 +82,11 @@ public class TurnManager : MonoBehaviour
 
         if (combatManager != null && combatManager.playerStats != null && currentEntry.character == combatManager.playerStats.gameObject)
         {
+            if (combatManager.playerStats.currentHealth <= 0)
+            {
+                return;
+            }
+
             combatManager.StartPlayerTurn();
         }
         else
@@ -88,6 +105,21 @@ public class TurnManager : MonoBehaviour
 
     public void NextTurn()
     {
+        if (combatManager != null && (!combatManager.isCombatActive && !combatManager.isPreparingCombat))
+        {
+            return;
+        }
+
+        if (combatManager != null && combatManager.playerStats != null && combatManager.playerStats.currentHealth <= 0)
+        {
+            return;
+        }
+
+        if (speedManager == null || speedManager.speedOrder == null || speedManager.speedOrder.Count == 0)
+        {
+            return;
+        }
+
         currentIndex++;
 
         if (currentIndex >= speedManager.speedOrder.Count)
@@ -103,20 +135,5 @@ public class TurnManager : MonoBehaviour
     public void EndPlayerTurn()
     {
         NextTurn();
-    }
-
-    public int GetCurrentIndex()
-    {
-        return currentIndex;
-    }
-
-    public SpeedEntry GetCurrentEntry()
-    {
-        if (currentIndex >= speedManager.speedOrder.Count)
-        {
-            return null;
-        }
-
-        return speedManager.speedOrder[currentIndex];
     }
 }

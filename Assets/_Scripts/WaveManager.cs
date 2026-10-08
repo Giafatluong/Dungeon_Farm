@@ -22,7 +22,6 @@ public class WaveManager : MonoBehaviour
     public Camp camp;
     [SerializeField] private MerchantEvent merchantEvent;
     [SerializeField] private RewardChest rewardChest;
-    [SerializeField] private ProgressController progressController;
     [SerializeField] private FloorGenerator floorGenerator;
     #endregion
 
@@ -64,7 +63,7 @@ public class WaveManager : MonoBehaviour
             return cachedActiveFloor;
         }
 
-        FloorData[] loadedFloors = Resources.FindObjectsOfTypeAll<FloorData>();
+        FloorData[] loadedFloors = GameAssetHelper.LoadAll<FloorData>();
         for (int i = 0; i < loadedFloors.Length; i++)
         {
             if (loadedFloors[i] != null && loadedFloors[i].floorNumber == currentFloorNum)
@@ -724,16 +723,9 @@ public class WaveManager : MonoBehaviour
     #region Progress & Helpers
     private void UpdateProgressBar()
     {
-        if (progressController == null) return;
-
-        FloorData activeFloor = GetActiveFloor();
-        int total = runtimeWaves != null ? runtimeWaves.Length : (activeFloor != null && activeFloor.waves != null ? activeFloor.waves.Length : 10);
-        progressController.totalStage = total;
-        progressController.currentStage = currentWaveIndex + 1;
-
-        if (progressController.image != null)
+        if (CombatUI.Instance != null)
         {
-            progressController.image.fillAmount = (float)progressController.currentStage / progressController.totalStage;
+            CombatUI.Instance.UpdateStageProgress();
         }
     }
 

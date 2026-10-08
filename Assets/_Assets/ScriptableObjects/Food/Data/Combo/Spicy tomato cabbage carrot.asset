@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 284236d205486aa4c8e049821338417f, type: 3}
+  m_Name: Spicy tomato cabbage carrot
+  m_EditorClassIdentifier: Assembly-CSharp::FoodData
+  itemName: Spicy tomato cabbage carrot
+  itemIcon: {fileID: -5554786960014384064, guid: 00265faf68382894ca8c291679a564b2, type: 3}
+  dropPrefab: {fileID: 7185413650348089892, guid: b7c4b98c72c616c478923c2847efde73, type: 3}
+  itemType: 2
+  isStackable: 1
+  isRare: 0
+  hungerValue: 0
+  healthValue: 0
+  foodBuff: []

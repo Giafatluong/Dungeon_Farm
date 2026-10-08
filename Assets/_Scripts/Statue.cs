@@ -17,6 +17,7 @@ public class Statue : MonoBehaviour, IInteractable
     #endregion
 
     #region State & References
+    private PlayerStats playerStats;
     private bool playerInRange = false;
     private Transform playerTransform;
     private Collider2D col;
@@ -29,7 +30,6 @@ public class Statue : MonoBehaviour, IInteractable
         col = GetComponent<Collider2D>();
         tilemap = GetComponent<UnityEngine.Tilemaps.Tilemap>();
 
-        // Ensure collider tightly bounds the statue visual instead of a giant zone
         if (col is BoxCollider2D boxCol)
         {
             if (boxCol.size.x > 2.5f || boxCol.size.y > 3.5f)
@@ -52,10 +52,10 @@ public class Statue : MonoBehaviour, IInteractable
 
         if (playerTransform != null)
         {
-            Vector2 statuePoint = col != null ? (Vector2)col.ClosestPoint(playerTransform.position) : (Vector2)GetStatueCenter();
+            Vector2 statuePoint = col != null ? col.ClosestPoint(playerTransform.position) : (Vector2)GetStatueCenter();
             float dist = Vector2.Distance(statuePoint, playerTransform.position);
             bool wasInRange = playerInRange;
-            playerInRange = (dist <= interactDistance);
+            playerInRange = dist <= interactDistance;
 
             if (!wasInRange && playerInRange)
             {
@@ -73,19 +73,9 @@ public class Statue : MonoBehaviour, IInteractable
 
         if (playerInRange && Input.GetKeyDown(KeyCode.E))
         {
+            if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return;
+            if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return;
             Interact();
-        }
-
-        if (Input.GetMouseButtonDown(0))
-        {
-            if (UnityEngine.EventSystems.EventSystem.current == null || !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-            {
-                Vector2 mouseWorld = Camera.main != null ? (Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition) : Vector2.zero;
-                if (col != null && col.OverlapPoint(mouseWorld) && playerInRange)
-                {
-                    Interact();
-                }
-            }
         }
     }
 
@@ -142,6 +132,7 @@ public class Statue : MonoBehaviour, IInteractable
         if (player != null)
         {
             playerTransform = player.transform;
+            playerStats = player.GetComponent<PlayerStats>();
         }
     }
 
@@ -214,6 +205,19 @@ public class Statue : MonoBehaviour, IInteractable
 
         Debug.Log($"Offering successful: {offering.offeringName}! Received +{offering.rewardAmount} {offering.rewardStat} permanently.");
         OnOfferingSuccess?.Invoke(offering);
+
+        if(offering.rewardStat == Offering.RewardStat.ATK)
+        {
+            playerStats.ATK += offering.rewardAmount;
+        }
+        else if( offering.rewardStat == Offering.RewardStat.DEF)
+        {
+            playerStats.DEF += offering.rewardAmount;
+        }
+        else if( offering.rewardStat == Offering.RewardStat.Speed)
+        {
+            playerStats.speed += offering.rewardAmount;
+        }
         return true;
     }
 
@@ -234,7 +238,6 @@ public class Statue : MonoBehaviour, IInteractable
         }
 
         System.Text.StringBuilder sb = new();
-        sb.AppendLine("=== [STATUE OF OFFERINGS] Insufficient items for any offering ===");
         for (int i = 0; i < offerings.Count; i++)
         {
             Offering off = offerings[i];

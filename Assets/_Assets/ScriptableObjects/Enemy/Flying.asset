@@ -13,13 +13,14 @@ MonoBehaviour:
   m_Name: Flying
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Flying
-  maxHealth: 0
-  ATK: 0
+  maxHealth: 30
+  ATK: 5
   DEF: 0
-  speed: 0
+  speed: 10
   possibleIntents: 00000000
+  intentEffects: []
   lootDrops:
-  - item: {fileID: 11400000, guid: 1e020026f91a85541b11bd8e9a9d5221, type: 2}
+  - item: {fileID: 0}
     dropChance: 0.5
     minAmount: 1
     maxAmount: 1

@@ -49,7 +49,7 @@ public class CookingManager : MonoBehaviour
 
         if (defaultRecipes.Count == 0)
         {
-            RecipeData[] allFound = Resources.FindObjectsOfTypeAll<RecipeData>();
+            RecipeData[] allFound = GameAssetHelper.LoadAll<RecipeData>();
             for (int i = 0; i < allFound.Length; i++)
             {
                 RecipeData r = allFound[i];
@@ -113,7 +113,7 @@ public class CookingManager : MonoBehaviour
     }
     #endregion
 
-    #region Recipe Queries
+    #region Recipe Queries & Pot Matching
     public bool IsValidRecipe(RecipeData r)
     {
         if (r == null || r.resultFood == null) return false;
@@ -157,6 +157,137 @@ public class CookingManager : MonoBehaviour
         return list;
     }
 
+    /// <summary>
+    /// So khớp nguyên liệu trong nồi với tất cả các công thức đã có.
+    /// Cơ chế đoán mò: Khi số lượng và loại nguyên liệu trong nồi khớp chính xác với công thức thì ra món!
+    /// </summary>
+    public RecipeData MatchRecipe(List<ItemSlot> potItems)
+    {
+        if (potItems == null || potItems.Count == 0) return null;
+
+        // 1. Gom nhóm nguyên liệu trong nồi theo loại ItemData
+        Dictionary<ItemData, int> potSummary = new Dictionary<ItemData, int>();
+        for (int i = 0; i < potItems.Count; i++)
+        {
+            ItemSlot slot = potItems[i];
+            if (slot == null || slot.itemData == null || slot.amount <= 0) continue;
+
+            ItemData existingKey = null;
+            foreach (var kvp in potSummary)
+            {
+                if (ItemContainer.IsItemMatch(kvp.Key, slot.itemData))
+                {
+                    existingKey = kvp.Key;
+                    break;
+                }
+            }
+
+            if (existingKey != null)
+            {
+                potSummary[existingKey] += slot.amount;
+            }
+            else
+            {
+                potSummary[slot.itemData] = slot.amount;
+            }
+        }
+
+        if (potSummary.Count == 0) return null;
+
+        // 2. So khớp với từng công thức
+        List<RecipeData> allRecipes = GetAllAvailableRecipes();
+        for (int r = 0; r < allRecipes.Count; r++)
+        {
+            RecipeData recipe = allRecipes[r];
+            if (!IsValidRecipe(recipe)) continue;
+
+            // Số loại nguyên liệu phải bằng nhau
+            int validReqCount = 0;
+            for (int i = 0; i < recipe.ingredients.Length; i++)
+            {
+                if (recipe.ingredients[i] != null && recipe.ingredients[i].item != null && recipe.ingredients[i].amount > 0)
+                {
+                    validReqCount++;
+                }
+            }
+
+            if (potSummary.Count != validReqCount) continue;
+
+            // Kiểm tra từng nguyên liệu yêu cầu
+            bool isMatch = true;
+            for (int i = 0; i < recipe.ingredients.Length; i++)
+            {
+                ItemRequirement req = recipe.ingredients[i];
+                if (req == null || req.item == null || req.amount <= 0) continue;
+
+                int amountInPot = 0;
+                foreach (var kvp in potSummary)
+                {
+                    if (ItemContainer.IsItemMatch(kvp.Key, req.item))
+                    {
+                        amountInPot = kvp.Value;
+                        break;
+                    }
+                }
+
+                // Phải đúng chính xác số lượng yêu cầu
+                if (amountInPot != req.amount)
+                {
+                    isMatch = false;
+                    break;
+                }
+            }
+
+            if (isMatch)
+            {
+                return recipe;
+            }
+        }
+
+        return null; // Không khớp công thức nào
+    }
+
+    /// <summary>
+    /// Thực hiện nấu nồi thức ăn thử nghiệm (đoán mò).
+    /// </summary>
+    public bool TryCookPot(List<ItemSlot> potItems, ItemContainer destinationContainer, out RecipeData matchedRecipe, out bool isNewDiscovery)
+    {
+        return TryCookPot(potItems, destinationContainer, out matchedRecipe, out isNewDiscovery, out _);
+    }
+
+    public bool TryCookPot(List<ItemSlot> potItems, ItemContainer destinationContainer, out RecipeData matchedRecipe, out bool isNewDiscovery, out string failReason)
+    {
+        matchedRecipe = MatchRecipe(potItems);
+        isNewDiscovery = false;
+        failReason = "";
+
+        if (matchedRecipe != null)
+        {
+            if (destinationContainer != null && matchedRecipe.resultFood != null)
+            {
+                if (!destinationContainer.CanAddItem(matchedRecipe.resultFood))
+                {
+                    failReason = "Balo đã đầy! Hãy dọn chỗ trống trước khi nấu.";
+                    OnCookFailed?.Invoke(failReason);
+                    return false;
+                }
+                destinationContainer.AddItem(matchedRecipe.resultFood, matchedRecipe.resultAmount);
+            }
+
+            if (ProgressionManager.Instance != null)
+            {
+                isNewDiscovery = ProgressionManager.Instance.DiscoverRecipe(matchedRecipe);
+            }
+
+            OnCookSuccess?.Invoke(matchedRecipe);
+            return true;
+        }
+
+        failReason = "Kết hợp nguyên liệu không thành công! Món ăn bị cháy khét.";
+        OnCookFailed?.Invoke(failReason);
+        return false;
+    }
+
     public bool CanCook(RecipeData recipe, ItemContainer container)
     {
         if (container == null) return false;
@@ -186,7 +317,7 @@ public class CookingManager : MonoBehaviour
     }
     #endregion
 
-    #region Cooking Execution
+    #region Cooking Execution (Legacy support for CampUI)
     public bool Cook(RecipeData recipe, ItemContainer container)
     {
         if (container == null)
@@ -263,6 +394,11 @@ public class CookingManager : MonoBehaviour
 
         // Add cooked food product
         primaryResultContainer.AddItem(recipe.resultFood, recipe.resultAmount);
+
+        if (ProgressionManager.Instance != null)
+        {
+            ProgressionManager.Instance.DiscoverRecipe(recipe);
+        }
 
         Debug.Log($"Successfully cooked: {recipe.resultFood.itemName} x{recipe.resultAmount}");
         OnCookSuccess?.Invoke(recipe);

@@ -26,6 +26,10 @@ public class DungeonEventChoice
     public int speedBuff = 0;
     public int buffDuration = 4;
 
+    [Header("Blessing Rewards (Phước Lành Thần Linh)")]
+    public BlessingType grantedBlessing = BlessingType.None;
+    public bool grantRandomBlessing = false;
+
     [Header("Gamble / Risk Option")]
     [Tooltip("0 = no gamble (100% guaranteed). 0.7 = 70% success chance.")]
     [Range(0f, 1f)] public float gambleSuccessChance = 0f;

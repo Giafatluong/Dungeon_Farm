@@ -84,10 +84,10 @@ public static class DungeonUIAssetHelper
             }
         }
 
-        LootUI lootUI = Object.FindFirstObjectByType<LootUI>(FindObjectsInactive.Include);
-        if (lootUI != null)
+        RewardUI rewardUI = Object.FindFirstObjectByType<RewardUI>(FindObjectsInactive.Include);
+        if (rewardUI != null)
         {
-            InventoryButton btn = lootUI.GetComponentInChildren<InventoryButton>(true);
+            InventoryButton btn = rewardUI.GetComponentInChildren<InventoryButton>(true);
             if (btn != null)
             {
                 _slotPrefab = btn.gameObject;

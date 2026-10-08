@@ -13,7 +13,7 @@ public class Floor : MonoBehaviour
         Merchant
     }
     public bool isFixed; 
-    public int weughtScore;
+    public int weightScore;
     public int floorindex;
     public int stageIndex;
     public List<StageConstraint> constraints;

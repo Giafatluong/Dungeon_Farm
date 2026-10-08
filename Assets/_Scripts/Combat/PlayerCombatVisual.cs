@@ -19,6 +19,7 @@ public class PlayerCombatVisual : MonoBehaviour
     private Vector3 originalPosition;
     private Color originalColor = Color.white;
     private Coroutine currentVisualRoutine;
+    private bool isMovingTransition = false;
 
     private void Awake()
     {
@@ -34,12 +35,12 @@ public class PlayerCombatVisual : MonoBehaviour
             spriteRenderer.sortingOrder = Mathf.Max(spriteRenderer.sortingOrder, 10);
         }
 
-        FaceRight();
+        SetIdle();
     }
 
     private void Start()
     {
-        FaceRight();
+        SetIdle();
 
         if (playerStats != null)
         {
@@ -49,13 +50,43 @@ public class PlayerCombatVisual : MonoBehaviour
             playerStats.OnPlayerDeath += OnDeath;
         }
 
-        CombatManager combatManager = FindFirstObjectByType<CombatManager>();
+        CombatManager combatManager = CombatManager.Instance ?? FindFirstObjectByType<CombatManager>();
         if (combatManager != null)
         {
             combatManager.OnPlayerAttackAction += OnAttack;
+            combatManager.OnCombatStarted += SetIdle;
+            combatManager.OnCombatEnded += SetIdle;
+            combatManager.OnTurnChanged += HandleTurnChanged;
         }
     }
 
+    private void Update()
+    {
+        // Trong suốt thời gian chiến đấu (ngoại trừ lúc chuyển tầng có move transition),
+        // ép Player luôn luôn duy trì ở trạng thái Idle, không chạy tại chỗ
+        if (!isMovingTransition)
+        {
+            if (animator != null && animator.isActiveAndEnabled)
+            {
+                animator.SetFloat("LastHorizontal", 1f);
+                animator.SetFloat("LastVertical", 0f);
+                animator.SetFloat("Horizontal", 0f);
+                animator.SetFloat("Vertical", 0f);
+                animator.SetFloat("Speed", 0f);
+
+                AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+                if (!stateInfo.IsName("Idle"))
+                {
+                    animator.Play("Idle", 0);
+                }
+            }
+        }
+    }
+
+    private void HandleTurnChanged(CombatManager.Turn turn)
+    {
+        SetIdle();
+    }
 
     public void PlayMoveTransition(float duration, System.Action onComplete = null)
     {
@@ -68,27 +99,50 @@ public class PlayerCombatVisual : MonoBehaviour
 
     private IEnumerator MoveTransitionRoutine(float duration, System.Action onComplete)
     {
+        isMovingTransition = true;
         FaceRight();
         float elapsed = 0f;
 
-        while (elapsed < duration)
+        try
         {
-            elapsed += Time.deltaTime;
-
-            if (animator != null && animator.isActiveAndEnabled)
+            while (elapsed < duration)
             {
-                animator.SetFloat("LastHorizontal", 1f);
-                animator.SetFloat("LastVertical", 0f);
-                animator.SetFloat("Horizontal", 1f);
-                animator.SetFloat("Vertical", 0f);
-                animator.SetFloat("Speed", 1f);
+                elapsed += Time.deltaTime;
+
+                if (animator != null && animator.isActiveAndEnabled)
+                {
+                    animator.SetFloat("LastHorizontal", 1f);
+                    animator.SetFloat("LastVertical", 0f);
+                    animator.SetFloat("Horizontal", 1f);
+                    animator.SetFloat("Vertical", 0f);
+                    animator.SetFloat("Speed", 1f);
+                }
+
+                transform.position = originalPosition;
+                yield return null;
             }
-
-            transform.position = originalPosition;
-            yield return null;
         }
+        finally
+        {
+            isMovingTransition = false;
+            transform.position = originalPosition;
+            SetIdle();
+            currentVisualRoutine = null;
+            onComplete?.Invoke();
+        }
+    }
 
-        transform.position = originalPosition;
+    public void FaceRight()
+    {
+        SetIdle();
+    }
+
+    public void SetIdle()
+    {
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.flipX = false;
+        }
 
         if (animator != null && animator.isActiveAndEnabled)
         {
@@ -97,10 +151,13 @@ public class PlayerCombatVisual : MonoBehaviour
             animator.SetFloat("Horizontal", 0f);
             animator.SetFloat("Vertical", 0f);
             animator.SetFloat("Speed", 0f);
-        }
 
-        currentVisualRoutine = null;
-        onComplete?.Invoke();
+            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            if (!stateInfo.IsName("Idle"))
+            {
+                animator.Play("Idle", 0, 0f);
+            }
+        }
     }
 
     private void OnDestroy()
@@ -113,27 +170,13 @@ public class PlayerCombatVisual : MonoBehaviour
             playerStats.OnPlayerDeath -= OnDeath;
         }
 
-        CombatManager combatManager = FindFirstObjectByType<CombatManager>();
+        CombatManager combatManager = CombatManager.Instance ?? FindFirstObjectByType<CombatManager>();
         if (combatManager != null)
         {
             combatManager.OnPlayerAttackAction -= OnAttack;
-        }
-    }
-
-    public void FaceRight()
-    {
-        if (spriteRenderer != null)
-        {
-            spriteRenderer.flipX = false;
-        }
-
-        if (animator != null)
-        {
-            animator.SetFloat("LastHorizontal", 1f);
-            animator.SetFloat("LastVertical", 0f);
-            animator.SetFloat("Horizontal", 0f);
-            animator.SetFloat("Vertical", 0f);
-            animator.SetFloat("Speed", 0f);
+            combatManager.OnCombatStarted -= SetIdle;
+            combatManager.OnCombatEnded -= SetIdle;
+            combatManager.OnTurnChanged -= HandleTurnChanged;
         }
     }
 
@@ -190,6 +233,7 @@ public class PlayerCombatVisual : MonoBehaviour
         }
 
         transform.position = startPos;
+        SetIdle();
     }
 
     private IEnumerator HurtFlashRoutine()
@@ -211,6 +255,7 @@ public class PlayerCombatVisual : MonoBehaviour
         {
             spriteRenderer.color = originalColor;
         }
+        SetIdle();
     }
 
     private IEnumerator DefendPulseRoutine()
@@ -221,6 +266,7 @@ public class PlayerCombatVisual : MonoBehaviour
             yield return new WaitForSeconds(0.25f);
             spriteRenderer.color = originalColor;
         }
+        SetIdle();
     }
 
     private IEnumerator HealPulseRoutine()
@@ -231,6 +277,7 @@ public class PlayerCombatVisual : MonoBehaviour
             yield return new WaitForSeconds(0.25f);
             spriteRenderer.color = originalColor;
         }
+        SetIdle();
     }
 
     private IEnumerator DeathRoutine()

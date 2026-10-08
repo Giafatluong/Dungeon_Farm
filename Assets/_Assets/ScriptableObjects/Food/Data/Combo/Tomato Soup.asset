@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 284236d205486aa4c8e049821338417f, type: 3}
+  m_Name: Tomato Soup
+  m_EditorClassIdentifier: Assembly-CSharp::FoodData
+  itemName: Tomato Soup
+  itemIcon: {fileID: 1226134801195689498, guid: 6e4e39d5b64163843a96a334091b2e80, type: 3}
+  dropPrefab: {fileID: 6223845131449706457, guid: 6a30a06eefcb701479d5a66bc652d672, type: 3}
+  itemType: 2
+  isStackable: 1
+  isRare: 0
+  hungerValue: 0
+  healthValue: 0
+  foodBuff: []

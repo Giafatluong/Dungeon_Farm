@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c63989b7d70655d4eb98239d5836f0e2, type: 3}
+  m_Name: Spicy tomato cabbage carrot
+  m_EditorClassIdentifier: Assembly-CSharp::RecipeData
+  recipeName: 
+  ingredients:
+  - item: {fileID: 11400000, guid: 3df971529d87e11458e9cca160be2dad, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: bebc2ac43f68ce44d89cca458fd002c8, type: 2}
+    amount: 2
+  - item: {fileID: 11400000, guid: 5aac5a38adcb69d4d8122b9760c16186, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: 87d1b2164c734434682f1fc6e72fba3a, type: 2}
+    amount: 1
+  resultFood: {fileID: 11400000, guid: 44e0ea967df46ab40801462a3092738b, type: 2}
+  resultAmount: 1

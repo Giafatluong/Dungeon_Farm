@@ -97,7 +97,7 @@ public class RewardUI : MonoBehaviour
             if (currentChest == null) currentChest = gameObject.AddComponent<RewardChest>();
         }
 
-        if (loot != null && (currentChest.currentChestLoot == null || currentChest.currentChestLoot.Count == 0))
+        if (loot != null && loot.Count > 0)
         {
             currentChest.currentChestLoot = new List<ItemSlot>(loot);
         }

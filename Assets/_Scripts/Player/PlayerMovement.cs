@@ -57,6 +57,7 @@ public class PlayerMovement : MonoBehaviour
         if (MerchantUI.Instance != null && MerchantUI.Instance.IsOpen) return true;
         if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return true;
         if (RewardUI.Instance != null && RewardUI.Instance.IsOpen) return true;
+        if (DungeonEntranceUI.Instance != null && DungeonEntranceUI.Instance.IsOpen) return true;
         return false;
     }
 
@@ -67,7 +68,11 @@ public class PlayerMovement : MonoBehaviour
             movement = Vector2.zero;
             if (anim != null)
             {
+                anim.SetFloat("Horizontal", 0f);
+                anim.SetFloat("Vertical", 0f);
                 anim.SetFloat("Speed", 0f);
+                anim.SetFloat("LastHorizontal", 1f);
+                anim.SetFloat("LastVertical", 0f);
             }
             return;
         }

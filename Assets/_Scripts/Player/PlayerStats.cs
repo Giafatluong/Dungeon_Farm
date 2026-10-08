@@ -57,10 +57,41 @@ public class PlayerStats : MonoBehaviour
 
     public void Eat(ItemData item)
     {
+        if (item == null) return;
+
+        bool hasRawVitality = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.RawVitality);
+        bool hasEndlessFeast = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast);
+
         FoodData food = item as FoodData;
 
+        // Nếu có phước lành RawVitality (Nông Dân Cường Tráng), cho phép ăn cả nông sản thô
         if (food == null)
         {
+            if (hasRawVitality && (item.itemType == ItemData.ItemType.Produce || item.itemType == ItemData.ItemType.Seed))
+            {
+                if (itemContainer != null && !itemContainer.HasItem(item))
+                {
+                    Debug.Log("Crop not found in container");
+                    return;
+                }
+
+                if (currentHunger >= maxHunger)
+                {
+                    Debug.Log("Too full to eat");
+                    return;
+                }
+
+                AddHunger(20);
+                Heal(12);
+                if (itemContainer != null)
+                {
+                    itemContainer.RemoveItem(item, 1);
+                }
+                DamagePopupManager.ShowText(transform.position + Vector3.up * 1.1f, "Ăn Sống! +12 HP", new Color(0.4f, 0.9f, 0.3f), 4.5f);
+                Debug.Log($"[Blessing: RawVitality] Ate raw crop {item.itemName} (+12 HP, +20 Hunger)!");
+                return;
+            }
+
             Debug.Log("Item is not food");
             return;
         }
@@ -83,10 +114,16 @@ public class PlayerStats : MonoBehaviour
             {
                 if (food.foodBuff[i] != null && food.foodBuff[i].buffs != null)
                 {
+                    int duration = food.foodBuff[i].buffDuration;
+                    if (hasEndlessFeast)
+                    {
+                        duration *= 2;
+                    }
+
                     AddBuff(
                         food.foodBuff[i].buffs,
                         food.foodBuff[i].buffValue,
-                        food.foodBuff[i].buffDuration,
+                        duration,
                         food.foodBuff[i].buffDurationType
                     );
                 }
@@ -106,6 +143,14 @@ public class PlayerStats : MonoBehaviour
     public void Defend()
     {
         defendCount++;
+
+        if (ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.BastionStrike))
+        {
+            currentAP = Mathf.Min(maxAP, currentAP + 1);
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 1.5f, "+1 AP!", new Color(1f, 0.8f, 0.2f), 4.5f);
+            Debug.Log("[Blessing: BastionStrike] Defend restored +1 AP!");
+        }
+
         OnPlayerDefended?.Invoke();
     }
 
@@ -120,6 +165,17 @@ public class PlayerStats : MonoBehaviour
         if (ProgressionManager.Instance != null)
         {
             value += ProgressionManager.Instance.permanentATK;
+
+            if (ProgressionManager.Instance.HasBlessing(BlessingType.BastionStrike))
+            {
+                value += Mathf.RoundToInt(GetCurrentDEF() * 0.5f);
+            }
+
+            // Blessing: Bụng Rỗng Cuồng Nộ (Độ no < 35% tăng +6 ATK)
+            if (ProgressionManager.Instance.HasBlessing(BlessingType.StarvingFury) && maxHunger > 0 && currentHunger <= maxHunger * 0.35f)
+            {
+                value += 6;
+            }
         }
 
         for (int i = 0; i < activeBuffs.Count; i++)
@@ -141,6 +197,11 @@ public class PlayerStats : MonoBehaviour
         if (ProgressionManager.Instance != null)
         {
             value += ProgressionManager.Instance.permanentDEF;
+
+            if (ProgressionManager.Instance.HasBlessing(BlessingType.GluttonousAegis) && maxHunger > 0 && currentHunger >= maxHunger * 0.70f)
+            {
+                value += 8;
+            }
         }
 
         for (int i = 0; i < activeBuffs.Count; i++)
@@ -162,6 +223,12 @@ public class PlayerStats : MonoBehaviour
         if (ProgressionManager.Instance != null)
         {
             value += ProgressionManager.Instance.permanentSpeed;
+
+            // Blessing: Động Lực Tốc Độ (+4 Tốc độ)
+            if (ProgressionManager.Instance.HasBlessing(BlessingType.SwiftMomentum))
+            {
+                value += 4;
+            }
         }
 
         for (int i = 0; i < activeBuffs.Count; i++)
@@ -230,6 +297,17 @@ public class PlayerStats : MonoBehaviour
 
         // Damage Popup above player
         DamagePopupManager.ShowDamage(transform.position + Vector3.up * 1.1f, damage, isPlayer: true);
+
+        // Blessing: No Căng Phản Đòn (GluttonousAegis) - Phản 40% sát thương khi no bụng (>70%)
+        if (damage > 0 && ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.GluttonousAegis)
+            && maxHunger > 0 && currentHunger >= maxHunger * 0.70f)
+        {
+            int reflected = Mathf.Max(1, Mathf.RoundToInt(damage * 0.4f));
+            if (CombatManager.Instance != null && CombatManager.Instance.isCombatActive)
+            {
+                CombatManager.Instance.ReflectDamageToCurrentEnemy(reflected);
+            }
+        }
 
         if (currentHealth <= 0)
         {

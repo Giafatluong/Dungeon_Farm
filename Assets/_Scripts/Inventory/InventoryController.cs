@@ -6,10 +6,19 @@ public class InventoryController : MonoBehaviour
     [SerializeField] private CurrentItemPanel currentItemPanel;
     public bool isInteractable = true;
 
+    private void Awake()
+    {
+        if (inventoryPanel == null)
+            inventoryPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+        if (currentItemPanel == null)
+            currentItemPanel = FindFirstObjectByType<CurrentItemPanel>(FindObjectsInactive.Include);
+    }
+
     private void Start()
     {
         isInteractable = true;
     }
+
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.I))
@@ -20,7 +29,10 @@ public class InventoryController : MonoBehaviour
 
     private void SwapInventoryPanel()
     {
-        if(inventoryPanel.gameObject.activeSelf)
+        if (inventoryPanel == null)
+            return;
+
+        if (inventoryPanel.gameObject.activeSelf)
         {
             CloseInventoryPanel();
         }
@@ -32,14 +44,23 @@ public class InventoryController : MonoBehaviour
 
     private void CloseInventoryPanel()
     {
-        inventoryPanel.gameObject.SetActive(false);
-        currentItemPanel.gameObject.SetActive(true);
+        if (inventoryPanel != null)
+            inventoryPanel.gameObject.SetActive(false);
+
+        if (currentItemPanel != null)
+            currentItemPanel.gameObject.SetActive(true);
+
         isInteractable = true;
     }
+
     private void OpenInventoryPanel()
     {
-        inventoryPanel.gameObject.SetActive(true);
-        currentItemPanel.gameObject.SetActive(false);
+        if (inventoryPanel != null)
+            inventoryPanel.gameObject.SetActive(true);
+
+        if (currentItemPanel != null)
+            currentItemPanel.gameObject.SetActive(false);
+
         isInteractable = false;
     }
 }

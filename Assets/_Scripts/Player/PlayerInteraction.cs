@@ -59,7 +59,9 @@ public class PlayerInteraction : MonoBehaviour
 
     private void Update()
     {
+        if (IsAnyUIOpen()) return;
         if (inventoryController != null && !inventoryController.isInteractable) return;
+
         if (Input.GetMouseButtonDown(0))
         {
             if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
@@ -72,6 +74,15 @@ public class PlayerInteraction : MonoBehaviour
         {
             InteractBed();
         }
+    }
+
+    private bool IsAnyUIOpen()
+    {
+        if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return true;
+        if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return true;
+        if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return true;
+        if (DungeonEntranceUI.Instance != null && DungeonEntranceUI.Instance.IsOpen) return true;
+        return false;
     }
 
     private void InteractFarmPlot()

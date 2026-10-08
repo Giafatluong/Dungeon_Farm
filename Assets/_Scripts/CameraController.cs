@@ -14,12 +14,18 @@ public class CameraController : MonoBehaviour
         }
     }
 
+    private float nextSearchTime = 0f;
+
     private void FixedUpdate()
     {
         if (player == null)
         {
-            PlayerMovement pm = FindFirstObjectByType<PlayerMovement>();
-            if (pm != null) player = pm.gameObject;
+            if (Time.time >= nextSearchTime)
+            {
+                nextSearchTime = Time.time + 1.0f;
+                PlayerMovement pm = FindFirstObjectByType<PlayerMovement>();
+                if (pm != null) player = pm.gameObject;
+            }
         }
 
         if (player != null)
