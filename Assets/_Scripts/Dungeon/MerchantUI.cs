@@ -25,12 +25,13 @@ public class MerchantUI : MonoBehaviour
             return _instance;
         }
 
-        Canvas c = FindFirstObjectByType<Canvas>();
+        Canvas c = DungeonUIAssetHelper.GetMainScreenCanvas();
         if (c != null)
         {
             GameObject go = new GameObject("MerchantUI");
             go.transform.SetParent(c.transform, false);
             _instance = go.AddComponent<MerchantUI>();
+            _instance.canvas = c;
             return _instance;
         }
 
@@ -92,6 +93,10 @@ public class MerchantUI : MonoBehaviour
     private void OnDestroy()
     {
         UnsubscribeEvents();
+        if (_instance == this)
+        {
+            _instance = null;
+        }
     }
 
     private void SubscribeEvents()
@@ -312,7 +317,7 @@ public class MerchantUI : MonoBehaviour
 
         TextMeshProUGUI tmp = headerGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(tmp);
-        tmp.fontSize = 12;
+        tmp.fontSize = 13;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = color;
         tmp.text = $"[ {title} ]";
@@ -366,7 +371,7 @@ public class MerchantUI : MonoBehaviour
 
         TextMeshProUGUI descTMP = descGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(descTMP);
-        descTMP.fontSize = 11;
+        descTMP.fontSize = 12;
         string inColor = haveInput >= trade.inputAmount ? "#55FF88" : "#FF7777";
         string inText = trade.inputSeed != null ? trade.inputSeed.itemName : "Seed";
         string outText = trade.outputSeed != null ? trade.outputSeed.itemName : "Seed";
@@ -417,7 +422,7 @@ public class MerchantUI : MonoBehaviour
         btnTextGO.transform.SetParent(btnGO.transform, false);
         TextMeshProUGUI btnTMP = btnTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(btnTMP);
-        btnTMP.fontSize = 11;
+        btnTMP.fontSize = 12;
         btnTMP.fontStyle = FontStyles.Bold;
         btnTMP.alignment = TextAlignmentOptions.Center;
         btnTMP.text = "Barter";
@@ -472,7 +477,7 @@ public class MerchantUI : MonoBehaviour
 
         TextMeshProUGUI descTMP = descGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(descTMP);
-        descTMP.fontSize = 11;
+        descTMP.fontSize = 12;
         string inColor = haveInput >= trade.inputAmount ? "#55FF88" : "#FF7777";
         string inText = trade.inputProduce != null ? trade.inputProduce.itemName : "Crop";
         string outText = trade.outputFood != null ? trade.outputFood.itemName : "Ration";
@@ -523,7 +528,7 @@ public class MerchantUI : MonoBehaviour
         btnTextGO.transform.SetParent(btnGO.transform, false);
         TextMeshProUGUI btnTMP = btnTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(btnTMP);
-        btnTMP.fontSize = 11;
+        btnTMP.fontSize = 12;
         btnTMP.fontStyle = FontStyles.Bold;
         btnTMP.alignment = TextAlignmentOptions.Center;
         btnTMP.text = "Trade";
@@ -538,7 +543,20 @@ public class MerchantUI : MonoBehaviour
         EnsureSlotPrefab();
         Canvas currentCanvas = GetCanvas();
 
-        if (backpackSlots.Count == container.maxSlots && backpackSlots.TrueForAll(s => s != null))
+        bool allSlotsValid = backpackSlots.Count == container.maxSlots;
+        if (allSlotsValid)
+        {
+            for (int i = 0; i < backpackSlots.Count; i++)
+            {
+                if (backpackSlots[i] == null)
+                {
+                    allSlotsValid = false;
+                    break;
+                }
+            }
+        }
+
+        if (allSlotsValid)
         {
             for (int i = 0; i < backpackSlots.Count; i++)
             {
@@ -633,8 +651,14 @@ public class MerchantUI : MonoBehaviour
 
     private Canvas GetCanvas()
     {
-        if (canvas == null) canvas = GetComponentInParent<Canvas>();
-        if (canvas == null) canvas = FindFirstObjectByType<Canvas>();
+        if (canvas == null || canvas.renderMode == RenderMode.WorldSpace)
+        {
+            canvas = GetComponentInParent<Canvas>();
+            if (canvas == null || canvas.renderMode == RenderMode.WorldSpace)
+            {
+                canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
+            }
+        }
         return canvas;
     }
 
@@ -681,11 +705,11 @@ public class MerchantUI : MonoBehaviour
         titleRT.anchorMax = new Vector2(1, 1);
         titleRT.pivot = new Vector2(0.5f, 1);
         titleRT.anchoredPosition = new Vector2(0, -14);
-        titleRT.sizeDelta = new Vector2(-60, 30);
+        titleRT.sizeDelta = new Vector2(-60, 32);
 
         titleText = titleGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(titleText);
-        titleText.fontSize = 20;
+        titleText.fontSize = 21;
         titleText.fontStyle = FontStyles.Bold;
         titleText.alignment = TextAlignmentOptions.Center;
         titleText.text = "WANDERING MERCHANT - DUNGEON OUTPOST";
@@ -698,14 +722,14 @@ public class MerchantUI : MonoBehaviour
         subtitleRT.anchorMax = new Vector2(1, 1);
         subtitleRT.pivot = new Vector2(0.5f, 1);
         subtitleRT.anchoredPosition = new Vector2(0, -44);
-        subtitleRT.sizeDelta = new Vector2(-60, 20);
+        subtitleRT.sizeDelta = new Vector2(-60, 22);
 
         subtitleText = subtitleGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(subtitleText);
-        subtitleText.fontSize = 11;
+        subtitleText.fontSize = 12.5f;
         subtitleText.alignment = TextAlignmentOptions.Center;
         subtitleText.text = "A mysterious trader braving the dungeon. Barter seeds, recipes, and survival rations.";
-        subtitleText.color = new Color(0.78f, 0.82f, 0.92f);
+        subtitleText.color = new Color(0.82f, 0.86f, 0.94f);
 
         // 4. Feedback Label
         GameObject feedbackGO = new GameObject("Feedback", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -714,16 +738,16 @@ public class MerchantUI : MonoBehaviour
         feedbackRT.anchorMin = new Vector2(0, 1);
         feedbackRT.anchorMax = new Vector2(1, 1);
         feedbackRT.pivot = new Vector2(0.5f, 1);
-        feedbackRT.anchoredPosition = new Vector2(0, -66);
-        feedbackRT.sizeDelta = new Vector2(-60, 22);
+        feedbackRT.anchoredPosition = new Vector2(0, -68);
+        feedbackRT.sizeDelta = new Vector2(-60, 24);
 
         feedbackText = feedbackGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(feedbackText);
-        feedbackText.fontSize = 12;
+        feedbackText.fontSize = 13;
         feedbackText.fontStyle = FontStyles.Bold;
         feedbackText.alignment = TextAlignmentOptions.Center;
         feedbackText.text = "Welcome traveler! What would you like to barter today?";
-        feedbackText.color = new Color(0.85f, 0.92f, 1f);
+        feedbackText.color = new Color(0.88f, 0.94f, 1f);
 
         // 5. Close Button (X)
         GameObject closeGO = new GameObject("BtnClose", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -733,7 +757,7 @@ public class MerchantUI : MonoBehaviour
         closeRT.anchorMax = new Vector2(1, 1);
         closeRT.pivot = new Vector2(1, 1);
         closeRT.anchoredPosition = new Vector2(-14, -14);
-        closeRT.sizeDelta = new Vector2(30, 30);
+        closeRT.sizeDelta = new Vector2(32, 32);
 
         Image closeBg = closeGO.GetComponent<Image>();
         closeButton = closeGO.GetComponent<Button>();
@@ -744,12 +768,12 @@ public class MerchantUI : MonoBehaviour
         xTextGO.transform.SetParent(closeGO.transform, false);
         TextMeshProUGUI xTMP = xTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(xTMP);
-        xTMP.fontSize = 15;
+        xTMP.fontSize = 16;
         xTMP.fontStyle = FontStyles.Bold;
         xTMP.alignment = TextAlignmentOptions.Center;
         xTMP.text = "X";
         xTMP.color = Color.white;
-        xTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(30, 30);
+        xTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(32, 32);
 
         // 6. Left Column: Merchant Wares (Scrollable) with 9-Sliced Frame
         GameObject waresColGO = new GameObject("WaresColumn", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
@@ -770,7 +794,8 @@ public class MerchantUI : MonoBehaviour
         RectTransform vpRT = viewportGO.GetComponent<RectTransform>();
         vpRT.anchorMin = Vector2.zero;
         vpRT.anchorMax = Vector2.one;
-        vpRT.sizeDelta = new Vector2(-12, -12);
+        vpRT.offsetMin = new Vector2(6, 6);
+        vpRT.offsetMax = new Vector2(-22, -6);
 
         // Content
         GameObject contentGO = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
@@ -780,7 +805,7 @@ public class MerchantUI : MonoBehaviour
         contentRT.anchorMax = new Vector2(1, 1);
         contentRT.pivot = new Vector2(0.5f, 1);
         contentRT.anchoredPosition = Vector2.zero;
-        contentRT.sizeDelta = new Vector2(-8, 0);
+        contentRT.sizeDelta = Vector2.zero;
 
         VerticalLayoutGroup vlg = contentGO.GetComponent<VerticalLayoutGroup>();
         vlg.padding = new RectOffset(6, 6, 8, 8);
@@ -799,6 +824,41 @@ public class MerchantUI : MonoBehaviour
         sr.horizontal = false;
         sr.vertical = true;
         sr.scrollSensitivity = 25f;
+
+        // Wares Vertical Scrollbar / Slider
+        GameObject waresSbGO = new GameObject("VerticalScrollbar", typeof(RectTransform), typeof(Image), typeof(Scrollbar));
+        waresSbGO.transform.SetParent(waresColGO.transform, false);
+        RectTransform waresSbRT = waresSbGO.GetComponent<RectTransform>();
+        waresSbRT.anchorMin = new Vector2(1, 0);
+        waresSbRT.anchorMax = new Vector2(1, 1);
+        waresSbRT.pivot = new Vector2(1, 0.5f);
+        waresSbRT.sizeDelta = new Vector2(12, -12);
+        waresSbRT.anchoredPosition = new Vector2(-6, 0);
+
+        Image waresSbBg = waresSbGO.GetComponent<Image>();
+        waresSbBg.color = new Color(0.04f, 0.06f, 0.09f, 0.8f);
+
+        Scrollbar waresSb = waresSbGO.GetComponent<Scrollbar>();
+        waresSb.direction = Scrollbar.Direction.BottomToTop;
+
+        GameObject waresSaGO = new GameObject("SlidingArea", typeof(RectTransform));
+        waresSaGO.transform.SetParent(waresSbGO.transform, false);
+        RectTransform waresSaRT = waresSaGO.GetComponent<RectTransform>();
+        waresSaRT.anchorMin = Vector2.zero;
+        waresSaRT.anchorMax = Vector2.one;
+        waresSaRT.sizeDelta = Vector2.zero;
+
+        GameObject waresHandleGO = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+        waresHandleGO.transform.SetParent(waresSaGO.transform, false);
+        RectTransform waresHandleRT = waresHandleGO.GetComponent<RectTransform>();
+        waresHandleRT.sizeDelta = Vector2.zero;
+
+        Image waresHandleImg = waresHandleGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(waresHandleImg, new Color(0.85f, 0.65f, 0.2f, 1f));
+
+        waresSb.handleRect = waresHandleRT;
+        waresSb.targetGraphic = waresHandleImg;
+        sr.verticalScrollbar = waresSb;
 
         waresContainer = contentGO.transform;
 
@@ -823,32 +883,98 @@ public class MerchantUI : MonoBehaviour
         bpHeaderRT.anchorMax = new Vector2(1, 1);
         bpHeaderRT.pivot = new Vector2(0.5f, 1);
         bpHeaderRT.anchoredPosition = new Vector2(0, -8);
-        bpHeaderRT.sizeDelta = new Vector2(-20, 24);
+        bpHeaderRT.sizeDelta = new Vector2(-20, 26);
 
         backpackHeaderTitle = bpHeaderGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(backpackHeaderTitle);
-        backpackHeaderTitle.fontSize = 13;
+        backpackHeaderTitle.fontSize = 13.5f;
         backpackHeaderTitle.fontStyle = FontStyles.Bold;
         backpackHeaderTitle.alignment = TextAlignmentOptions.Center;
         backpackHeaderTitle.text = "PLAYER BACKPACK";
         backpackHeaderTitle.color = new Color(0.4f, 0.85f, 1f);
 
-        // Backpack Grid Parent
-        GameObject bpGridGO = new GameObject("BackpackSlots", typeof(RectTransform), typeof(GridLayoutGroup));
-        bpGridGO.transform.SetParent(backpackColGO.transform, false);
+        // Scroll Area for Backpack
+        GameObject bpScrollGO = new GameObject("BackpackScrollArea", typeof(RectTransform), typeof(ScrollRect));
+        bpScrollGO.transform.SetParent(backpackColGO.transform, false);
+        RectTransform bpScrollRT = bpScrollGO.GetComponent<RectTransform>();
+        bpScrollRT.anchorMin = Vector2.zero;
+        bpScrollRT.anchorMax = Vector2.one;
+        bpScrollRT.offsetMin = new Vector2(8, 8);
+        bpScrollRT.offsetMax = new Vector2(-8, -38);
+
+        ScrollRect bpScrollRect = bpScrollGO.GetComponent<ScrollRect>();
+        bpScrollRect.horizontal = false;
+        bpScrollRect.vertical = true;
+        bpScrollRect.movementType = ScrollRect.MovementType.Clamped;
+        bpScrollRect.scrollSensitivity = 25f;
+
+        // Viewport
+        GameObject bpVpGO = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
+        bpVpGO.transform.SetParent(bpScrollGO.transform, false);
+        RectTransform bpVpRT = bpVpGO.GetComponent<RectTransform>();
+        bpVpRT.anchorMin = Vector2.zero;
+        bpVpRT.anchorMax = Vector2.one;
+        bpVpRT.offsetMin = Vector2.zero;
+        bpVpRT.offsetMax = new Vector2(-16, 0); // space for scrollbar
+
+        // Backpack Grid Container (Content)
+        GameObject bpGridGO = new GameObject("BackpackSlots", typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter));
+        bpGridGO.transform.SetParent(bpVpGO.transform, false);
         RectTransform bpGridRT = bpGridGO.GetComponent<RectTransform>();
-        bpGridRT.anchorMin = new Vector2(0, 0);
+        bpGridRT.anchorMin = new Vector2(0, 1);
         bpGridRT.anchorMax = new Vector2(1, 1);
-        bpGridRT.sizeDelta = new Vector2(-20, -44);
-        bpGridRT.anchoredPosition = new Vector2(0, -14);
+        bpGridRT.pivot = new Vector2(0.5f, 1);
+        bpGridRT.anchoredPosition = Vector2.zero;
+        bpGridRT.sizeDelta = Vector2.zero;
 
         GridLayoutGroup bpGLG = bpGridGO.GetComponent<GridLayoutGroup>();
         bpGLG.cellSize = new Vector2(50, 50);
-        bpGLG.spacing = new Vector2(8, 8);
-        bpGLG.padding = new RectOffset(8, 8, 8, 8);
+        bpGLG.spacing = new Vector2(7, 7);
+        bpGLG.padding = new RectOffset(6, 6, 6, 6);
         bpGLG.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         bpGLG.constraintCount = 6;
         bpGLG.childAlignment = TextAnchor.UpperCenter;
+
+        ContentSizeFitter bpCsf = bpGridGO.GetComponent<ContentSizeFitter>();
+        bpCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        bpScrollRect.viewport = bpVpRT;
+        bpScrollRect.content = bpGridRT;
+
+        // Vertical Scrollbar for Backpack
+        GameObject bpSbGO = new GameObject("VerticalScrollbar", typeof(RectTransform), typeof(Image), typeof(Scrollbar));
+        bpSbGO.transform.SetParent(bpScrollGO.transform, false);
+        RectTransform bpSbRT = bpSbGO.GetComponent<RectTransform>();
+        bpSbRT.anchorMin = new Vector2(1, 0);
+        bpSbRT.anchorMax = new Vector2(1, 1);
+        bpSbRT.pivot = new Vector2(1, 0.5f);
+        bpSbRT.sizeDelta = new Vector2(12, 0);
+        bpSbRT.anchoredPosition = Vector2.zero;
+
+        Image bpSbBg = bpSbGO.GetComponent<Image>();
+        bpSbBg.color = new Color(0.04f, 0.06f, 0.09f, 0.8f);
+
+        Scrollbar bpSb = bpSbGO.GetComponent<Scrollbar>();
+        bpSb.direction = Scrollbar.Direction.BottomToTop;
+
+        GameObject bpSaGO = new GameObject("SlidingArea", typeof(RectTransform));
+        bpSaGO.transform.SetParent(bpSbGO.transform, false);
+        RectTransform bpSaRT = bpSaGO.GetComponent<RectTransform>();
+        bpSaRT.anchorMin = Vector2.zero;
+        bpSaRT.anchorMax = Vector2.one;
+        bpSaRT.sizeDelta = Vector2.zero;
+
+        GameObject bpHandleGO = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+        bpHandleGO.transform.SetParent(bpSaGO.transform, false);
+        RectTransform bpHandleRT = bpHandleGO.GetComponent<RectTransform>();
+        bpHandleRT.sizeDelta = Vector2.zero;
+
+        Image bpHandleImg = bpHandleGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(bpHandleImg, new Color(0.25f, 0.42f, 0.65f, 1f));
+
+        bpSb.handleRect = bpHandleRT;
+        bpSb.targetGraphic = bpHandleImg;
+        bpScrollRect.verticalScrollbar = bpSb;
 
         backpackSlotsParent = bpGridGO.transform;
 
@@ -860,7 +986,7 @@ public class MerchantUI : MonoBehaviour
         continueRT.anchorMax = new Vector2(0.5f, 0);
         continueRT.pivot = new Vector2(0.5f, 0);
         continueRT.anchoredPosition = new Vector2(0, 12);
-        continueRT.sizeDelta = new Vector2(290, 38);
+        continueRT.sizeDelta = new Vector2(300, 42);
 
         Image continueBg = continueGO.GetComponent<Image>();
         continueButton = continueGO.GetComponent<Button>();
@@ -871,12 +997,12 @@ public class MerchantUI : MonoBehaviour
         continueTextGO.transform.SetParent(continueGO.transform, false);
         TextMeshProUGUI continueTMP = continueTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(continueTMP);
-        continueTMP.fontSize = 13;
+        continueTMP.fontSize = 13.5f;
         continueTMP.fontStyle = FontStyles.Bold;
         continueTMP.alignment = TextAlignmentOptions.Center;
         continueTMP.text = "CONTINUE EXPEDITION >>";
         continueTMP.color = Color.white;
-        continueTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(290, 38);
+        continueTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(300, 42);
     }
 
     private int GetItemCount(ItemContainer container, ItemData item)

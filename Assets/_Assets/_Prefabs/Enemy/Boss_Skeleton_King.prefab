@@ -181,6 +181,8 @@ MonoBehaviour:
   activeBuffs: []
   isDefending: 0
   currentIntent: 0
+  isFlying: 0
+  yOffset: 0.27
 --- !u!114 &5812948192847192847
 MonoBehaviour:
   m_ObjectHideFlags: 0

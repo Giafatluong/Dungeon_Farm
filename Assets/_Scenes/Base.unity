@@ -19255,7 +19255,7 @@ MonoBehaviour:
   currentHunger: 0
   activeBuffs: []
   itemContainer: {fileID: 11400000, guid: a25b2750692e3ff408f36198a3111a15, type: 2}
-  healthBar: {fileID: 4783744029208277675, guid: 7be31d6a794d0094c9488825d5f9f8ea, type: 3}
+  healthBar: {fileID: 0}
 --- !u!1001 &927455020
 PrefabInstance:
   m_ObjectHideFlags: 0

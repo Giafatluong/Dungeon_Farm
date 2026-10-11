@@ -17,6 +17,7 @@ public class PlayerCombatVisual : MonoBehaviour
     [SerializeField] private float lungeDuration = 0.15f;
 
     private Vector3 originalPosition;
+    private Vector3 originalScale = Vector3.one;
     private Color originalColor = Color.white;
     private Coroutine currentVisualRoutine;
     private bool isMovingTransition = false;
@@ -28,6 +29,7 @@ public class PlayerCombatVisual : MonoBehaviour
         if (playerStats == null) playerStats = GetComponent<PlayerStats>();
 
         originalPosition = transform.position;
+        originalScale = transform.localScale;
 
         if (spriteRenderer != null)
         {
@@ -216,23 +218,37 @@ public class PlayerCombatVisual : MonoBehaviour
         Vector3 targetPos = startPos + new Vector3(lungeDistance, 0f, 0f);
         float halfDuration = lungeDuration * 0.5f;
 
+        Vector3 stretchScale = new Vector3(originalScale.x * 1.15f, originalScale.y * 0.88f, originalScale.z);
+        Vector3 impactScale = new Vector3(originalScale.x * 0.90f, originalScale.y * 1.12f, originalScale.z);
+
+        // Lunge forward with horizontal stretch
         float t = 0f;
         while (t < halfDuration)
         {
             t += Time.deltaTime;
-            transform.position = Vector3.Lerp(startPos, targetPos, t / halfDuration);
+            float factor = t / halfDuration;
+            transform.position = Vector3.Lerp(startPos, targetPos, factor);
+            transform.localScale = Vector3.Lerp(originalScale, stretchScale, factor);
             yield return null;
         }
 
+        // Momentary impact punch
+        transform.position = targetPos;
+        transform.localScale = impactScale;
+
+        // Return with elastic recovery
         t = 0f;
         while (t < halfDuration)
         {
             t += Time.deltaTime;
-            transform.position = Vector3.Lerp(targetPos, startPos, t / halfDuration);
+            float factor = t / halfDuration;
+            transform.position = Vector3.Lerp(targetPos, startPos, factor);
+            transform.localScale = Vector3.Lerp(impactScale, originalScale, factor);
             yield return null;
         }
 
         transform.position = startPos;
+        transform.localScale = originalScale;
         SetIdle();
     }
 
@@ -244,13 +260,33 @@ public class PlayerCombatVisual : MonoBehaviour
         }
 
         Vector3 startPos = originalPosition;
-        for (int i = 0; i < 4; i++)
+        Vector3 recoilPos = startPos + Vector3.left * 0.14f; // Recoil backwards away from enemy
+        Vector3 squashScale = new Vector3(originalScale.x * 1.12f, originalScale.y * 0.85f, originalScale.z);
+
+        float p1 = 0.05f;
+        float elapsed = 0f;
+        while (elapsed < p1)
         {
-            transform.position = startPos + new Vector3(Random.Range(-0.08f, 0.08f), Random.Range(-0.05f, 0.05f), 0f);
-            yield return new WaitForSeconds(0.035f);
+            elapsed += Time.deltaTime;
+            float factor = elapsed / p1;
+            transform.position = Vector3.Lerp(startPos, recoilPos, factor);
+            transform.localScale = Vector3.Lerp(originalScale, squashScale, factor);
+            yield return null;
+        }
+
+        float p2 = 0.08f;
+        elapsed = 0f;
+        while (elapsed < p2)
+        {
+            elapsed += Time.deltaTime;
+            float factor = elapsed / p2;
+            transform.position = Vector3.Lerp(recoilPos, startPos, factor);
+            transform.localScale = Vector3.Lerp(squashScale, originalScale, factor);
+            yield return null;
         }
 
         transform.position = startPos;
+        transform.localScale = originalScale;
         if (spriteRenderer != null)
         {
             spriteRenderer.color = originalColor;

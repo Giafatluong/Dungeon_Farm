@@ -34,18 +34,63 @@ public class PlayerStats : MonoBehaviour
     public event System.Action OnPlayerDefended;
 
     private int baseMaxHealth;
+    private int baseATK;
+    private int baseDEF;
+    private int baseSpeed;
 
     private void Awake()
     {
         baseMaxHealth = maxHealth;
+        baseATK = ATK;
+        baseDEF = DEF;
+        baseSpeed = speed;
+    }
+
+    private void OnEnable()
+    {
+        if (ProgressionManager.Instance != null)
+        {
+            ProgressionManager.Instance.OnProgressionChanged += RefreshStatsFromProgression;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (ProgressionManager.Instance != null)
+        {
+            ProgressionManager.Instance.OnProgressionChanged -= RefreshStatsFromProgression;
+        }
+    }
+
+    public void RefreshStatsFromProgression()
+    {
+        if (baseMaxHealth <= 0 && maxHealth > 0) baseMaxHealth = maxHealth;
+        if (baseATK <= 0 && ATK > 0) baseATK = ATK;
+        if (baseDEF <= 0 && DEF > 0) baseDEF = DEF;
+        if (baseSpeed <= 0 && speed > 0) baseSpeed = speed;
+
+        int permHP = ProgressionManager.Instance != null ? ProgressionManager.Instance.permanentMaxHP : 0;
+        int permATK = ProgressionManager.Instance != null ? ProgressionManager.Instance.permanentATK : 0;
+        int permDEF = ProgressionManager.Instance != null ? ProgressionManager.Instance.permanentDEF : 0;
+        int permSpeed = ProgressionManager.Instance != null ? ProgressionManager.Instance.permanentSpeed : 0;
+
+        maxHealth = baseMaxHealth + permHP;
+        ATK = baseATK + permATK;
+        DEF = baseDEF + permDEF;
+        speed = baseSpeed + permSpeed;
     }
 
     private void Start()
     {
-        maxHealth = baseMaxHealth + (ProgressionManager.Instance != null ? ProgressionManager.Instance.permanentMaxHP : 0);
+        RefreshStatsFromProgression();
         currentHealth = maxHealth;
         currentHunger = maxHunger;
         currentAP = maxAP;
+
+        if (healthBar != null && !healthBar.gameObject.scene.IsValid())
+        {
+            healthBar = null;
+        }
 
         if (healthBar != null)
         {
@@ -164,8 +209,6 @@ public class PlayerStats : MonoBehaviour
 
         if (ProgressionManager.Instance != null)
         {
-            value += ProgressionManager.Instance.permanentATK;
-
             if (ProgressionManager.Instance.HasBlessing(BlessingType.BastionStrike))
             {
                 value += Mathf.RoundToInt(GetCurrentDEF() * 0.5f);
@@ -196,8 +239,6 @@ public class PlayerStats : MonoBehaviour
 
         if (ProgressionManager.Instance != null)
         {
-            value += ProgressionManager.Instance.permanentDEF;
-
             if (ProgressionManager.Instance.HasBlessing(BlessingType.GluttonousAegis) && maxHunger > 0 && currentHunger >= maxHunger * 0.70f)
             {
                 value += 8;
@@ -222,8 +263,6 @@ public class PlayerStats : MonoBehaviour
 
         if (ProgressionManager.Instance != null)
         {
-            value += ProgressionManager.Instance.permanentSpeed;
-
             // Blessing: Động Lực Tốc Độ (+4 Tốc độ)
             if (ProgressionManager.Instance.HasBlessing(BlessingType.SwiftMomentum))
             {
@@ -297,6 +336,11 @@ public class PlayerStats : MonoBehaviour
 
         // Damage Popup above player
         DamagePopupManager.ShowDamage(transform.position + Vector3.up * 1.1f, damage, isPlayer: true);
+
+        if (CombatJuice.Instance != null && damage > 0)
+        {
+            CombatJuice.Instance.OnPlayerDamaged(transform.position, damage);
+        }
 
         // Blessing: No Căng Phản Đòn (GluttonousAegis) - Phản 40% sát thương khi no bụng (>70%)
         if (damage > 0 && ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.GluttonousAegis)

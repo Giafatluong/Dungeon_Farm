@@ -111,6 +111,8 @@ MonoBehaviour:
   activeBuffs: []
   isDefending: 0
   currentIntent: 0
+  isFlying: 0
+  yOffset: 0
 --- !u!61 &7800568205176035794
 BoxCollider2D:
   m_ObjectHideFlags: 0

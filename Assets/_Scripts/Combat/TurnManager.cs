@@ -51,7 +51,7 @@ public class TurnManager : MonoBehaviour
                 {
                     enemy.ResetDefend();
                     enemy.hasActedThisRound = false;
-                    enemy.SelectNextIntent();
+                    // Không roll lại intent ở đây vì intent đã được roll từ lúc chuẩn bị hoặc sau lượt trước đó
                 }
             }
         }

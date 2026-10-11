@@ -12,13 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c32e8c2eb4883b42bac2a10e839d4cb, type: 3}
   m_Name: ME1
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
-  enemyName: ME1
-  maxHealth: 10
-  ATK: 0
-  DEF: 0
-  speed: 0
-  possibleIntents: 
+  enemyName: Goblin Warrior
+  maxHealth: 38
+  ATK: 11
+  DEF: 2
+  speed: 20
+  possibleIntents: 0000000001000000
   intentEffects: []
-  lootDrops: []
+  lootDrops:
+  - item: {fileID: 11400000, guid: 7fbf6b6fc33a6a24aa6ccfb21298e0fd, type: 2}
+    dropChance: 0.55
+    minAmount: 1
+    maxAmount: 2
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
+    dropChance: 0.45
+    minAmount: 1
+    maxAmount: 1
+    requireUnlock: 0
   dropUnlockedSeeds: 1
   seedDropChance: 0.35

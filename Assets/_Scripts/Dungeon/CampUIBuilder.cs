@@ -14,7 +14,10 @@ public static class CampUIBuilder
         if (ui == null || ui.mainCampPanel != null) return;
 
         Canvas canvas = ui.GetComponentInParent<Canvas>();
-        if (canvas == null) canvas = Object.FindFirstObjectByType<Canvas>();
+        if (canvas == null || canvas.renderMode == RenderMode.WorldSpace)
+        {
+            canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
+        }
         if (canvas == null)
         {
             GameObject canvasGO = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
@@ -32,7 +35,7 @@ public static class CampUIBuilder
         panelRT.anchorMin = new Vector2(0.5f, 0.5f);
         panelRT.anchorMax = new Vector2(0.5f, 0.5f);
         panelRT.pivot = new Vector2(0.5f, 0.5f);
-        panelRT.sizeDelta = new Vector2(760, 520);
+        panelRT.sizeDelta = new Vector2(780, 530);
         Image panelBg = ui.mainCampPanel.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(panelBg, new Color(0.10f, 0.12f, 0.17f, 0.98f));
 
@@ -81,7 +84,7 @@ public static class CampUIBuilder
         descRT.sizeDelta = new Vector2(-60, 48);
         ui.campDescText = descGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(ui.campDescText);
-        ui.campDescText.fontSize = 12;
+        ui.campDescText.fontSize = 12.5f;
         ui.campDescText.alignment = TextAlignmentOptions.Center;
         ui.campDescText.text = "A warm campfire burns in the dungeon. Rest, eat, or cook to recover.\n<color=#FFAA55>Warning: Activities create noise and aroma that attract wandering monsters!</color>";
         ui.campDescText.color = new Color(0.85f, 0.88f, 0.95f);
@@ -103,7 +106,7 @@ public static class CampUIBuilder
         riskTextRT.anchoredPosition = new Vector2(0, 0);
         riskTextRT.sizeDelta = new Vector2(0, 20);
         ui.ambushRiskPercentText = riskTextGO.GetComponent<TextMeshProUGUI>();
-        ui.ambushRiskPercentText.fontSize = 13;
+        ui.ambushRiskPercentText.fontSize = 13.5f;
         ui.ambushRiskPercentText.alignment = TextAlignmentOptions.Center;
         ui.ambushRiskPercentText.text = "Ambush Risk: <b>0%</b>";
 
@@ -133,7 +136,7 @@ public static class CampUIBuilder
         riskStatusRT.anchoredPosition = new Vector2(0, -38);
         riskStatusRT.sizeDelta = new Vector2(460, 18);
         ui.ambushRiskStatusText = riskStatusGO.GetComponent<TextMeshProUGUI>();
-        ui.ambushRiskStatusText.fontSize = 11;
+        ui.ambushRiskStatusText.fontSize = 12;
         ui.ambushRiskStatusText.alignment = TextAlignmentOptions.Center;
         ui.ambushRiskStatusText.text = "The campsite is quiet and safe.";
         ui.ambushRiskStatusText.color = new Color(0.7f, 1f, 0.7f);
@@ -147,7 +150,7 @@ public static class CampUIBuilder
         statusRT.anchoredPosition = new Vector2(0, -188);
         statusRT.sizeDelta = new Vector2(600, 22);
         ui.playerStatusText = statusGO.GetComponent<TextMeshProUGUI>();
-        ui.playerStatusText.fontSize = 13;
+        ui.playerStatusText.fontSize = 13.5f;
         ui.playerStatusText.alignment = TextAlignmentOptions.Center;
         ui.playerStatusText.text = "HP: 100/100   |   Fullness: 100/100";
 
@@ -159,7 +162,7 @@ public static class CampUIBuilder
         buffsRT.anchoredPosition = new Vector2(0, -210);
         buffsRT.sizeDelta = new Vector2(600, 18);
         ui.playerBuffsText = buffsGO.GetComponent<TextMeshProUGUI>();
-        ui.playerBuffsText.fontSize = 11;
+        ui.playerBuffsText.fontSize = 12;
         ui.playerBuffsText.alignment = TextAlignmentOptions.Center;
         ui.playerBuffsText.text = "Buffs: None";
 
@@ -229,7 +232,7 @@ public static class CampUIBuilder
         textRT.sizeDelta = Vector2.zero;
         TextMeshProUGUI tmp = textGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(tmp);
-        tmp.fontSize = 11;
+        tmp.fontSize = 12;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.text = label;
@@ -245,7 +248,7 @@ public static class CampUIBuilder
         RectTransform rt = ui.foodModal.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta = new Vector2(500, 420);
+        rt.sizeDelta = new Vector2(520, 440);
         Image bg = ui.foodModal.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.10f, 0.12f, 0.18f, 0.98f));
 
@@ -259,26 +262,37 @@ public static class CampUIBuilder
         titleRT.sizeDelta = new Vector2(0, 30);
         TextMeshProUGUI tmp = titleGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(tmp);
-        tmp.fontSize = 16;
+        tmp.fontSize = 17;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.text = "SELECT FOOD TO EAT";
 
         // Scroll View
-        GameObject scrollGO = new GameObject("ScrollView", typeof(RectTransform), typeof(ScrollRect), typeof(Image), typeof(Mask));
+        GameObject scrollGO = new GameObject("ScrollView", typeof(RectTransform), typeof(ScrollRect));
         scrollGO.transform.SetParent(ui.foodModal.transform, false);
         RectTransform scrollRT = scrollGO.GetComponent<RectTransform>();
         scrollRT.anchorMin = new Vector2(0, 0);
         scrollRT.anchorMax = new Vector2(1, 1);
-        scrollRT.offsetMin = new Vector2(15, 60);
-        scrollRT.offsetMax = new Vector2(-15, -45);
-        Image maskImg = scrollGO.GetComponent<Image>();
-        maskImg.color = new Color(0, 0, 0, 0.3f);
-        Mask mask = scrollGO.GetComponent<Mask>();
-        mask.showMaskGraphic = true;
+        scrollRT.offsetMin = new Vector2(16, 60);
+        scrollRT.offsetMax = new Vector2(-16, -48);
 
+        ScrollRect sr = scrollGO.GetComponent<ScrollRect>();
+        sr.horizontal = false;
+        sr.vertical = true;
+        sr.scrollSensitivity = 25f;
+
+        // Viewport with RectMask2D
+        GameObject vpGO = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
+        vpGO.transform.SetParent(scrollGO.transform, false);
+        RectTransform vpRT = vpGO.GetComponent<RectTransform>();
+        vpRT.anchorMin = Vector2.zero;
+        vpRT.anchorMax = Vector2.one;
+        vpRT.offsetMin = Vector2.zero;
+        vpRT.offsetMax = new Vector2(-16, 0);
+
+        // Content
         GameObject contentGO = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-        contentGO.transform.SetParent(scrollGO.transform, false);
+        contentGO.transform.SetParent(vpGO.transform, false);
         RectTransform contentRT = contentGO.GetComponent<RectTransform>();
         contentRT.anchorMin = new Vector2(0, 1);
         contentRT.anchorMax = new Vector2(1, 1);
@@ -296,11 +310,44 @@ public static class CampUIBuilder
         ContentSizeFitter csf = contentGO.GetComponent<ContentSizeFitter>();
         csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        ScrollRect sr = scrollGO.GetComponent<ScrollRect>();
+        sr.viewport = vpRT;
         sr.content = contentRT;
-        sr.horizontal = false;
-        sr.vertical = true;
         ui.foodListContainer = contentGO.transform;
+
+        // Vertical Scrollbar
+        GameObject sbGO = new GameObject("VerticalScrollbar", typeof(RectTransform), typeof(Image), typeof(Scrollbar));
+        sbGO.transform.SetParent(scrollGO.transform, false);
+        RectTransform sbRT = sbGO.GetComponent<RectTransform>();
+        sbRT.anchorMin = new Vector2(1, 0);
+        sbRT.anchorMax = new Vector2(1, 1);
+        sbRT.pivot = new Vector2(1, 0.5f);
+        sbRT.sizeDelta = new Vector2(12, 0);
+        sbRT.anchoredPosition = Vector2.zero;
+
+        Image sbBg = sbGO.GetComponent<Image>();
+        sbBg.color = new Color(0.04f, 0.06f, 0.09f, 0.8f);
+
+        Scrollbar sb = sbGO.GetComponent<Scrollbar>();
+        sb.direction = Scrollbar.Direction.BottomToTop;
+
+        GameObject saGO = new GameObject("SlidingArea", typeof(RectTransform));
+        saGO.transform.SetParent(sbGO.transform, false);
+        RectTransform saRT = saGO.GetComponent<RectTransform>();
+        saRT.anchorMin = Vector2.zero;
+        saRT.anchorMax = Vector2.one;
+        saRT.sizeDelta = Vector2.zero;
+
+        GameObject handleGO = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+        handleGO.transform.SetParent(saGO.transform, false);
+        RectTransform handleRT = handleGO.GetComponent<RectTransform>();
+        handleRT.sizeDelta = Vector2.zero;
+
+        Image handleImg = handleGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(handleImg, new Color(0.2f, 0.6f, 0.35f, 1f));
+
+        sb.handleRect = handleRT;
+        sb.targetGraphic = handleImg;
+        sr.verticalScrollbar = sb;
 
         // No Food Text
         GameObject noFoodGO = new GameObject("NoFoodText", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -310,13 +357,13 @@ public static class CampUIBuilder
         noFoodRT.sizeDelta = new Vector2(400, 60);
         ui.noFoodText = noFoodGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(ui.noFoodText);
-        ui.noFoodText.fontSize = 13;
+        ui.noFoodText.fontSize = 13.5f;
         ui.noFoodText.alignment = TextAlignmentOptions.Center;
         ui.noFoodText.text = "No food in backpack!\n(Cook meals or harvest food from farm)";
-        ui.noFoodText.color = new Color(0.7f, 0.7f, 0.7f);
+        ui.noFoodText.color = new Color(0.75f, 0.75f, 0.8f);
 
         // Close Button
-        ui.closeFoodModalButton = CreateCampButton(ui.foodModal.transform, "CloseBtn", "CLOSE", new Vector2(0, -180), new Vector2(120, 36), new Color(0.4f, 0.4f, 0.45f));
+        ui.closeFoodModalButton = CreateCampButton(ui.foodModal.transform, "CloseBtn", "CLOSE", new Vector2(0, -188), new Vector2(130, 36), new Color(0.4f, 0.4f, 0.45f));
         ui.foodModal.SetActive(false);
     }
 
@@ -327,7 +374,7 @@ public static class CampUIBuilder
         RectTransform rt = ui.cookModal.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta = new Vector2(500, 440);
+        rt.sizeDelta = new Vector2(520, 440);
         Image bg = ui.cookModal.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.10f, 0.12f, 0.18f, 0.98f));
 
@@ -341,26 +388,36 @@ public static class CampUIBuilder
         titleRT.sizeDelta = new Vector2(0, 30);
         TextMeshProUGUI tmp = titleGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(tmp);
-        tmp.fontSize = 16;
+        tmp.fontSize = 17;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.text = "SELECT RECIPE TO COOK";
 
         // Scroll View
-        GameObject scrollGO = new GameObject("ScrollView", typeof(RectTransform), typeof(ScrollRect), typeof(Image), typeof(Mask));
+        GameObject scrollGO = new GameObject("ScrollView", typeof(RectTransform), typeof(ScrollRect));
         scrollGO.transform.SetParent(ui.cookModal.transform, false);
         RectTransform scrollRT = scrollGO.GetComponent<RectTransform>();
         scrollRT.anchorMin = new Vector2(0, 0);
         scrollRT.anchorMax = new Vector2(1, 1);
-        scrollRT.offsetMin = new Vector2(15, 60);
-        scrollRT.offsetMax = new Vector2(-15, -45);
-        Image maskImg = scrollGO.GetComponent<Image>();
-        maskImg.color = new Color(0, 0, 0, 0.3f);
-        Mask mask = scrollGO.GetComponent<Mask>();
-        mask.showMaskGraphic = true;
+        scrollRT.offsetMin = new Vector2(16, 60);
+        scrollRT.offsetMax = new Vector2(-16, -48);
+
+        ScrollRect sr = scrollGO.GetComponent<ScrollRect>();
+        sr.horizontal = false;
+        sr.vertical = true;
+        sr.scrollSensitivity = 25f;
+
+        // Viewport with RectMask2D
+        GameObject vpGO = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
+        vpGO.transform.SetParent(scrollGO.transform, false);
+        RectTransform vpRT = vpGO.GetComponent<RectTransform>();
+        vpRT.anchorMin = Vector2.zero;
+        vpRT.anchorMax = Vector2.one;
+        vpRT.offsetMin = Vector2.zero;
+        vpRT.offsetMax = new Vector2(-16, 0);
 
         GameObject contentGO = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-        contentGO.transform.SetParent(scrollGO.transform, false);
+        contentGO.transform.SetParent(vpGO.transform, false);
         RectTransform contentRT = contentGO.GetComponent<RectTransform>();
         contentRT.anchorMin = new Vector2(0, 1);
         contentRT.anchorMax = new Vector2(1, 1);
@@ -378,11 +435,44 @@ public static class CampUIBuilder
         ContentSizeFitter csf = contentGO.GetComponent<ContentSizeFitter>();
         csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        ScrollRect sr = scrollGO.GetComponent<ScrollRect>();
+        sr.viewport = vpRT;
         sr.content = contentRT;
-        sr.horizontal = false;
-        sr.vertical = true;
         ui.recipeListContainer = contentGO.transform;
+
+        // Vertical Scrollbar
+        GameObject sbGO = new GameObject("VerticalScrollbar", typeof(RectTransform), typeof(Image), typeof(Scrollbar));
+        sbGO.transform.SetParent(scrollGO.transform, false);
+        RectTransform sbRT = sbGO.GetComponent<RectTransform>();
+        sbRT.anchorMin = new Vector2(1, 0);
+        sbRT.anchorMax = new Vector2(1, 1);
+        sbRT.pivot = new Vector2(1, 0.5f);
+        sbRT.sizeDelta = new Vector2(12, 0);
+        sbRT.anchoredPosition = Vector2.zero;
+
+        Image sbBg = sbGO.GetComponent<Image>();
+        sbBg.color = new Color(0.04f, 0.06f, 0.09f, 0.8f);
+
+        Scrollbar sb = sbGO.GetComponent<Scrollbar>();
+        sb.direction = Scrollbar.Direction.BottomToTop;
+
+        GameObject saGO = new GameObject("SlidingArea", typeof(RectTransform));
+        saGO.transform.SetParent(sbGO.transform, false);
+        RectTransform saRT = saGO.GetComponent<RectTransform>();
+        saRT.anchorMin = Vector2.zero;
+        saRT.anchorMax = Vector2.one;
+        saRT.sizeDelta = Vector2.zero;
+
+        GameObject handleGO = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+        handleGO.transform.SetParent(saGO.transform, false);
+        RectTransform handleRT = handleGO.GetComponent<RectTransform>();
+        handleRT.sizeDelta = Vector2.zero;
+
+        Image handleImg = handleGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(handleImg, new Color(0.8f, 0.45f, 0.15f, 1f));
+
+        sb.handleRect = handleRT;
+        sb.targetGraphic = handleImg;
+        sr.verticalScrollbar = sb;
 
         // No Recipe Text
         GameObject noRecGO = new GameObject("NoRecipeText", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -391,13 +481,14 @@ public static class CampUIBuilder
         noRecRT.anchoredPosition = new Vector2(0, 10);
         noRecRT.sizeDelta = new Vector2(400, 60);
         ui.noRecipeText = noRecGO.GetComponent<TextMeshProUGUI>();
-        ui.noRecipeText.fontSize = 13;
+        DungeonUIAssetHelper.ApplyFont(ui.noRecipeText);
+        ui.noRecipeText.fontSize = 13.5f;
         ui.noRecipeText.alignment = TextAlignmentOptions.Center;
         ui.noRecipeText.text = "No recipes discovered yet!\n(Meet Merchants or offer gifts to unlock recipes)";
-        ui.noRecipeText.color = new Color(0.7f, 0.7f, 0.7f);
+        ui.noRecipeText.color = new Color(0.75f, 0.75f, 0.8f);
 
         // Close Button
-        ui.closeCookModalButton = CreateCampButton(ui.cookModal.transform, "CloseBtn", "CLOSE", new Vector2(0, -190), new Vector2(120, 36), new Color(0.4f, 0.4f, 0.45f));
+        ui.closeCookModalButton = CreateCampButton(ui.cookModal.transform, "CloseBtn", "CLOSE", new Vector2(0, -188), new Vector2(130, 36), new Color(0.4f, 0.4f, 0.45f));
         ui.cookModal.SetActive(false);
     }
 }

@@ -12,12 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c32e8c2eb4883b42bac2a10e839d4cb, type: 3}
   m_Name: ME2
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
-  enemyName: Melee
-  maxHealth: 0
-  ATK: 0
-  DEF: 0
-  speed: 0
+  enemyName: Armored Orc
+  maxHealth: 55
+  ATK: 14
+  DEF: 5
+  speed: 15
   possibleIntents: 0000000001000000
+  intentEffects: []
   lootDrops:
   - item: {fileID: 11400000, guid: 7fbf6b6fc33a6a24aa6ccfb21298e0fd, type: 2}
     dropChance: 0.6
@@ -25,7 +26,7 @@ MonoBehaviour:
     maxAmount: 2
     requireUnlock: 0
   - item: {fileID: 11400000, guid: 4b7a8e6b75a48144b849bf42fe69e38d, type: 2}
-    dropChance: 0.4
+    dropChance: 0.45
     minAmount: 1
     maxAmount: 1
     requireUnlock: 0

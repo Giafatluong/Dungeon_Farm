@@ -72,7 +72,7 @@ public class DungeonEntrance : MonoBehaviour
             dungeonEntranceUI = FindFirstObjectByType<DungeonEntranceUI>(FindObjectsInactive.Include);
             if (dungeonEntranceUI == null)
             {
-                Debug.Log("Dungeon Entrance UI is NULL");
+                Debug.LogWarning("[DungeonEntrance] Dungeon Entrance UI not found.");
                 return;
             }
         }
@@ -85,7 +85,6 @@ public class DungeonEntrance : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             playerInRange = true;
-            Debug.Log("Press E to enter Dungeon");
         }
     }
 

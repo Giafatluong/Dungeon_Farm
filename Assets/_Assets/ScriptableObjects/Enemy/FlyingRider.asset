@@ -12,22 +12,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c32e8c2eb4883b42bac2a10e839d4cb, type: 3}
   m_Name: FlyingRider
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
-  enemyName: FlyingRider
-  maxHealth: 0
-  ATK: 0
-  DEF: 0
-  speed: 0
-  possibleIntents: 00000000010000000200000003000000
+  enemyName: Dark Flying Rider (Boss)
+  maxHealth: 155
+  ATK: 19
+  DEF: 6
+  speed: 28
+  possibleIntents: 000000000100000002000000
+  intentEffects:
+  - effect: {fileID: 11400000, guid: 6fbdc716dfd5399429b38f2c719b3694, type: 2}
+    target: 0
+    value: 4
+    duration: 3
+    durationType: 0
   lootDrops:
-  - item: {fileID: 11400000, guid: 24d50eb236d912048b08475f98b0e46a, type: 2}
-    dropChance: 0.55
-    minAmount: 1
-    maxAmount: 2
+  - item: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
+    dropChance: 1
+    minAmount: 3
+    maxAmount: 5
     requireUnlock: 0
-  - item: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
-    dropChance: 0.45
-    minAmount: 1
-    maxAmount: 1
-    requireUnlock: 1
+  - item: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
+    dropChance: 0.9
+    minAmount: 2
+    maxAmount: 4
+    requireUnlock: 0
   dropUnlockedSeeds: 1
-  seedDropChance: 0.35
+  seedDropChance: 0.8

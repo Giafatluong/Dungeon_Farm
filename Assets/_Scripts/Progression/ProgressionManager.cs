@@ -4,14 +4,25 @@ using System.Collections.Generic;
 public class ProgressionManager : MonoBehaviour
 {
     private static ProgressionManager _instance;
+    private static bool isQuitting = false;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        _instance = null;
+        isQuitting = false;
+    }
+
     public static ProgressionManager Instance
     {
         get
         {
+            if (isQuitting) return _instance;
+
             if (_instance == null)
             {
                 _instance = FindFirstObjectByType<ProgressionManager>();
-                if (_instance == null)
+                if (_instance == null && !isQuitting && Application.isPlaying)
                 {
                     GameObject go = new GameObject("ProgressionManager_Runtime");
                     _instance = go.AddComponent<ProgressionManager>();
@@ -20,6 +31,20 @@ public class ProgressionManager : MonoBehaviour
             return _instance;
         }
         private set => _instance = value;
+    }
+
+    private void OnApplicationQuit()
+    {
+        isQuitting = true;
+    }
+
+    private void OnDestroy()
+    {
+        if (_instance == this)
+        {
+            isQuitting = true;
+            _instance = null;
+        }
     }
 
     [Header("Permanent Stats (From Statues)")]
@@ -69,6 +94,7 @@ public class ProgressionManager : MonoBehaviour
         LoadFloorProgression();
         LoadDiscoveredRecipes();
         LoadUnlockedBlessings();
+        LoadPermanentStats();
         InitializeDefaultUnlocks();
         CheckAllBlessingUnlocks();
     }
@@ -225,8 +251,77 @@ public class ProgressionManager : MonoBehaviour
         }
 
         Debug.Log($"Permanently increased {stat} by {amount}!");
+        SavePermanentStats();
         CheckAllBlessingUnlocks();
         OnProgressionChanged?.Invoke();
+    }
+
+    public void SavePermanentStats()
+    {
+        PlayerPrefs.SetInt("Progression_PermanentATK", permanentATK);
+        PlayerPrefs.SetInt("Progression_PermanentDEF", permanentDEF);
+        PlayerPrefs.SetInt("Progression_PermanentSpeed", permanentSpeed);
+        PlayerPrefs.SetInt("Progression_PermanentMaxHP", permanentMaxHP);
+
+        if (completedOfferings != null)
+        {
+            PlayerPrefs.SetString("Progression_CompletedOfferings", string.Join(",", completedOfferings));
+        }
+
+        if (offeringContributions != null && offeringContributions.Count > 0)
+        {
+            List<string> entries = new List<string>();
+            foreach (var kvp in offeringContributions)
+            {
+                entries.Add($"{kvp.Key}:{kvp.Value}");
+            }
+            PlayerPrefs.SetString("Progression_OfferingContributions", string.Join(";", entries));
+        }
+        else
+        {
+            PlayerPrefs.SetString("Progression_OfferingContributions", "");
+        }
+
+        PlayerPrefs.Save();
+    }
+
+    public void LoadPermanentStats()
+    {
+        permanentATK = PlayerPrefs.GetInt("Progression_PermanentATK", 0);
+        permanentDEF = PlayerPrefs.GetInt("Progression_PermanentDEF", 0);
+        permanentSpeed = PlayerPrefs.GetInt("Progression_PermanentSpeed", 0);
+        permanentMaxHP = PlayerPrefs.GetInt("Progression_PermanentMaxHP", 0);
+
+        if (completedOfferings == null) completedOfferings = new HashSet<string>();
+        completedOfferings.Clear();
+
+        string savedCompleted = PlayerPrefs.GetString("Progression_CompletedOfferings", "");
+        if (!string.IsNullOrEmpty(savedCompleted))
+        {
+            string[] items = savedCompleted.Split(',');
+            for (int i = 0; i < items.Length; i++)
+            {
+                string key = items[i].Trim();
+                if (!string.IsNullOrEmpty(key)) completedOfferings.Add(key);
+            }
+        }
+
+        if (offeringContributions != null) offeringContributions.Clear();
+        string savedContribs = PlayerPrefs.GetString("Progression_OfferingContributions", "");
+        if (!string.IsNullOrEmpty(savedContribs))
+        {
+            string[] pairs = savedContribs.Split(';');
+            for (int i = 0; i < pairs.Length; i++)
+            {
+                string pair = pairs[i].Trim();
+                if (string.IsNullOrEmpty(pair)) continue;
+                string[] parts = pair.Split(':');
+                if (parts.Length == 2 && int.TryParse(parts[1], out int val))
+                {
+                    offeringContributions[parts[0]] = val;
+                }
+            }
+        }
     }
 
     public void UnlockRecipe(RecipeData recipe)
@@ -261,6 +356,7 @@ public class ProgressionManager : MonoBehaviour
     {
         if (string.IsNullOrEmpty(offeringID)) return;
         completedOfferings.Add(offeringID);
+        SavePermanentStats();
         CheckAllBlessingUnlocks();
         OnProgressionChanged?.Invoke();
     }
@@ -279,6 +375,7 @@ public class ProgressionManager : MonoBehaviour
         if (string.IsNullOrEmpty(offeringKey)) return;
         string key = $"{offeringKey}_req_{requirementIndex}";
         offeringContributions[key] = Mathf.Max(0, amount);
+        SavePermanentStats();
         OnProgressionChanged?.Invoke();
     }
 
@@ -288,6 +385,7 @@ public class ProgressionManager : MonoBehaviour
         string key = $"{offeringKey}_req_{requirementIndex}";
         int current = offeringContributions.TryGetValue(key, out int val) ? val : 0;
         offeringContributions[key] = current + amount;
+        SavePermanentStats();
         OnProgressionChanged?.Invoke();
     }
 
@@ -522,18 +620,18 @@ public class ProgressionManager : MonoBehaviour
         return defeatedBossFloors != null && defeatedBossFloors.Contains(floor);
     }
 
-    public void RecordBossDefeated(int floor)
+    public bool RecordBossDefeated(int floor)
     {
         if (floor < 1) floor = 1;
         if (defeatedBossFloors == null) defeatedBossFloors = new List<int>();
 
-        bool changed = false;
-        if (!defeatedBossFloors.Contains(floor))
+        bool isFirstTime = !defeatedBossFloors.Contains(floor);
+        if (isFirstTime)
         {
             defeatedBossFloors.Add(floor);
-            changed = true;
         }
 
+        bool changed = isFirstTime;
         if (floor + 1 > highestUnlockedFloor)
         {
             highestUnlockedFloor = floor + 1;
@@ -544,9 +642,32 @@ public class ProgressionManager : MonoBehaviour
         {
             SaveFloorProgression();
             CheckAllBlessingUnlocks();
-            Debug.Log($"[ProgressionManager] Boss of Floor {floor} defeated! Floor {floor + 1} is now unlocked! (Highest: {highestUnlockedFloor})");
+            Debug.Log($"[ProgressionManager] Boss of Floor {floor} defeated! (FirstTimeClear: {isFirstTime}) Floor {floor + 1} is now unlocked! (Highest: {highestUnlockedFloor})");
             OnProgressionChanged?.Invoke();
         }
+
+        return isFirstTime;
+    }
+
+    public bool HasClaimedFirstClearStats(int floor)
+    {
+        return PlayerPrefs.GetInt($"Floor_{floor}_FirstClearStatsClaimed", 0) == 1;
+    }
+
+    public void MarkFirstClearStatsClaimed(int floor)
+    {
+        PlayerPrefs.SetInt($"Floor_{floor}_FirstClearStatsClaimed", 1);
+        PlayerPrefs.Save();
+    }
+
+    public void ApplyPermanentStatBonus(int atk, int def, int hp, int spd)
+    {
+        if (atk > 0) permanentATK += atk;
+        if (def > 0) permanentDEF += def;
+        if (hp > 0) permanentMaxHP += hp;
+        if (spd > 0) permanentSpeed += spd;
+        SavePermanentStats();
+        OnProgressionChanged?.Invoke();
     }
 
     public void UnlockFloor(int floor)

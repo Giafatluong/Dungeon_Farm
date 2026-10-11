@@ -18,6 +18,9 @@ public class EnemyCombatVisual : MonoBehaviour
     [SerializeField] private float anticipationDuration = 0.15f;
     [SerializeField] private float recoveryDuration = 0.25f;
 
+    [Header("Sprite Orientation")]
+    [SerializeField] private bool defaultFacesRight = false;
+
     private Vector3 originalPosition;
     private Vector3 originalScale = Vector3.one;
     private Color originalColor = Color.white;
@@ -36,6 +39,18 @@ public class EnemyCombatVisual : MonoBehaviour
         {
             originalColor = spriteRenderer.color;
             spriteRenderer.sortingOrder = Mathf.Max(spriteRenderer.sortingOrder, 10);
+
+            string n = gameObject.name.ToLower();
+            if (n.Contains("rat") || n.Contains("bat") || n.Contains("slime_boss"))
+            {
+                defaultFacesRight = true;
+            }
+            else
+            {
+                defaultFacesRight = spriteRenderer.flipX;
+            }
+
+            FaceDirection(Vector3.left);
         }
     }
 
@@ -44,6 +59,7 @@ public class EnemyCombatVisual : MonoBehaviour
         // Re-record original position in case WaveManager repositioned the enemy on spawn
         originalPosition = transform.position;
         originalScale = transform.localScale;
+        FaceDirection(Vector3.left);
     }
 
     /// <summary>
@@ -53,6 +69,7 @@ public class EnemyCombatVisual : MonoBehaviour
     {
         originalPosition = newPos;
         transform.position = newPos;
+        FaceDirection(Vector3.left);
     }
 
     #region Attack Animation & Motion
@@ -140,6 +157,7 @@ public class EnemyCombatVisual : MonoBehaviour
         // 6. Reset to baseline
         transform.position = originalPosition;
         transform.localScale = originalScale;
+        FaceDirection(Vector3.left);
         if (spriteRenderer != null) spriteRenderer.color = originalColor;
 
         // Return animator to idle
@@ -260,14 +278,53 @@ public class EnemyCombatVisual : MonoBehaviour
             spriteRenderer.color = new Color(1f, 0.35f, 0.35f, 1f);
         }
 
-        Vector3 startPos = originalPosition;
-        for (int i = 0; i < 3; i++)
+        Vector3 basePos = originalPosition;
+        Vector3 baseScale = originalScale;
+
+        // Phase 1: Impact Recoil & Squash (giật lùi sang phải + nén dẹp)
+        Vector3 recoilPos = basePos + Vector3.right * 0.16f;
+        Vector3 squashScale = new Vector3(baseScale.x * 1.15f, baseScale.y * 0.82f, baseScale.z);
+        float p1Duration = 0.05f;
+        float elapsed = 0f;
+
+        while (elapsed < p1Duration)
         {
-            transform.position = startPos + new Vector3(Random.Range(-0.06f, 0.06f), Random.Range(-0.04f, 0.04f), 0f);
-            yield return new WaitForSeconds(0.035f);
+            elapsed += Time.deltaTime;
+            float t = elapsed / p1Duration;
+            transform.position = Vector3.Lerp(basePos, recoilPos, t);
+            transform.localScale = Vector3.Lerp(baseScale, squashScale, t);
+            yield return null;
         }
 
-        transform.position = startPos;
+        // Phase 2: Elastic Rebound (nảy bật nhẹ)
+        Vector3 reboundPos = basePos - Vector3.right * 0.04f;
+        Vector3 stretchScale = new Vector3(baseScale.x * 0.94f, baseScale.y * 1.06f, baseScale.z);
+        float p2Duration = 0.06f;
+        elapsed = 0f;
+
+        while (elapsed < p2Duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / p2Duration;
+            transform.position = Vector3.Lerp(recoilPos, reboundPos, t);
+            transform.localScale = Vector3.Lerp(squashScale, stretchScale, t);
+            yield return null;
+        }
+
+        // Phase 3: Settle back to original
+        float p3Duration = 0.06f;
+        elapsed = 0f;
+        while (elapsed < p3Duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / p3Duration;
+            transform.position = Vector3.Lerp(reboundPos, basePos, t);
+            transform.localScale = Vector3.Lerp(stretchScale, baseScale, t);
+            yield return null;
+        }
+
+        transform.position = basePos;
+        transform.localScale = baseScale;
         if (spriteRenderer != null)
         {
             spriteRenderer.color = originalColor;
@@ -327,7 +384,7 @@ public class EnemyCombatVisual : MonoBehaviour
     {
         if (spriteRenderer != null && dir.x != 0f)
         {
-            spriteRenderer.flipX = dir.x > 0f;
+            spriteRenderer.flipX = defaultFacesRight ? (dir.x < 0f) : (dir.x > 0f);
         }
     }
 

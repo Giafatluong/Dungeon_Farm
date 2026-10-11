@@ -26,12 +26,13 @@ public class RewardUI : MonoBehaviour
             return _instance;
         }
 
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
         if (canvas != null)
         {
             GameObject go = new("RewardUI");
             go.transform.SetParent(canvas.transform, false);
             _instance = go.AddComponent<RewardUI>();
+            _instance.canvas = canvas;
             return _instance;
         }
 
@@ -49,6 +50,7 @@ public class RewardUI : MonoBehaviour
     [SerializeField] private Image chestHeaderIcon;
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private TextMeshProUGUI subtitleText;
+    [SerializeField] private TextMeshProUGUI leftHeaderTitle;
     [SerializeField] private TextMeshProUGUI backpackHeaderTitle;
     [SerializeField] private TextMeshProUGUI hintText;
 
@@ -62,6 +64,7 @@ public class RewardUI : MonoBehaviour
 
     private readonly List<GameObject> activeRewardRows = new();
     private readonly List<InventoryButton> backpackSlots = new();
+    private GameObject emptyNoticeGO;
 
     public bool IsOpen => rewardPanel != null && rewardPanel.activeSelf;
     #endregion
@@ -83,12 +86,45 @@ public class RewardUI : MonoBehaviour
             rewardPanel.SetActive(false);
         }
     }
+
+    private void Update()
+    {
+        if (IsOpen && Input.GetKeyDown(KeyCode.Escape))
+        {
+            Close();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (backpackContainer != null)
+        {
+            backpackContainer.OnInventoryChange -= RefreshBackpackSlots;
+        }
+        if (_instance == this)
+        {
+            _instance = null;
+        }
+    }
     #endregion
 
     #region Open & Close
-    public void Open(RewardChest chest, List<ItemSlot> loot, ItemContainer backpack, System.Action onComplete)
+    public void Open(RewardChest chest, List<ItemSlot> loot, ItemContainer backpack, System.Action onComplete, string customTitle = null, string customSubtitle = null)
     {
         EnsureUIBuilt();
+
+        if (titleText != null)
+        {
+            titleText.text = !string.IsNullOrEmpty(customTitle) ? customTitle : "TREASURE VAULT - STAGE REWARD";
+        }
+        if (subtitleText != null)
+        {
+            subtitleText.text = !string.IsNullOrEmpty(customSubtitle) ? customSubtitle : "An ancient treasure cache has unlocked! Claim seeds, rare crops, and provisions.";
+        }
+        if (leftHeaderTitle != null)
+        {
+            leftHeaderTitle.text = !string.IsNullOrEmpty(customTitle) ? "CHIẾN LỢI PHẨM RƠI RA" : "CHEST CACHE CONTENTS";
+        }
 
         currentChest = chest;
         if (currentChest == null)
@@ -111,6 +147,7 @@ public class RewardUI : MonoBehaviour
 
         if (backpackContainer != null)
         {
+            backpackContainer.OnInventoryChange -= RefreshBackpackSlots;
             backpackContainer.OnInventoryChange += RefreshBackpackSlots;
         }
 
@@ -122,8 +159,8 @@ public class RewardUI : MonoBehaviour
 
         RefreshAll();
 
-        SetHint("Click <b>[Take]</b> on any item or click <b>[LOOT ALL]</b> to store treasure into your backpack.");
-        Debug.Log("[RewardUI] Treasure chest reward room opened successfully.");
+        SetHint("Bấm <b>[Take]</b> để nhặt từng món hoặc bấm <b>[NHẶT TẤT CẢ]</b> để cất toàn bộ vào balo.");
+        Debug.Log("[RewardUI] Reward/Loot room opened successfully.");
     }
 
     public void Close()
@@ -154,8 +191,9 @@ public class RewardUI : MonoBehaviour
 
     private void UpdateBackpackHeader()
     {
-        if (backpackHeaderTitle == null || backpackContainer == null) return;
+        if (backpackHeaderTitle == null || backpackContainer == null || backpackContainer.itemSlots == null) return;
         int occupied = 0;
+        int maxSlots = backpackContainer.maxSlots;
         for (int i = 0; i < backpackContainer.itemSlots.Length; i++)
         {
             if (backpackContainer.itemSlots[i] != null && backpackContainer.itemSlots[i].itemData != null)
@@ -163,38 +201,61 @@ public class RewardUI : MonoBehaviour
                 occupied++;
             }
         }
-        backpackHeaderTitle.text = $"YOUR BACKPACK <size=11><color=#A0D8EF>({occupied}/{backpackContainer.maxSlots} SLOTS)</color></size>";
+        backpackHeaderTitle.text = $"YOUR BACKPACK <size=11><color=#A0D8EF>({occupied}/{maxSlots} SLOTS)</color></size>";
     }
 
     private void RefreshChestItems()
     {
-        for (int i = 0; i < activeRewardRows.Count; i++)
-        {
-            if (activeRewardRows[i] != null)
-            {
-                Destroy(activeRewardRows[i]);
-            }
-        }
-        activeRewardRows.Clear();
-
         if (currentChest == null || currentChest.currentChestLoot == null || currentChest.currentChestLoot.Count == 0)
         {
+            for (int i = 0; i < activeRewardRows.Count; i++)
+            {
+                if (activeRewardRows[i] != null) activeRewardRows[i].SetActive(false);
+            }
             ShowEmptyChestNotice();
             return;
         }
 
+        if (emptyNoticeGO != null)
+        {
+            emptyNoticeGO.SetActive(false);
+        }
+
+        int validIndex = 0;
         for (int i = 0; i < currentChest.currentChestLoot.Count; i++)
         {
-            int index = i;
             ItemSlot slot = currentChest.currentChestLoot[i];
             if (slot == null || slot.itemData == null || slot.amount <= 0) continue;
 
-            GameObject row = CreateRewardRow(slot, index);
-            if (row != null && chestItemsContainer != null)
+            if (validIndex < activeRewardRows.Count && activeRewardRows[validIndex] != null)
             {
-                row.transform.SetParent(chestItemsContainer, false);
-                activeRewardRows.Add(row);
+                GameObject row = activeRewardRows[validIndex];
+                row.SetActive(true);
+                UpdateRewardRow(row, slot, validIndex);
             }
+            else
+            {
+                GameObject newRow = CreateRewardRow(slot, validIndex);
+                if (newRow != null && chestItemsContainer != null)
+                {
+                    newRow.transform.SetParent(chestItemsContainer, false);
+                    activeRewardRows.Add(newRow);
+                }
+            }
+            validIndex++;
+        }
+
+        for (int i = validIndex; i < activeRewardRows.Count; i++)
+        {
+            if (activeRewardRows[i] != null)
+            {
+                activeRewardRows[i].SetActive(false);
+            }
+        }
+
+        if (validIndex == 0)
+        {
+            ShowEmptyChestNotice();
         }
     }
 
@@ -202,109 +263,130 @@ public class RewardUI : MonoBehaviour
     {
         if (chestItemsContainer == null) return;
 
-        // Background frame - Image only, NO TMP on same object (causes null GetComponent)
-        GameObject emptyNotice = new("EmptyNotice", typeof(RectTransform), typeof(Image));
-        emptyNotice.transform.SetParent(chestItemsContainer, false);
-        RectTransform rt = emptyNotice.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(370, 75);
+        if (emptyNoticeGO == null)
+        {
+            emptyNoticeGO = new("EmptyNotice", typeof(RectTransform), typeof(Image));
+            emptyNoticeGO.transform.SetParent(chestItemsContainer, false);
+            RectTransform rt = emptyNoticeGO.GetComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(370, 75);
 
-        Image bg = emptyNotice.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.1f, 0.12f, 0.16f, 0.9f));
+            Image bg = emptyNoticeGO.GetComponent<Image>();
+            DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.1f, 0.12f, 0.16f, 0.9f));
 
-        // Text on a separate child object (same pattern as CreateRewardRow)
-        GameObject textGO = new("EmptyLabel", typeof(RectTransform), typeof(TextMeshProUGUI));
-        textGO.transform.SetParent(emptyNotice.transform, false);
-        RectTransform textRT = textGO.GetComponent<RectTransform>();
-        textRT.anchorMin = Vector2.zero;
-        textRT.anchorMax = Vector2.one;
-        textRT.offsetMin = new Vector2(10, 6);
-        textRT.offsetMax = new Vector2(-10, -6);
+            GameObject textGO = new("EmptyLabel", typeof(RectTransform), typeof(TextMeshProUGUI));
+            textGO.transform.SetParent(emptyNoticeGO.transform, false);
+            RectTransform textRT = textGO.GetComponent<RectTransform>();
+            textRT.anchorMin = Vector2.zero;
+            textRT.anchorMax = Vector2.one;
+            textRT.offsetMin = new Vector2(10, 6);
+            textRT.offsetMax = new Vector2(-10, -6);
 
-        TextMeshProUGUI tmp = textGO.GetComponent<TextMeshProUGUI>();
-        if (tmp == null) tmp = textGO.AddComponent<TextMeshProUGUI>(); // extra safety
-        DungeonUIAssetHelper.ApplyFont(tmp);
-        tmp.fontSize = 13;
-        tmp.alignment = TextAlignmentOptions.Center;
-        tmp.color = new Color(0.85f, 0.9f, 0.95f, 0.95f);
-        tmp.text = "<b>The treasure chest is now empty.</b>\n<size=11><color=#88FF88>All rewards claimed!</color> Click [Continue] to proceed.</size>";
+            TextMeshProUGUI tmp = textGO.GetComponent<TextMeshProUGUI>();
+            if (tmp == null) tmp = textGO.AddComponent<TextMeshProUGUI>();
+            DungeonUIAssetHelper.ApplyFont(tmp);
+            tmp.fontSize = 13;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = new Color(0.85f, 0.9f, 0.95f, 0.95f);
+            tmp.text = "<b>Không còn chiến lợi phẩm nào.</b>\n<size=11><color=#88FF88>Đã nhặt hết vật phẩm!</color> Bấm [TIẾP TỤC] để đi tiếp.</size>";
+        }
 
-        activeRewardRows.Add(emptyNotice);
+        emptyNoticeGO.SetActive(true);
+        emptyNoticeGO.transform.SetAsLastSibling();
+    }
+
+    private void UpdateRewardRow(GameObject row, ItemSlot slot, int slotIndex)
+    {
+        if (row == null || slot == null || slot.itemData == null) return;
+
+        row.name = $"RewardItem_{slotIndex}";
+        ItemData item = slot.itemData;
+        int amount = slot.amount;
+
+        Image iconImg = row.transform.Find("SlotBox/Icon")?.GetComponent<Image>();
+        if (iconImg != null)
+        {
+            iconImg.preserveAspect = true;
+            iconImg.sprite = item.itemIcon;
+            iconImg.enabled = item.itemIcon != null;
+        }
+
+        TextMeshProUGUI label = row.transform.Find("Label")?.GetComponent<TextMeshProUGUI>();
+        if (label != null)
+        {
+            string tag = GetItemTag(item);
+            label.text = $"<b>{item.itemName}</b> <color=#FFD700>x{amount}</color> {tag}\n<size=11.5><color=#C8D4E2>{GetItemDescription(item)}</color></size>";
+        }
+
+        Button btn = row.transform.Find("TakeBtn")?.GetComponent<Button>();
+        if (btn != null)
+        {
+            btn.interactable = true;
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(() =>
+            {
+                btn.interactable = false;
+                OnTakeItemClicked(slot);
+            });
+        }
     }
 
     private GameObject CreateRewardRow(ItemSlot slot, int slotIndex)
     {
-        ItemData item = slot.itemData;
-        int amount = slot.amount;
-
-        // Card row with 9-sliced frame
         GameObject row = new($"RewardItem_{slotIndex}", typeof(RectTransform), typeof(Image));
         RectTransform rt = row.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(370, 56);
+        rt.sizeDelta = new Vector2(400, 60);
 
         Image bg = row.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.13f, 0.16f, 0.22f, 0.98f));
 
-        // Slot Frame for item icon (UI_Slot.png)
         GameObject slotBoxGO = new("SlotBox", typeof(RectTransform), typeof(Image));
         slotBoxGO.transform.SetParent(row.transform, false);
         RectTransform slotBoxRT = slotBoxGO.GetComponent<RectTransform>();
         slotBoxRT.anchorMin = new Vector2(0, 0.5f);
         slotBoxRT.anchorMax = new Vector2(0, 0.5f);
-        slotBoxRT.anchoredPosition = new Vector2(28, 0);
-        slotBoxRT.sizeDelta = new Vector2(42, 42);
+        slotBoxRT.anchoredPosition = new Vector2(30, 0);
+        slotBoxRT.sizeDelta = new Vector2(44, 44);
 
         Image slotBoxImg = slotBoxGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlotImage(slotBoxImg, new Color(0.2f, 0.24f, 0.32f, 1f));
 
-        // Item Icon inside slot
         GameObject iconGO = new("Icon", typeof(RectTransform), typeof(Image));
         iconGO.transform.SetParent(slotBoxGO.transform, false);
         RectTransform iconRT = iconGO.GetComponent<RectTransform>();
         iconRT.anchorMin = new Vector2(0.5f, 0.5f);
         iconRT.anchorMax = new Vector2(0.5f, 0.5f);
         iconRT.anchoredPosition = Vector2.zero;
-        iconRT.sizeDelta = new Vector2(32, 32);
+        iconRT.sizeDelta = new Vector2(34, 34);
 
         Image iconImg = iconGO.GetComponent<Image>();
         iconImg.preserveAspect = true;
-        if (item.itemIcon != null) iconImg.sprite = item.itemIcon;
 
-        // Label Info
         GameObject labelGO = new("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
         labelGO.transform.SetParent(row.transform, false);
         RectTransform labelRT = labelGO.GetComponent<RectTransform>();
         labelRT.anchorMin = new Vector2(0, 0);
         labelRT.anchorMax = new Vector2(1, 1);
-        labelRT.offsetMin = new Vector2(58, 4);
-        labelRT.offsetMax = new Vector2(-78, -4);
+        labelRT.offsetMin = new Vector2(62, 4);
+        labelRT.offsetMax = new Vector2(-84, -4);
 
         TextMeshProUGUI label = labelGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(label);
-        label.fontSize = 12;
+        label.fontSize = 13;
         label.color = Color.white;
         label.alignment = TextAlignmentOptions.MidlineLeft;
 
-        string tag = GetItemTag(item);
-        label.text = $"<b>{item.itemName}</b> <color=#FFD700>x{amount}</color> {tag}\n<size=10><color=#C8D4E2>{GetItemDescription(item)}</color></size>";
-
-        // Take Button with sliced frame
         GameObject btnGO = new("TakeBtn", typeof(RectTransform), typeof(Image), typeof(Button));
         btnGO.transform.SetParent(row.transform, false);
         RectTransform btnRT = btnGO.GetComponent<RectTransform>();
         btnRT.anchorMin = new Vector2(1, 0.5f);
         btnRT.anchorMax = new Vector2(1, 0.5f);
-        btnRT.anchoredPosition = new Vector2(-42, 0);
-        btnRT.sizeDelta = new Vector2(68, 34);
+        btnRT.anchoredPosition = new Vector2(-46, 0);
+        btnRT.sizeDelta = new Vector2(74, 36);
 
         Image btnImg = btnGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(btnImg, new Color(0.18f, 0.62f, 0.32f, 1f));
 
-        Button btn = btnGO.GetComponent<Button>();
-        btn.onClick.AddListener(() =>
-        {
-            btn.interactable = false; // prevent double-click
-            OnTakeItemClicked(slot);
-        });
+        btnGO.GetComponent<Button>();
 
         GameObject btnTextGO = new("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         btnTextGO.transform.SetParent(btnGO.transform, false);
@@ -315,12 +397,13 @@ public class RewardUI : MonoBehaviour
 
         TextMeshProUGUI btnText = btnTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(btnText);
-        btnText.fontSize = 11;
+        btnText.fontSize = 12;
         btnText.fontStyle = FontStyles.Bold;
         btnText.alignment = TextAlignmentOptions.Center;
         btnText.color = Color.white;
         btnText.text = "Take";
 
+        UpdateRewardRow(row, slot, slotIndex);
         return row;
     }
 
@@ -444,7 +527,20 @@ public class RewardUI : MonoBehaviour
         EnsureSlotPrefab();
         Canvas currentCanvas = GetCanvas();
 
-        if (backpackSlots.Count == container.maxSlots && backpackSlots.TrueForAll(s => s != null))
+        bool allSlotsValid = backpackSlots.Count == container.maxSlots;
+        if (allSlotsValid)
+        {
+            for (int i = 0; i < backpackSlots.Count; i++)
+            {
+                if (backpackSlots[i] == null)
+                {
+                    allSlotsValid = false;
+                    break;
+                }
+            }
+        }
+
+        if (allSlotsValid)
         {
             for (int i = 0; i < backpackSlots.Count; i++)
             {
@@ -538,8 +634,14 @@ public class RewardUI : MonoBehaviour
 
     private Canvas GetCanvas()
     {
-        if (canvas == null) canvas = GetComponentInParent<Canvas>();
-        if (canvas == null) canvas = FindFirstObjectByType<Canvas>();
+        if (canvas == null || canvas.renderMode == RenderMode.WorldSpace)
+        {
+            canvas = GetComponentInParent<Canvas>();
+            if (canvas == null || canvas.renderMode == RenderMode.WorldSpace)
+            {
+                canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
+            }
+        }
         return canvas;
     }
     #endregion
@@ -577,7 +679,7 @@ public class RewardUI : MonoBehaviour
         modalRT.anchorMin = new Vector2(0.5f, 0.5f);
         modalRT.anchorMax = new Vector2(0.5f, 0.5f);
         modalRT.pivot = new Vector2(0.5f, 0.5f);
-        modalRT.sizeDelta = new Vector2(800, 550);
+        modalRT.sizeDelta = new Vector2(920, 580);
 
         Image modalImg = modalGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(modalImg, new Color(0.10f, 0.12f, 0.17f, 0.98f));
@@ -589,7 +691,7 @@ public class RewardUI : MonoBehaviour
         headerRT.anchorMin = new Vector2(0, 1);
         headerRT.anchorMax = new Vector2(1, 1);
         headerRT.pivot = new Vector2(0.5f, 1);
-        headerRT.sizeDelta = new Vector2(0, 74);
+        headerRT.sizeDelta = new Vector2(0, 76);
 
         Image headerImg = headerGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(headerImg, new Color(0.24f, 0.18f, 0.08f, 1f));
@@ -600,8 +702,8 @@ public class RewardUI : MonoBehaviour
         RectTransform chestIconRT = chestIconGO.GetComponent<RectTransform>();
         chestIconRT.anchorMin = new Vector2(0, 0.5f);
         chestIconRT.anchorMax = new Vector2(0, 0.5f);
-        chestIconRT.anchoredPosition = new Vector2(40, 0);
-        chestIconRT.sizeDelta = new Vector2(48, 48);
+        chestIconRT.anchoredPosition = new Vector2(42, 0);
+        chestIconRT.sizeDelta = new Vector2(50, 50);
 
         chestHeaderIcon = chestIconGO.GetComponent<Image>();
         chestHeaderIcon.preserveAspect = true;
@@ -613,12 +715,12 @@ public class RewardUI : MonoBehaviour
         RectTransform titleRT = titleGO.GetComponent<RectTransform>();
         titleRT.anchorMin = new Vector2(0, 0);
         titleRT.anchorMax = new Vector2(1, 1);
-        titleRT.offsetMin = new Vector2(75, 24);
+        titleRT.offsetMin = new Vector2(80, 24);
         titleRT.offsetMax = new Vector2(-20, -6);
 
         titleText = titleGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(titleText);
-        titleText.fontSize = 20;
+        titleText.fontSize = 21;
         titleText.fontStyle = FontStyles.Bold;
         titleText.color = new Color(1f, 0.88f, 0.38f);
         titleText.alignment = TextAlignmentOptions.MidlineLeft;
@@ -630,12 +732,12 @@ public class RewardUI : MonoBehaviour
         RectTransform subRT = subGO.GetComponent<RectTransform>();
         subRT.anchorMin = new Vector2(0, 0);
         subRT.anchorMax = new Vector2(1, 1);
-        subRT.offsetMin = new Vector2(75, 6);
+        subRT.offsetMin = new Vector2(80, 6);
         subRT.offsetMax = new Vector2(-20, -36);
 
         subtitleText = subGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(subtitleText);
-        subtitleText.fontSize = 11;
+        subtitleText.fontSize = 12.5f;
         subtitleText.color = new Color(0.92f, 0.88f, 0.78f);
         subtitleText.alignment = TextAlignmentOptions.MidlineLeft;
         subtitleText.text = "An ancient treasure cache has unlocked! Claim seeds, rare crops, and provisions.";
@@ -646,8 +748,8 @@ public class RewardUI : MonoBehaviour
         RectTransform bodyRT = bodyGO.GetComponent<RectTransform>();
         bodyRT.anchorMin = Vector2.zero;
         bodyRT.anchorMax = Vector2.one;
-        bodyRT.offsetMin = new Vector2(16, 62);
-        bodyRT.offsetMax = new Vector2(-16, -82);
+        bodyRT.offsetMin = new Vector2(16, 64);
+        bodyRT.offsetMax = new Vector2(-16, -84);
 
         // Left Panel: Chest Items (Sliced Frame)
         GameObject leftPanel = new("LeftChestPanel", typeof(RectTransform), typeof(Image));
@@ -668,31 +770,99 @@ public class RewardUI : MonoBehaviour
         lhRT.anchorMin = new Vector2(0, 1);
         lhRT.anchorMax = new Vector2(1, 1);
         lhRT.pivot = new Vector2(0.5f, 1);
-        lhRT.sizeDelta = new Vector2(0, 30);
+        lhRT.sizeDelta = new Vector2(0, 32);
 
         TextMeshProUGUI lhTMP = leftHeaderGO.GetComponent<TextMeshProUGUI>();
+        leftHeaderTitle = lhTMP;
         DungeonUIAssetHelper.ApplyFont(lhTMP);
-        lhTMP.fontSize = 13;
+        lhTMP.fontSize = 13.5f;
         lhTMP.fontStyle = FontStyles.Bold;
         lhTMP.color = new Color(1f, 0.85f, 0.3f);
         lhTMP.alignment = TextAlignmentOptions.Center;
         lhTMP.text = "CHEST CACHE CONTENTS";
 
-        // Chest Items Container (Vertical Layout)
-        GameObject chestItemsGO = new("ChestItemsContainer", typeof(RectTransform), typeof(VerticalLayoutGroup));
-        chestItemsGO.transform.SetParent(leftPanel.transform, false);
+        // Scroll Area for Chest Items
+        GameObject chestScrollGO = new("ChestScrollArea", typeof(RectTransform), typeof(ScrollRect));
+        chestScrollGO.transform.SetParent(leftPanel.transform, false);
+        RectTransform chestScrollRT = chestScrollGO.GetComponent<RectTransform>();
+        chestScrollRT.anchorMin = Vector2.zero;
+        chestScrollRT.anchorMax = Vector2.one;
+        chestScrollRT.offsetMin = new Vector2(10, 10);
+        chestScrollRT.offsetMax = new Vector2(-10, -36);
+
+        ScrollRect chestScrollRect = chestScrollGO.GetComponent<ScrollRect>();
+        chestScrollRect.horizontal = false;
+        chestScrollRect.vertical = true;
+        chestScrollRect.movementType = ScrollRect.MovementType.Clamped;
+        chestScrollRect.scrollSensitivity = 25f;
+
+        // Chest Viewport
+        GameObject chestVpGO = new("Viewport", typeof(RectTransform), typeof(RectMask2D));
+        chestVpGO.transform.SetParent(chestScrollGO.transform, false);
+        RectTransform chestVpRT = chestVpGO.GetComponent<RectTransform>();
+        chestVpRT.anchorMin = Vector2.zero;
+        chestVpRT.anchorMax = Vector2.one;
+        chestVpRT.offsetMin = Vector2.zero;
+        chestVpRT.offsetMax = new Vector2(-16, 0);
+
+        // Chest Items Container (Content)
+        GameObject chestItemsGO = new("ChestItemsContainer", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        chestItemsGO.transform.SetParent(chestVpGO.transform, false);
         chestItemsContainer = chestItemsGO.GetComponent<RectTransform>();
-        chestItemsContainer.anchorMin = Vector2.zero;
-        chestItemsContainer.anchorMax = Vector2.one;
-        chestItemsContainer.offsetMin = new Vector2(10, 10);
-        chestItemsContainer.offsetMax = new Vector2(-10, -32);
+        chestItemsContainer.anchorMin = new Vector2(0, 1);
+        chestItemsContainer.anchorMax = new Vector2(1, 1);
+        chestItemsContainer.pivot = new Vector2(0.5f, 1);
+        chestItemsContainer.anchoredPosition = Vector2.zero;
+        chestItemsContainer.sizeDelta = Vector2.zero;
 
         VerticalLayoutGroup vlg = chestItemsGO.GetComponent<VerticalLayoutGroup>();
         vlg.spacing = 8;
+        vlg.padding = new RectOffset(4, 4, 4, 4);
         vlg.childControlHeight = false;
         vlg.childControlWidth = true;
         vlg.childForceExpandHeight = false;
         vlg.childForceExpandWidth = true;
+
+        ContentSizeFitter chestCsf = chestItemsGO.GetComponent<ContentSizeFitter>();
+        chestCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        chestScrollRect.viewport = chestVpRT;
+        chestScrollRect.content = chestItemsContainer;
+
+        // Chest Vertical Scrollbar
+        GameObject chestSbGO = new("VerticalScrollbar", typeof(RectTransform), typeof(Image), typeof(Scrollbar));
+        chestSbGO.transform.SetParent(chestScrollGO.transform, false);
+        RectTransform chestSbRT = chestSbGO.GetComponent<RectTransform>();
+        chestSbRT.anchorMin = new Vector2(1, 0);
+        chestSbRT.anchorMax = new Vector2(1, 1);
+        chestSbRT.pivot = new Vector2(1, 0.5f);
+        chestSbRT.sizeDelta = new Vector2(12, 0);
+        chestSbRT.anchoredPosition = Vector2.zero;
+
+        Image chestSbBg = chestSbGO.GetComponent<Image>();
+        chestSbBg.color = new Color(0.04f, 0.06f, 0.09f, 0.8f);
+
+        Scrollbar chestSb = chestSbGO.GetComponent<Scrollbar>();
+        chestSb.direction = Scrollbar.Direction.BottomToTop;
+
+        GameObject chestSaGO = new("SlidingArea", typeof(RectTransform));
+        chestSaGO.transform.SetParent(chestSbGO.transform, false);
+        RectTransform chestSaRT = chestSaGO.GetComponent<RectTransform>();
+        chestSaRT.anchorMin = Vector2.zero;
+        chestSaRT.anchorMax = Vector2.one;
+        chestSaRT.sizeDelta = Vector2.zero;
+
+        GameObject chestHandleGO = new("Handle", typeof(RectTransform), typeof(Image));
+        chestHandleGO.transform.SetParent(chestSaGO.transform, false);
+        RectTransform chestHandleRT = chestHandleGO.GetComponent<RectTransform>();
+        chestHandleRT.sizeDelta = Vector2.zero;
+
+        Image chestHandleImg = chestHandleGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(chestHandleImg, new Color(0.85f, 0.65f, 0.2f, 1f));
+
+        chestSb.handleRect = chestHandleRT;
+        chestSb.targetGraphic = chestHandleImg;
+        chestScrollRect.verticalScrollbar = chestSb;
 
         // Right Panel: Player Backpack (Sliced Frame)
         GameObject rightPanel = new("RightBackpackPanel", typeof(RectTransform), typeof(Image));
@@ -713,11 +883,11 @@ public class RewardUI : MonoBehaviour
         rhRT.anchorMin = new Vector2(0, 1);
         rhRT.anchorMax = new Vector2(1, 1);
         rhRT.pivot = new Vector2(0.5f, 1);
-        rhRT.sizeDelta = new Vector2(0, 30);
+        rhRT.sizeDelta = new Vector2(0, 32);
 
         backpackHeaderTitle = rightHeaderGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(backpackHeaderTitle);
-        backpackHeaderTitle.fontSize = 13;
+        backpackHeaderTitle.fontSize = 13.5f;
         backpackHeaderTitle.fontStyle = FontStyles.Bold;
         backpackHeaderTitle.color = new Color(0.4f, 0.85f, 1f);
         backpackHeaderTitle.alignment = TextAlignmentOptions.Center;
@@ -730,7 +900,7 @@ public class RewardUI : MonoBehaviour
         bpScrollRT.anchorMin = Vector2.zero;
         bpScrollRT.anchorMax = Vector2.one;
         bpScrollRT.offsetMin = new Vector2(10, 10);
-        bpScrollRT.offsetMax = new Vector2(-10, -34);
+        bpScrollRT.offsetMax = new Vector2(-10, -36);
 
         ScrollRect bpScrollRect = bpScrollGO.GetComponent<ScrollRect>();
         bpScrollRect.horizontal = false;
@@ -758,7 +928,7 @@ public class RewardUI : MonoBehaviour
         backpackSlotsParent.sizeDelta = new Vector2(0, 0);
 
         GridLayoutGroup glg = bpSlotsGO.GetComponent<GridLayoutGroup>();
-        glg.cellSize = new Vector2(50, 50);
+        glg.cellSize = new Vector2(52, 52);
         glg.spacing = new Vector2(6, 6);
         glg.padding = new RectOffset(4, 4, 4, 4);
         glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
@@ -812,20 +982,20 @@ public class RewardUI : MonoBehaviour
         footerRT.anchorMin = new Vector2(0, 0);
         footerRT.anchorMax = new Vector2(1, 0);
         footerRT.pivot = new Vector2(0.5f, 0);
-        footerRT.sizeDelta = new Vector2(0, 58);
+        footerRT.sizeDelta = new Vector2(0, 60);
 
         // Hint Text
         GameObject hintGO = new("HintText", typeof(RectTransform), typeof(TextMeshProUGUI));
         hintGO.transform.SetParent(footerGO.transform, false);
         RectTransform hintRT = hintGO.GetComponent<RectTransform>();
         hintRT.anchorMin = new Vector2(0, 0);
-        hintRT.anchorMax = new Vector2(0.55f, 1);
+        hintRT.anchorMax = new Vector2(0.52f, 1);
         hintRT.offsetMin = new Vector2(18, 4);
         hintRT.offsetMax = new Vector2(-10, -4);
 
         hintText = hintGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(hintText);
-        hintText.fontSize = 11;
+        hintText.fontSize = 12;
         hintText.color = new Color(0.85f, 0.9f, 0.96f);
         hintText.alignment = TextAlignmentOptions.MidlineLeft;
         hintText.text = "Items collected will be safely stored in your backpack.";
@@ -834,10 +1004,11 @@ public class RewardUI : MonoBehaviour
         GameObject lootAllGO = new("BtnLootAll", typeof(RectTransform), typeof(Image), typeof(Button));
         lootAllGO.transform.SetParent(footerGO.transform, false);
         RectTransform laRT = lootAllGO.GetComponent<RectTransform>();
-        laRT.anchorMin = new Vector2(0.56f, 0.5f);
-        laRT.anchorMax = new Vector2(0.56f, 0.5f);
-        laRT.sizeDelta = new Vector2(146, 38);
-        laRT.anchoredPosition = new Vector2(73, 0);
+        laRT.anchorMin = new Vector2(0.54f, 0.5f);
+        laRT.anchorMax = new Vector2(0.54f, 0.5f);
+        laRT.pivot = new Vector2(0, 0.5f);
+        laRT.sizeDelta = new Vector2(180, 42);
+        laRT.anchoredPosition = Vector2.zero;
 
         Image laImg = lootAllGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(laImg, new Color(0.18f, 0.65f, 0.32f, 1f));
@@ -854,11 +1025,11 @@ public class RewardUI : MonoBehaviour
 
         TextMeshProUGUI laText = laTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(laText);
-        laText.fontSize = 12;
+        laText.fontSize = 13;
         laText.fontStyle = FontStyles.Bold;
         laText.alignment = TextAlignmentOptions.Center;
         laText.color = Color.white;
-        laText.text = "LOOT ALL";
+        laText.text = "NHẶT TẤT CẢ";
 
         // Button: Continue
         GameObject contGO = new("BtnContinue", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -866,8 +1037,9 @@ public class RewardUI : MonoBehaviour
         RectTransform contRT = contGO.GetComponent<RectTransform>();
         contRT.anchorMin = new Vector2(1, 0.5f);
         contRT.anchorMax = new Vector2(1, 0.5f);
-        contRT.sizeDelta = new Vector2(156, 38);
-        contRT.anchoredPosition = new Vector2(-95, 0);
+        contRT.pivot = new Vector2(1, 0.5f);
+        contRT.sizeDelta = new Vector2(180, 42);
+        contRT.anchoredPosition = new Vector2(-18, 0);
 
         Image contImg = contGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(contImg, new Color(0.2f, 0.45f, 0.8f, 1f));
@@ -884,11 +1056,11 @@ public class RewardUI : MonoBehaviour
 
         TextMeshProUGUI contText = contTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(contText);
-        contText.fontSize = 12;
+        contText.fontSize = 13;
         contText.fontStyle = FontStyles.Bold;
         contText.alignment = TextAlignmentOptions.Center;
         contText.color = Color.white;
-        contText.text = "CONTINUE >>";
+        contText.text = "TIẾP TỤC >>";
     }
     #endregion
 }

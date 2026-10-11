@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections.Generic;
 
 /// <summary>
@@ -85,17 +86,11 @@ public class ChestUI : MonoBehaviour
             if (t != null) backpackSlotsParent = t;
         }
 
-        if (slotPrefab == null)
+        Button closeBtn = root.Find("MiddleBar/CloseButton")?.GetComponent<Button>() ?? root.GetComponentInChildren<Button>(true);
+        if (closeBtn != null)
         {
-            InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
-            if (invPanel != null)
-            {
-                InventoryButton btn = invPanel.GetComponentInChildren<InventoryButton>(true);
-                if (btn != null)
-                {
-                    slotPrefab = btn.gameObject;
-                }
-            }
+            closeBtn.onClick.RemoveListener(Close);
+            closeBtn.onClick.AddListener(Close);
         }
     }
 
@@ -193,7 +188,7 @@ public class ChestUI : MonoBehaviour
         if (canvas == null)
             canvas = GetComponentInParent<Canvas>();
         if (canvas == null)
-            canvas = FindFirstObjectByType<Canvas>();
+            canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
         return canvas;
     }
 
@@ -204,7 +199,20 @@ public class ChestUI : MonoBehaviour
 
         Canvas currentCanvas = GetCanvas();
 
-        if (slotList.Count == container.maxSlots && slotList.TrueForAll(s => s != null))
+        bool allSlotsValid = slotList.Count == container.maxSlots;
+        if (allSlotsValid)
+        {
+            for (int i = 0; i < slotList.Count; i++)
+            {
+                if (slotList[i] == null)
+                {
+                    allSlotsValid = false;
+                    break;
+                }
+            }
+        }
+
+        if (allSlotsValid)
         {
             for (int i = 0; i < slotList.Count; i++)
             {
@@ -216,52 +224,22 @@ public class ChestUI : MonoBehaviour
         }
 
         InventoryButton[] existingSlots = parent.GetComponentsInChildren<InventoryButton>(true);
-        if (existingSlots != null && existingSlots.Length >= container.maxSlots)
+        if (existingSlots != null && existingSlots.Length > 0)
         {
             slotList.Clear();
-            for (int i = 0; i < container.maxSlots; i++)
+            int countToUse = Mathf.Min(existingSlots.Length, container.maxSlots);
+            for (int i = 0; i < countToUse; i++)
             {
                 existingSlots[i].gameObject.SetActive(true);
                 existingSlots[i].SetSlotData(container, i);
                 existingSlots[i].SetCanvas(currentCanvas);
                 slotList.Add(existingSlots[i]);
             }
-            for (int i = container.maxSlots; i < existingSlots.Length; i++)
+            for (int i = countToUse; i < existingSlots.Length; i++)
             {
                 existingSlots[i].gameObject.SetActive(false);
             }
             return;
-        }
-
-        foreach (InventoryButton slot in slotList)
-        {
-            if (slot != null)
-                Destroy(slot.gameObject);
-        }
-        slotList.Clear();
-
-        if (slotPrefab == null)
-        {
-            Debug.LogWarning("[ChestUI] slotPrefab is not assigned and parent has no InventoryButton children!");
-            return;
-        }
-
-        for (int i = 0; i < container.maxSlots; i++)
-        {
-            GameObject slotObj = Instantiate(slotPrefab, parent);
-            slotObj.name = $"Slot_{i}";
-            InventoryButton btn = slotObj.GetComponent<InventoryButton>();
-
-            if (btn == null)
-            {
-                Debug.LogWarning("[ChestUI] slotPrefab missing InventoryButton component!");
-                Destroy(slotObj);
-                continue;
-            }
-
-            btn.SetSlotData(container, i);
-            btn.SetCanvas(currentCanvas);
-            slotList.Add(btn);
         }
     }
 

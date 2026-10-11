@@ -1,7 +1,7 @@
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-using System.Collections.Generic;
 
 public class CombatUI : MonoBehaviour
 {
@@ -168,6 +168,7 @@ public class CombatUI : MonoBehaviour
             combatManager.OnTurnChanged += HandleTurnChanged;
             combatManager.OnCombatPreparationCountdown += HandleCombatPreparationCountdown;
             combatManager.OnCombatStarted += HandleCombatStarted;
+            combatManager.OnPlayerActingChanged += HandlePlayerActingChanged;
         }
 
         if (playerStats != null)
@@ -194,6 +195,7 @@ public class CombatUI : MonoBehaviour
             combatManager.OnTurnChanged -= HandleTurnChanged;
             combatManager.OnCombatPreparationCountdown -= HandleCombatPreparationCountdown;
             combatManager.OnCombatStarted -= HandleCombatStarted;
+            combatManager.OnPlayerActingChanged -= HandlePlayerActingChanged;
         }
 
         if (playerStats != null)
@@ -259,7 +261,7 @@ public class CombatUI : MonoBehaviour
             }
         }
 
-        bool canUseShortcuts = combatManager != null && combatManager.isCombatActive && !combatManager.isPreparingCombat && combatManager.currentTurn == CombatManager.Turn.Player && playerStats != null && playerStats.currentHealth > 0;
+        bool canUseShortcuts = combatManager != null && combatManager.isCombatActive && !combatManager.isPreparingCombat && combatManager.currentTurn == CombatManager.Turn.Player && playerStats != null && playerStats.currentHealth > 0 && !combatManager.isPlayerActing;
         if (!canUseShortcuts) return;
 
         if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
@@ -361,6 +363,7 @@ public class CombatUI : MonoBehaviour
     private bool? cachedIsPlayerTurn = null;
     private bool? cachedHasAP = null;
     private bool? cachedIsAlive = null;
+    private bool? cachedIsActing = null;
 
     public void InvalidateHUDCache()
     {
@@ -372,6 +375,7 @@ public class CombatUI : MonoBehaviour
         cachedIsPlayerTurn = null;
         cachedHasAP = null;
         cachedIsAlive = null;
+        cachedIsActing = null;
     }
 
     public void RefreshAll()
@@ -501,19 +505,22 @@ public class CombatUI : MonoBehaviour
         bool isPlayerTurn = combatManager.isCombatActive && !combatManager.isPreparingCombat && combatManager.currentTurn == CombatManager.Turn.Player;
         bool hasAP = playerStats.currentAP > 0;
         bool isAlive = playerStats.currentHealth > 0;
+        bool isActing = combatManager.isPlayerActing;
 
-        if (isPlayerTurn == cachedIsPlayerTurn && hasAP == cachedHasAP && isAlive == cachedIsAlive)
+        if (isPlayerTurn == cachedIsPlayerTurn && hasAP == cachedHasAP && isAlive == cachedIsAlive && isActing == cachedIsActing)
             return;
 
         cachedIsPlayerTurn = isPlayerTurn;
         cachedHasAP = hasAP;
         cachedIsAlive = isAlive;
+        cachedIsActing = isActing;
 
-        bool canAct = isPlayerTurn && hasAP && isAlive;
+        bool isAtEntrance = waveManager != null && waveManager.isAtEntrance;
+        bool canAct = isPlayerTurn && hasAP && isAlive && !isActing;
         if (attackButton != null) attackButton.interactable = canAct;
         if (defendButton != null) defendButton.interactable = canAct;
-        if (eatButton != null) eatButton.interactable = canAct;
-        if (endTurnButton != null) endTurnButton.interactable = isPlayerTurn && isAlive;
+        if (eatButton != null) eatButton.interactable = canAct || (isAtEntrance && isAlive && !isActing);
+        if (endTurnButton != null) endTurnButton.interactable = isPlayerTurn && isAlive && !isActing;
     }
 
     public void UpdateTurnBanner()
@@ -544,6 +551,21 @@ public class CombatUI : MonoBehaviour
 
         if (!combatManager.isCombatActive)
         {
+            if (waveManager != null && waveManager.isAtEntrance)
+            {
+                if (turnBannerText != null)
+                {
+                    int floor = ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1;
+                    turnBannerText.text = $"CỬA VÀO HẦM NGỤC - TẦNG {floor} (SẢNH CHỜ)";
+                    turnBannerText.color = new Color(1f, 0.88f, 0.35f);
+                }
+                if (turnBannerBg != null)
+                {
+                    turnBannerBg.color = new Color(0.12f, 0.20f, 0.32f, 0.90f);
+                }
+                return;
+            }
+
             if (CampUI.Instance != null && CampUI.Instance.camp != null && CampUI.Instance.camp.isCampOpen)
             {
                 if (turnBannerText != null)
@@ -691,8 +713,17 @@ public class CombatUI : MonoBehaviour
     {
         if (stageProgressText != null && waveManager != null)
         {
-            int current = waveManager.GetCurrentWaveIndex() + 1;
-            stageProgressText.text = $"Stage: {current}";
+            if (waveManager.isAtEntrance)
+            {
+                int total = waveManager.GetTotalStages();
+                stageProgressText.text = total > 0 ? $"Sảnh vào (0/{total})" : "Sảnh vào";
+            }
+            else
+            {
+                int current = waveManager.GetCurrentWaveIndex() + 1;
+                int total = waveManager.GetTotalStages();
+                stageProgressText.text = total > 0 ? $"Ải: {current}/{total}" : $"Stage: {current}";
+            }
         }
     }
 
@@ -728,12 +759,17 @@ public class CombatUI : MonoBehaviour
         UpdateTurnBanner();
         UpdateActionButtons();
     }
+
+    private void HandlePlayerActingChanged(bool acting)
+    {
+        UpdateActionButtons();
+    }
     #endregion
 
     #region Action Button Handlers
     public void OnAttackClicked()
     {
-        if (combatManager == null) return;
+        if (combatManager == null || combatManager.isPlayerActing) return;
 
         if (targetSelector != null && (targetSelector.selectedEnemy == null || targetSelector.selectedEnemy.currentHealth <= 0))
         {
@@ -752,14 +788,14 @@ public class CombatUI : MonoBehaviour
 
     public void OnDefendClicked()
     {
-        if (combatManager == null) return;
+        if (combatManager == null || combatManager.isPlayerActing) return;
         combatManager.PlayerDefend();
         RefreshAll();
     }
 
     public void OnEatClicked()
     {
-        if (foodPanel == null) return;
+        if (foodPanel == null || (combatManager != null && combatManager.isPlayerActing)) return;
 
         bool isOpen = foodPanel.activeSelf;
         foodPanel.SetActive(!isOpen);
@@ -772,7 +808,7 @@ public class CombatUI : MonoBehaviour
 
     public void OnEndTurnClicked()
     {
-        if (combatManager == null) return;
+        if (combatManager == null || combatManager.isPlayerActing) return;
         if (foodPanel != null) foodPanel.SetActive(false);
         combatManager.EndTurnPlayer();
         RefreshAll();
@@ -829,81 +865,31 @@ public class CombatUI : MonoBehaviour
             FoodData food = slot.itemData as FoodData;
             int count = slot.amount;
 
-            GameObject rowGO = CreateFoodRow(food, count);
+            GameObject rowGO = null;
+            if (foodItemPrefab != null)
+            {
+                rowGO = Instantiate(foodItemPrefab, foodListContainer);
+                // Bạn có thể gắn script riêng lên Prefab hoặc lấy Button trực tiếp
+                Button btn = rowGO.GetComponentInChildren<Button>();
+                if (btn != null)
+                {
+                    btn.onClick.AddListener(() =>
+                    {
+                        if (combatManager != null && !combatManager.isPlayerActing)
+                        {
+                            combatManager.PlayerEat(food);
+                            RefreshAll();
+                            if (foodPanel != null) foodPanel.SetActive(false);
+                        }
+                    });
+                }
+            }
+
             if (rowGO != null)
             {
-                rowGO.transform.SetParent(foodListContainer, false);
                 activeFoodButtons.Add(rowGO);
             }
         }
-    }
-
-    private GameObject CreateFoodRow(FoodData food, int count)
-    {
-        GameObject row = new($"Food_{food.itemName}", typeof(RectTransform), typeof(Image));
-        RectTransform rt = row.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(380, 50);
-
-        Image bg = row.GetComponent<Image>();
-        bg.color = new Color(0.15f, 0.15f, 0.2f, 0.9f);
-
-        GameObject iconGO = new("Icon", typeof(RectTransform), typeof(Image));
-        iconGO.transform.SetParent(row.transform, false);
-        RectTransform iconRT = iconGO.GetComponent<RectTransform>();
-        iconRT.anchorMin = new Vector2(0, 0.5f);
-        iconRT.anchorMax = new Vector2(0, 0.5f);
-        iconRT.anchoredPosition = new Vector2(30, 0);
-        iconRT.sizeDelta = new Vector2(36, 36);
-        Image iconImg = iconGO.GetComponent<Image>();
-        if (food.itemIcon != null) iconImg.sprite = food.itemIcon;
-
-        GameObject labelGO = new("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
-        labelGO.transform.SetParent(row.transform, false);
-        RectTransform labelRT = labelGO.GetComponent<RectTransform>();
-        labelRT.anchorMin = new Vector2(0, 0);
-        labelRT.anchorMax = new Vector2(1, 1);
-        labelRT.offsetMin = new Vector2(60, 5);
-        labelRT.offsetMax = new Vector2(-90, -5);
-        TextMeshProUGUI label = labelGO.GetComponent<TextMeshProUGUI>();
-        label.fontSize = 13;
-        label.color = Color.white;
-        label.alignment = TextAlignmentOptions.MidlineLeft;
-        label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#88FF88>+{food.healthValue} HP</color> | <color=#FFAA44>+{food.hungerValue} Full</color></size>";
-
-        GameObject btnGO = new("EatBtn", typeof(RectTransform), typeof(Image), typeof(Button));
-        btnGO.transform.SetParent(row.transform, false);
-        RectTransform btnRT = btnGO.GetComponent<RectTransform>();
-        btnRT.anchorMin = new Vector2(1, 0.5f);
-        btnRT.anchorMax = new Vector2(1, 0.5f);
-        btnRT.anchoredPosition = new Vector2(-45, 0);
-        btnRT.sizeDelta = new Vector2(75, 34);
-
-        Image btnImg = btnGO.GetComponent<Image>();
-        btnImg.color = new Color(0.2f, 0.7f, 0.3f, 1f);
-
-        Button btn = btnGO.GetComponent<Button>();
-        btn.onClick.AddListener(() =>
-        {
-            if (combatManager != null)
-            {
-                combatManager.PlayerEat(food);
-                RefreshAll();
-                if (foodPanel != null) foodPanel.SetActive(false);
-            }
-        });
-
-        GameObject btnTextGO = new("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
-        btnTextGO.transform.SetParent(btnGO.transform, false);
-        RectTransform btnTextRT = btnTextGO.GetComponent<RectTransform>();
-        btnTextRT.anchorMin = Vector2.zero;
-        btnTextRT.anchorMax = Vector2.one;
-        btnTextRT.sizeDelta = Vector2.zero;
-        TextMeshProUGUI btnText = btnTextGO.GetComponent<TextMeshProUGUI>();
-        btnText.fontSize = 11;
-        btnText.alignment = TextAlignmentOptions.Center;
-        btnText.text = "EAT (1 AP)";
-
-        return row;
     }
     #endregion
 
@@ -987,7 +973,9 @@ public class CombatUI : MonoBehaviour
     {
         if (rewardPanel == null)
         {
-            CreateFallbackWaveVictoryPanel();
+            if (waveManager == null) waveManager = FindFirstObjectByType<WaveManager>();
+            if (waveManager != null) waveManager.Continue();
+            return;
         }
 
         if (rewardPanel != null)
@@ -1039,88 +1027,6 @@ public class CombatUI : MonoBehaviour
                 }
             }
         }
-        else
-        {
-            if (waveManager == null) waveManager = FindFirstObjectByType<WaveManager>();
-            if (waveManager != null) waveManager.Continue();
-        }
-    }
-
-    private void CreateFallbackWaveVictoryPanel()
-    {
-        Canvas canvas = GetComponentInParent<Canvas>() ?? FindFirstObjectByType<Canvas>();
-        if (canvas == null) return;
-
-        GameObject overlayGO = new("WaveVictoryFallbackPanel", typeof(RectTransform), typeof(Image));
-        overlayGO.transform.SetParent(canvas.transform, false);
-        RectTransform overlayRT = overlayGO.GetComponent<RectTransform>();
-        overlayRT.anchorMin = Vector2.zero;
-        overlayRT.anchorMax = Vector2.one;
-        overlayRT.sizeDelta = Vector2.zero;
-        Image overlayImg = overlayGO.GetComponent<Image>();
-        overlayImg.color = new Color(0, 0, 0, 0.78f);
-
-        GameObject boxGO = new("Box", typeof(RectTransform), typeof(Image));
-        boxGO.transform.SetParent(overlayGO.transform, false);
-        RectTransform boxRT = boxGO.GetComponent<RectTransform>();
-        boxRT.anchorMin = new Vector2(0.5f, 0.5f);
-        boxRT.anchorMax = new Vector2(0.5f, 0.5f);
-        boxRT.sizeDelta = new Vector2(580, 320);
-        Image boxImg = boxGO.GetComponent<Image>();
-        boxImg.color = new Color(0.12f, 0.14f, 0.18f, 0.95f);
-
-        GameObject titleGO = new("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
-        titleGO.transform.SetParent(boxGO.transform, false);
-        RectTransform titleRT = titleGO.GetComponent<RectTransform>();
-        titleRT.anchorMin = new Vector2(0, 0.75f);
-        titleRT.anchorMax = new Vector2(1, 1);
-        titleRT.sizeDelta = Vector2.zero;
-        TextMeshProUGUI titleTMP = titleGO.GetComponent<TextMeshProUGUI>();
-        titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.fontSize = 24;
-        titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.color = new Color(1f, 0.85f, 0.2f);
-        titleTMP.text = "HOÀN THÀNH WAVE!";
-
-        GameObject descGO = new("Description", typeof(RectTransform), typeof(TextMeshProUGUI));
-        descGO.transform.SetParent(boxGO.transform, false);
-        RectTransform descRT = descGO.GetComponent<RectTransform>();
-        descRT.anchorMin = new Vector2(0.08f, 0.25f);
-        descRT.anchorMax = new Vector2(0.92f, 0.75f);
-        descRT.sizeDelta = Vector2.zero;
-        TextMeshProUGUI descTMP = descGO.GetComponent<TextMeshProUGUI>();
-        descTMP.alignment = TextAlignmentOptions.Center;
-        descTMP.fontSize = 17;
-        descTMP.color = Color.white;
-        rewardDescriptionText = descTMP;
-
-        GameObject btnGO = new("ActionBtn", typeof(RectTransform), typeof(Image), typeof(Button));
-        btnGO.transform.SetParent(boxGO.transform, false);
-        RectTransform btnRT = btnGO.GetComponent<RectTransform>();
-        btnRT.anchorMin = new Vector2(0.5f, 0f);
-        btnRT.anchorMax = new Vector2(0.5f, 0f);
-        btnRT.anchoredPosition = new Vector2(0, 25);
-        btnRT.sizeDelta = new Vector2(260, 52);
-        Image btnImg = btnGO.GetComponent<Image>();
-        btnImg.color = new Color(0.85f, 0.65f, 0.15f, 1f);
-        Button btn = btnGO.GetComponent<Button>();
-        rewardClaimButton = btn;
-        BindButton(rewardClaimButton, OnRewardClaimClicked);
-
-        GameObject btnTextGO = new("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
-        btnTextGO.transform.SetParent(btnGO.transform, false);
-        RectTransform btnTextRT = btnTextGO.GetComponent<RectTransform>();
-        btnTextRT.anchorMin = Vector2.zero;
-        btnTextRT.anchorMax = Vector2.one;
-        btnTextRT.sizeDelta = Vector2.zero;
-        TextMeshProUGUI btnTextTMP = btnTextGO.GetComponent<TextMeshProUGUI>();
-        btnTextTMP.alignment = TextAlignmentOptions.Center;
-        btnTextTMP.fontSize = 20;
-        btnTextTMP.fontStyle = FontStyles.Bold;
-        btnTextTMP.color = Color.white;
-        btnTextTMP.text = "TIẾP TỤC";
-
-        rewardPanel = overlayGO;
     }
 
     public void OnRewardClaimClicked()

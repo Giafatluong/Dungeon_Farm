@@ -22,6 +22,24 @@ public class RewardChest : MonoBehaviour
     [Header("Runtime State")]
     public List<ItemSlot> currentChestLoot = new List<ItemSlot>();
 
+    private static ItemData[] _cachedProjectItems;
+    private readonly List<ItemData> _cachedCandidates = new List<ItemData>(32);
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        _cachedProjectItems = null;
+    }
+
+    private static ItemData[] GetAllProjectItems()
+    {
+        if (_cachedProjectItems == null || _cachedProjectItems.Length == 0)
+        {
+            _cachedProjectItems = GameAssetHelper.LoadAll<ItemData>();
+        }
+        return _cachedProjectItems;
+    }
+
     /// <summary>
     /// Generates a list of loot for this reward stage.
     /// </summary>
@@ -49,22 +67,22 @@ public class RewardChest : MonoBehaviour
         }
 
         // 2. Try configured default pool if valid
-        List<ItemData> candidateItems = new List<ItemData>();
+        _cachedCandidates.Clear();
         if (defaultLootPool != null && defaultLootPool.Length > 0)
         {
             foreach (var s in defaultLootPool)
             {
-                if (s != null && s.itemData != null && !candidateItems.Contains(s.itemData))
+                if (s != null && s.itemData != null && !_cachedCandidates.Contains(s.itemData))
                 {
-                    candidateItems.Add(s.itemData);
+                    _cachedCandidates.Add(s.itemData);
                 }
             }
         }
 
         // 3. Fallback: Automatically gather all available project items (seeds, crops, provisions)
-        if (candidateItems.Count == 0)
+        ItemData[] allItems = GetAllProjectItems();
+        if (_cachedCandidates.Count == 0)
         {
-            ItemData[] allItems = GameAssetHelper.LoadAll<ItemData>();
             for (int i = 0; i < allItems.Length; i++)
             {
                 ItemData it = allItems[i];
@@ -80,47 +98,48 @@ public class RewardChest : MonoBehaviour
                     }
                 }
 
-                if (!candidateItems.Contains(it))
+                if (!_cachedCandidates.Contains(it))
                 {
-                    candidateItems.Add(it);
+                    _cachedCandidates.Add(it);
                 }
             }
         }
         else
         {
             // Lọc danh sách candidateItems đã nạp nếu có hạt chưa đủ điều kiện tầng
-            for (int i = candidateItems.Count - 1; i >= 0; i--)
+            for (int i = _cachedCandidates.Count - 1; i >= 0; i--)
             {
-                ItemData it = candidateItems[i];
+                ItemData it = _cachedCandidates[i];
                 if (it != null && (it.itemType == ItemData.ItemType.Seed || it.name.ToLower().Contains("seed")))
                 {
                     if (floorNumber < ProgressionManager.GetSeedMinFloor(it))
                     {
-                        candidateItems.RemoveAt(i);
+                        _cachedCandidates.RemoveAt(i);
                     }
                 }
             }
         }
 
         // If strict floor filter left no candidate items, load all items without restriction as guaranteed fallback
-        if (candidateItems.Count == 0)
+        if (_cachedCandidates.Count == 0)
         {
-            ItemData[] allItems = GameAssetHelper.LoadAll<ItemData>();
             for (int i = 0; i < allItems.Length; i++)
             {
-                if (allItems[i] != null && !candidateItems.Contains(allItems[i]))
+                if (allItems[i] != null && !_cachedCandidates.Contains(allItems[i]))
                 {
-                    candidateItems.Add(allItems[i]);
+                    _cachedCandidates.Add(allItems[i]);
                 }
             }
         }
 
-        if (candidateItems.Count == 0)
+        if (_cachedCandidates.Count == 0)
         {
             Debug.LogWarning("[RewardChest] No items found in project to generate loot!");
             currentChestLoot = result;
             return result;
         }
+
+        List<ItemData> candidateItems = _cachedCandidates;
 
         // 4. Procedurally roll a randomized assortment of 2 to 4 distinct items
         ShuffleList(candidateItems);

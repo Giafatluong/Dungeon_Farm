@@ -108,6 +108,7 @@ public class CampUI : MonoBehaviour
     private void OnDestroy()
     {
         UnsubscribeEvents();
+        if (Instance == this) Instance = null;
     }
 
     public void InitializeCampUI()

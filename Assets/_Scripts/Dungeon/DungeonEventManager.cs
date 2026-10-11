@@ -25,6 +25,11 @@ public class DungeonEventManager : MonoBehaviour
 
         InitializeDefaultEvents();
     }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
     #endregion
 
     #region Event Templates Setup

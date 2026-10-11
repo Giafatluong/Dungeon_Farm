@@ -14,6 +14,11 @@ public class Statue : MonoBehaviour, IInteractable
 
     public event System.Action<Offering> OnOfferingSuccess;
     public event System.Action<string> OnOfferingFailed;
+
+    public void NotifyOfferingSuccess(Offering offering)
+    {
+        OnOfferingSuccess?.Invoke(offering);
+    }
     #endregion
 
     #region State & References
@@ -56,11 +61,6 @@ public class Statue : MonoBehaviour, IInteractable
             float dist = Vector2.Distance(statuePoint, playerTransform.position);
             bool wasInRange = playerInRange;
             playerInRange = dist <= interactDistance;
-
-            if (!wasInRange && playerInRange)
-            {
-                Debug.Log("[Statue] Near the Statue! Click on it or press E to make offerings.");
-            }
 
             if (wasInRange && !playerInRange)
             {
@@ -140,10 +140,30 @@ public class Statue : MonoBehaviour, IInteractable
     {
         if (playerInventory == null)
         {
+            InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+            if (invPanel != null && invPanel.ItemContainer != null)
+            {
+                playerInventory = invPanel.ItemContainer;
+            }
+        }
+        if (playerInventory == null)
+        {
             PlayerStats ps = FindFirstObjectByType<PlayerStats>();
             if (ps != null && ps.itemContainer != null)
             {
                 playerInventory = ps.itemContainer;
+            }
+        }
+        if (playerInventory == null)
+        {
+            ItemContainer[] containers = GameAssetHelper.LoadAll<ItemContainer>();
+            for (int i = 0; i < containers.Length; i++)
+            {
+                if (containers[i] != null && !containers[i].name.ToLower().Contains("chest") && !containers[i].name.ToLower().Contains("loot"))
+                {
+                    playerInventory = containers[i];
+                    break;
+                }
             }
         }
     }
@@ -206,17 +226,10 @@ public class Statue : MonoBehaviour, IInteractable
         Debug.Log($"Offering successful: {offering.offeringName}! Received +{offering.rewardAmount} {offering.rewardStat} permanently.");
         OnOfferingSuccess?.Invoke(offering);
 
-        if(offering.rewardStat == Offering.RewardStat.ATK)
+        if (playerStats != null)
         {
-            playerStats.ATK += offering.rewardAmount;
-        }
-        else if( offering.rewardStat == Offering.RewardStat.DEF)
-        {
-            playerStats.DEF += offering.rewardAmount;
-        }
-        else if( offering.rewardStat == Offering.RewardStat.Speed)
-        {
-            playerStats.speed += offering.rewardAmount;
+            playerStats.RefreshStatsFromProgression();
+            DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.5f, $"+{offering.rewardAmount} {offering.rewardStat} VĨNH VIỄN!", new Color(1f, 0.85f, 0.2f), 4.5f);
         }
         return true;
     }

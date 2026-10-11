@@ -206,4 +206,75 @@ public static class DungeonUIAssetHelper
         }
         return null;
     }
+
+    /// <summary>
+    /// Tìm Canvas chính trên màn hình (Screen Space Overlay / Camera) thay vì nhầm lẫn sang World Space Canvas (như HealthBarCanvas).
+    /// </summary>
+    public static Canvas GetMainScreenCanvas()
+    {
+        Canvas[] allCanvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        // 1. Ưu tiên CombatCanvas
+        for (int i = 0; i < allCanvases.Length; i++)
+        {
+            if (allCanvases[i] != null && allCanvases[i].name.Equals("CombatCanvas", System.StringComparison.OrdinalIgnoreCase))
+                return allCanvases[i];
+        }
+        // 2. Ưu tiên bất kỳ Canvas nào không phải World Space
+        for (int i = 0; i < allCanvases.Length; i++)
+        {
+            if (allCanvases[i] != null && allCanvases[i].renderMode != RenderMode.WorldSpace)
+                return allCanvases[i];
+        }
+        return allCanvases.Length > 0 ? allCanvases[0] : null;
+    }
+
+    /// <summary>
+    /// Tạo thanh cuộn slider dọc đẹp mắt chuẩn Fantasy UI cho ScrollRect.
+    /// </summary>
+    public static Scrollbar CreateVerticalScrollbar(Transform parent, ScrollRect scrollRect, Color handleColor, float width = 12f)
+    {
+        if (parent == null) return null;
+
+        GameObject sbGO = new("VerticalScrollbar", typeof(RectTransform), typeof(Image), typeof(Scrollbar));
+        sbGO.transform.SetParent(parent, false);
+
+        RectTransform sbRT = sbGO.GetComponent<RectTransform>();
+        sbRT.anchorMin = new Vector2(1, 0);
+        sbRT.anchorMax = new Vector2(1, 1);
+        sbRT.pivot = new Vector2(1, 0.5f);
+        sbRT.sizeDelta = new Vector2(width, 0);
+        sbRT.anchoredPosition = Vector2.zero;
+
+        Image sbBg = sbGO.GetComponent<Image>();
+        sbBg.color = new Color(0.04f, 0.06f, 0.09f, 0.85f);
+
+        Scrollbar sb = sbGO.GetComponent<Scrollbar>();
+        sb.direction = Scrollbar.Direction.BottomToTop;
+
+        GameObject slideAreaGO = new("SlidingArea", typeof(RectTransform));
+        slideAreaGO.transform.SetParent(sbGO.transform, false);
+        RectTransform saRT = slideAreaGO.GetComponent<RectTransform>();
+        saRT.anchorMin = Vector2.zero;
+        saRT.anchorMax = Vector2.one;
+        saRT.sizeDelta = Vector2.zero;
+
+        GameObject handleGO = new("Handle", typeof(RectTransform), typeof(Image));
+        handleGO.transform.SetParent(slideAreaGO.transform, false);
+        RectTransform handleRT = handleGO.GetComponent<RectTransform>();
+        handleRT.sizeDelta = Vector2.zero;
+
+        Image handleImg = handleGO.GetComponent<Image>();
+        StyleSlicedFrame(handleImg, handleColor);
+
+        sb.handleRect = handleRT;
+        sb.targetGraphic = handleImg;
+
+        if (scrollRect != null)
+        {
+            scrollRect.verticalScrollbar = sb;
+            scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+        }
+
+        return sb;
+    }
 }

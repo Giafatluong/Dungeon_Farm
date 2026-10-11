@@ -153,7 +153,7 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
 
         if (dragged.currentItem == null) return;
 
-        if (dragged.currentItem != requiredItem)
+        if (!ItemContainer.IsItemMatch(dragged.currentItem, requiredItem))
         {
             StatueUI.Instance?.SetFeedback($"<color=#FF6666>The Gods reject this item! Requires {requiredItem.itemName}.</color>");
             return;
@@ -167,7 +167,7 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
         if (container == null || slotIndex < 0 || slotIndex >= container.itemSlots.Length) return;
 
         ItemSlot sourceSlot = container.itemSlots[slotIndex];
-        if (sourceSlot == null || sourceSlot.itemData != requiredItem || sourceSlot.amount <= 0) return;
+        if (sourceSlot == null || !ItemContainer.IsItemMatch(sourceSlot.itemData, requiredItem) || sourceSlot.amount <= 0) return;
 
         int deposit = Mathf.Min(sourceSlot.amount, needed);
         if (deposit <= 0) return;
@@ -236,7 +236,7 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
         int count = 0;
         for (int i = 0; i < container.itemSlots.Length; i++)
         {
-            if (container.itemSlots[i] != null && container.itemSlots[i].itemData == item)
+            if (container.itemSlots[i] != null && ItemContainer.IsItemMatch(container.itemSlots[i].itemData, item))
             {
                 count += container.itemSlots[i].amount;
             }

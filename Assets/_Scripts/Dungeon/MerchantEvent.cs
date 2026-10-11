@@ -265,6 +265,7 @@ public class MerchantEvent : MonoBehaviour
             cachedDayManager.OnNewDay -= HandleNewDay;
             cachedDayManager = null;
         }
+        if (Instance == this) Instance = null;
     }
 
     private void HandleNewDay()

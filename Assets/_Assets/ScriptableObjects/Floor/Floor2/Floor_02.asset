@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b361ef3d9b53cdd41b30d69a54936c4a, type: 3}
+  m_Name: Đầm Lầy Quái Vật (Floor 2)
+  m_EditorClassIdentifier: Assembly-CSharp::FloorData
+  floorName: Đầm Lầy Quái Vật
+  floorNumber: 2
+  waves:
+  - {fileID: 11400000, guid: bee3ba3a9438e8f3e1ab9f5ae0cff799, type: 2}
+  - {fileID: 11400000, guid: c1f8a3145cc56b6e0386b583bcf01a89, type: 2}
+  - {fileID: 11400000, guid: 994de4e9c675be0247a062f8b1772127, type: 2}
+  - {fileID: 11400000, guid: 9ecd3bcc68126ca12ff40750df6b4fd2, type: 2}
+  - {fileID: 11400000, guid: 469944009f48e9d7bbbf357b581beaa5, type: 2}
+  - {fileID: 11400000, guid: 717cd14e9e3c9415829c80bc49fd2b07, type: 2}
+  - {fileID: 11400000, guid: 195a7352fa73c54aeb91527f5023a2ba, type: 2}
+  - {fileID: 11400000, guid: 22939dca345c1d43a50903342544043c, type: 2}
+  - {fileID: 11400000, guid: 0fc7bcc3f78e8de3eff3662dc0e9fc7a, type: 2}
+  - {fileID: 11400000, guid: 0e016bcaeaa92d0dc797c525852d519e, type: 2}
+  - {fileID: 11400000, guid: baf834d48dde2dd2f37df403141d483b, type: 2}
+  - {fileID: 11400000, guid: e353f63a1ed5ce3a84332adb0c1418b1, type: 2}
+  - {fileID: 11400000, guid: e56453db1a3646bb6d6ebcb2d31f86ba, type: 2}
+  - {fileID: 11400000, guid: 9e0ea82002eab79926eca9cc0e87dbf7, type: 2}
+  - {fileID: 11400000, guid: d98d33549aad94f2677671eec611d5f4, type: 2}
+  - {fileID: 11400000, guid: 4ff651bb1e8facfe53032b57ae4848a3, type: 2}
+  bossName: King Slime
+  clearRewardItems:
+  - itemData: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
+    amount: 6
+  - itemData: {fileID: 11400000, guid: 7fbf6b6fc33a6a24aa6ccfb21298e0fd, type: 2}
+    amount: 6
+  - itemData: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
+    amount: 4
+  - itemData: {fileID: 11400000, guid: 90c8846f9ae7d4a4fb3425fb40027a06, type: 2}
+    amount: 2
+  - itemData: {fileID: 11400000, guid: 7b235b7cc0dbff740ad1722db4b69233, type: 2}
+    amount: 2
+  bonusPermanentATK: 0
+  bonusPermanentDEF: 1
+  bonusPermanentMaxHP: 10
+  bonusPermanentSpeed: 0
+  victoryTitle: ĐẦM LẦY ĐÃ ĐƯỢC THANH TẨY!
+  victoryDescription: "Vua Slime khổng lồ đã tan rã! Đầm Lầy Quái Vật đã bình yên, mang về những hạt giống phong phú và nguồn sống dồi dào."

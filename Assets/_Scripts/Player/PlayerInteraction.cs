@@ -24,7 +24,6 @@ public class PlayerInteraction : MonoBehaviour
         if (bed != null && !currentBeds.Contains(bed))
         {
             currentBeds.Add(bed);
-            Debug.Log("Di chuyen vao giuong");
         }
     }
 
@@ -42,7 +41,6 @@ public class PlayerInteraction : MonoBehaviour
         if (bed != null && currentBeds.Contains(bed))
         {
             currentBeds.Remove(bed);
-            Debug.Log("Da di chuyen ra khoi giuong");
         }
     }
 

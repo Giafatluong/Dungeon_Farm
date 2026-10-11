@@ -157,3 +157,5 @@ MonoBehaviour:
   activeBuffs: []
   isDefending: 0
   currentIntent: 0
+  isFlying: 0
+  yOffset: 0

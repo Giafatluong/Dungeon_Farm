@@ -57,6 +57,7 @@ public class PlayerMovement : MonoBehaviour
         if (MerchantUI.Instance != null && MerchantUI.Instance.IsOpen) return true;
         if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return true;
         if (RewardUI.Instance != null && RewardUI.Instance.IsOpen) return true;
+        if (LootUI.Instance != null && LootUI.Instance.IsOpen) return true;
         if (DungeonEntranceUI.Instance != null && DungeonEntranceUI.Instance.IsOpen) return true;
         return false;
     }
@@ -108,6 +109,16 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    public float GetCurrentMoveSpeed()
+    {
+        float bonus = 0f;
+        if (ProgressionManager.Instance != null && ProgressionManager.Instance.permanentSpeed > 0)
+        {
+            bonus += ProgressionManager.Instance.permanentSpeed * 0.4f;
+        }
+        return speed + bonus;
+    }
+
     private void FixedUpdate()
     {
         if (IsInCombat() || IsAnyUIOpen())
@@ -117,7 +128,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (rb != null)
         {
-            rb.MovePosition(rb.position + movement * speed * Time.fixedDeltaTime);
+            rb.MovePosition(rb.position + movement * GetCurrentMoveSpeed() * Time.fixedDeltaTime);
         }
     }
 }

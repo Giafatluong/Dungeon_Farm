@@ -27,6 +27,38 @@ public class FloorGenerator : MonoBehaviour
     public WaveData[] merchantWavePool;
     public WaveData bossWave;
 
+    // Pre-allocated reusable lists to achieve 0 GC heap allocations during generation
+    private readonly List<WaveData.WaveType> _cachedStageTypes = new List<WaveData.WaveType>(16);
+    private readonly List<WaveData.WaveType> _cachedAllowedTypes = new List<WaveData.WaveType>(8);
+    private readonly List<WaveData.WaveType> _cachedAllCandidates = new List<WaveData.WaveType>(8);
+    private readonly List<WaveData.WaveType> _cachedValidCandidates = new List<WaveData.WaveType>(8);
+    private static readonly List<WaveData.WaveType> _fallbackTypes = new List<WaveData.WaveType>
+    {
+        WaveData.WaveType.Combat,
+        WaveData.WaveType.Combat,
+        WaveData.WaveType.Camp,
+        WaveData.WaveType.Combat,
+        WaveData.WaveType.Boss
+    };
+    private readonly List<WaveData> runtimeInstantiatedWaves = new List<WaveData>();
+
+    private void OnDestroy()
+    {
+        CleanupRuntimeWaves();
+    }
+
+    public void CleanupRuntimeWaves()
+    {
+        for (int i = 0; i < runtimeInstantiatedWaves.Count; i++)
+        {
+            if (runtimeInstantiatedWaves[i] != null)
+            {
+                Destroy(runtimeInstantiatedWaves[i]);
+            }
+        }
+        runtimeInstantiatedWaves.Clear();
+    }
+
     /// <summary>
     /// Returns the score delta for a given wave type according to GDD:
     /// Combat = +1, Event = -1, Reward = -2, Camp = 0, Merchant = -1.
@@ -57,53 +89,52 @@ public class FloorGenerator : MonoBehaviour
         int minScore,
         int maxScore)
     {
-        List<WaveData.WaveType> allCandidates = new List<WaveData.WaveType>
-        {
-            WaveData.WaveType.Combat,
-            WaveData.WaveType.Event
-        };
+        _cachedAllCandidates.Clear();
+        _cachedAllCandidates.Add(WaveData.WaveType.Combat);
+        _cachedAllCandidates.Add(WaveData.WaveType.Event);
 
         // Constraint: no consecutive Reward
         if (previousType != WaveData.WaveType.Reward)
         {
-            allCandidates.Add(WaveData.WaveType.Reward);
+            _cachedAllCandidates.Add(WaveData.WaveType.Reward);
         }
 
         // Constraint: no consecutive Camp
         if (previousType != WaveData.WaveType.Camp)
         {
-            allCandidates.Add(WaveData.WaveType.Camp);
+            _cachedAllCandidates.Add(WaveData.WaveType.Camp);
         }
 
         // Constraint: no consecutive Merchant, and Merchant must be active in town/dungeon schedule
         if (previousType != WaveData.WaveType.Merchant && MerchantEvent.IsMerchantActive())
         {
-            allCandidates.Add(WaveData.WaveType.Merchant);
+            _cachedAllCandidates.Add(WaveData.WaveType.Merchant);
         }
 
         // Filter candidates whose projected score falls within [minScore, maxScore]
-        List<WaveData.WaveType> validCandidates = new List<WaveData.WaveType>();
-        foreach (var candidate in allCandidates)
+        _cachedValidCandidates.Clear();
+        for (int i = 0; i < _cachedAllCandidates.Count; i++)
         {
+            WaveData.WaveType candidate = _cachedAllCandidates[i];
             int projected = currentScore + GetScoreForWaveType(candidate);
             if (projected >= minScore && projected <= maxScore)
             {
-                validCandidates.Add(candidate);
+                _cachedValidCandidates.Add(candidate);
             }
         }
 
-        if (validCandidates.Count > 0)
+        if (_cachedValidCandidates.Count > 0)
         {
-            WaveData.WaveType chosen = validCandidates[Random.Range(0, validCandidates.Count)];
-            Debug.Log($"[FloorGenerator] Random Wave calculated: currentScore={currentScore}, valid candidates=[{string.Join(", ", validCandidates)}], chosen={chosen} (newScore={currentScore + GetScoreForWaveType(chosen)})");
+            WaveData.WaveType chosen = _cachedValidCandidates[Random.Range(0, _cachedValidCandidates.Count)];
             return chosen;
         }
 
         // If no candidate falls exactly within range, pick the candidate that gets closest to [minScore, maxScore]
-        WaveData.WaveType bestType = allCandidates[0];
+        WaveData.WaveType bestType = _cachedAllCandidates[0];
         int bestDistance = int.MaxValue;
-        foreach (var candidate in allCandidates)
+        for (int i = 0; i < _cachedAllCandidates.Count; i++)
         {
+            WaveData.WaveType candidate = _cachedAllCandidates[i];
             int projected = currentScore + GetScoreForWaveType(candidate);
             int dist = 0;
             if (projected < minScore) dist = minScore - projected;
@@ -116,7 +147,6 @@ public class FloorGenerator : MonoBehaviour
             }
         }
 
-        Debug.Log($"[FloorGenerator] Random Wave (closest balance): currentScore={currentScore}, chosen={bestType} (projected={currentScore + GetScoreForWaveType(bestType)})");
         return bestType;
     }
 
@@ -129,7 +159,7 @@ public class FloorGenerator : MonoBehaviour
 
         for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
-            List<WaveData.WaveType> stageTypes = new List<WaveData.WaveType>();
+            _cachedStageTypes.Clear();
 
             int currentScore = 0;
             int combatCount = 0;
@@ -142,25 +172,27 @@ public class FloorGenerator : MonoBehaviour
             // Generate stages from 0 to totalStages - 2
             for (int i = 0; i < totalStages - 1; i++)
             {
-                List<WaveData.WaveType> allowedTypes = new List<WaveData.WaveType> { WaveData.WaveType.Combat, WaveData.WaveType.Event };
+                _cachedAllowedTypes.Clear();
+                _cachedAllowedTypes.Add(WaveData.WaveType.Combat);
+                _cachedAllowedTypes.Add(WaveData.WaveType.Event);
 
                 if (consecutiveReward < maxConsecutiveReward)
                 {
-                    allowedTypes.Add(WaveData.WaveType.Reward);
+                    _cachedAllowedTypes.Add(WaveData.WaveType.Reward);
                 }
 
                 if (consecutiveCamp < maxConsecutiveCamp)
                 {
-                    allowedTypes.Add(WaveData.WaveType.Camp);
+                    _cachedAllowedTypes.Add(WaveData.WaveType.Camp);
                 }
 
                 if (consecutiveMerchant < 1 && merchantCount < 2 && MerchantEvent.IsMerchantActive())
                 {
-                    allowedTypes.Add(WaveData.WaveType.Merchant);
+                    _cachedAllowedTypes.Add(WaveData.WaveType.Merchant);
                 }
 
-                WaveData.WaveType chosen = allowedTypes[Random.Range(0, allowedTypes.Count)];
-                stageTypes.Add(chosen);
+                WaveData.WaveType chosen = _cachedAllowedTypes[Random.Range(0, _cachedAllowedTypes.Count)];
+                _cachedStageTypes.Add(chosen);
 
                 if (chosen == WaveData.WaveType.Combat)
                 {
@@ -202,7 +234,7 @@ public class FloorGenerator : MonoBehaviour
             }
 
             // The final stage is always the Boss stage
-            stageTypes.Add(WaveData.WaveType.Boss);
+            _cachedStageTypes.Add(WaveData.WaveType.Boss);
 
             // Check constraints
             if (combatCount < minCombatCount) valid = false;
@@ -210,8 +242,7 @@ public class FloorGenerator : MonoBehaviour
 
             if (valid)
             {
-                Debug.Log($"[FloorGenerator] Floor generation successful on attempt {attempt + 1}. Total score: {currentScore}, Combat stages: {combatCount}");
-                return BuildWavesFromTypesWithFallbacks(stageTypes);
+                return BuildWavesFromTypesWithFallbacks(_cachedStageTypes);
             }
         }
 
@@ -346,6 +377,7 @@ public class FloorGenerator : MonoBehaviour
     private WaveData CloneWaveWithType(WaveData source, WaveData.WaveType newType, string namePrefix)
     {
         WaveData copy = ScriptableObject.CreateInstance<WaveData>();
+        runtimeInstantiatedWaves.Add(copy);
         copy.name = $"{namePrefix} ({source.name})";
         copy.waveType = newType;
         copy.isRandom = source.isRandom;
@@ -360,6 +392,7 @@ public class FloorGenerator : MonoBehaviour
     private WaveData CreateDefaultWave(WaveData.WaveType type, string stageName, WaveData sourceWave = null)
     {
         WaveData wave = ScriptableObject.CreateInstance<WaveData>();
+        runtimeInstantiatedWaves.Add(wave);
         wave.name = stageName;
         wave.waveType = type;
         if (sourceWave != null)
@@ -382,14 +415,6 @@ public class FloorGenerator : MonoBehaviour
 
     private WaveData[] BuildFallbackFloor()
     {
-        List<WaveData.WaveType> fallbackTypes = new List<WaveData.WaveType>
-        {
-            WaveData.WaveType.Combat,
-            WaveData.WaveType.Combat,
-            WaveData.WaveType.Camp,
-            WaveData.WaveType.Combat,
-            WaveData.WaveType.Boss
-        };
-        return BuildWavesFromTypesWithFallbacks(fallbackTypes);
+        return BuildWavesFromTypesWithFallbacks(_fallbackTypes);
     }
 }

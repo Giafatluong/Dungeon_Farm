@@ -4,14 +4,25 @@ using System.Collections;
 public class DayManager : MonoBehaviour
 {
     private static DayManager _instance;
+    private static bool isQuitting = false;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        _instance = null;
+        isQuitting = false;
+    }
+
     public static DayManager Instance
     {
         get
         {
+            if (isQuitting) return _instance;
+
             if (_instance == null)
             {
                 _instance = FindFirstObjectByType<DayManager>();
-                if (_instance == null)
+                if (_instance == null && !isQuitting && Application.isPlaying)
                 {
                     GameObject go = new GameObject("DayManager_Runtime");
                     _instance = go.AddComponent<DayManager>();
@@ -20,6 +31,25 @@ public class DayManager : MonoBehaviour
             return _instance;
         }
         private set => _instance = value;
+    }
+
+    private void OnApplicationQuit()
+    {
+        isQuitting = true;
+    }
+
+    private void OnDestroy()
+    {
+        if (_instance == this)
+        {
+            isQuitting = true;
+            _instance = null;
+        }
+        if (dayTimerCoroutine != null)
+        {
+            StopCoroutine(dayTimerCoroutine);
+            dayTimerCoroutine = null;
+        }
     }
 
     [Header("Day Settings")]

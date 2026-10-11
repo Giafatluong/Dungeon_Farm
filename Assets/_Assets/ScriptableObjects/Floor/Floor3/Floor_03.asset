@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b361ef3d9b53cdd41b30d69a54936c4a, type: 3}
+  m_Name: Thành Cổ Quỷ Dữ (Floor 3)
+  m_EditorClassIdentifier: Assembly-CSharp::FloorData
+  floorName: Thành Cổ Quỷ Dữ
+  floorNumber: 3
+  waves:
+  - {fileID: 11400000, guid: 6728364bf1a6b74a40895e1fe86f905a, type: 2}
+  - {fileID: 11400000, guid: edc11910e9f700db6c1e2c96a8b43428, type: 2}
+  - {fileID: 11400000, guid: e81a0202a59d74c6874b0338e27aaae1, type: 2}
+  - {fileID: 11400000, guid: bea6be3f73c9f5009f9e8c7e355f01aa, type: 2}
+  - {fileID: 11400000, guid: 0c127ed08401ce9d1bab83fe36b2e972, type: 2}
+  - {fileID: 11400000, guid: 9cafba8a6e3277bf49d8339e9c594f4a, type: 2}
+  - {fileID: 11400000, guid: 6040839ee6521bc26917b9347d1b644b, type: 2}
+  - {fileID: 11400000, guid: 74aa74153feaf8da598ba1b333ae2741, type: 2}
+  - {fileID: 11400000, guid: df1611a5c7a62e66c14e1ba4244dcafa, type: 2}
+  - {fileID: 11400000, guid: 1fe56e0755f19c9d7e95c2e44280e747, type: 2}
+  - {fileID: 11400000, guid: 87655b8066983cf1c707182464570427, type: 2}
+  - {fileID: 11400000, guid: e60521b76a72779578edd03d5d46bc33, type: 2}
+  - {fileID: 11400000, guid: e062969bd638d31d5a6aa6c04be6ee75, type: 2}
+  - {fileID: 11400000, guid: ffc4472cc5dd9354d9467ccc3e6b13c4, type: 2}
+  - {fileID: 11400000, guid: deb21bc5329605fb26e92a807d928906, type: 2}
+  - {fileID: 11400000, guid: aa8013c457f72658a8fb75298adb08e8, type: 2}
+  - {fileID: 11400000, guid: cab0e083cb93ef7a7761fa418388453e, type: 2}
+  - {fileID: 11400000, guid: 3c342df02fa4826e38cc135657c7c34b, type: 2}
+  bossName: Dark Flying Rider
+  clearRewardItems:
+  - itemData: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
+    amount: 8
+  - itemData: {fileID: 11400000, guid: ea2db54ad97c8e94e968dd42f17c610f, type: 2}
+    amount: 8
+  - itemData: {fileID: 11400000, guid: 44e0ea967df46ab40801462a3092738b, type: 2}
+    amount: 3
+  bonusPermanentATK: 2
+  bonusPermanentDEF: 0
+  bonusPermanentMaxHP: 15
+  bonusPermanentSpeed: 2
+  victoryTitle: VÔ ĐỊCH HẦM NGỤC - THÀNH CỔ SỤP ĐỔ!
+  victoryDescription: "Kỵ Sĩ Hắc Ám đã bị tiêu diệt hoàn toàn! Bạn đã trở thành huyền thoại dũng cảm nhất lục địa với kho tàng báu vật vô giá."

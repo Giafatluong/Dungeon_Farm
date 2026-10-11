@@ -1,6 +1,6 @@
-using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class CombatManager : MonoBehaviour
 {
@@ -25,11 +25,12 @@ public class CombatManager : MonoBehaviour
     public readonly List<ItemSlot> currentWaveLoot = new();
     #endregion
 
-    #region Config
     [Header("Config")]
     public float preparationTime = 3f;
     public float enemyTurnDelay = 1.2f;
-    #endregion
+    public float playerActionDelay = 0.35f;
+    [Tooltip("Thời gian chờ sau khi quái cuối cùng chết trước khi hiện UI kết thúc")]
+    public float victoryDelay = 1.0f;
 
     #region Events
     public event System.Action<string> OnCombatLog;
@@ -38,10 +39,14 @@ public class CombatManager : MonoBehaviour
     public event System.Action OnCombatStarted;
     public event System.Action OnCombatEnded;
     public event System.Action<EnemyStats, int> OnPlayerAttackAction;
+    public event System.Action<bool> OnPlayerActingChanged;
     #endregion
+
+    public bool isPlayerActing { get; private set; } = false;
 
     private Coroutine preparationCoroutine;
     private Coroutine enemyTurnCoroutine;
+    private Coroutine playerActionDelayCoroutine;
 
     public static CombatManager Instance { get; private set; }
 
@@ -180,6 +185,13 @@ public class CombatManager : MonoBehaviour
 
     public void StartPlayerTurn()
     {
+        if (playerActionDelayCoroutine != null)
+        {
+            StopCoroutine(playerActionDelayCoroutine);
+            playerActionDelayCoroutine = null;
+        }
+        SetPlayerActing(false);
+
         currentTurn = Turn.Player;
         hasEatenThisTurn = false;
 
@@ -195,6 +207,13 @@ public class CombatManager : MonoBehaviour
 
     public void StartEnemyTurn(EnemyStats enemy)
     {
+        if (playerActionDelayCoroutine != null)
+        {
+            StopCoroutine(playerActionDelayCoroutine);
+            playerActionDelayCoroutine = null;
+        }
+        SetPlayerActing(false);
+
         if (enemy == null || enemy.currentHealth <= 0)
         {
             if (turnManager != null) turnManager.NextTurn();
@@ -242,7 +261,7 @@ public class CombatManager : MonoBehaviour
 
     public void EndTurnPlayer()
     {
-        if (!isCombatActive || currentTurn != Turn.Player) return;
+        if (!isCombatActive || currentTurn != Turn.Player || isPlayerActing) return;
 
         // Reduce player turn-based buff durations
         if (playerStats != null)
@@ -258,13 +277,40 @@ public class CombatManager : MonoBehaviour
         }
     }
 
+    public void StartPlayerActionCooldown(float delay = -1f)
+    {
+        float actualDelay = delay > 0f ? delay : playerActionDelay;
+        if (playerActionDelayCoroutine != null)
+        {
+            StopCoroutine(playerActionDelayCoroutine);
+        }
+        playerActionDelayCoroutine = StartCoroutine(PlayerActionDelayRoutine(actualDelay));
+    }
+
+    private IEnumerator PlayerActionDelayRoutine(float delay)
+    {
+        SetPlayerActing(true);
+        yield return new WaitForSeconds(delay);
+        SetPlayerActing(false);
+        playerActionDelayCoroutine = null;
+    }
+
+    private void SetPlayerActing(bool acting)
+    {
+        if (isPlayerActing != acting)
+        {
+            isPlayerActing = acting;
+            OnPlayerActingChanged?.Invoke(isPlayerActing);
+        }
+    }
+
     #endregion
 
     #region Player Actions
 
     public void PlayerAttack()
     {
-        if (!isCombatActive || currentTurn != Turn.Player) return;
+        if (!isCombatActive || currentTurn != Turn.Player || isPlayerActing) return;
         if (playerStats == null || playerStats.currentAP <= 0) return;
 
         if (targetSelector == null || targetSelector.selectedEnemy == null)
@@ -279,6 +325,8 @@ public class CombatManager : MonoBehaviour
             LogMessage("Target is already dead!");
             return;
         }
+
+        StartPlayerActionCooldown();
 
         int atk = playerStats.GetCurrentATK();
 
@@ -328,8 +376,10 @@ public class CombatManager : MonoBehaviour
 
     public void PlayerDefend()
     {
-        if (!isCombatActive || currentTurn != Turn.Player) return;
+        if (!isCombatActive || currentTurn != Turn.Player || isPlayerActing) return;
         if (playerStats == null || playerStats.currentAP <= 0) return;
+
+        StartPlayerActionCooldown();
 
         playerStats.Defend();
         playerStats.currentAP--;
@@ -340,9 +390,11 @@ public class CombatManager : MonoBehaviour
 
     public void PlayerEat(FoodData food)
     {
-        if (!isCombatActive || currentTurn != Turn.Player) return;
-        if (playerStats == null) return;
-        if (food == null) return;
+        if (playerStats == null || food == null || isPlayerActing) return;
+
+        bool isAtEntrance = WaveManager.Instance != null && WaveManager.Instance.isAtEntrance;
+
+        if (!isAtEntrance && (!isCombatActive || currentTurn != Turn.Player)) return;
 
         bool isFreeEat = false;
         // Blessing: Đại Tiệc Bất Tận (EndlessFeast) - Món ăn đầu tiên trong mỗi lượt không tốn AP
@@ -352,15 +404,17 @@ public class CombatManager : MonoBehaviour
             hasEatenThisTurn = true;
         }
 
-        if (!isFreeEat && playerStats.currentAP <= 0)
+        if (!isAtEntrance && !isFreeEat && playerStats.currentAP <= 0)
         {
             LogMessage("Not enough AP to eat!");
             return;
         }
 
+        StartPlayerActionCooldown();
+
         playerStats.Eat(food);
 
-        if (!isFreeEat)
+        if (!isAtEntrance && !isFreeEat)
         {
             playerStats.currentAP--;
         }
@@ -403,21 +457,39 @@ public class CombatManager : MonoBehaviour
 
         LogMessage($"{deadEnemy.enemyData?.enemyName ?? "Enemy"} was defeated!");
 
-        // Drop loot
+        // Drop loot - collect into currentWaveLoot for player to loot via UI upon victory
         List<ItemSlot> drops = deadEnemy.GetLootDrops();
-        if (playerStats != null && playerStats.itemContainer != null && drops != null)
+        if ((drops == null || drops.Count == 0) && deadEnemy.enemyData != null && deadEnemy.enemyData.lootDrops != null && deadEnemy.enemyData.lootDrops.Length > 0)
+        {
+            var fallback = deadEnemy.enemyData.lootDrops[0];
+            if (fallback != null && fallback.item != null)
+            {
+                drops = new List<ItemSlot> { new ItemSlot { itemData = fallback.item, amount = Mathf.Max(1, fallback.minAmount) } };
+            }
+        }
+
+        if (drops != null)
         {
             for (int i = 0; i < drops.Count; i++)
             {
                 if (drops[i] != null && drops[i].itemData != null && drops[i].amount > 0)
                 {
-                    playerStats.itemContainer.AddItem(drops[i].itemData, drops[i].amount);
-                    currentWaveLoot.Add(new ItemSlot { itemData = drops[i].itemData, amount = drops[i].amount });
-                    LogMessage($"Obtained: {drops[i].itemData.itemName} x{drops[i].amount}");
+                    bool stacked = false;
+                    for (int s = 0; s < currentWaveLoot.Count; s++)
+                    {
+                        if (currentWaveLoot[s] != null && ItemContainer.IsItemMatch(currentWaveLoot[s].itemData, drops[i].itemData))
+                        {
+                            currentWaveLoot[s].amount += drops[i].amount;
+                            stacked = true;
+                            break;
+                        }
+                    }
+                    if (!stacked)
+                    {
+                        currentWaveLoot.Add(new ItemSlot { itemData = drops[i].itemData, amount = drops[i].amount });
+                    }
 
-                    // Floating text popup above dead enemy
-                    Vector3 popupPos = deadEnemy.transform.position + Vector3.up * 1.4f + new Vector3(Random.Range(-0.25f, 0.25f), i * 0.45f, 0);
-                    DamagePopupManager.ShowText(popupPos, $"+{drops[i].amount} {drops[i].itemData.itemName}", new Color(0.35f, 0.95f, 0.55f), 4.6f);
+                    LogMessage($"Rơi vật phẩm: {drops[i].itemData.itemName} x{drops[i].amount}");
                 }
             }
         }
@@ -441,8 +513,25 @@ public class CombatManager : MonoBehaviour
 
         if (!anyAlive)
         {
-            EndCombat(victory: true);
+            if (CombatJuice.Instance != null)
+            {
+                CombatJuice.Instance.PlayFinisherSlowMo(0.25f, 0.45f);
+            }
+            StartCoroutine(DelayedVictoryRoutine());
         }
+    }
+
+    private IEnumerator DelayedVictoryRoutine()
+    {
+        // Khóa hành động người chơi trong lúc chờ quái tan biến
+        SetPlayerActing(true);
+
+        if (victoryDelay > 0f)
+        {
+            yield return new WaitForSeconds(victoryDelay);
+        }
+
+        EndCombat(victory: true);
     }
 
     private void EndCombat(bool victory)
@@ -454,6 +543,12 @@ public class CombatManager : MonoBehaviour
 
         if (preparationCoroutine != null) StopCoroutine(preparationCoroutine);
         if (enemyTurnCoroutine != null) StopCoroutine(enemyTurnCoroutine);
+        if (playerActionDelayCoroutine != null)
+        {
+            StopCoroutine(playerActionDelayCoroutine);
+            playerActionDelayCoroutine = null;
+        }
+        SetPlayerActing(false);
 
         if (playerStats != null)
         {
@@ -467,16 +562,79 @@ public class CombatManager : MonoBehaviour
             LogMessage("Victory! All enemies defeated.");
 
             WaveManager waveManager = FindFirstObjectByType<WaveManager>();
-            if (waveManager != null && isAmbushCurrent)
+            int waveIdx = waveManager != null ? waveManager.GetCurrentWaveIndex() : 0;
+
+            // Người chơi sẽ kéo các vật phẩm vào inventory chứ không tự động vào inven
+            ItemContainer backpack = playerStats != null ? playerStats.itemContainer : null;
+            if (backpack == null)
             {
-                waveManager.HandlePostAmbushCamp();
+                InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+                if (invPanel != null && invPanel.ItemContainer != null) backpack = invPanel.ItemContainer;
+            }
+            if (backpack == null)
+            {
+                ItemContainer[] containers = GameAssetHelper.LoadAll<ItemContainer>();
+                for (int i = 0; i < containers.Length; i++)
+                {
+                    if (containers[i] != null && !containers[i].name.ToLower().Contains("chest") && !containers[i].name.ToLower().Contains("loot"))
+                    {
+                        backpack = containers[i];
+                        break;
+                    }
+                }
+            }
+
+            bool hasLoot = false;
+            if (currentWaveLoot != null)
+            {
+                for (int i = 0; i < currentWaveLoot.Count; i++)
+                {
+                    if (currentWaveLoot[i] != null && currentWaveLoot[i].itemData != null && currentWaveLoot[i].amount > 0)
+                    {
+                        hasLoot = true;
+                        break;
+                    }
+                }
+            }
+
+            System.Action onLootFinished = () =>
+            {
+                if (currentWaveLoot != null) currentWaveLoot.Clear();
+
+                if (waveManager != null && isAmbushCurrent)
+                {
+                    waveManager.HandlePostAmbushCamp();
+                }
+                else if (waveManager != null)
+                {
+                    waveManager.Continue();
+                }
+            };
+
+            LootUI lootUI = LootUI.EnsureInstance();
+            if (hasLoot && lootUI != null && backpack != null)
+            {
+                if (CombatUI.Instance != null && CombatUI.Instance.rewardPanel != null)
+                {
+                    CombatUI.Instance.rewardPanel.SetActive(false);
+                }
+
+                List<ItemSlot> lootToPass = new(currentWaveLoot);
+                currentWaveLoot.Clear();
+
+                lootUI.Open(lootToPass, backpack, onLootFinished);
             }
             else
             {
-                int waveIdx = waveManager != null ? waveManager.GetCurrentWaveIndex() : 0;
-                if (CombatUI.Instance != null)
+                if (currentWaveLoot != null) currentWaveLoot.Clear();
+
+                if (waveManager != null && isAmbushCurrent)
                 {
-                    CombatUI.Instance.ShowWaveVictoryScreen(waveIdx, currentWaveLoot);
+                    waveManager.HandlePostAmbushCamp();
+                }
+                else if (CombatUI.Instance != null && CombatUI.Instance.rewardPanel != null)
+                {
+                    CombatUI.Instance.ShowWaveVictoryScreen(waveIdx, null);
                 }
                 else if (waveManager != null)
                 {

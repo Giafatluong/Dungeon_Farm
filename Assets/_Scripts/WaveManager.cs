@@ -1,6 +1,6 @@
-using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class WaveManager : MonoBehaviour
 {
@@ -32,6 +32,11 @@ public class WaveManager : MonoBehaviour
     private int currentFloorScore = 0;
     private WaveData.WaveType lastResolvedType = (WaveData.WaveType)(-1);
     private FloorData cachedActiveFloor;
+
+    // Zero-allocation cached lists & runtime resource tracking
+    private readonly List<WaveData> runtimeInstantiatedWaves = new List<WaveData>();
+    private readonly List<int> _cachedMerchantCandidateIndices = new List<int>(8);
+    private readonly List<EnemyStats> _cachedValidEnemies = new List<EnemyStats>(4);
 
     public FloorData GetActiveFloor()
     {
@@ -97,14 +102,37 @@ public class WaveManager : MonoBehaviour
     #endregion
 
     #region Unity Lifecycle
+    public static WaveManager Instance { get; private set; }
+
+    [Header("Entrance Room")]
+    [Tooltip("Whether the player is currently in the safe entrance antechamber before wave 1.")]
+    [SerializeField] private bool _isAtEntrance = false;
+    public bool isAtEntrance => _isAtEntrance;
+    public bool IsAtEntrance => _isAtEntrance;
+
     private void Awake()
     {
+        Instance = this;
         cachedActiveFloor = null;
         if (combatManager == null) combatManager = GetComponent<CombatManager>();
         if (healthBarManager == null) healthBarManager = GetComponent<HealthBarManager>();
         if (targetSelector == null) targetSelector = GetComponent<EnemyTargetSelector>();
         if (floorGenerator == null) floorGenerator = GetComponent<FloorGenerator>();
         if (rewardChest == null) rewardChest = GetComponentInChildren<RewardChest>(true) ?? FindFirstObjectByType<RewardChest>(FindObjectsInactive.Include);
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+
+        for (int i = 0; i < runtimeInstantiatedWaves.Count; i++)
+        {
+            if (runtimeInstantiatedWaves[i] != null)
+            {
+                Destroy(runtimeInstantiatedWaves[i]);
+            }
+        }
+        runtimeInstantiatedWaves.Clear();
     }
 
     private void Start()
@@ -115,12 +143,12 @@ public class WaveManager : MonoBehaviour
             ProgressionManager.Instance.StartRun(floorToRun);
         }
 
-        StartFirstWave();
+        SetupFloorAndEnterEntrance();
     }
     #endregion
 
     #region Floor & Stage Navigation
-    public void StartFirstWave()
+    public void SetupFloorAndEnterEntrance()
     {
         FloorData activeFloor = GetActiveFloor();
 
@@ -155,8 +183,73 @@ public class WaveManager : MonoBehaviour
         // Hand-crafted or procedural runtime waves established
         ApplyRoguelikeMerchantEncounter();
 
+        // Safe entrance room buffer with right arrow UI
+        EnterEntranceRoom();
+    }
+
+    public void EnterEntranceRoom()
+    {
+        _isAtEntrance = true;
+        currentWaveIndex = -1;
+
+        int floorNum = ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1;
+        int totalStages = GetTotalStages();
+
+        if (CombatUI.Instance != null)
+        {
+            CombatUI.Instance.RefreshAll();
+            CombatUI.Instance.LogMessage($"Chào mừng đến Hầm Ngục Tầng {floorNum}! Nhấn nút mũi tên bên phải để tiến vào ải đầu tiên.");
+        }
+
+        DungeonEntranceArrowUI arrowUI = DungeonEntranceArrowUI.EnsureInstance();
+        if (arrowUI != null)
+        {
+            arrowUI.Show(floorNum, totalStages, ProceedFromEntrance);
+        }
+    }
+
+    public void ProceedFromEntrance()
+    {
+        if (!_isAtEntrance || isTransitioning)
+            return;
+
+        _isAtEntrance = false;
+
+        DungeonEntranceArrowUI.Instance?.Hide();
+
+        StartCoroutine(TransitionFromEntranceToFirstWave());
+    }
+
+    private IEnumerator TransitionFromEntranceToFirstWave()
+    {
+        isTransitioning = true;
+
+        float moveDuration = 1.4f;
+
+        // Player walking forward animation between entrance and stage 1
+        PlayerCombatVisual playerVisual = FindFirstObjectByType<PlayerCombatVisual>();
+        if (playerVisual != null)
+        {
+            playerVisual.PlayMoveTransition(moveDuration);
+        }
+
+        if (CombatUI.Instance != null)
+        {
+            CombatUI.Instance.LogMessage("Đang tiến vào ải đầu tiên...");
+        }
+
+        yield return new WaitForSeconds(moveDuration);
+
         currentWaveIndex = 0;
+        UpdateProgressBar();
         StartWave();
+
+        isTransitioning = false;
+    }
+
+    public void StartFirstWave()
+    {
+        SetupFloorAndEnterEntrance();
     }
 
     #region Roguelike Merchant Encounter
@@ -203,20 +296,21 @@ public class WaveManager : MonoBehaviour
         if (Random.value <= roguelikeMerchantSpawnChance)
         {
             // Pick a random middle stage (exclude stage 0 and final boss stage)
-            List<int> candidateIndices = new();
+            _cachedMerchantCandidateIndices.Clear();
             for (int i = 1; i < runtimeWaves.Length - 1; i++)
             {
                 if (runtimeWaves[i] == null) continue;
                 if (runtimeWaves[i].waveType == WaveData.WaveType.Combat || runtimeWaves[i].waveType == WaveData.WaveType.Random)
                 {
-                    candidateIndices.Add(i);
+                    _cachedMerchantCandidateIndices.Add(i);
                 }
             }
 
-            if (candidateIndices.Count > 0)
+            if (_cachedMerchantCandidateIndices.Count > 0)
             {
-                int chosenIndex = candidateIndices[Random.Range(0, candidateIndices.Count)];
+                int chosenIndex = _cachedMerchantCandidateIndices[Random.Range(0, _cachedMerchantCandidateIndices.Count)];
                 WaveData merchantWave = ScriptableObject.CreateInstance<WaveData>();
+                runtimeInstantiatedWaves.Add(merchantWave);
                 merchantWave.name = $"Roguelike_Merchant_Stage_{chosenIndex + 1}";
                 merchantWave.waveType = WaveData.WaveType.Merchant;
                 merchantWave.enemyPrefabs = new GameObject[0];
@@ -242,12 +336,54 @@ public class WaveManager : MonoBehaviour
 
         if (currentWaveIndex >= totalStages - 1)
         {
-            Debug.Log("[WaveManager] Completed entire Floor!");
-            int floorNum = activeFloor != null ? activeFloor.floorNumber : (ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1);
-            if (ProgressionManager.Instance != null)
-            {
-                ProgressionManager.Instance.RecordBossDefeated(floorNum);
-            }
+            Debug.Log("[WaveManager] Completed entire Floor! Opening Grand Floor Victory Rewards.");
+            HandleFloorVictory();
+            return;
+        }
+
+        StartCoroutine(NextWave());
+    }
+
+    private void HandleFloorVictory()
+    {
+        FloorData activeFloor = GetActiveFloor();
+        int floorNum = activeFloor != null ? activeFloor.floorNumber : (ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1);
+
+        bool isFirstTime = false;
+        if (ProgressionManager.Instance != null)
+        {
+            isFirstTime = ProgressionManager.Instance.RecordBossDefeated(floorNum);
+        }
+
+        PlayerStats pStats = (combatManager != null && combatManager.playerStats != null) ? combatManager.playerStats : FindFirstObjectByType<PlayerStats>();
+        ItemContainer backpack = pStats != null ? pStats.itemContainer : null;
+
+        FloorVictoryUI victoryUI = FloorVictoryUI.EnsureInstance();
+        if (victoryUI != null)
+        {
+            victoryUI.Open(activeFloor, floorNum, backpack, isFirstTime,
+                onReturnToBase: () =>
+                {
+                    if (ProgressionManager.Instance != null)
+                    {
+                        ProgressionManager.Instance.CompleteRun();
+                    }
+                    else if (SceneTransitionManager.Instance != null)
+                    {
+                        SceneTransitionManager.Instance.LoadBase();
+                    }
+                    else
+                    {
+                        UnityEngine.SceneManagement.SceneManager.LoadScene("Base");
+                    }
+                },
+                onNextFloor: () =>
+                {
+                    ProceedToNextFloor(floorNum + 1);
+                });
+        }
+        else
+        {
             if (CombatUI.Instance != null)
             {
                 CombatUI.Instance.ShowVictoryScreen("DUNGEON VICTORY!\n\nYou cleared all stages and defeated the Boss!\nAll loot and crops have been secured.");
@@ -256,10 +392,24 @@ public class WaveManager : MonoBehaviour
             {
                 ProgressionManager.Instance.CompleteRun();
             }
-            return;
+        }
+    }
+
+    public void ProceedToNextFloor(int nextFloorNum)
+    {
+        Debug.Log($"[WaveManager] Transitioning directly to next floor: Floor {nextFloorNum}");
+        if (ProgressionManager.Instance != null)
+        {
+            ProgressionManager.Instance.currentFloor = nextFloorNum;
+            ProgressionManager.Instance.UnlockFloor(nextFloorNum);
         }
 
-        StartCoroutine(NextWave());
+        cachedActiveFloor = null;
+        currentWaveIndex = -1;
+        currentFloorScore = 0;
+        lastResolvedType = (WaveData.WaveType)(-1);
+
+        SetupFloorAndEnterEntrance();
     }
 
     private IEnumerator NextWave()
@@ -638,14 +788,17 @@ public class WaveManager : MonoBehaviour
         }
 
         int enemyCount = Mathf.Min(enemiesToSpawn.Length, combatPositions.Length);
-        List<EnemyStats> validEnemies = new();
+        _cachedValidEnemies.Clear();
 
         for (int i = 0; i < enemyCount; i++)
         {
             if (enemiesToSpawn[i] == null || combatPositions[i] == null)
                 continue;
 
-            Vector3 finalPos = combatPositions[i].position;
+            EnemyStats prefabStats = enemiesToSpawn[i].GetComponent<EnemyStats>();
+            float yOff = prefabStats != null ? prefabStats.GetSpawnYOffset() : 0f;
+
+            Vector3 finalPos = combatPositions[i].position + new Vector3(0f, yOff, 0f);
             Vector3 startPos = finalPos + new Vector3(5.5f, 0f, 0f);
 
             GameObject enemyObject = Instantiate(enemiesToSpawn[i], startPos, Quaternion.identity);
@@ -660,10 +813,10 @@ public class WaveManager : MonoBehaviour
             }
 
             stats.targetSelector = targetSelector;
-            validEnemies.Add(stats);
+            _cachedValidEnemies.Add(stats);
         }
 
-        EnemyStats[] enemyArray = validEnemies.ToArray();
+        EnemyStats[] enemyArray = _cachedValidEnemies.ToArray();
 
         combatManager.SetEnemies(enemyArray);
 
@@ -732,6 +885,18 @@ public class WaveManager : MonoBehaviour
     public int GetCurrentWaveIndex()
     {
         return currentWaveIndex;
+    }
+
+    public int GetTotalStages()
+    {
+        if (runtimeWaves != null && runtimeWaves.Length > 0)
+            return runtimeWaves.Length;
+
+        FloorData floor = GetActiveFloor();
+        if (floor != null && floor.waves != null)
+            return floor.waves.Length;
+
+        return 0;
     }
     #endregion
 }

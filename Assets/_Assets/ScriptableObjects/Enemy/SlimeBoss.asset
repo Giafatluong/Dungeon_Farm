@@ -12,13 +12,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c32e8c2eb4883b42bac2a10e839d4cb, type: 3}
   m_Name: SlimeBoss
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
-  enemyName: Slime
-  maxHealth: 0
-  ATK: 0
-  DEF: 0
-  speed: 0
-  possibleIntents: 
-  intentEffects: []
-  lootDrops: []
+  enemyName: King Slime (Boss)
+  maxHealth: 120
+  ATK: 16
+  DEF: 5
+  speed: 15
+  possibleIntents: 000000000100000002000000
+  intentEffects:
+  - effect: {fileID: 11400000, guid: 2c54625ab304a2649b5fcfa7060c0828, type: 2}
+    target: 0
+    value: 3
+    duration: 3
+    durationType: 0
+  lootDrops:
+  - item: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
+    dropChance: 1
+    minAmount: 2
+    maxAmount: 3
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
+    dropChance: 0.8
+    minAmount: 2
+    maxAmount: 3
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
+    dropChance: 0.7
+    minAmount: 1
+    maxAmount: 2
+    requireUnlock: 0
   dropUnlockedSeeds: 1
-  seedDropChance: 0.35
+  seedDropChance: 0.75

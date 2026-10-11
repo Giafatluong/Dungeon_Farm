@@ -108,28 +108,28 @@ public class DungeonEntranceUI : MonoBehaviour
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 1,
-            floorName = "TẦNG 1",
-            bossName = "Skeleton King",
-            subTitle = "",
-            description = ""
+            floorName = "TẦNG 1: HANG ĐỘNG XÁC SỐNG",
+            bossName = "Vua Xương Cổ Đại (Skeleton King)",
+            subTitle = "8 Ải Thử Thách - Hang Động Cổ Đại",
+            description = "Hầm ngục tầng 1 chứa chấp bộ xương và quái vật cơ bản. Hạ gục Vua Xương để mở đường xuống tầng dưới."
         });
 
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 2,
-            floorName = "TẦNG 2",
-            bossName = "Immortal Skeleton General",
-            subTitle = "",
-            description = ""
+            floorName = "TẦNG 2: ĐẦM LẦY QUÁI VẬT",
+            bossName = "Vua Chất Nhầy (King Slime)",
+            subTitle = "16 Ải Thử Thách - Đầm Lầy Nhầy Nhụa",
+            description = "Khu vực đầm lầy hiểm trở gồm 16 ải thử thách với dơi quỷ, chuột cống, yêu tinh và Vua Chất Nhầy khổng lồ."
         });
 
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 3,
-            floorName = "TẦNG 3",
-            bossName = "Spore Demon Fungus",
-            subTitle = "",
-            description = ""
+            floorName = "TẦNG 3: THÀNH CỔ QUỶ DỮ",
+            bossName = "Kỵ Sĩ Bay Hắc Ám (Dark Flying Rider)",
+            subTitle = "18 Ải Thử Thách - Thành Cổ Quỷ Dữ",
+            description = "Pháo đài bóng đêm với 18 ải khốc liệt gồm quỷ bay, Orc bọc giáp, cung thủ hắc ám và Kỵ Sĩ Bay huyền thoại."
         });
 
         floorList.Add(new FloorDisplayData
@@ -407,9 +407,11 @@ public class DungeonEntranceUI : MonoBehaviour
     #region Procedural UI Builder
     private void EnsureUIConstructed()
     {
+        if (dialogPanel != null) return;
+
         if (enterDungeonPanel == null)
         {
-            Canvas canvas = FindFirstObjectByType<Canvas>();
+            Canvas canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
             if (canvas != null)
             {
                 enterDungeonPanel = new GameObject("EnterDungeonPanel", typeof(RectTransform), typeof(Image));
@@ -428,14 +430,16 @@ public class DungeonEntranceUI : MonoBehaviour
             }
         }
 
-        // Always clean up existing modal to rebuild fresh with latest layout and scrollbar
         Transform existingModal = enterDungeonPanel.transform.Find("FloorSelectionModal");
         if (existingModal != null)
         {
+            if (floorCards.Count > 0 && dialogPanel != null)
+            {
+                return;
+            }
             Destroy(existingModal.gameObject);
+            dialogPanel = null;
         }
-        dialogPanel = null;
-        floorCards.Clear();
 
         // Hide legacy unstyled Yes/No buttons in the scene so they don't overlap
         for (int i = 0; i < enterDungeonPanel.transform.childCount; i++)

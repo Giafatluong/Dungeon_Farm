@@ -12,13 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c32e8c2eb4883b42bac2a10e839d4cb, type: 3}
   m_Name: Rat
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
-  enemyName: Rat
-  maxHealth: 5
-  ATK: 0
+  enemyName: Sewer Rat
+  maxHealth: 20
+  ATK: 6
   DEF: 0
-  speed: 0
-  possibleIntents: 
+  speed: 24
+  possibleIntents: 0000000001000000
   intentEffects: []
-  lootDrops: []
+  lootDrops:
+  - item: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
+    dropChance: 0.6
+    minAmount: 1
+    maxAmount: 2
+    requireUnlock: 0
   dropUnlockedSeeds: 1
   seedDropChance: 0.35

@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 16.386915, y: 5.1243024, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 3.2, y: 3.2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -86,7 +86,7 @@ SpriteRenderer:
   m_MaskInteraction: 0
   m_Sprite: {fileID: 8793639957104055765, guid: 06bcc4d7ce9d91b4d957a1f2bb07f55b, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
+  m_FlipX: 1
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 0.7, y: 0.7}
@@ -135,6 +135,8 @@ MonoBehaviour:
   isDefending: 0
   defendBonus: 5
   activeBuffs: []
+  isFlying: 0
+  yOffset: -0.3
   targetSelector: {fileID: 0}
 --- !u!61 &5795892705598643387
 BoxCollider2D:

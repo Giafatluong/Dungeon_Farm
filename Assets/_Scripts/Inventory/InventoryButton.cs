@@ -160,7 +160,7 @@ public class InventoryButton : MonoBehaviour,
             canvas = GetComponentInParent<Canvas>();
 
         if (canvas == null)
-            canvas = FindFirstObjectByType<Canvas>();
+            canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
 
         if (canvas == null)
             return;

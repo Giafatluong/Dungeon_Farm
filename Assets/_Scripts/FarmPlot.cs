@@ -34,8 +34,8 @@ public class FarmPlot : MonoBehaviour
 
         if (itemContainer == null)
         {
-            PlayerStats ps = FindFirstObjectByType<PlayerStats>();
-            if (ps != null) itemContainer = ps.itemContainer;
+            if (_cachedPlayerStats == null) _cachedPlayerStats = FindFirstObjectByType<PlayerStats>();
+            if (_cachedPlayerStats != null) itemContainer = _cachedPlayerStats.itemContainer;
         }
 
         if (itemContainer == null || !itemContainer.HasItem(selectedItem))
@@ -81,21 +81,26 @@ public class FarmPlot : MonoBehaviour
         return true;
     }
 
+    private static List<CropData> _cachedCrops;
+    private static PlayerStats _cachedPlayerStats;
+
     public void EnsureAvailableCrops()
     {
-        if (availableCrops == null) availableCrops = new List<CropData>();
+        if (availableCrops != null && availableCrops.Count > 0) return;
 
-        if (availableCrops.Count == 0)
+        if (_cachedCrops == null || _cachedCrops.Count == 0)
         {
+            _cachedCrops = new List<CropData>();
             CropData[] found = GameAssetHelper.LoadAll<CropData>();
             for (int i = 0; i < found.Length; i++)
             {
-                if (found[i] != null && !availableCrops.Contains(found[i]))
+                if (found[i] != null && !_cachedCrops.Contains(found[i]))
                 {
-                    availableCrops.Add(found[i]);
+                    _cachedCrops.Add(found[i]);
                 }
             }
         }
+        availableCrops = _cachedCrops;
     }
 
     public void Harvest()
@@ -187,8 +192,8 @@ public class FarmPlot : MonoBehaviour
 
         if (itemContainer == null)
         {
-            PlayerStats ps = FindFirstObjectByType<PlayerStats>();
-            if (ps != null) itemContainer = ps.itemContainer;
+            if (_cachedPlayerStats == null) _cachedPlayerStats = FindFirstObjectByType<PlayerStats>();
+            if (_cachedPlayerStats != null) itemContainer = _cachedPlayerStats.itemContainer;
         }
     }
 

@@ -1,6 +1,6 @@
-using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class EnemyStats : MonoBehaviour
 {
@@ -14,6 +14,17 @@ public class EnemyStats : MonoBehaviour
     public bool isDefending = false;
     public int defendBonus = 5;
     public List<ActiveBuff> activeBuffs = new List<ActiveBuff>();
+
+    [Header("Placement Configuration")]
+    public bool isFlying = false;
+    public float yOffset = 0f;
+
+    public float GetSpawnYOffset()
+    {
+        if (yOffset != 0f) return yOffset;
+        if (isFlying) return 1.1f;
+        return 0f;
+    }
 
     public EnemyTargetSelector targetSelector;
 
@@ -135,7 +146,20 @@ public class EnemyStats : MonoBehaviour
 
         // Damage Popup above enemy
         bool isCrit = damage >= 20 || (def > 0 && damage >= def * 2 && damage >= 12);
-        DamagePopupManager.ShowDamage(transform.position + Vector3.up * 1.2f, reducedDamage, isPlayer: false, isCrit: isCrit);
+        int maxHp = enemyData != null ? Mathf.Max(1, enemyData.maxHealth) : 1;
+        float damagePercent = (float)reducedDamage / maxHp;
+        bool isLethal = currentHealth <= 0;
+
+        Collider2D col = GetComponent<Collider2D>();
+        float popupY = col != null ? (col.bounds.max.y - transform.position.y + 0.35f) : 1.2f;
+        Vector3 popupPos = transform.position + new Vector3(0, popupY, 0);
+
+        DamagePopupManager.ShowDamage(popupPos, reducedDamage, isPlayer: false, isCrit: isCrit, damagePercent: damagePercent, isLethal: isLethal);
+
+        if (CombatJuice.Instance != null)
+        {
+            CombatJuice.Instance.OnEnemyDamaged(transform.position, reducedDamage, damagePercent, isLethal);
+        }
 
         Debug.Log($"[EnemyStats] {(enemyData != null ? enemyData.enemyName : "Enemy")} took {reducedDamage} damage (raw: {damage}, DEF: {def}). HP: {currentHealth}");
 

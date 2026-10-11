@@ -7470,7 +7470,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaveManager
   floorData: {fileID: 11400000, guid: f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3, type: 2}
-  allFloors: []
+  allFloors:
+  - {fileID: 11400000, guid: f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3, type: 2}
+  - {fileID: 11400000, guid: 266394e973e1c7e7d9cd380bce1f5068, type: 2}
+  - {fileID: 11400000, guid: 0e953ee5c64c0eb56cf030ca8cf749b8, type: 2}
   enemySpawnPoint: {fileID: 745719492}
   combatPositions:
   - {fileID: 1413860899}

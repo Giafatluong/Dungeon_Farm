@@ -26,12 +26,13 @@ public class DungeonEventUI : MonoBehaviour
             return _instance;
         }
 
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
         if (canvas != null)
         {
             GameObject go = new("DungeonEventUI");
             go.transform.SetParent(canvas.transform, false);
             _instance = go.AddComponent<DungeonEventUI>();
+            _instance.canvas = canvas;
             return _instance;
         }
 
@@ -77,6 +78,14 @@ public class DungeonEventUI : MonoBehaviour
         if (eventPanel != null)
         {
             eventPanel.SetActive(false);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (_instance == this)
+        {
+            _instance = null;
         }
     }
     #endregion
@@ -195,7 +204,7 @@ public class DungeonEventUI : MonoBehaviour
         // Choice Button with Sliced Frame
         GameObject btnGO = new($"ChoiceBtn_{index}", typeof(RectTransform), typeof(Image), typeof(Button));
         RectTransform rt = btnGO.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(700, 52);
+        rt.sizeDelta = new Vector2(750, 54);
 
         Image img = btnGO.GetComponent<Image>();
         Button btn = btnGO.GetComponent<Button>();
@@ -224,7 +233,7 @@ public class DungeonEventUI : MonoBehaviour
 
         TextMeshProUGUI tmp = textGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(tmp);
-        tmp.fontSize = 13;
+        tmp.fontSize = 13.5f;
         tmp.alignment = TextAlignmentOptions.MidlineLeft;
 
         string labelColor = canSelect ? "#FFD700" : "#777777";
@@ -236,7 +245,7 @@ public class DungeonEventUI : MonoBehaviour
         }
         else
         {
-            tmp.text = $"<color={labelColor}><b>{choice.choiceLabel}</b></color>  <color={detailsColor}>{choice.choiceDetails}</color>\n<size=11><color=#FF6666>({reason})</color></size>";
+            tmp.text = $"<color={labelColor}><b>{choice.choiceLabel}</b></color>  <color={detailsColor}>{choice.choiceDetails}</color>\n<size=12><color=#FF6666>({reason})</color></size>";
         }
 
         return btnGO;
@@ -349,8 +358,14 @@ public class DungeonEventUI : MonoBehaviour
     #region Procedural UI Building
     private Canvas GetCanvas()
     {
-        if (canvas == null) canvas = GetComponentInParent<Canvas>();
-        if (canvas == null) canvas = FindFirstObjectByType<Canvas>();
+        if (canvas == null || canvas.renderMode == RenderMode.WorldSpace)
+        {
+            canvas = GetComponentInParent<Canvas>();
+            if (canvas == null || canvas.renderMode == RenderMode.WorldSpace)
+            {
+                canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
+            }
+        }
         return canvas;
     }
 
@@ -386,7 +401,7 @@ public class DungeonEventUI : MonoBehaviour
         modalRT.anchorMin = new Vector2(0.5f, 0.5f);
         modalRT.anchorMax = new Vector2(0.5f, 0.5f);
         modalRT.pivot = new Vector2(0.5f, 0.5f);
-        modalRT.sizeDelta = new Vector2(780, 540);
+        modalRT.sizeDelta = new Vector2(820, 560);
 
         Image modalImg = modalGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(modalImg, new Color(0.10f, 0.12f, 0.17f, 0.98f));
@@ -398,7 +413,7 @@ public class DungeonEventUI : MonoBehaviour
         headerRT.anchorMin = new Vector2(0, 1);
         headerRT.anchorMax = new Vector2(1, 1);
         headerRT.pivot = new Vector2(0.5f, 1);
-        headerRT.sizeDelta = new Vector2(0, 74);
+        headerRT.sizeDelta = new Vector2(0, 76);
 
         Image headerImg = headerGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(headerImg, new Color(0.18f, 0.15f, 0.22f, 1f));
@@ -414,7 +429,7 @@ public class DungeonEventUI : MonoBehaviour
 
         categoryText = catGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(categoryText);
-        categoryText.fontSize = 11;
+        categoryText.fontSize = 12;
         categoryText.fontStyle = FontStyles.Bold;
         categoryText.alignment = TextAlignmentOptions.Center;
         categoryText.color = new Color(1f, 0.85f, 0.35f);
@@ -431,7 +446,7 @@ public class DungeonEventUI : MonoBehaviour
 
         titleText = titleGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(titleText);
-        titleText.fontSize = 20;
+        titleText.fontSize = 21;
         titleText.fontStyle = FontStyles.Bold;
         titleText.color = Color.white;
         titleText.alignment = TextAlignmentOptions.Center;
@@ -460,27 +475,58 @@ public class DungeonEventUI : MonoBehaviour
 
         narrativeText = narrativeGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(narrativeText);
-        narrativeText.fontSize = 13;
-        narrativeText.lineSpacing = 16;
+        narrativeText.fontSize = 13.5f;
+        narrativeText.lineSpacing = 18;
         narrativeText.color = new Color(0.9f, 0.93f, 0.97f);
         narrativeText.alignment = TextAlignmentOptions.TopLeft;
         narrativeText.text = "A mysterious story unfolds before you...";
 
-        // 5. Choices Container (Slay the Spire Vertical Stack)
-        GameObject choicesGO = new("ChoicesContainer", typeof(RectTransform), typeof(VerticalLayoutGroup));
-        choicesGO.transform.SetParent(modalGO.transform, false);
+        // 5. Choices Container in Scroll View (Slay the Spire Vertical Stack)
+        GameObject choicesScrollGO = new("ChoicesScrollArea", typeof(RectTransform), typeof(ScrollRect));
+        choicesScrollGO.transform.SetParent(modalGO.transform, false);
+        RectTransform choicesScrollRT = choicesScrollGO.GetComponent<RectTransform>();
+        choicesScrollRT.anchorMin = new Vector2(0, 0);
+        choicesScrollRT.anchorMax = new Vector2(1, 1);
+        choicesScrollRT.offsetMin = new Vector2(18, 68);
+        choicesScrollRT.offsetMax = new Vector2(-18, -266);
+
+        ScrollRect cSr = choicesScrollGO.GetComponent<ScrollRect>();
+        cSr.horizontal = false;
+        cSr.vertical = true;
+        cSr.scrollSensitivity = 25f;
+
+        GameObject vpGO = new("Viewport", typeof(RectTransform), typeof(RectMask2D));
+        vpGO.transform.SetParent(choicesScrollGO.transform, false);
+        RectTransform vpRT = vpGO.GetComponent<RectTransform>();
+        vpRT.anchorMin = Vector2.zero;
+        vpRT.anchorMax = Vector2.one;
+        vpRT.offsetMin = Vector2.zero;
+        vpRT.offsetMax = new Vector2(-12, 0);
+
+        GameObject choicesGO = new("ChoicesContainer", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        choicesGO.transform.SetParent(vpGO.transform, false);
         choicesContainer = choicesGO.GetComponent<RectTransform>();
-        choicesContainer.anchorMin = new Vector2(0, 0);
+        choicesContainer.anchorMin = new Vector2(0, 1);
         choicesContainer.anchorMax = new Vector2(1, 1);
-        choicesContainer.offsetMin = new Vector2(18, 70);
-        choicesContainer.offsetMax = new Vector2(-18, -268);
+        choicesContainer.pivot = new Vector2(0.5f, 1);
+        choicesContainer.anchoredPosition = Vector2.zero;
+        choicesContainer.sizeDelta = Vector2.zero;
 
         VerticalLayoutGroup vlg = choicesGO.GetComponent<VerticalLayoutGroup>();
         vlg.spacing = 8;
+        vlg.padding = new RectOffset(2, 2, 2, 2);
         vlg.childControlHeight = false;
         vlg.childControlWidth = true;
         vlg.childForceExpandHeight = false;
         vlg.childForceExpandWidth = true;
+
+        ContentSizeFitter csf = choicesGO.GetComponent<ContentSizeFitter>();
+        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        cSr.viewport = vpRT;
+        cSr.content = choicesContainer;
+
+        DungeonUIAssetHelper.CreateVerticalScrollbar(choicesScrollGO.transform, cSr, new Color(0.85f, 0.65f, 0.2f, 1f));
 
         // 6. Footer & Continue Button
         GameObject footerGO = new("Footer", typeof(RectTransform));
@@ -496,13 +542,13 @@ public class DungeonEventUI : MonoBehaviour
         statusGO.transform.SetParent(footerGO.transform, false);
         RectTransform statusRT = statusGO.GetComponent<RectTransform>();
         statusRT.anchorMin = new Vector2(0, 0);
-        statusRT.anchorMax = new Vector2(0.6f, 1);
+        statusRT.anchorMax = new Vector2(0.58f, 1);
         statusRT.offsetMin = new Vector2(18, 4);
         statusRT.offsetMax = new Vector2(-10, -4);
 
         statusFeedbackText = statusGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(statusFeedbackText);
-        statusFeedbackText.fontSize = 12;
+        statusFeedbackText.fontSize = 12.5f;
         statusFeedbackText.alignment = TextAlignmentOptions.MidlineLeft;
         statusFeedbackText.text = "";
 
@@ -512,8 +558,9 @@ public class DungeonEventUI : MonoBehaviour
         RectTransform contRT = contGO.GetComponent<RectTransform>();
         contRT.anchorMin = new Vector2(1, 0.5f);
         contRT.anchorMax = new Vector2(1, 0.5f);
-        contRT.sizeDelta = new Vector2(210, 40);
-        contRT.anchoredPosition = new Vector2(-120, 0);
+        contRT.pivot = new Vector2(1, 0.5f);
+        contRT.sizeDelta = new Vector2(230, 42);
+        contRT.anchoredPosition = new Vector2(-18, 0);
 
         Image contImg = contGO.GetComponent<Image>();
         continueButton = contGO.GetComponent<Button>();
@@ -529,10 +576,11 @@ public class DungeonEventUI : MonoBehaviour
 
         TextMeshProUGUI contTMP = contTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(contTMP);
-        contTMP.fontSize = 13;
+        contTMP.fontSize = 13.5f;
         contTMP.fontStyle = FontStyles.Bold;
         contTMP.alignment = TextAlignmentOptions.Center;
         contTMP.color = Color.white;
+        contTMP.text = "CONTINUE EXPEDITION >>";
         contTMP.text = "CONTINUE EXPEDITION >>";
     }
     #endregion
