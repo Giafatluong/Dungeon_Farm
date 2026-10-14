@@ -174,6 +174,8 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
         ghostDrainRoutine = null;
     }
 
+    private Collider2D cachedEnemyCollider;
+
     public void SetEnemyTarget(EnemyStats enemy)
     {
         enemyTarget = enemy;
@@ -182,6 +184,9 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
         lastMaxHealth = -1;
         lastIntent = null;
         lastAtk = -1;
+        cachedEnemyCollider = enemy != null ? enemy.GetComponent<Collider2D>() : null;
+
+        EnsureIntentText();
 
         if (intentText != null)
         {
@@ -189,10 +194,37 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
         }
     }
 
+    private void EnsureIntentText()
+    {
+        if (intentText != null) return;
+        Transform existing = transform.Find("IntentText");
+        if (existing != null)
+        {
+            intentText = existing.GetComponent<TextMeshProUGUI>();
+            if (intentText != null) return;
+        }
+
+        GameObject go = new GameObject("IntentText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        go.transform.SetParent(transform, false);
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.anchoredPosition = new Vector2(0, 4f);
+        rt.sizeDelta = new Vector2(160, 24);
+
+        intentText = go.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(intentText);
+        intentText.fontSize = 13;
+        intentText.fontStyle = FontStyles.Bold;
+        intentText.alignment = TextAlignmentOptions.Center;
+    }
+
     public void SetPlayerTarget(PlayerStats player)
     {
         playerTarget = player;
         enemyTarget = null;
+        cachedEnemyCollider = null;
         lastHealth = -1;
         lastMaxHealth = -1;
         lastIntent = null;
@@ -219,10 +251,9 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
         if (enemyTarget != null)
         {
             float topY = offset.y;
-            Collider2D col = enemyTarget.GetComponent<Collider2D>();
-            if (col != null)
+            if (cachedEnemyCollider != null)
             {
-                topY = Mathf.Max(offset.y, (col.bounds.max.y - enemyTarget.transform.position.y) + 0.35f);
+                topY = Mathf.Max(offset.y, (cachedEnemyCollider.bounds.max.y - enemyTarget.transform.position.y) + 0.35f);
             }
             transform.position = enemyTarget.transform.position + new Vector3(offset.x, topY, offset.z);
 

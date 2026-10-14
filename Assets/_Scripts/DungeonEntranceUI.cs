@@ -327,9 +327,20 @@ public class DungeonEntranceUI : MonoBehaviour
             // Status Badge
             if (isDefeated)
             {
-                card.statusBadgeText.text = "* DA VUOT";
-                card.statusBadgeText.color = ColorStatusDefeatedText;
-                card.statusBadgeBg.color = ColorStatusDefeatedBg;
+                bool bossAvailable = ProgressionManager.Instance == null || ProgressionManager.Instance.IsBossAvailable(floorNum);
+                if (bossAvailable)
+                {
+                    card.statusBadgeText.text = "BOSS READY";
+                    card.statusBadgeText.color = new Color(1f, 0.88f, 0.35f);
+                    card.statusBadgeBg.color = new Color(0.35f, 0.25f, 0.08f, 0.9f);
+                }
+                else
+                {
+                    int cd = ProgressionManager.Instance != null ? ProgressionManager.Instance.GetDaysUntilBossReset(floorNum) : 0;
+                    card.statusBadgeText.text = $"DA VUOT ({cd}N)";
+                    card.statusBadgeText.color = ColorStatusDefeatedText;
+                    card.statusBadgeBg.color = ColorStatusDefeatedBg;
+                }
             }
             else if (isSelected)
             {
@@ -363,7 +374,16 @@ public class DungeonEntranceUI : MonoBehaviour
             }
             else if (selDefeated)
             {
-                detailsText.text = $"<color=#69F0AE>Đã vượt qua tầng này (Có thể khiêu chiến lại)</color>";
+                bool bAvailable = ProgressionManager.Instance == null || ProgressionManager.Instance.IsBossAvailable(selectedFloor);
+                if (bAvailable)
+                {
+                    detailsText.text = $"<color=#FFE082>Boss Tầng {selectedFloor} đã hồi sinh! Sẵn sàng khiêu chiến lại để nhận thưởng hiếm.</color>";
+                }
+                else
+                {
+                    int daysLeft = ProgressionManager.Instance != null ? ProgressionManager.Instance.GetDaysUntilBossReset(selectedFloor) : 0;
+                    detailsText.text = $"<color=#69F0AE>Đã vượt tầng. Boss chưa hồi sinh (còn {daysLeft} ngày). Phòng Boss sẽ trống, bạn có thể đi thẳng lên tầng sau.</color>";
+                }
             }
             else
             {

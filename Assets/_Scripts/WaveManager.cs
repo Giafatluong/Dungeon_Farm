@@ -108,7 +108,6 @@ public class WaveManager : MonoBehaviour
     [Tooltip("Whether the player is currently in the safe entrance antechamber before wave 1.")]
     [SerializeField] private bool _isAtEntrance = false;
     public bool isAtEntrance => _isAtEntrance;
-    public bool IsAtEntrance => _isAtEntrance;
 
     private void Awake()
     {
@@ -259,36 +258,66 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private float roguelikeMerchantSpawnChance = 0.65f;
     [Tooltip("If true, dynamically places a Merchant stage at a randomized mid-floor stage on each expedition run.")]
     [SerializeField] private bool enableDynamicRoguelikeMerchant = true;
+    [Tooltip("Biến CD thời gian thương nhân xuất hiện trên tầng. Khi đếm về 0 thì tầng sẽ có tỉ lệ xuất hiện thương nhân trở lại bình thường.")]
+    public int merchantCooldown = 0;
+
+    public int GetMerchantCooldown()
+    {
+        int currentFloorNum = ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor > 0
+            ? ProgressionManager.Instance.currentFloor
+            : (GetActiveFloor() != null ? GetActiveFloor().floorNumber : 1);
+
+        if (merchantEvent == null)
+            merchantEvent = FindFirstObjectByType<MerchantEvent>(FindObjectsInactive.Include);
+
+        return MerchantEvent.GetCooldownForFloor(currentFloorNum);
+    }
 
     private void ApplyRoguelikeMerchantEncounter()
     {
         if (runtimeWaves == null || runtimeWaves.Length < 3)
             return;
 
+        int currentFloorNum = ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor > 0
+            ? ProgressionManager.Instance.currentFloor
+            : (GetActiveFloor() != null ? GetActiveFloor().floorNumber : 1);
+
         // Synchronize merchant calendar state with current Farm Day (never hardcode reset to 5)
         if (merchantEvent == null) merchantEvent = FindFirstObjectByType<MerchantEvent>(FindObjectsInactive.Include);
         if (merchantEvent != null)
         {
             merchantEvent.RefreshCalendarStatus();
+            merchantCooldown = MerchantEvent.GetCooldownForFloor(currentFloorNum);
         }
 
         if (!enableDynamicRoguelikeMerchant)
             return;
+
+        bool isMerchantActive = MerchantEvent.IsMerchantActiveForFloor(currentFloorNum);
 
         // Check if floor already explicitly contains a Merchant wave
         for (int i = 0; i < runtimeWaves.Length; i++)
         {
             if (runtimeWaves[i] != null && runtimeWaves[i].waveType == WaveData.WaveType.Merchant)
             {
-                Debug.Log($"[WaveManager] Floor already has a designated Merchant stage at Stage {i + 1}.");
-                return;
+                // Khi sự kiện thương nhân hết thời gian hoặc đang CD, stage đó sẽ trở lại thành ô random
+                if (!isMerchantActive)
+                {
+                    Debug.Log($"[WaveManager] Pre-existing Merchant stage at Stage {i + 1} converted to Random because Merchant has expired/on cooldown (CD: {GetMerchantCooldown()}).");
+                    runtimeWaves[i].waveType = WaveData.WaveType.Random;
+                }
+                else
+                {
+                    Debug.Log($"[WaveManager] Floor already has a designated Merchant stage at Stage {i + 1}.");
+                    return;
+                }
             }
         }
 
-        // If merchant has departed on supply run, do not roll dynamic merchant stage
-        if (merchantEvent != null && !merchantEvent.merchantActive)
+        // If merchant has departed on supply run, expired or on cooldown, do not roll dynamic merchant stage
+        if (!isMerchantActive)
         {
-            Debug.Log("[WaveManager] Merchant is currently departed on supply cooldown. No dynamic merchant stage for this run.");
+            Debug.Log($"[WaveManager] Merchant is currently expired / on cooldown (CD: {GetMerchantCooldown()}). No dynamic merchant stage for this run.");
             return;
         }
 
@@ -450,6 +479,18 @@ public class WaveManager : MonoBehaviour
 
         WaveData.WaveType effectiveType = wave.waveType;
 
+        int currentFloorNum = ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor > 0
+            ? ProgressionManager.Instance.currentFloor
+            : (GetActiveFloor() != null ? GetActiveFloor().floorNumber : 1);
+
+        // Sau khi sự kiện thương nhân hết thời gian hoặc đang CD, stage đó trở lại thành ô random
+        if (effectiveType == WaveData.WaveType.Merchant && (!MerchantEvent.IsMerchantActiveForFloor(currentFloorNum) || GetMerchantCooldown() > 0))
+        {
+            Debug.Log($"[WaveManager] Merchant event time expired / on cooldown on Floor {currentFloorNum} (CD: {GetMerchantCooldown()}). Stage {currentWaveIndex + 1} reverts to Random tile.");
+            wave.waveType = WaveData.WaveType.Random;
+            effectiveType = WaveData.WaveType.Random;
+        }
+
         // If this single wave is a Random Wave, dynamically calculate encounter type based on current score
         if (effectiveType == WaveData.WaveType.Random)
         {
@@ -479,8 +520,20 @@ public class WaveManager : MonoBehaviour
         switch (effectiveType)
         {
             case WaveData.WaveType.Combat:
-            case WaveData.WaveType.Boss:
                 SpawnEnemies(wave, isAmbush: false);
+                break;
+
+            case WaveData.WaveType.Boss:
+                bool bossAvailable = ProgressionManager.Instance == null || ProgressionManager.Instance.IsBossAvailable(currentFloorNum);
+
+                if (bossAvailable)
+                {
+                    SpawnEnemies(wave, isAmbush: false);
+                }
+                else
+                {
+                    HandleEmptyBossStage(currentFloorNum);
+                }
                 break;
 
             case WaveData.WaveType.Camp:
@@ -498,6 +551,61 @@ public class WaveManager : MonoBehaviour
             case WaveData.WaveType.Reward:
                 HandleRewardStage();
                 break;
+        }
+    }
+
+    private void HandleEmptyBossStage(int floorNum)
+    {
+        int daysLeft = ProgressionManager.Instance != null ? ProgressionManager.Instance.GetDaysUntilBossReset(floorNum) : 0;
+        Debug.Log($"[WaveManager] Reached Boss Stage of Floor {floorNum}, but Boss has not reset yet (Days remaining: {daysLeft}). Boss room is peaceful and empty.");
+
+        if (healthBarManager != null)
+        {
+            healthBarManager.ClearEnemyHealthBars();
+        }
+
+        if (CombatUI.Instance != null)
+        {
+            CombatUI.Instance.LogMessage($"[Phòng Boss Trống] Thủ Lĩnh Tầng {floorNum} chưa hồi sinh (Còn {daysLeft} ngày). Khu vực hoàn toàn an toàn!");
+            if (CombatUI.Instance.turnBannerText != null)
+            {
+                CombatUI.Instance.turnBannerText.text = "PHÒNG THỦ LĨNH TRỐNG (BOSS CHƯA HỒI SINH)";
+                CombatUI.Instance.turnBannerText.color = new Color(0.4f, 1f, 0.6f);
+            }
+            if (CombatUI.Instance.turnBannerBg != null)
+            {
+                CombatUI.Instance.turnBannerBg.color = new Color(0.12f, 0.28f, 0.18f, 0.9f);
+            }
+        }
+
+        FloorData activeFloor = GetActiveFloor();
+        FloorVictoryUI victoryUI = FloorVictoryUI.EnsureInstance();
+        if (victoryUI != null)
+        {
+            victoryUI.OpenEmptyBossRoom(activeFloor, floorNum, daysLeft,
+                onReturnToBase: () =>
+                {
+                    if (ProgressionManager.Instance != null)
+                    {
+                        ProgressionManager.Instance.CompleteRun();
+                    }
+                    else if (SceneTransitionManager.Instance != null)
+                    {
+                        SceneTransitionManager.Instance.LoadBase();
+                    }
+                    else
+                    {
+                        UnityEngine.SceneManagement.SceneManager.LoadScene("Base");
+                    }
+                },
+                onNextFloor: () =>
+                {
+                    ProceedToNextFloor(floorNum + 1);
+                });
+        }
+        else
+        {
+            ProceedToNextFloor(floorNum + 1);
         }
     }
     #endregion
@@ -601,34 +709,54 @@ public class WaveManager : MonoBehaviour
             }
         }
 
+        bool isMerchantActive = merchantEvent != null && merchantEvent.merchantActive && merchantEvent.remainingDays > 0 && GetMerchantCooldown() <= 0;
+
+        // Khi sự kiện thương nhân hết thời gian thì stage đó chuyển lại thành ô random và chạy logic ô random
+        if (!isMerchantActive)
+        {
+            Debug.Log("[WaveManager] Merchant event expired / on cooldown during HandleMerchantStage. Reverting stage to Random!");
+            if (CurrentWave != null) CurrentWave.waveType = WaveData.WaveType.Random;
+
+            WaveData.WaveType resolvedType = floorGenerator != null
+                ? floorGenerator.DetermineRandomWaveType(currentFloorScore, lastResolvedType, 0, 4)
+                : WaveData.WaveType.Combat;
+
+            int scoreDelta = floorGenerator != null ? floorGenerator.GetScoreForWaveType(resolvedType) : 0;
+            currentFloorScore += scoreDelta;
+            lastResolvedType = resolvedType;
+
+            switch (resolvedType)
+            {
+                case WaveData.WaveType.Combat:
+                case WaveData.WaveType.Boss:
+                    SpawnEnemies(CurrentWave, isAmbush: false);
+                    break;
+                case WaveData.WaveType.Camp:
+                    HandleCampStage();
+                    break;
+                case WaveData.WaveType.Event:
+                    HandleEventStage();
+                    break;
+                case WaveData.WaveType.Reward:
+                    HandleRewardStage();
+                    break;
+                default:
+                    Continue();
+                    break;
+            }
+            return;
+        }
+
         PlayerStats ps = (combatManager != null && combatManager.playerStats != null)
             ? combatManager.playerStats
             : FindFirstObjectByType<PlayerStats>();
         ItemContainer backpack = ps != null ? ps.itemContainer : null;
 
-        bool isMerchantActive = merchantEvent != null && merchantEvent.merchantActive && merchantEvent.remainingDays > 0;
+        int floorNum = ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor > 0
+            ? ProgressionManager.Instance.currentFloor
+            : (GetActiveFloor() != null ? GetActiveFloor().floorNumber : 1);
 
-        if (CombatUI.Instance != null && CombatUI.Instance.turnBannerText != null)
-        {
-            if (isMerchantActive)
-            {
-                CombatUI.Instance.turnBannerText.text = $"MERCHANT - WANDERING TRADER ({merchantEvent.remainingDays}D LEFT)";
-                CombatUI.Instance.turnBannerText.color = new Color(1f, 0.85f, 0.35f);
-                if (CombatUI.Instance.turnBannerBg != null)
-                {
-                    CombatUI.Instance.turnBannerBg.color = new Color(0.32f, 0.22f, 0.08f, 0.9f);
-                }
-            }
-            else
-            {
-                CombatUI.Instance.turnBannerText.text = "MERCHANT POST - DEPARTED (SAFE REST)";
-                CombatUI.Instance.turnBannerText.color = new Color(0.65f, 0.82f, 1f);
-                if (CombatUI.Instance.turnBannerBg != null)
-                {
-                    CombatUI.Instance.turnBannerBg.color = new Color(0.12f, 0.20f, 0.28f, 0.9f);
-                }
-            }
-        }
+        MerchantEvent.RecordMerchantEncounter(floorNum);
 
         MerchantUI merchantUI = MerchantUI.EnsureInstance();
         if (merchantUI != null)

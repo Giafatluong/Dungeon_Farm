@@ -38,12 +38,20 @@ public class PlayerStats : MonoBehaviour
     private int baseDEF;
     private int baseSpeed;
 
+    public static PlayerStats Instance { get; private set; }
+
     private void Awake()
     {
+        Instance = this;
         baseMaxHealth = maxHealth;
         baseATK = ATK;
         baseDEF = DEF;
         baseSpeed = speed;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     private void OnEnable()
@@ -100,9 +108,9 @@ public class PlayerStats : MonoBehaviour
 
     #region PlayerAction
 
-    public void Eat(ItemData item)
+    public bool Eat(ItemData item)
     {
-        if (item == null) return;
+        if (item == null) return false;
 
         bool hasRawVitality = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.RawVitality);
         bool hasEndlessFeast = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast);
@@ -117,13 +125,13 @@ public class PlayerStats : MonoBehaviour
                 if (itemContainer != null && !itemContainer.HasItem(item))
                 {
                     Debug.Log("Crop not found in container");
-                    return;
+                    return false;
                 }
 
                 if (currentHunger >= maxHunger)
                 {
                     Debug.Log("Too full to eat");
-                    return;
+                    return false;
                 }
 
                 AddHunger(20);
@@ -134,23 +142,23 @@ public class PlayerStats : MonoBehaviour
                 }
                 DamagePopupManager.ShowText(transform.position + Vector3.up * 1.1f, "Ăn Sống! +12 HP", new Color(0.4f, 0.9f, 0.3f), 4.5f);
                 Debug.Log($"[Blessing: RawVitality] Ate raw crop {item.itemName} (+12 HP, +20 Hunger)!");
-                return;
+                return true;
             }
 
             Debug.Log("Item is not food");
-            return;
+            return false;
         }
 
         if (itemContainer != null && !itemContainer.HasItem(food))
         {
             Debug.Log("Food not found in container");
-            return;
+            return false;
         }
 
         if (currentHunger >= maxHunger)
         {
             Debug.Log("Too full to eat");
-            return;
+            return false;
         }
 
         if (food.foodBuff != null && food.foodBuff.Length > 0)
@@ -183,6 +191,7 @@ public class PlayerStats : MonoBehaviour
         }
 
         Debug.Log("Ate: " + food.itemName);
+        return true;
     }
 
     public void Defend()

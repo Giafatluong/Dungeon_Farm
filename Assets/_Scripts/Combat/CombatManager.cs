@@ -47,6 +47,7 @@ public class CombatManager : MonoBehaviour
     private Coroutine preparationCoroutine;
     private Coroutine enemyTurnCoroutine;
     private Coroutine playerActionDelayCoroutine;
+    private Coroutine victoryCoroutine;
 
     public static CombatManager Instance { get; private set; }
 
@@ -56,12 +57,12 @@ public class CombatManager : MonoBehaviour
         if (turnManager == null) turnManager = GetComponent<TurnManager>();
         if (speedManager == null) speedManager = GetComponent<SpeedManager>();
         if (targetSelector == null) targetSelector = GetComponent<EnemyTargetSelector>();
-        if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
+        if (playerStats == null) playerStats = PlayerStats.Instance ?? FindFirstObjectByType<PlayerStats>();
     }
 
     private void Start()
     {
-        if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
+        if (playerStats == null) playerStats = PlayerStats.Instance ?? FindFirstObjectByType<PlayerStats>();
         if (playerStats != null)
         {
             playerStats.OnPlayerDeath += HandlePlayerDeath;
@@ -81,6 +82,12 @@ public class CombatManager : MonoBehaviour
             {
                 if (e != null) e.OnEnemyDeath -= HandleEnemyDeath;
             }
+        }
+
+        if (victoryCoroutine != null)
+        {
+            StopCoroutine(victoryCoroutine);
+            victoryCoroutine = null;
         }
 
         if (Instance == this) Instance = null;
@@ -124,6 +131,11 @@ public class CombatManager : MonoBehaviour
     public void StartCombat(bool isAmbush = false)
     {
         if (preparationCoroutine != null) StopCoroutine(preparationCoroutine);
+        if (victoryCoroutine != null)
+        {
+            StopCoroutine(victoryCoroutine);
+            victoryCoroutine = null;
+        }
         isAmbushCurrent = isAmbush;
         isPreparingCombat = true;
         isCombatActive = false;
@@ -410,9 +422,18 @@ public class CombatManager : MonoBehaviour
             return;
         }
 
-        StartPlayerActionCooldown();
+        // Attempt to eat the food item
+        if (!playerStats.Eat(food))
+        {
+            if (playerStats.currentHunger >= playerStats.maxHunger)
+            {
+                LogMessage("Bụng đã quá no, không thể ăn thêm!");
+                DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.3f, "BỤNG ĐÃ QUÁ NO!", Color.yellow, 4.5f);
+            }
+            return;
+        }
 
-        playerStats.Eat(food);
+        StartPlayerActionCooldown();
 
         if (!isAtEntrance && !isFreeEat)
         {
@@ -499,7 +520,7 @@ public class CombatManager : MonoBehaviour
 
     private void CheckAllEnemiesDead()
     {
-        if (enemies == null) return;
+        if (!isCombatActive || victoryCoroutine != null || enemies == null) return;
 
         bool anyAlive = false;
         for (int i = 0; i < enemies.Length; i++)
@@ -517,7 +538,7 @@ public class CombatManager : MonoBehaviour
             {
                 CombatJuice.Instance.PlayFinisherSlowMo(0.25f, 0.45f);
             }
-            StartCoroutine(DelayedVictoryRoutine());
+            victoryCoroutine = StartCoroutine(DelayedVictoryRoutine());
         }
     }
 
@@ -531,6 +552,7 @@ public class CombatManager : MonoBehaviour
             yield return new WaitForSeconds(victoryDelay);
         }
 
+        victoryCoroutine = null;
         EndCombat(victory: true);
     }
 
@@ -543,6 +565,11 @@ public class CombatManager : MonoBehaviour
 
         if (preparationCoroutine != null) StopCoroutine(preparationCoroutine);
         if (enemyTurnCoroutine != null) StopCoroutine(enemyTurnCoroutine);
+        if (victoryCoroutine != null)
+        {
+            StopCoroutine(victoryCoroutine);
+            victoryCoroutine = null;
+        }
         if (playerActionDelayCoroutine != null)
         {
             StopCoroutine(playerActionDelayCoroutine);
@@ -561,7 +588,7 @@ public class CombatManager : MonoBehaviour
         {
             LogMessage("Victory! All enemies defeated.");
 
-            WaveManager waveManager = FindFirstObjectByType<WaveManager>();
+            WaveManager waveManager = WaveManager.Instance ?? FindFirstObjectByType<WaveManager>();
             int waveIdx = waveManager != null ? waveManager.GetCurrentWaveIndex() : 0;
 
             // Người chơi sẽ kéo các vật phẩm vào inventory chứ không tự động vào inven

@@ -161,13 +161,21 @@ public class MerchantUI : MonoBehaviour
 
         BuildWaresList();
         BuildBackpackSlots(backpackContainer);
-        bool isMerchantActive = currentMerchant == null || (currentMerchant.merchantActive && currentMerchant.remainingDays > 0);
+
+        int floorNum = ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor > 0
+            ? ProgressionManager.Instance.currentFloor
+            : 1;
+
+        MerchantEvent.RecordMerchantEncounter(floorNum);
+        bool isMerchantActive = MerchantEvent.IsMerchantActiveForFloor(floorNum);
+        int daysLeft = MerchantEvent.GetRemainingDaysForFloor(floorNum);
+        int cdLeft = MerchantEvent.GetCooldownForFloor(floorNum);
+
         if (isMerchantActive)
         {
-            int daysLeft = currentMerchant != null ? currentMerchant.remainingDays : 5;
             if (subtitleText != null)
             {
-                subtitleText.text = $"Traveling Merchant Camp | Remaining stay: {daysLeft} days";
+                subtitleText.text = $"Thương Nhân Tầng {floorNum} | Thời gian ghé thăm còn lại: {daysLeft} ngày";
                 subtitleText.color = new Color(0.78f, 0.82f, 0.92f);
             }
             SetFeedback("Welcome, brave traveler! Browse my rare recipes, barter seeds, or stock up on hot travel rations.");
@@ -176,7 +184,9 @@ public class MerchantUI : MonoBehaviour
         {
             if (subtitleText != null)
             {
-                subtitleText.text = "<color=#FF7777>Merchant has departed! Trade counter is temporarily closed.</color>";
+                subtitleText.text = cdLeft > 0
+                    ? $"<color=#FF7777>Thương nhân Tầng {floorNum} đã rời đi! Trở lại sau {cdLeft} ngày.</color>"
+                    : $"<color=#FF7777>Thương nhân Tầng {floorNum} tạm thời đóng quầy hàng.</color>";
             }
             SetFeedback("The merchant packed up and departed to a new land. You can rest for a moment then continue your journey.");
         }
@@ -213,7 +223,7 @@ public class MerchantUI : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        bool isMerchantActive = currentMerchant == null || (currentMerchant.merchantActive && currentMerchant.remainingDays > 0);
+        bool isMerchantActive = currentMerchant == null || (currentMerchant.merchantActive && currentMerchant.remainingDays > 0 && currentMerchant.merchantCooldown <= 0);
         if (!isMerchantActive)
         {
             CreateSectionHeader("REST STOP - MERCHANT DEPARTED", new Color(0.6f, 0.8f, 1f));

@@ -114,6 +114,16 @@ public class KitchenStation : MonoBehaviour, IInteractable
 
     private void FindPlayer()
     {
+        if (PlayerStats.Instance != null)
+        {
+            playerTransform = PlayerStats.Instance.transform;
+            return;
+        }
+        if (PlayerMovement.Instance != null)
+        {
+            playerTransform = PlayerMovement.Instance.transform;
+            return;
+        }
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
@@ -142,11 +152,17 @@ public class KitchenStation : MonoBehaviour, IInteractable
         }
     }
 
+    private float nextPlayerSearchTime = 0f;
+
     private void Update()
     {
         if (playerTransform == null)
         {
-            FindPlayer();
+            if (Time.time >= nextPlayerSearchTime)
+            {
+                nextPlayerSearchTime = Time.time + 0.5f;
+                FindPlayer();
+            }
         }
 
         if (playerTransform != null)
@@ -178,8 +194,8 @@ public class KitchenStation : MonoBehaviour, IInteractable
 
             if (HomeChest.Instance != null && HomeChest.Instance.playerInRange)
             {
-                float distToKitchen = Vector2.Distance(transform.position, playerTransform.position);
-                float distToChest = Vector2.Distance(HomeChest.Instance.transform.position, playerTransform.position);
+                float distToKitchen = ((Vector2)(transform.position - playerTransform.position)).sqrMagnitude;
+                float distToChest = ((Vector2)(HomeChest.Instance.transform.position - playerTransform.position)).sqrMagnitude;
                 if (distToChest < distToKitchen) return;
             }
 

@@ -18,6 +18,20 @@ public class DamagePopupManager : MonoBehaviour
     [Tooltip("Prefab text thông báo (Miss, Buff, Shield...)")]
     public GameObject statusTextPrefab;
 
+    public static DamagePopupManager EnsureInstance()
+    {
+        if (Instance != null) return Instance;
+        DamagePopupManager found = FindFirstObjectByType<DamagePopupManager>(FindObjectsInactive.Include);
+        if (found != null)
+        {
+            Instance = found;
+            return Instance;
+        }
+        GameObject go = new GameObject("DamagePopupManager_Runtime");
+        Instance = go.AddComponent<DamagePopupManager>();
+        return Instance;
+    }
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -35,18 +49,19 @@ public class DamagePopupManager : MonoBehaviour
     {
         if (amount <= 0)
         {
-            ShowText(worldPos, "BLOCKED");
+            ShowText(worldPos, "BLOCKED", Color.gray);
             return;
         }
 
-        if (Instance == null) return;
+        EnsureInstance();
 
         // Chọn Prefab: nếu chí mạng / kết liễu thì dùng critDamagePrefab, ngược lại dùng normalDamagePrefab
-        GameObject prefabToSpawn = (isCrit || isLethal) && Instance.critDamagePrefab != null
+        GameObject prefabToSpawn = (isCrit || isLethal) && Instance != null && Instance.critDamagePrefab != null
             ? Instance.critDamagePrefab
-            : Instance.normalDamagePrefab;
+            : (Instance != null ? Instance.normalDamagePrefab : null);
 
-        SpawnPopup(prefabToSpawn, worldPos, $"-{amount}");
+        Color dmgColor = isCrit ? new Color(1f, 0.3f, 0.2f) : (isPlayer ? new Color(1f, 0.4f, 0.4f) : Color.white);
+        SpawnPopup(prefabToSpawn, worldPos, $"-{amount}", dmgColor, isCrit ? 5.5f : 4f);
     }
 
     /// <summary>
@@ -54,9 +69,11 @@ public class DamagePopupManager : MonoBehaviour
     /// </summary>
     public static void ShowHeal(Vector3 worldPos, int amount)
     {
-        if (amount <= 0 || Instance == null) return;
+        if (amount <= 0) return;
+        EnsureInstance();
 
-        SpawnPopup(Instance.healPrefab, worldPos, $"+{amount}");
+        GameObject prefabToSpawn = Instance != null ? Instance.healPrefab : null;
+        SpawnPopup(prefabToSpawn, worldPos, $"+{amount}", new Color(0.3f, 1f, 0.4f), 4.5f);
     }
 
     /// <summary>
@@ -64,23 +81,52 @@ public class DamagePopupManager : MonoBehaviour
     /// </summary>
     public static void ShowText(Vector3 worldPos, string text, Color color = default, float size = 0f)
     {
-        if (Instance == null) return;
+        EnsureInstance();
 
-        SpawnPopup(Instance.statusTextPrefab, worldPos, text);
+        GameObject prefabToSpawn = Instance != null ? Instance.statusTextPrefab : null;
+        SpawnPopup(prefabToSpawn, worldPos, text, color, size);
     }
 
-    private static void SpawnPopup(GameObject prefab, Vector3 worldPos, string content)
+    private static GameObject CreateFallbackPopup(string content, Color color, float size)
     {
-        if (prefab == null) return;
+        GameObject go = new GameObject("Popup_Fallback", typeof(TextMeshPro));
+        TextMeshPro tmp = go.GetComponent<TextMeshPro>();
+        tmp.text = content;
+        tmp.fontSize = size > 0 ? size : 4.5f;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = color != default ? color : Color.white;
+        tmp.sortingOrder = 50;
+        return go;
+    }
 
+    private static void SpawnPopup(GameObject prefab, Vector3 worldPos, string content, Color customColor = default, float customSize = 0f)
+    {
         // Thêm độ lệch nhẹ ngẫu nhiên để nhiều số dame không đè khít lên nhau
         Vector3 spawnPos = worldPos + new Vector3(Random.Range(-0.25f, 0.25f), Random.Range(-0.1f, 0.15f), 0f);
-        GameObject popup = Instantiate(prefab, spawnPos, Quaternion.identity);
+        GameObject popup = null;
+
+        if (prefab != null)
+        {
+            popup = Instantiate(prefab, spawnPos, Quaternion.identity);
+        }
+        else
+        {
+            popup = CreateFallbackPopup(content, customColor, customSize);
+            popup.transform.position = spawnPos;
+        }
 
         TMP_Text tmp = popup.GetComponentInChildren<TMP_Text>();
         if (tmp != null)
         {
             tmp.text = content;
+            if (customColor != default)
+            {
+                tmp.color = customColor;
+            }
+            if (customSize > 0f)
+            {
+                tmp.fontSize = customSize;
+            }
         }
 
         // Chạy hiệu ứng nảy số, bay lên và mờ dần biến mất

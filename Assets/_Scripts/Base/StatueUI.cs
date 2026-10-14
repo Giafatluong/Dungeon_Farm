@@ -363,23 +363,23 @@ public class StatueUI : MonoBehaviour
 
         if (isStarter)
         {
-            blessingStatusText.text = "<b><color=#55CCFF>[TÂN THỦ] 🛡️ Bảo Hộ Thần Linh:</color></b> Đang tự động bảo vệ hành trang (không rơi đồ khi thua tại Tầng 1-2)!";
-            if (blessingButtonText != null) blessingButtonText.text = "✨ Đổi Phước Lành";
+            blessingStatusText.text = "<b><color=#55CCFF>[TÂN THỦ] [BẢO HỘ] Bảo Hộ Thần Linh:</color></b> Đang tự động bảo vệ hành trang (không rơi đồ khi thua tại Tầng 1-2)!";
+            if (blessingButtonText != null) blessingButtonText.text = "Đổi Phước Lành";
         }
         else if (currentType != BlessingType.None)
         {
             BlessingInfo info = BlessingDatabase.GetBlessingInfo(currentType);
             string hex = info != null ? ColorUtility.ToHtmlStringRGB(info.color) : "55CCFF";
             string title = info != null ? info.title : currentType.ToString();
-            string icon = info != null ? info.iconSymbol : "✨";
+            string icon = info != null ? info.iconSymbol : "[BUFF]";
             string desc = info != null ? info.description : "";
             blessingStatusText.text = $"<b><color=#{hex}>[HIỆN TẠI] {icon} {title}:</color></b> {desc} <i><color=#AAAAAA>(Mất khi qua ngày, thua, hoặc xong run)</color></i>";
-            if (blessingButtonText != null) blessingButtonText.text = "✨ Đổi Phước Lành";
+            if (blessingButtonText != null) blessingButtonText.text = "Đổi Phước Lành";
         }
         else
         {
             blessingStatusText.text = "<b><color=#FFCC44>[CHƯA NHẬN PHƯỚC LÀNH]</color></b> Hãy chọn 1 phước lành trợ chiến trước khi bước vào Dungeon!";
-            if (blessingButtonText != null) blessingButtonText.text = "✨ Thỉnh Phước Lành";
+            if (blessingButtonText != null) blessingButtonText.text = "Thỉnh Phước Lành";
         }
     }
 
@@ -545,9 +545,10 @@ public class StatueUI : MonoBehaviour
         iconRT.sizeDelta = new Vector2(50, 36);
 
         TextMeshProUGUI iconTMP = iconGO.GetComponent<TextMeshProUGUI>();
-        iconTMP.fontSize = 28;
+        iconTMP.fontSize = 13;
+        iconTMP.fontStyle = FontStyles.Bold;
         iconTMP.alignment = TextAlignmentOptions.Center;
-        iconTMP.text = isUnlocked ? info.iconSymbol : "🔒";
+        iconTMP.text = isUnlocked ? info.iconSymbol : "[KHÓA]";
 
         // Title
         GameObject tGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -590,7 +591,7 @@ public class StatueUI : MonoBehaviour
 
         if (!isUnlocked)
         {
-            descTMP.text = $"{info.description}\n\n<color=#FFB833><b>🔓 Điều kiện mở khóa:</b>\n{info.unlockRequirement}</color>";
+            descTMP.text = $"{info.description}\n\n<color=#FFB833><b>[!] Điều kiện mở khóa:</b>\n{info.unlockRequirement}</color>";
             descTMP.color = new Color(0.7f, 0.72f, 0.78f);
         }
         else
@@ -647,7 +648,7 @@ public class StatueUI : MonoBehaviour
 
         if (!isUnlocked)
         {
-            btnTxtTMP.text = "🔒 CHƯA MỞ KHÓA";
+            btnTxtTMP.text = "[KHÓA] CHƯA MỞ KHÓA";
             btnTxtTMP.color = new Color(0.7f, 0.7f, 0.7f);
         }
         else
@@ -765,7 +766,7 @@ public class StatueUI : MonoBehaviour
             DungeonUIAssetHelper.ApplyFont(doneTMP);
             doneTMP.fontSize = 12;
             doneTMP.fontStyle = FontStyles.Bold;
-            doneTMP.text = "✅ [ĐÃ HOÀN THÀNH]";
+            doneTMP.text = "[ĐÃ HOÀN THÀNH]";
             doneTMP.color = new Color(0.35f, 1f, 0.5f);
             doneGO.GetComponent<RectTransform>().sizeDelta = new Vector2(130, 26);
         }
@@ -788,7 +789,7 @@ public class StatueUI : MonoBehaviour
             btnTMP.fontSize = 11;
             btnTMP.fontStyle = FontStyles.Bold;
             btnTMP.alignment = TextAlignmentOptions.Center;
-            btnTMP.text = "✨ Dâng Nhanh";
+            btnTMP.text = "Dâng Nhanh";
             btnTMP.color = Color.white;
             btnTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(110, 24);
         }
@@ -886,10 +887,10 @@ public class StatueUI : MonoBehaviour
 
         TextMeshProUGUI checkTMP = checkGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(checkTMP);
-        checkTMP.fontSize = 14;
+        checkTMP.fontSize = 12;
         checkTMP.fontStyle = FontStyles.Bold;
         checkTMP.alignment = TextAlignmentOptions.Center;
-        checkTMP.text = "<color=#55FF88>✓</color>";
+        checkTMP.text = "<color=#55FF88>[V]</color>";
         checkTMP.raycastTarget = false;
         checkGO.SetActive(false);
 
@@ -1184,10 +1185,10 @@ public class StatueUI : MonoBehaviour
 
         titleText = titleGO.GetComponent<TextMeshProUGUI>();
         if (font != null) titleText.font = font;
-        titleText.fontSize = 22;
+        titleText.fontSize = 20;
         titleText.fontStyle = FontStyles.Bold;
         titleText.alignment = TextAlignmentOptions.Center;
-        titleText.text = "🏛️ ĐỀN THỜ CỔ ĐẠI (TƯỢNG THẦN BAN PHƯỚC)";
+        titleText.text = "ĐỀN THỜ CỔ ĐẠI (TƯỢNG THẦN BAN PHƯỚC)";
         titleText.color = new Color(1f, 0.86f, 0.35f);
 
         // Subtitle
@@ -1268,7 +1269,7 @@ public class StatueUI : MonoBehaviour
         blessingButtonText.fontSize = 12;
         blessingButtonText.fontStyle = FontStyles.Bold;
         blessingButtonText.alignment = TextAlignmentOptions.Center;
-        blessingButtonText.text = "🔮 Đổi Hướng Build";
+        blessingButtonText.text = "Đổi Hướng Build";
         blessingButtonText.color = Color.white;
 
         // Feedback / Hint Strip
@@ -1287,7 +1288,7 @@ public class StatueUI : MonoBehaviour
         feedbackText.fontSize = 12;
         feedbackText.fontStyle = FontStyles.Italic;
         feedbackText.alignment = TextAlignmentOptions.Center;
-        feedbackText.text = "💡 Kéo thả vật phẩm từ ba lô hoặc click ô yêu cầu để dâng lễ vật.";
+        feedbackText.text = "Kéo thả vật phẩm từ ba lô hoặc click ô yêu cầu để dâng lễ vật.";
         feedbackText.color = new Color(0.85f, 0.92f, 1f);
 
         // Close Button (X)

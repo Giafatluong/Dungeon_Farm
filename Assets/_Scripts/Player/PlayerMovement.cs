@@ -11,10 +11,20 @@ public class PlayerMovement : MonoBehaviour
     private SpriteRenderer spriteRenderer; 
     [SerializeField] private CombatManager combatManager;
 
+    private static readonly int HorizontalHash = Animator.StringToHash("Horizontal");
+    private static readonly int VerticalHash = Animator.StringToHash("Vertical");
+    private static readonly int SpeedHash = Animator.StringToHash("Speed");
+    private static readonly int LastHorizontalHash = Animator.StringToHash("LastHorizontal");
+    private static readonly int LastVerticalHash = Animator.StringToHash("LastVertical");
+
     private bool cachedIsDungeonScene = false;
+    private InventoryPanel inventoryPanel;
+
+    public static PlayerMovement Instance { get; private set; }
 
     private void Awake()
     {
+        Instance = this;
         if (rb == null) rb = GetComponent<Rigidbody2D>();
         if (anim == null) anim = GetComponent<Animator>() ?? GetComponentInChildren<Animator>();
         if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>() ?? GetComponentInChildren<SpriteRenderer>();
@@ -25,12 +35,14 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (Instance == this) Instance = null;
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         UpdateSceneCache();
+        inventoryPanel = null;
     }
 
     private void UpdateSceneCache()
@@ -52,13 +64,23 @@ public class PlayerMovement : MonoBehaviour
 
     private bool IsAnyUIOpen()
     {
+        if (inventoryPanel == null)
+        {
+            inventoryPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+        }
+        if (inventoryPanel != null && inventoryPanel.gameObject.activeSelf) return true;
+
         if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return true;
         if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return true;
         if (MerchantUI.Instance != null && MerchantUI.Instance.IsOpen) return true;
         if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return true;
         if (RewardUI.Instance != null && RewardUI.Instance.IsOpen) return true;
         if (LootUI.Instance != null && LootUI.Instance.IsOpen) return true;
+        if (CampUI.Instance != null && CampUI.Instance.IsOpen) return true;
+        if (DungeonEventUI.Instance != null && DungeonEventUI.Instance.IsOpen) return true;
+        if (FloorVictoryUI.Instance != null && FloorVictoryUI.Instance.IsOpen) return true;
         if (DungeonEntranceUI.Instance != null && DungeonEntranceUI.Instance.IsOpen) return true;
+        if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen) return true;
         return false;
     }
 
@@ -69,11 +91,11 @@ public class PlayerMovement : MonoBehaviour
             movement = Vector2.zero;
             if (anim != null)
             {
-                anim.SetFloat("Horizontal", 0f);
-                anim.SetFloat("Vertical", 0f);
-                anim.SetFloat("Speed", 0f);
-                anim.SetFloat("LastHorizontal", 1f);
-                anim.SetFloat("LastVertical", 0f);
+                anim.SetFloat(HorizontalHash, 0f);
+                anim.SetFloat(VerticalHash, 0f);
+                anim.SetFloat(SpeedHash, 0f);
+                anim.SetFloat(LastHorizontalHash, 1f);
+                anim.SetFloat(LastVerticalHash, 0f);
             }
             return;
         }
@@ -85,14 +107,14 @@ public class PlayerMovement : MonoBehaviour
 
         if (anim != null)
         {
-            anim.SetFloat("Horizontal", movement.x);
-            anim.SetFloat("Vertical", movement.y);
-            anim.SetFloat("Speed", movement.sqrMagnitude);
+            anim.SetFloat(HorizontalHash, movement.x);
+            anim.SetFloat(VerticalHash, movement.y);
+            anim.SetFloat(SpeedHash, movement.sqrMagnitude);
 
             if (movement != Vector2.zero)
             {
-                anim.SetFloat("LastHorizontal", movement.x);
-                anim.SetFloat("LastVertical", movement.y);
+                anim.SetFloat(LastHorizontalHash, movement.x);
+                anim.SetFloat(LastVerticalHash, movement.y);
             }
         }
 

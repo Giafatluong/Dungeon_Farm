@@ -5,9 +5,37 @@ public class MerchantEvent : MonoBehaviour
 {
     public static MerchantEvent Instance { get; private set; }
 
-    [Header("Merchant State")]
-    public bool merchantActive = true;
-    public int remainingDays = 5;
+    [System.Serializable]
+    public class FloorMerchantStatus
+    {
+        public int floorNumber;
+        public bool hasMet;
+        public int remainingDays = 5;
+        public int cooldownDays = 0;
+        public bool isPresent => hasMet ? (remainingDays > 0 && cooldownDays <= 0) : true;
+    }
+
+    public const int DefaultStayDuration = 5;
+    public const int DefaultCooldownDuration = 3;
+
+    [Header("Merchant State (Current Floor Dynamic Properties)")]
+    public bool merchantActive
+    {
+        get => IsMerchantActiveForFloor(GetCurrentOrSelectedFloor());
+        set { }
+    }
+
+    public int remainingDays
+    {
+        get => GetRemainingDaysForFloor(GetCurrentOrSelectedFloor());
+        set { }
+    }
+
+    public int merchantCooldown
+    {
+        get => GetCooldownForFloor(GetCurrentOrSelectedFloor());
+        set { }
+    }
 
     [Header("Calendar Cycle Settings")]
     [Tooltip("How many consecutive days the merchant remains stationed in the dungeon.")]
@@ -37,6 +65,156 @@ public class MerchantEvent : MonoBehaviour
         RefreshCalendarStatus();
     }
 
+    public static int GetCurrentOrSelectedFloor()
+    {
+        if (ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor > 0)
+            return ProgressionManager.Instance.currentFloor;
+        return 1;
+    }
+
+    public static FloorMerchantStatus GetFloorMerchantStatus(int floor)
+    {
+        if (floor <= 0) floor = 1;
+        FloorMerchantStatus status = new FloorMerchantStatus();
+        status.floorNumber = floor;
+        status.hasMet = PlayerPrefs.GetInt($"Merchant_Floor_{floor}_HasMet", 0) == 1;
+        status.remainingDays = PlayerPrefs.GetInt($"Merchant_Floor_{floor}_RemainingDays", DefaultStayDuration);
+        status.cooldownDays = PlayerPrefs.GetInt($"Merchant_Floor_{floor}_CooldownDays", 0);
+        return status;
+    }
+
+    public static void SaveFloorMerchantStatus(FloorMerchantStatus status)
+    {
+        if (status == null) return;
+        PlayerPrefs.SetInt($"Merchant_Floor_{status.floorNumber}_HasMet", status.hasMet ? 1 : 0);
+        PlayerPrefs.SetInt($"Merchant_Floor_{status.floorNumber}_RemainingDays", status.remainingDays);
+        PlayerPrefs.SetInt($"Merchant_Floor_{status.floorNumber}_CooldownDays", status.cooldownDays);
+        PlayerPrefs.Save();
+    }
+
+    public static void RecordMerchantEncounter(int floor)
+    {
+        if (floor <= 0) floor = 1;
+        FloorMerchantStatus status = GetFloorMerchantStatus(floor);
+        if (!status.hasMet)
+        {
+            status.hasMet = true;
+            if (status.remainingDays <= 0) status.remainingDays = DefaultStayDuration;
+            status.cooldownDays = 0;
+            SaveFloorMerchantStatus(status);
+            Debug.Log($"[MerchantEvent] First encounter with Merchant on Floor {floor}! Registered with {status.remainingDays} days remaining.");
+        }
+    }
+
+    public static bool HasMetMerchant(int floor)
+    {
+        if (floor <= 0) floor = 1;
+        return PlayerPrefs.GetInt($"Merchant_Floor_{floor}_HasMet", 0) == 1;
+    }
+
+    public static bool HasMetAnyMerchant()
+    {
+        int maxFloor = GetMaxFloorsToCheck();
+        for (int f = 1; f <= maxFloor; f++)
+        {
+            if (HasMetMerchant(f)) return true;
+        }
+        return false;
+    }
+
+    public static List<FloorMerchantStatus> GetAllDiscoveredMerchants()
+    {
+        List<FloorMerchantStatus> list = new List<FloorMerchantStatus>();
+        int maxFloor = GetMaxFloorsToCheck();
+        for (int f = 1; f <= maxFloor; f++)
+        {
+            if (HasMetMerchant(f))
+            {
+                list.Add(GetFloorMerchantStatus(f));
+            }
+        }
+        return list;
+    }
+
+    public static int GetMaxFloorsToCheck()
+    {
+        int maxUnlocked = ProgressionManager.Instance != null ? ProgressionManager.Instance.highestUnlockedFloor : 1;
+        return Mathf.Max(5, maxUnlocked + 1);
+    }
+
+    public static bool IsMerchantActiveForFloor(int floor)
+    {
+        if (floor <= 0) floor = 1;
+        FloorMerchantStatus status = GetFloorMerchantStatus(floor);
+        // Khi chưa gặp: luôn sẵn sàng cho người chơi gặp (số ngày không giảm)
+        if (!status.hasMet) return true;
+        // Khi đã gặp: active nếu còn ngày và không trong cooldown
+        return status.remainingDays > 0 && status.cooldownDays <= 0;
+    }
+
+    public static int GetRemainingDaysForFloor(int floor)
+    {
+        if (floor <= 0) floor = 1;
+        FloorMerchantStatus status = GetFloorMerchantStatus(floor);
+        return status.remainingDays;
+    }
+
+    public static int GetCooldownForFloor(int floor)
+    {
+        if (floor <= 0) floor = 1;
+        FloorMerchantStatus status = GetFloorMerchantStatus(floor);
+        return status.cooldownDays;
+    }
+
+    public static void AdvanceCalendarStatus(int newDay)
+    {
+        int lastProcessedDay = PlayerPrefs.GetInt("Merchant_LastProcessedDay", 0);
+        if (lastProcessedDay == 0)
+        {
+            PlayerPrefs.SetInt("Merchant_LastProcessedDay", newDay);
+            PlayerPrefs.Save();
+            return;
+        }
+
+        if (newDay <= lastProcessedDay) return;
+
+        int daysAdvanced = newDay - lastProcessedDay;
+        PlayerPrefs.SetInt("Merchant_LastProcessedDay", newDay);
+        PlayerPrefs.Save();
+
+        int maxFloor = GetMaxFloorsToCheck();
+        for (int f = 1; f <= maxFloor; f++)
+        {
+            if (!HasMetMerchant(f))
+            {
+                // QUAN TRỌNG: "khi chưa gặp thương nhân thì số ngày không giảm"
+                continue;
+            }
+
+            FloorMerchantStatus status = GetFloorMerchantStatus(f);
+            for (int d = 0; d < daysAdvanced; d++)
+            {
+                if (status.remainingDays > 0)
+                {
+                    status.remainingDays--;
+                    if (status.remainingDays <= 0)
+                    {
+                        status.cooldownDays = DefaultCooldownDuration;
+                    }
+                }
+                else if (status.cooldownDays > 0)
+                {
+                    status.cooldownDays--;
+                    if (status.cooldownDays <= 0)
+                    {
+                        status.remainingDays = DefaultStayDuration;
+                    }
+                }
+            }
+            SaveFloorMerchantStatus(status);
+        }
+    }
+
     /// <summary>
     /// Synchronizes merchant active status and remaining days with the farm calendar (DayManager / PlayerPrefs).
     /// </summary>
@@ -53,43 +231,50 @@ public class MerchantEvent : MonoBehaviour
             currentDay = PlayerPrefs.GetInt("Farm_CurrentDay", 1);
         }
 
-        int totalCycle = stayDurationDays + cooldownDurationDays;
-        if (totalCycle <= 0) totalCycle = 8;
-
-        int cycleDayOffset = (currentDay - 1) % totalCycle;
-        if (cycleDayOffset < stayDurationDays)
-        {
-            merchantActive = true;
-            remainingDays = stayDurationDays - cycleDayOffset;
-            Debug.Log($"[MerchantEvent] Active! Farm Day: {currentDay} -> {remainingDays} days remaining in current visit.");
-        }
-        else
-        {
-            merchantActive = false;
-            remainingDays = 0;
-            int daysUntilReturn = totalCycle - cycleDayOffset;
-            Debug.Log($"[MerchantEvent] Departed on supply run. Farm Day: {currentDay} -> Returns in {daysUntilReturn} days.");
-        }
-
+        AdvanceCalendarStatus(currentDay);
         EnsureDefaultTrades();
     }
 
     /// <summary>
-    /// Checks if a merchant is currently present and active in the dungeon.
+    /// Checks if a merchant is currently present and active in the dungeon on the current floor.
     /// </summary>
     public static bool IsMerchantActive()
     {
-        if (Instance != null)
+        int floor = GetCurrentOrSelectedFloor();
+        return IsMerchantActiveForFloor(floor);
+    }
+
+    /// <summary>
+    /// Kết thúc thời gian của sự kiện thương nhân (hết thời gian).
+    /// Chuyển sang trạng thái cooldown.
+    /// </summary>
+    public void ExpireMerchant()
+    {
+        int floor = GetCurrentOrSelectedFloor();
+        FloorMerchantStatus status = GetFloorMerchantStatus(floor);
+        status.remainingDays = 0;
+        status.cooldownDays = cooldownDurationDays > 0 ? cooldownDurationDays : DefaultCooldownDuration;
+        SaveFloorMerchantStatus(status);
+        Debug.Log($"[MerchantEvent] Merchant on Floor {floor} expired! Cooldown set to {status.cooldownDays} days.");
+    }
+
+    /// <summary>
+    /// Giảm biến cooldown. Khi đếm về 0, thương nhân sẽ xuất hiện trở lại với tỉ lệ bình thường.
+    /// </summary>
+    public void DecrementCooldown(int amount = 1)
+    {
+        int floor = GetCurrentOrSelectedFloor();
+        FloorMerchantStatus status = GetFloorMerchantStatus(floor);
+        if (status.cooldownDays > 0)
         {
-            return Instance.merchantActive && Instance.remainingDays > 0;
+            status.cooldownDays = Mathf.Max(0, status.cooldownDays - amount);
+            if (status.cooldownDays == 0)
+            {
+                status.remainingDays = stayDurationDays > 0 ? stayDurationDays : DefaultStayDuration;
+            }
+            SaveFloorMerchantStatus(status);
+            Debug.Log($"[MerchantEvent] Floor {floor} Cooldown decremented to {status.cooldownDays}.");
         }
-        MerchantEvent found = FindFirstObjectByType<MerchantEvent>(FindObjectsInactive.Include);
-        if (found != null)
-        {
-            Instance = found;
-            return found.merchantActive && found.remainingDays > 0;
-        }
-        return true; // Default to available if not explicitly placed/depleted
     }
 
     /// <summary>
@@ -97,10 +282,14 @@ public class MerchantEvent : MonoBehaviour
     /// </summary>
     public void ResetMerchant(int days = 5)
     {
-        merchantActive = true;
-        remainingDays = days;
+        int floor = GetCurrentOrSelectedFloor();
+        FloorMerchantStatus status = GetFloorMerchantStatus(floor);
+        status.remainingDays = days;
+        status.cooldownDays = 0;
+        status.hasMet = true;
+        SaveFloorMerchantStatus(status);
         EnsureDefaultTrades();
-        Debug.Log($"[MerchantEvent] Merchant has arrived for this run! Active for {days} days.");
+        Debug.Log($"[MerchantEvent] Merchant on Floor {floor} has arrived! Active for {days} days.");
     }
 
     public void EnsureDefaultTrades()

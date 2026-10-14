@@ -73,6 +73,8 @@ public class ProgressionManager : MonoBehaviour
     public int highestUnlockedFloor = 1;
     public List<int> defeatedBossFloors = new List<int>();
     public int selectedFloor = 1;
+    [Tooltip("Số ngày cần để Boss hồi sinh lại sau khi bị đánh bại")]
+    public int defaultBossResetDays = 3;
 
     public event System.Action OnProgressionChanged;
     public event System.Action<bool> OnRunEnded; // true: victory, false: defeat
@@ -620,6 +622,44 @@ public class ProgressionManager : MonoBehaviour
         return defeatedBossFloors != null && defeatedBossFloors.Contains(floor);
     }
 
+    /// <summary>
+    /// Kiểm tra xem Boss của tầng đã hồi sinh lại hay chưa.
+    /// Nếu chưa từng đánh bại Boss -> Luôn sẵn sàng (true).
+    /// Nếu đã đánh bại -> Phải chờ hết số ngày hồi sinh (defaultBossResetDays).
+    /// </summary>
+    public bool IsBossAvailable(int floor)
+    {
+        if (!IsBossDefeated(floor)) return true;
+
+        int currentDay = DayManager.Instance != null ? DayManager.Instance.currentDay : 1;
+        int nextAvailableDay = PlayerPrefs.GetInt($"Boss_Floor_{floor}_NextAvailableDay", 0);
+
+        return currentDay >= nextAvailableDay;
+    }
+
+    /// <summary>
+    /// Trả về số ngày còn lại để Boss tầng này hồi sinh. 0 nếu đã hồi sinh hoặc chưa đánh bại.
+    /// </summary>
+    public int GetDaysUntilBossReset(int floor)
+    {
+        if (IsBossAvailable(floor)) return 0;
+
+        int currentDay = DayManager.Instance != null ? DayManager.Instance.currentDay : 1;
+        int nextAvailableDay = PlayerPrefs.GetInt($"Boss_Floor_{floor}_NextAvailableDay", 0);
+
+        return Mathf.Max(0, nextAvailableDay - currentDay);
+    }
+
+    /// <summary>
+    /// Buộc Boss tầng hồi sinh ngay lập tức (phục vụ test hoặc hiệu ứng đặc biệt).
+    /// </summary>
+    public void ResetBossCooldown(int floor)
+    {
+        PlayerPrefs.SetInt($"Boss_Floor_{floor}_NextAvailableDay", 0);
+        PlayerPrefs.Save();
+        OnProgressionChanged?.Invoke();
+    }
+
     public bool RecordBossDefeated(int floor)
     {
         if (floor < 1) floor = 1;
@@ -631,6 +671,12 @@ public class ProgressionManager : MonoBehaviour
             defeatedBossFloors.Add(floor);
         }
 
+        // Đặt mốc ngày hồi sinh tiếp theo cho Boss
+        int currentDay = DayManager.Instance != null ? DayManager.Instance.currentDay : 1;
+        int nextAvailableDay = currentDay + defaultBossResetDays;
+        PlayerPrefs.SetInt($"Boss_Floor_{floor}_DefeatedDay", currentDay);
+        PlayerPrefs.SetInt($"Boss_Floor_{floor}_NextAvailableDay", nextAvailableDay);
+
         bool changed = isFirstTime;
         if (floor + 1 > highestUnlockedFloor)
         {
@@ -638,13 +684,14 @@ public class ProgressionManager : MonoBehaviour
             changed = true;
         }
 
+        SaveFloorProgression();
         if (changed)
         {
-            SaveFloorProgression();
             CheckAllBlessingUnlocks();
-            Debug.Log($"[ProgressionManager] Boss of Floor {floor} defeated! (FirstTimeClear: {isFirstTime}) Floor {floor + 1} is now unlocked! (Highest: {highestUnlockedFloor})");
-            OnProgressionChanged?.Invoke();
         }
+
+        Debug.Log($"[ProgressionManager] Boss of Floor {floor} defeated on Day {currentDay}! (FirstTimeClear: {isFirstTime}) Floor {floor + 1} unlocked. Boss will reset on Day {nextAvailableDay} (Cooldown: {defaultBossResetDays} days).");
+        OnProgressionChanged?.Invoke();
 
         return isFirstTime;
     }
@@ -775,7 +822,7 @@ public static class BlessingDatabase
                 BlessingType.KeepLootOnDefeat,
                 "Bảo Hộ Thần Linh",
                 "Khi thất bại hoặc tử trận trong Dungeon, giữ lại toàn bộ vật phẩm trong túi đồ mà không bị rơi rụng.",
-                "🛡️",
+                "[BẢO HỘ]",
                 new Color(0.3f, 0.8f, 1f),
                 "Mở khóa sẵn ngay từ đầu."
             )
@@ -786,7 +833,7 @@ public static class BlessingDatabase
                 BlessingType.BastionStrike,
                 "Lấy Thủ Làm Công",
                 "Cộng thêm 50% chỉ số DEF hiện tại vào ATK. Dùng hành động Phòng Thủ (Defend) sẽ hồi ngay +1 Điểm Hành Động (AP).",
-                "⚔️",
+                "[THỦ CÔNG]",
                 new Color(1f, 0.7f, 0.2f),
                 "Vượt qua Tầng 1 Dungeon HOẶC Hoàn thành Cúng Dường DEF tại Tượng Thần."
             )
@@ -797,7 +844,7 @@ public static class BlessingDatabase
                 BlessingType.SwiftMomentum,
                 "Động Lực Tốc Độ",
                 "Tăng vĩnh viễn +4 Tốc độ trong run. Nếu Tốc độ cao hơn quái vật, mỗi đòn đánh gây thêm sát thương chênh lệch tốc độ.",
-                "⚡",
+                "[TỐC ĐỘ]",
                 new Color(0.2f, 1f, 0.5f),
                 "Vượt qua Tầng 1 Dungeon HOẶC Hoàn thành Cúng Dường Tốc Độ tại Tượng Thần."
             )
@@ -808,7 +855,7 @@ public static class BlessingDatabase
                 BlessingType.StarvingFury,
                 "Bụng Rỗng Cuồng Nộ",
                 "Khi Độ no dưới 35%, nhận thêm +6 ATK và đòn tấn công có 35% tỷ lệ bạo kích gây 150% sát thương.",
-                "🔥",
+                "[CUỒNG NỘ]",
                 new Color(1f, 0.3f, 0.3f),
                 "Vượt qua Tầng 1 Dungeon HOẶC Hoàn thành Cúng Dường Sức Mạnh (ATK)."
             )
@@ -819,7 +866,7 @@ public static class BlessingDatabase
                 BlessingType.GluttonousAegis,
                 "No Căng Phản Đòn",
                 "Khi Độ no trên 70%, nhận thêm +8 DEF vững chãi và phản lại 40% sát thương nhận vào cho kẻ địch tấn công.",
-                "🍲",
+                "[PHẢN ĐÒN]",
                 new Color(0.9f, 0.8f, 0.2f),
                 "Đánh bại Boss và Vượt qua Tầng 2 Dungeon."
             )
@@ -830,7 +877,7 @@ public static class BlessingDatabase
                 BlessingType.EndlessFeast,
                 "Đại Tiệc Bất Tận",
                 "Hiệu lực của tất cả các món ăn tăng gấp đôi thời lượng. Món ăn đầu tiên trong mỗi lượt không tiêu tốn Điểm Hành Động (AP).",
-                "🍗",
+                "[ĐẠI TIỆC]",
                 new Color(1f, 0.5f, 0.8f),
                 "Hoàn thành 2 Cúng Dường tại Tượng Thần HOẶC Vượt qua Tầng 3 Dungeon."
             )
@@ -841,7 +888,7 @@ public static class BlessingDatabase
                 BlessingType.BitterDecay,
                 "Món Đắng Bào Mòn",
                 "Mọi đòn đánh thường đều kèm độc dược bào mòn: giảm vĩnh viễn 2 DEF của mục tiêu trong trận đấu và gây thêm 4 sát thương độc.",
-                "🧪",
+                "[BÀO MÒN]",
                 new Color(0.6f, 0.3f, 0.9f),
                 "Đánh bại Boss và Vượt qua Tầng 2 Dungeon."
             )
@@ -852,7 +899,7 @@ public static class BlessingDatabase
                 BlessingType.RawVitality,
                 "Nông Dân Cường Tráng",
                 "Cho phép ăn trực tiếp bất kỳ loại nông sản sống nào (lúa mì, cà rốt, bắp...) ngay trong Dungeon để hồi phục +12 HP và +20 Độ no.",
-                "🌾",
+                "[CƯỜNG TRÁNG]",
                 new Color(0.4f, 0.9f, 0.3f),
                 "Hoàn thành bất kỳ 1 Cúng Dường / Hiến Tế nào tại Tượng Thần."
             )

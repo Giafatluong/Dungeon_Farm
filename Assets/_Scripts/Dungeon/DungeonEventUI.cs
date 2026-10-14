@@ -1,7 +1,7 @@
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-using System.Collections.Generic;
 
 /// <summary>
 /// UI for Slay the Spire style Mystery / Shrine / Fountain / Encounter events in the Dungeon.
@@ -73,11 +73,16 @@ public class DungeonEventUI : MonoBehaviour
         }
         _instance = this;
 
-        EnsureUIBuilt();
-
         if (eventPanel != null)
         {
             eventPanel.SetActive(false);
+        }
+
+        // Fix Bug 2: Bind continueButton listener
+        if (continueButton != null)
+        {
+            continueButton.onClick.RemoveAllListeners();
+            continueButton.onClick.AddListener(OnContinueClicked);
         }
     }
 
@@ -87,6 +92,176 @@ public class DungeonEventUI : MonoBehaviour
         {
             _instance = null;
         }
+    }
+    #endregion
+
+    #region UI Construction
+    public void EnsureUIBuilt()
+    {
+        if (eventPanel != null) return;
+
+        Canvas parentCanvas = canvas != null ? canvas : DungeonUIAssetHelper.GetMainScreenCanvas();
+        if (parentCanvas == null)
+        {
+            Debug.LogError("[DungeonEventUI] No Canvas found in scene!");
+            return;
+        }
+
+        // 1. Dark overlay
+        GameObject overlayGO = new("DungeonEventPanel", typeof(RectTransform), typeof(Image));
+        overlayGO.transform.SetParent(parentCanvas.transform, false);
+        eventPanel = overlayGO;
+
+        RectTransform overlayRT = overlayGO.GetComponent<RectTransform>();
+        overlayRT.anchorMin = Vector2.zero;
+        overlayRT.anchorMax = Vector2.one;
+        overlayRT.sizeDelta = Vector2.zero;
+
+        Image overlayImg = overlayGO.GetComponent<Image>();
+        overlayImg.color = new Color(0.04f, 0.05f, 0.08f, 0.88f);
+
+        // 2. Main Window Modal
+        GameObject modalGO = new("EventModal", typeof(RectTransform), typeof(Image));
+        modalGO.transform.SetParent(overlayGO.transform, false);
+
+        RectTransform modalRT = modalGO.GetComponent<RectTransform>();
+        modalRT.anchorMin = new Vector2(0.5f, 0.5f);
+        modalRT.anchorMax = new Vector2(0.5f, 0.5f);
+        modalRT.pivot = new Vector2(0.5f, 0.5f);
+        modalRT.sizeDelta = new Vector2(760, 520);
+
+        Image modalImg = modalGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(modalImg, new Color(0.12f, 0.13f, 0.18f, 0.98f));
+
+        // 3. Header Banner
+        GameObject headerGO = new("Header", typeof(RectTransform), typeof(Image));
+        headerGO.transform.SetParent(modalGO.transform, false);
+        RectTransform headerRT = headerGO.GetComponent<RectTransform>();
+        headerRT.anchorMin = new Vector2(0, 1);
+        headerRT.anchorMax = new Vector2(1, 1);
+        headerRT.pivot = new Vector2(0.5f, 1);
+        headerRT.sizeDelta = new Vector2(0, 68);
+
+        Image headerImg = headerGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(headerImg, new Color(0.20f, 0.15f, 0.28f, 1f));
+
+        // Category Text
+        GameObject catGO = new("CategoryText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        catGO.transform.SetParent(headerGO.transform, false);
+        RectTransform catRT = catGO.GetComponent<RectTransform>();
+        catRT.anchorMin = new Vector2(0, 1);
+        catRT.anchorMax = new Vector2(1, 1);
+        catRT.offsetMin = new Vector2(24, -26);
+        catRT.offsetMax = new Vector2(-24, -6);
+
+        categoryText = catGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(categoryText);
+        categoryText.fontSize = 12f;
+        categoryText.fontStyle = FontStyles.Bold;
+        categoryText.alignment = TextAlignmentOptions.MidlineLeft;
+
+        // Title Text
+        GameObject titleGO = new("TitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        titleGO.transform.SetParent(headerGO.transform, false);
+        RectTransform titleRT = titleGO.GetComponent<RectTransform>();
+        titleRT.anchorMin = new Vector2(0, 0);
+        titleRT.anchorMax = new Vector2(1, 1);
+        titleRT.offsetMin = new Vector2(24, 6);
+        titleRT.offsetMax = new Vector2(-24, -28);
+
+        titleText = titleGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(titleText);
+        titleText.fontSize = 19f;
+        titleText.fontStyle = FontStyles.Bold;
+        titleText.color = new Color(1f, 0.88f, 0.25f);
+        titleText.alignment = TextAlignmentOptions.MidlineLeft;
+
+        // 4. Narrative Box
+        GameObject narrativeBoxGO = new("NarrativeBox", typeof(RectTransform), typeof(Image));
+        narrativeBoxGO.transform.SetParent(modalGO.transform, false);
+        RectTransform narrBoxRT = narrativeBoxGO.GetComponent<RectTransform>();
+        narrBoxRT.anchorMin = new Vector2(0, 0.52f);
+        narrBoxRT.anchorMax = new Vector2(1, 1);
+        narrBoxRT.offsetMin = new Vector2(24, 0);
+        narrBoxRT.offsetMax = new Vector2(-24, -76);
+
+        Image narrBoxImg = narrativeBoxGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(narrBoxImg, new Color(0.07f, 0.08f, 0.12f, 0.95f));
+
+        GameObject narrTextGO = new("NarrativeText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        narrTextGO.transform.SetParent(narrativeBoxGO.transform, false);
+        RectTransform narrTextRT = narrTextGO.GetComponent<RectTransform>();
+        narrTextRT.anchorMin = Vector2.zero;
+        narrTextRT.anchorMax = Vector2.one;
+        narrTextRT.offsetMin = new Vector2(16, 12);
+        narrTextRT.offsetMax = new Vector2(-16, -12);
+
+        narrativeText = narrTextGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(narrativeText);
+        narrativeText.fontSize = 13.5f;
+        narrativeText.lineSpacing = 6f;
+        narrativeText.color = new Color(0.92f, 0.94f, 0.98f);
+        narrativeText.alignment = TextAlignmentOptions.TopLeft;
+
+        // 5. Choices Container
+        GameObject choicesGO = new("ChoicesContainer", typeof(RectTransform), typeof(VerticalLayoutGroup));
+        choicesGO.transform.SetParent(modalGO.transform, false);
+        choicesContainer = choicesGO.GetComponent<RectTransform>();
+        choicesContainer.anchorMin = new Vector2(0, 0);
+        choicesContainer.anchorMax = new Vector2(1, 0.50f);
+        choicesContainer.offsetMin = new Vector2(24, 56);
+        choicesContainer.offsetMax = new Vector2(-24, 0);
+
+        VerticalLayoutGroup vlg = choicesGO.GetComponent<VerticalLayoutGroup>();
+        vlg.spacing = 8f;
+        vlg.childControlWidth = true;
+        vlg.childControlHeight = true;
+        vlg.childForceExpandWidth = true;
+        vlg.childForceExpandHeight = false;
+
+        // 6. Footer: StatusFeedbackText & ContinueButton
+        GameObject feedbackGO = new("StatusFeedbackText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        feedbackGO.transform.SetParent(modalGO.transform, false);
+        RectTransform fbRT = feedbackGO.GetComponent<RectTransform>();
+        fbRT.anchorMin = new Vector2(0, 0);
+        fbRT.anchorMax = new Vector2(0.68f, 0);
+        fbRT.offsetMin = new Vector2(24, 12);
+        fbRT.offsetMax = new Vector2(0, 48);
+
+        statusFeedbackText = feedbackGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(statusFeedbackText);
+        statusFeedbackText.fontSize = 12.5f;
+        statusFeedbackText.alignment = TextAlignmentOptions.MidlineLeft;
+
+        GameObject btnGO = new("ContinueButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        btnGO.transform.SetParent(modalGO.transform, false);
+        RectTransform btnRT = btnGO.GetComponent<RectTransform>();
+        btnRT.anchorMin = new Vector2(1, 0);
+        btnRT.anchorMax = new Vector2(1, 0);
+        btnRT.pivot = new Vector2(1, 0);
+        btnRT.anchoredPosition = new Vector2(-24, 12);
+        btnRT.sizeDelta = new Vector2(160, 38);
+
+        Image btnImg = btnGO.GetComponent<Image>();
+        continueButton = btnGO.GetComponent<Button>();
+        DungeonUIAssetHelper.StyleButton(continueButton, btnImg, new Color(0.18f, 0.55f, 0.28f));
+        continueButton.onClick.RemoveAllListeners();
+        continueButton.onClick.AddListener(OnContinueClicked);
+
+        GameObject btnTxtGO = new("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        btnTxtGO.transform.SetParent(btnGO.transform, false);
+        RectTransform btnTxtRT = btnTxtGO.GetComponent<RectTransform>();
+        btnTxtRT.anchorMin = Vector2.zero;
+        btnTxtRT.anchorMax = Vector2.one;
+        btnTxtRT.sizeDelta = Vector2.zero;
+
+        TextMeshProUGUI btnTxt = btnTxtGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(btnTxt);
+        btnTxt.text = "TIẾP TỤC [->]";
+        btnTxt.fontSize = 13f;
+        btnTxt.fontStyle = FontStyles.Bold;
+        btnTxt.alignment = TextAlignmentOptions.Center;
+        btnTxt.color = Color.white;
     }
     #endregion
 
@@ -171,6 +346,7 @@ public class DungeonEventUI : MonoBehaviour
 
     private void BuildChoiceButtons()
     {
+        // Xóa các button cũ
         for (int i = 0; i < activeChoiceButtons.Count; i++)
         {
             if (activeChoiceButtons[i] != null)
@@ -180,75 +356,50 @@ public class DungeonEventUI : MonoBehaviour
         }
         activeChoiceButtons.Clear();
 
-        if (currentEvent == null || currentEvent.choices == null || choicesContainer == null) return;
+        // Fix Bug 3: Tạo button cho từng lựa chọn trong event
+        if (currentEvent == null || currentEvent.choices == null || choicesContainer == null)
+            return;
 
         for (int i = 0; i < currentEvent.choices.Count; i++)
         {
-            int index = i;
             DungeonEventChoice choice = currentEvent.choices[i];
             if (choice == null) continue;
 
-            GameObject btnGO = CreateChoiceButton(choice, index);
-            if (btnGO != null)
-            {
-                btnGO.transform.SetParent(choicesContainer, false);
-                activeChoiceButtons.Add(btnGO);
-            }
+            // Tạo button cho lựa chọn
+            GameObject btnGO = new GameObject($"ChoiceButton_{i}", typeof(RectTransform), typeof(UnityEngine.UI.Image), typeof(UnityEngine.UI.Button));
+            btnGO.transform.SetParent(choicesContainer, false);
+
+            RectTransform btnRT = btnGO.GetComponent<RectTransform>();
+            btnRT.sizeDelta = new Vector2(400, 44);
+
+            UnityEngine.UI.Image btnImg = btnGO.GetComponent<UnityEngine.UI.Image>();
+            UnityEngine.UI.Button btn = btnGO.GetComponent<UnityEngine.UI.Button>();
+            DungeonUIAssetHelper.StyleButton(btn, btnImg, new Color(0.16f, 0.19f, 0.28f, 0.95f), new Color(0.24f, 0.29f, 0.40f, 1f));
+
+            // Label text
+            GameObject textGO = new GameObject("Label", typeof(RectTransform), typeof(TMPro.TextMeshProUGUI));
+            textGO.transform.SetParent(btnGO.transform, false);
+            RectTransform textRT = textGO.GetComponent<RectTransform>();
+            textRT.anchorMin = Vector2.zero;
+            textRT.anchorMax = Vector2.one;
+            textRT.sizeDelta = Vector2.zero;
+            textRT.offsetMin = new Vector2(14, 4);
+            textRT.offsetMax = new Vector2(-14, -4);
+
+            TMPro.TextMeshProUGUI label = textGO.GetComponent<TMPro.TextMeshProUGUI>();
+            DungeonUIAssetHelper.ApplyFont(label);
+            label.fontSize = 12.5f;
+            label.alignment = TMPro.TextAlignmentOptions.MidlineLeft;
+            label.text = string.IsNullOrEmpty(choice.choiceDetails)
+                ? $"<b><color=#FFD070>{choice.choiceLabel}</color></b>"
+                : $"<b><color=#FFD070>{choice.choiceLabel}</color></b>   <size=11><color=#C8D0DC>{choice.choiceDetails}</color></size>";
+
+            // Bind listener (capture local index)
+            DungeonEventChoice capturedChoice = choice;
+            btn.onClick.AddListener(() => OnChoiceSelected(capturedChoice));
+
+            activeChoiceButtons.Add(btnGO);
         }
-    }
-
-    private GameObject CreateChoiceButton(DungeonEventChoice choice, int index)
-    {
-        bool canSelect = choice.CanPlayerSelect(currentPlayer, currentBackpack, out string reason);
-
-        // Choice Button with Sliced Frame
-        GameObject btnGO = new($"ChoiceBtn_{index}", typeof(RectTransform), typeof(Image), typeof(Button));
-        RectTransform rt = btnGO.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(750, 54);
-
-        Image img = btnGO.GetComponent<Image>();
-        Button btn = btnGO.GetComponent<Button>();
-        btn.interactable = canSelect;
-        btn.onClick.AddListener(() => OnChoiceSelected(choice));
-
-        if (canSelect)
-        {
-            Color baseCol = new Color(0.15f, 0.18f, 0.25f, 0.98f);
-            DungeonUIAssetHelper.StyleButton(btn, img, baseCol, new Color(0.22f, 0.28f, 0.38f, 1f), new Color(0.12f, 0.14f, 0.20f, 1f));
-        }
-        else
-        {
-            Color disabledCol = new Color(0.10f, 0.11f, 0.14f, 0.75f);
-            DungeonUIAssetHelper.StyleButton(btn, img, disabledCol);
-        }
-
-        // Text Content
-        GameObject textGO = new("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
-        textGO.transform.SetParent(btnGO.transform, false);
-        RectTransform textRT = textGO.GetComponent<RectTransform>();
-        textRT.anchorMin = Vector2.zero;
-        textRT.anchorMax = Vector2.one;
-        textRT.offsetMin = new Vector2(16, 4);
-        textRT.offsetMax = new Vector2(-16, -4);
-
-        TextMeshProUGUI tmp = textGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(tmp);
-        tmp.fontSize = 13.5f;
-        tmp.alignment = TextAlignmentOptions.MidlineLeft;
-
-        string labelColor = canSelect ? "#FFD700" : "#777777";
-        string detailsColor = canSelect ? "#E4EBF2" : "#666666";
-
-        if (canSelect)
-        {
-            tmp.text = $"<color={labelColor}><b>{choice.choiceLabel}</b></color>  <color={detailsColor}>{choice.choiceDetails}</color>";
-        }
-        else
-        {
-            tmp.text = $"<color={labelColor}><b>{choice.choiceLabel}</b></color>  <color={detailsColor}>{choice.choiceDetails}</color>\n<size=12><color=#FF6666>({reason})</color></size>";
-        }
-
-        return btnGO;
     }
     #endregion
 
@@ -355,233 +506,5 @@ public class DungeonEventUI : MonoBehaviour
     }
     #endregion
 
-    #region Procedural UI Building
-    private Canvas GetCanvas()
-    {
-        if (canvas == null || canvas.renderMode == RenderMode.WorldSpace)
-        {
-            canvas = GetComponentInParent<Canvas>();
-            if (canvas == null || canvas.renderMode == RenderMode.WorldSpace)
-            {
-                canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
-            }
-        }
-        return canvas;
-    }
-
-    private void EnsureUIBuilt()
-    {
-        if (eventPanel != null) return;
-
-        Canvas parentCanvas = GetCanvas();
-        if (parentCanvas == null)
-        {
-            Debug.LogError("[DungeonEventUI] No Canvas found in scene!");
-            return;
-        }
-
-        // 1. Fullscreen Dark Overlay
-        GameObject overlayGO = new("DungeonEventPanel", typeof(RectTransform), typeof(Image));
-        overlayGO.transform.SetParent(parentCanvas.transform, false);
-        eventPanel = overlayGO;
-
-        RectTransform overlayRT = overlayGO.GetComponent<RectTransform>();
-        overlayRT.anchorMin = Vector2.zero;
-        overlayRT.anchorMax = Vector2.one;
-        overlayRT.sizeDelta = Vector2.zero;
-
-        Image overlayImg = overlayGO.GetComponent<Image>();
-        overlayImg.color = new Color(0.04f, 0.05f, 0.08f, 0.88f);
-
-        // 2. Main Parchment Modal (Slay the Spire Style Card with 9-Sliced Frame)
-        GameObject modalGO = new("EventCardModal", typeof(RectTransform), typeof(Image));
-        modalGO.transform.SetParent(overlayGO.transform, false);
-
-        RectTransform modalRT = modalGO.GetComponent<RectTransform>();
-        modalRT.anchorMin = new Vector2(0.5f, 0.5f);
-        modalRT.anchorMax = new Vector2(0.5f, 0.5f);
-        modalRT.pivot = new Vector2(0.5f, 0.5f);
-        modalRT.sizeDelta = new Vector2(820, 560);
-
-        Image modalImg = modalGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(modalImg, new Color(0.10f, 0.12f, 0.17f, 0.98f));
-
-        // 3. Top Banner with Sliced Frame
-        GameObject headerGO = new("Header", typeof(RectTransform), typeof(Image));
-        headerGO.transform.SetParent(modalGO.transform, false);
-        RectTransform headerRT = headerGO.GetComponent<RectTransform>();
-        headerRT.anchorMin = new Vector2(0, 1);
-        headerRT.anchorMax = new Vector2(1, 1);
-        headerRT.pivot = new Vector2(0.5f, 1);
-        headerRT.sizeDelta = new Vector2(0, 76);
-
-        Image headerImg = headerGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(headerImg, new Color(0.18f, 0.15f, 0.22f, 1f));
-
-        // Category Badge
-        GameObject catGO = new("CategoryText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        catGO.transform.SetParent(headerGO.transform, false);
-        RectTransform catRT = catGO.GetComponent<RectTransform>();
-        catRT.anchorMin = new Vector2(0, 1);
-        catRT.anchorMax = new Vector2(1, 1);
-        catRT.offsetMin = new Vector2(16, -26);
-        catRT.offsetMax = new Vector2(-16, -8);
-
-        categoryText = catGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(categoryText);
-        categoryText.fontSize = 12;
-        categoryText.fontStyle = FontStyles.Bold;
-        categoryText.alignment = TextAlignmentOptions.Center;
-        categoryText.color = new Color(1f, 0.85f, 0.35f);
-        categoryText.text = "[ ENCOUNTER ]";
-
-        // Title Text
-        GameObject titleGO = new("TitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        titleGO.transform.SetParent(headerGO.transform, false);
-        RectTransform titleRT = titleGO.GetComponent<RectTransform>();
-        titleRT.anchorMin = Vector2.zero;
-        titleRT.anchorMax = Vector2.one;
-        titleRT.offsetMin = new Vector2(16, 8);
-        titleRT.offsetMax = new Vector2(-16, -26);
-
-        titleText = titleGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(titleText);
-        titleText.fontSize = 21;
-        titleText.fontStyle = FontStyles.Bold;
-        titleText.color = Color.white;
-        titleText.alignment = TextAlignmentOptions.Center;
-        titleText.text = "Mysterious Encounter";
-
-        // 4. Center Narrative Story Box with Sliced Frame
-        GameObject storyBoxGO = new("NarrativeBox", typeof(RectTransform), typeof(Image));
-        storyBoxGO.transform.SetParent(modalGO.transform, false);
-        RectTransform storyBoxRT = storyBoxGO.GetComponent<RectTransform>();
-        storyBoxRT.anchorMin = new Vector2(0, 1);
-        storyBoxRT.anchorMax = new Vector2(1, 1);
-        storyBoxRT.pivot = new Vector2(0.5f, 1);
-        storyBoxRT.anchoredPosition = new Vector2(0, -84);
-        storyBoxRT.sizeDelta = new Vector2(-36, 175);
-
-        Image storyBoxImg = storyBoxGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(storyBoxImg, new Color(0.06f, 0.08f, 0.11f, 0.95f));
-
-        GameObject narrativeGO = new("NarrativeText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        narrativeGO.transform.SetParent(storyBoxGO.transform, false);
-        RectTransform narrativeRT = narrativeGO.GetComponent<RectTransform>();
-        narrativeRT.anchorMin = Vector2.zero;
-        narrativeRT.anchorMax = Vector2.one;
-        narrativeRT.offsetMin = new Vector2(16, 12);
-        narrativeRT.offsetMax = new Vector2(-16, -12);
-
-        narrativeText = narrativeGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(narrativeText);
-        narrativeText.fontSize = 13.5f;
-        narrativeText.lineSpacing = 18;
-        narrativeText.color = new Color(0.9f, 0.93f, 0.97f);
-        narrativeText.alignment = TextAlignmentOptions.TopLeft;
-        narrativeText.text = "A mysterious story unfolds before you...";
-
-        // 5. Choices Container in Scroll View (Slay the Spire Vertical Stack)
-        GameObject choicesScrollGO = new("ChoicesScrollArea", typeof(RectTransform), typeof(ScrollRect));
-        choicesScrollGO.transform.SetParent(modalGO.transform, false);
-        RectTransform choicesScrollRT = choicesScrollGO.GetComponent<RectTransform>();
-        choicesScrollRT.anchorMin = new Vector2(0, 0);
-        choicesScrollRT.anchorMax = new Vector2(1, 1);
-        choicesScrollRT.offsetMin = new Vector2(18, 68);
-        choicesScrollRT.offsetMax = new Vector2(-18, -266);
-
-        ScrollRect cSr = choicesScrollGO.GetComponent<ScrollRect>();
-        cSr.horizontal = false;
-        cSr.vertical = true;
-        cSr.scrollSensitivity = 25f;
-
-        GameObject vpGO = new("Viewport", typeof(RectTransform), typeof(RectMask2D));
-        vpGO.transform.SetParent(choicesScrollGO.transform, false);
-        RectTransform vpRT = vpGO.GetComponent<RectTransform>();
-        vpRT.anchorMin = Vector2.zero;
-        vpRT.anchorMax = Vector2.one;
-        vpRT.offsetMin = Vector2.zero;
-        vpRT.offsetMax = new Vector2(-12, 0);
-
-        GameObject choicesGO = new("ChoicesContainer", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-        choicesGO.transform.SetParent(vpGO.transform, false);
-        choicesContainer = choicesGO.GetComponent<RectTransform>();
-        choicesContainer.anchorMin = new Vector2(0, 1);
-        choicesContainer.anchorMax = new Vector2(1, 1);
-        choicesContainer.pivot = new Vector2(0.5f, 1);
-        choicesContainer.anchoredPosition = Vector2.zero;
-        choicesContainer.sizeDelta = Vector2.zero;
-
-        VerticalLayoutGroup vlg = choicesGO.GetComponent<VerticalLayoutGroup>();
-        vlg.spacing = 8;
-        vlg.padding = new RectOffset(2, 2, 2, 2);
-        vlg.childControlHeight = false;
-        vlg.childControlWidth = true;
-        vlg.childForceExpandHeight = false;
-        vlg.childForceExpandWidth = true;
-
-        ContentSizeFitter csf = choicesGO.GetComponent<ContentSizeFitter>();
-        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        cSr.viewport = vpRT;
-        cSr.content = choicesContainer;
-
-        DungeonUIAssetHelper.CreateVerticalScrollbar(choicesScrollGO.transform, cSr, new Color(0.85f, 0.65f, 0.2f, 1f));
-
-        // 6. Footer & Continue Button
-        GameObject footerGO = new("Footer", typeof(RectTransform));
-        footerGO.transform.SetParent(modalGO.transform, false);
-        RectTransform footerRT = footerGO.GetComponent<RectTransform>();
-        footerRT.anchorMin = new Vector2(0, 0);
-        footerRT.anchorMax = new Vector2(1, 0);
-        footerRT.pivot = new Vector2(0.5f, 0);
-        footerRT.sizeDelta = new Vector2(0, 60);
-
-        // Status Feedback Text
-        GameObject statusGO = new("StatusText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        statusGO.transform.SetParent(footerGO.transform, false);
-        RectTransform statusRT = statusGO.GetComponent<RectTransform>();
-        statusRT.anchorMin = new Vector2(0, 0);
-        statusRT.anchorMax = new Vector2(0.58f, 1);
-        statusRT.offsetMin = new Vector2(18, 4);
-        statusRT.offsetMax = new Vector2(-10, -4);
-
-        statusFeedbackText = statusGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(statusFeedbackText);
-        statusFeedbackText.fontSize = 12.5f;
-        statusFeedbackText.alignment = TextAlignmentOptions.MidlineLeft;
-        statusFeedbackText.text = "";
-
-        // Continue Button
-        GameObject contGO = new("BtnContinue", typeof(RectTransform), typeof(Image), typeof(Button));
-        contGO.transform.SetParent(footerGO.transform, false);
-        RectTransform contRT = contGO.GetComponent<RectTransform>();
-        contRT.anchorMin = new Vector2(1, 0.5f);
-        contRT.anchorMax = new Vector2(1, 0.5f);
-        contRT.pivot = new Vector2(1, 0.5f);
-        contRT.sizeDelta = new Vector2(230, 42);
-        contRT.anchoredPosition = new Vector2(-18, 0);
-
-        Image contImg = contGO.GetComponent<Image>();
-        continueButton = contGO.GetComponent<Button>();
-        DungeonUIAssetHelper.StyleButton(continueButton, contImg, new Color(0.2f, 0.55f, 0.35f, 1f), new Color(0.26f, 0.70f, 0.42f, 1f));
-        continueButton.onClick.AddListener(OnContinueClicked);
-
-        GameObject contTextGO = new("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
-        contTextGO.transform.SetParent(contGO.transform, false);
-        RectTransform contTextRT = contTextGO.GetComponent<RectTransform>();
-        contTextRT.anchorMin = Vector2.zero;
-        contTextRT.anchorMax = Vector2.one;
-        contTextRT.sizeDelta = Vector2.zero;
-
-        TextMeshProUGUI contTMP = contTextGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(contTMP);
-        contTMP.fontSize = 13.5f;
-        contTMP.fontStyle = FontStyles.Bold;
-        contTMP.alignment = TextAlignmentOptions.Center;
-        contTMP.color = Color.white;
-        contTMP.text = "CONTINUE EXPEDITION >>";
-        contTMP.text = "CONTINUE EXPEDITION >>";
-    }
-    #endregion
 }
+

@@ -9,12 +9,18 @@ public class HomeChest : MonoBehaviour, IInteractable
     public ItemContainer backpackContainer;
 
     [Header("Interaction")]
+    [SerializeField] private float interactDistance = 1.4f;
     public bool playerInRange;
+    private bool _isOpen = false;
     public bool isOpen
     {
-        get => ChestUI.Instance != null && ChestUI.Instance.IsOpen;
-        set { }
+        get => _isOpen || (ChestUI.Instance != null && ChestUI.Instance.IsOpen);
+        private set => _isOpen = value;
     }
+
+    [Header("Visual & Animation")]
+    [SerializeField] private Animator animator;
+    [SerializeField] private SpriteRenderer spriteRenderer;
 
     public event System.Action<bool> OnChestToggled;
     public event System.Action OnChestContentsChanged;
@@ -30,6 +36,9 @@ public class HomeChest : MonoBehaviour, IInteractable
             return;
         }
         Instance = this;
+
+        if (animator == null) animator = GetComponent<Animator>();
+        if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     private void Start()
@@ -58,10 +67,22 @@ public class HomeChest : MonoBehaviour, IInteractable
                 }
             }
         }
+
+        UpdateVisualState(false);
     }
 
     private void FindPlayer()
     {
+        if (PlayerStats.Instance != null)
+        {
+            playerTransform = PlayerStats.Instance.transform;
+            return;
+        }
+        if (PlayerMovement.Instance != null)
+        {
+            playerTransform = PlayerMovement.Instance.transform;
+            return;
+        }
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
@@ -69,18 +90,24 @@ public class HomeChest : MonoBehaviour, IInteractable
         }
     }
 
+    private float nextPlayerSearchTime = 0f;
+
     private void Update()
     {
         if (playerTransform == null)
         {
-            FindPlayer();
+            if (Time.time >= nextPlayerSearchTime)
+            {
+                nextPlayerSearchTime = Time.time + 0.5f;
+                FindPlayer();
+            }
         }
 
         if (playerTransform != null)
         {
             Vector3 center = col != null ? col.bounds.center : transform.position;
-            float dist = Vector2.Distance(center, playerTransform.position);
-            playerInRange = (dist <= 2.2f);
+            float sqrDist = (center - playerTransform.position).sqrMagnitude;
+            playerInRange = (sqrDist <= interactDistance * interactDistance);
         }
 
         if (!playerInRange && isOpen)
@@ -90,13 +117,14 @@ public class HomeChest : MonoBehaviour, IInteractable
 
         if (playerInRange && Input.GetKeyDown(KeyCode.E))
         {
+            if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen) return;
             if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return;
             if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return;
 
             if (KitchenStation.Instance != null && KitchenStation.Instance.playerInRange)
             {
-                float distToChest = Vector2.Distance(transform.position, playerTransform.position);
-                float distToKitchen = Vector2.Distance(KitchenStation.Instance.transform.position, playerTransform.position);
+                float distToChest = ((Vector2)(transform.position - playerTransform.position)).sqrMagnitude;
+                float distToKitchen = ((Vector2)(KitchenStation.Instance.transform.position - playerTransform.position)).sqrMagnitude;
                 if (distToKitchen < distToChest) return;
             }
 
@@ -152,6 +180,9 @@ public class HomeChest : MonoBehaviour, IInteractable
             }
         }
 
+        _isOpen = true;
+        UpdateVisualState(true);
+
         Debug.Log("[HomeChest] Opened Home Chest. Stored items are 100% safe!");
         OnChestToggled?.Invoke(true);
 
@@ -172,12 +203,25 @@ public class HomeChest : MonoBehaviour, IInteractable
 
     public void CloseChest()
     {
+        _isOpen = false;
+        UpdateVisualState(false);
+
         Debug.Log("[HomeChest] Closed Home Chest.");
         OnChestToggled?.Invoke(false);
 
         if (ChestUI.Instance != null && ChestUI.Instance.IsOpen)
         {
             ChestUI.Instance.Close();
+        }
+    }
+
+    private void UpdateVisualState(bool open)
+    {
+        if (animator != null)
+        {
+            animator.SetBool("IsInteracted", open);
+            animator.SetBool("IsOpen", open);
+            animator.Play(open ? "Chest" : "Closed", 0, 0f);
         }
     }
 

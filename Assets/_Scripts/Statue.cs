@@ -48,11 +48,17 @@ public class Statue : MonoBehaviour, IInteractable
         EnsureReferences();
     }
 
+    private float nextPlayerSearchTime = 0f;
+
     private void Update()
     {
         if (playerTransform == null)
         {
-            FindPlayer();
+            if (Time.time >= nextPlayerSearchTime)
+            {
+                nextPlayerSearchTime = Time.time + 0.5f;
+                FindPlayer();
+            }
         }
 
         if (playerTransform != null)
@@ -128,6 +134,18 @@ public class Statue : MonoBehaviour, IInteractable
 
     private void FindPlayer()
     {
+        if (PlayerStats.Instance != null)
+        {
+            playerStats = PlayerStats.Instance;
+            playerTransform = PlayerStats.Instance.transform;
+            return;
+        }
+        if (PlayerMovement.Instance != null)
+        {
+            playerTransform = PlayerMovement.Instance.transform;
+            playerStats = playerTransform.GetComponent<PlayerStats>();
+            return;
+        }
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {

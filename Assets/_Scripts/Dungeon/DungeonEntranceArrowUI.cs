@@ -1,6 +1,6 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 /// <summary>
 /// UI for the Dungeon Safe Entrance / Antechamber room.
@@ -41,7 +41,6 @@ public class DungeonEntranceArrowUI : MonoBehaviour
             go.transform.SetParent(canvas.transform, false);
         }
 
-        Instance.BuildUI();
         return Instance;
     }
 
@@ -54,9 +53,10 @@ public class DungeonEntranceArrowUI : MonoBehaviour
         }
         Instance = this;
 
-        if (container == null)
+        // Gán containerRT để animation bounce trong Update() hoạt động
+        if (container != null)
         {
-            BuildUI();
+            containerRT = container.GetComponent<RectTransform>();
         }
     }
 
@@ -101,11 +101,6 @@ public class DungeonEntranceArrowUI : MonoBehaviour
         onProceedCallback = onProceed;
         isProceeding = false;
 
-        if (container == null)
-        {
-            BuildUI();
-        }
-
         if (titleText != null)
         {
             titleText.text = "TIẾN LÊN";
@@ -113,11 +108,12 @@ public class DungeonEntranceArrowUI : MonoBehaviour
 
         if (hintText != null)
         {
-            hintText.text = totalStages > 0 ? $"Vào Ải 1/{totalStages} [➔]" : "Vào Ải 1 [Space / ➔]";
+            hintText.text = totalStages > 0 ? $"Vào Ải 1/{totalStages} [->]" : "Vào Ải 1 [Space / ->]";
         }
 
         if (container != null)
         {
+            if (containerRT == null) containerRT = container.GetComponent<RectTransform>();
             container.SetActive(true);
             container.transform.SetAsLastSibling();
         }
@@ -148,98 +144,4 @@ public class DungeonEntranceArrowUI : MonoBehaviour
         cb?.Invoke();
     }
 
-    private void BuildUI()
-    {
-        Canvas parentCanvas = GetComponentInParent<Canvas>();
-        if (parentCanvas == null || parentCanvas.renderMode == RenderMode.WorldSpace)
-        {
-            parentCanvas = DungeonUIAssetHelper.GetMainScreenCanvas();
-        }
-        if (parentCanvas == null) return;
-
-        // Container / Button Object on the right edge
-        GameObject btnGO = new GameObject("RightArrowProceedBtn", typeof(RectTransform), typeof(Image), typeof(Button), typeof(Outline));
-        btnGO.transform.SetParent(parentCanvas.transform, false);
-        container = btnGO;
-        containerRT = btnGO.GetComponent<RectTransform>();
-
-        containerRT.anchorMin = new Vector2(1f, 0.5f);
-        containerRT.anchorMax = new Vector2(1f, 0.5f);
-        containerRT.pivot = new Vector2(1f, 0.5f);
-        containerRT.sizeDelta = new Vector2(195f, 78f);
-        containerRT.anchoredPosition = basePosition;
-
-        Image bgImg = btnGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(bgImg, new Color(0.10f, 0.13f, 0.19f, 0.96f));
-
-        Outline outline = btnGO.GetComponent<Outline>();
-        outline.effectColor = new Color(0.85f, 0.68f, 0.22f, 0.75f);
-        outline.effectDistance = new Vector2(2f, -2f);
-
-        arrowButton = btnGO.GetComponent<Button>();
-        ColorBlock cb = arrowButton.colors;
-        cb.normalColor = Color.white;
-        cb.highlightedColor = new Color(1.15f, 1.15f, 1.05f, 1f);
-        cb.pressedColor = new Color(0.85f, 0.85f, 0.85f, 1f);
-        arrowButton.colors = cb;
-        arrowButton.onClick.RemoveAllListeners();
-        arrowButton.onClick.AddListener(OnArrowClicked);
-
-        // Left Text Block
-        GameObject textBlockGO = new GameObject("TextBlock", typeof(RectTransform));
-        textBlockGO.transform.SetParent(btnGO.transform, false);
-        RectTransform tbRT = textBlockGO.GetComponent<RectTransform>();
-        tbRT.anchorMin = new Vector2(0f, 0f);
-        tbRT.anchorMax = new Vector2(0.68f, 1f);
-        tbRT.offsetMin = new Vector2(12f, 8f);
-        tbRT.offsetMax = new Vector2(-4f, -8f);
-
-        // Title: "TIẾN LÊN"
-        GameObject titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
-        titleGO.transform.SetParent(textBlockGO.transform, false);
-        RectTransform titleRT = titleGO.GetComponent<RectTransform>();
-        titleRT.anchorMin = new Vector2(0f, 0.45f);
-        titleRT.anchorMax = new Vector2(1f, 1f);
-        titleRT.sizeDelta = Vector2.zero;
-        titleText = titleGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(titleText);
-        titleText.fontSize = 15;
-        titleText.fontStyle = FontStyles.Bold;
-        titleText.alignment = TextAlignmentOptions.MidlineLeft;
-        titleText.color = new Color(1f, 0.88f, 0.35f);
-        titleText.text = "TIẾN LÊN";
-
-        // Subtitle: "[Space / ➔]"
-        GameObject hintGO = new GameObject("Hint", typeof(RectTransform), typeof(TextMeshProUGUI));
-        hintGO.transform.SetParent(textBlockGO.transform, false);
-        RectTransform hintRT = hintGO.GetComponent<RectTransform>();
-        hintRT.anchorMin = new Vector2(0f, 0f);
-        hintRT.anchorMax = new Vector2(1f, 0.45f);
-        hintRT.sizeDelta = Vector2.zero;
-        hintText = hintGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(hintText);
-        hintText.fontSize = 11;
-        hintText.alignment = TextAlignmentOptions.MidlineLeft;
-        hintText.color = new Color(0.72f, 0.84f, 0.98f, 0.9f);
-        hintText.text = "Vào Ải 1 [➔]";
-
-        // Right Arrow Block
-        GameObject arrowGO = new GameObject("ArrowIcon", typeof(RectTransform), typeof(TextMeshProUGUI));
-        arrowGO.transform.SetParent(btnGO.transform, false);
-        arrowIconRT = arrowGO.GetComponent<RectTransform>();
-        arrowIconRT.anchorMin = new Vector2(0.68f, 0f);
-        arrowIconRT.anchorMax = new Vector2(1f, 1f);
-        arrowIconRT.offsetMin = new Vector2(0f, 4f);
-        arrowIconRT.offsetMax = new Vector2(-10f, -4f);
-
-        arrowTMP = arrowGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(arrowTMP);
-        arrowTMP.fontSize = 28;
-        arrowTMP.fontStyle = FontStyles.Bold;
-        arrowTMP.alignment = TextAlignmentOptions.Center;
-        arrowTMP.color = new Color(1f, 0.92f, 0.45f);
-        arrowTMP.text = "➔";
-
-        container.SetActive(false);
-    }
 }

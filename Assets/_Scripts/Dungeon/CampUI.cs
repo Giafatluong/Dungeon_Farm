@@ -81,6 +81,8 @@ public class CampUI : MonoBehaviour
         return Instance;
     }
 
+    public bool IsOpen => (mainCampPanel != null && mainCampPanel.activeInHierarchy) || (camp != null && camp.isCampOpen);
+
     private void Awake()
     {
         if (Instance != null && Instance != this)

@@ -18,9 +18,19 @@ public class HealthBarManager : MonoBehaviour
         if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
     }
 
+    private float nextCleanupTime = 0f;
+
     private void Update()
     {
-        ClearHealthBars();
+        // Run cleanup periodically (once every 1 second) rather than every single frame
+        if (Time.time >= nextCleanupTime)
+        {
+            nextCleanupTime = Time.time + 1.0f;
+            if (healthBars.Count > 0)
+            {
+                ClearHealthBars();
+            }
+        }
     }
     #endregion
 

@@ -181,6 +181,11 @@ public class ChestUI : MonoBehaviour
 
         if (chestPanel != null)
             chestPanel.SetActive(false);
+
+        if (HomeChest.Instance != null && HomeChest.Instance.isOpen)
+        {
+            HomeChest.Instance.CloseChest();
+        }
     }
 
     private Canvas GetCanvas()

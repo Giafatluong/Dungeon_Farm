@@ -78,6 +78,7 @@ public class FarmPlot : MonoBehaviour
             cropRenderer.sprite = currentCrop.growthStages[currentStage];
         }
 
+        SavePlotData();
         return true;
     }
 
@@ -137,6 +138,8 @@ public class FarmPlot : MonoBehaviour
         {
             cropRenderer.sprite = null;
         }
+
+        SavePlotData();
     }
 
     public void NextDay()
@@ -168,6 +171,8 @@ public class FarmPlot : MonoBehaviour
                 }
             }
         }
+
+        SavePlotData();
     }
 
     public DayManager dayManager;
@@ -176,7 +181,7 @@ public class FarmPlot : MonoBehaviour
     {
         if (dayManager == null)
         {
-            dayManager = FindFirstObjectByType<DayManager>();
+            dayManager = DayManager.Instance ?? FindFirstObjectByType<DayManager>();
         }
 
         if (dayManager != null)
@@ -195,6 +200,8 @@ public class FarmPlot : MonoBehaviour
             if (_cachedPlayerStats == null) _cachedPlayerStats = FindFirstObjectByType<PlayerStats>();
             if (_cachedPlayerStats != null) itemContainer = _cachedPlayerStats.itemContainer;
         }
+
+        LoadPlotData();
     }
 
     private void OnDestroy()
@@ -204,4 +211,82 @@ public class FarmPlot : MonoBehaviour
             dayManager.OnNewDay -= NextDay;
         }
     }
+
+    #region Persistence
+    public string GetPlotSaveKey()
+    {
+        Vector3 pos = transform.position;
+        return $"FarmPlot_{Mathf.RoundToInt(pos.x * 100f)}_{Mathf.RoundToInt(pos.y * 100f)}";
+    }
+
+    public void SavePlotData()
+    {
+        string key = GetPlotSaveKey();
+        if (currentState == State.Empty || currentCrop == null)
+        {
+            PlayerPrefs.DeleteKey(key + "_State");
+            PlayerPrefs.DeleteKey(key + "_Crop");
+            PlayerPrefs.DeleteKey(key + "_GrowthDay");
+            PlayerPrefs.DeleteKey(key + "_Stage");
+            PlayerPrefs.DeleteKey(key + "_DaysInStage");
+            PlayerPrefs.Save();
+            return;
+        }
+
+        PlayerPrefs.SetInt(key + "_State", (int)currentState);
+        PlayerPrefs.SetString(key + "_Crop", currentCrop.name);
+        PlayerPrefs.SetInt(key + "_GrowthDay", currentGrowthDay);
+        PlayerPrefs.SetInt(key + "_Stage", currentStage);
+        PlayerPrefs.SetInt(key + "_DaysInStage", daysInCurrentStage);
+        PlayerPrefs.Save();
+    }
+
+    public void LoadPlotData()
+    {
+        string key = GetPlotSaveKey();
+        if (!PlayerPrefs.HasKey(key + "_State"))
+        {
+            return;
+        }
+
+        int stateInt = PlayerPrefs.GetInt(key + "_State", (int)State.Empty);
+        if (stateInt == (int)State.Empty) return;
+
+        string cropName = PlayerPrefs.GetString(key + "_Crop", "");
+        if (string.IsNullOrEmpty(cropName)) return;
+
+        EnsureAvailableCrops();
+        CropData foundCrop = null;
+        if (availableCrops != null)
+        {
+            for (int i = 0; i < availableCrops.Count; i++)
+            {
+                if (availableCrops[i] != null && (availableCrops[i].name.Equals(cropName, System.StringComparison.OrdinalIgnoreCase) || availableCrops[i].cropName.Equals(cropName, System.StringComparison.OrdinalIgnoreCase)))
+                {
+                    foundCrop = availableCrops[i];
+                    break;
+                }
+            }
+        }
+
+        if (foundCrop == null) return;
+
+        currentState = (State)stateInt;
+        currentCrop = foundCrop;
+        currentGrowthDay = PlayerPrefs.GetInt(key + "_GrowthDay", 0);
+        currentStage = PlayerPrefs.GetInt(key + "_Stage", 0);
+        daysInCurrentStage = PlayerPrefs.GetInt(key + "_DaysInStage", 0);
+
+        if (cropRenderer == null)
+        {
+            cropRenderer = GetComponent<SpriteRenderer>() ?? GetComponentInChildren<SpriteRenderer>();
+        }
+
+        if (cropRenderer != null && currentCrop.growthStages != null && currentCrop.growthStages.Length > 0)
+        {
+            int stageIdx = Mathf.Clamp(currentStage, 0, currentCrop.growthStages.Length - 1);
+            cropRenderer.sprite = currentCrop.growthStages[stageIdx];
+        }
+    }
+    #endregion
 }

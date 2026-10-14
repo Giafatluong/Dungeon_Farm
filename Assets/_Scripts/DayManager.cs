@@ -42,7 +42,6 @@ public class DayManager : MonoBehaviour
     {
         if (_instance == this)
         {
-            isQuitting = true;
             _instance = null;
         }
         if (dayTimerCoroutine != null)
@@ -96,19 +95,49 @@ public class DayManager : MonoBehaviour
             // Chỉ tự động qua ngày khi người chơi đang ở Base (không trong Dungeon Run)
             if (ProgressionManager.Instance == null || !ProgressionManager.Instance.runActive)
             {
-                AdvanceDay();
+                DayTransitionUI transitionUI = DayTransitionUI.Instance ?? FindFirstObjectByType<DayTransitionUI>();
+                if (transitionUI == null && Application.isPlaying)
+                {
+                    GameObject go = new GameObject("DayTransitionUI");
+                    transitionUI = go.AddComponent<DayTransitionUI>();
+                }
+
+                if (transitionUI != null && !transitionUI.IsOpen)
+                {
+                    transitionUI.PlayTransition(currentDay, () => AdvanceDay());
+                }
+                else
+                {
+                    AdvanceDay();
+                }
             }
         }
     }
 
     /// <summary>
     /// Called when the player interacts with the bed to sleep and advance the day.
+    /// Triggers the Morning Report & Day Transition UI sequence.
     /// </summary>
     public void Sleep()
     {
         Debug.Log($"[DayManager] Player is sleeping... Advancing from Day {currentDay}.");
         OnDaySleep?.Invoke();
-        AdvanceDay();
+
+        DayTransitionUI transitionUI = DayTransitionUI.Instance ?? FindFirstObjectByType<DayTransitionUI>();
+        if (transitionUI == null && Application.isPlaying)
+        {
+            GameObject go = new GameObject("DayTransitionUI");
+            transitionUI = go.AddComponent<DayTransitionUI>();
+        }
+
+        if (transitionUI != null && !transitionUI.IsOpen)
+        {
+            transitionUI.PlayTransition(currentDay, () => AdvanceDay());
+        }
+        else
+        {
+            AdvanceDay();
+        }
     }
 
     public void AdvanceDay()
@@ -120,16 +149,7 @@ public class DayManager : MonoBehaviour
         // Notify all subscribers (FarmPlots listen to OnNewDay)
         OnNewDay?.Invoke();
 
-        // Reduce player hunger slightly each day
-        if (playerStats == null)
-        {
-            playerStats = FindFirstObjectByType<PlayerStats>();
-        }
-
-        if (playerStats != null)
-        {
-            playerStats.ReduceHunger(5);
-        }
+        // Ở nhà các chỉ số không tự động giảm (Hunger/HP giữ nguyên theo yêu cầu thiết kế)
 
         // Reset temporary run blessings when day advances
         if (ProgressionManager.Instance != null)

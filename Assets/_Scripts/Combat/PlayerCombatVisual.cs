@@ -16,6 +16,14 @@ public class PlayerCombatVisual : MonoBehaviour
     [SerializeField] private float lungeDistance = 1.0f;
     [SerializeField] private float lungeDuration = 0.15f;
 
+    private static readonly int HorizontalHash = Animator.StringToHash("Horizontal");
+    private static readonly int VerticalHash = Animator.StringToHash("Vertical");
+    private static readonly int SpeedHash = Animator.StringToHash("Speed");
+    private static readonly int LastHorizontalHash = Animator.StringToHash("LastHorizontal");
+    private static readonly int LastVerticalHash = Animator.StringToHash("LastVertical");
+    private static readonly int IdleHash = Animator.StringToHash("Idle");
+    private static readonly WaitForSeconds PulseWait = new(0.25f);
+
     private Vector3 originalPosition;
     private Vector3 originalScale = Vector3.one;
     private Color originalColor = Color.white;
@@ -70,16 +78,16 @@ public class PlayerCombatVisual : MonoBehaviour
         {
             if (animator != null && animator.isActiveAndEnabled)
             {
-                animator.SetFloat("LastHorizontal", 1f);
-                animator.SetFloat("LastVertical", 0f);
-                animator.SetFloat("Horizontal", 0f);
-                animator.SetFloat("Vertical", 0f);
-                animator.SetFloat("Speed", 0f);
+                animator.SetFloat(LastHorizontalHash, 1f);
+                animator.SetFloat(LastVerticalHash, 0f);
+                animator.SetFloat(HorizontalHash, 0f);
+                animator.SetFloat(VerticalHash, 0f);
+                animator.SetFloat(SpeedHash, 0f);
 
                 AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-                if (!stateInfo.IsName("Idle"))
+                if (stateInfo.shortNameHash != IdleHash && (!animator.IsInTransition(0) || animator.GetNextAnimatorStateInfo(0).shortNameHash != IdleHash))
                 {
-                    animator.Play("Idle", 0);
+                    animator.Play(IdleHash, 0);
                 }
             }
         }
@@ -113,11 +121,11 @@ public class PlayerCombatVisual : MonoBehaviour
 
                 if (animator != null && animator.isActiveAndEnabled)
                 {
-                    animator.SetFloat("LastHorizontal", 1f);
-                    animator.SetFloat("LastVertical", 0f);
-                    animator.SetFloat("Horizontal", 1f);
-                    animator.SetFloat("Vertical", 0f);
-                    animator.SetFloat("Speed", 1f);
+                    animator.SetFloat(LastHorizontalHash, 1f);
+                    animator.SetFloat(LastVerticalHash, 0f);
+                    animator.SetFloat(HorizontalHash, 1f);
+                    animator.SetFloat(VerticalHash, 0f);
+                    animator.SetFloat(SpeedHash, 1f);
                 }
 
                 transform.position = originalPosition;
@@ -148,16 +156,16 @@ public class PlayerCombatVisual : MonoBehaviour
 
         if (animator != null && animator.isActiveAndEnabled)
         {
-            animator.SetFloat("LastHorizontal", 1f);
-            animator.SetFloat("LastVertical", 0f);
-            animator.SetFloat("Horizontal", 0f);
-            animator.SetFloat("Vertical", 0f);
-            animator.SetFloat("Speed", 0f);
+            animator.SetFloat(LastHorizontalHash, 1f);
+            animator.SetFloat(LastVerticalHash, 0f);
+            animator.SetFloat(HorizontalHash, 0f);
+            animator.SetFloat(VerticalHash, 0f);
+            animator.SetFloat(SpeedHash, 0f);
 
             AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-            if (!stateInfo.IsName("Idle"))
+            if (stateInfo.shortNameHash != IdleHash && (!animator.IsInTransition(0) || animator.GetNextAnimatorStateInfo(0).shortNameHash != IdleHash))
             {
-                animator.Play("Idle", 0, 0f);
+                animator.Play(IdleHash, 0, 0f);
             }
         }
     }
@@ -299,7 +307,7 @@ public class PlayerCombatVisual : MonoBehaviour
         if (spriteRenderer != null)
         {
             spriteRenderer.color = new Color(0.45f, 0.85f, 1f, 1f);
-            yield return new WaitForSeconds(0.25f);
+            yield return PulseWait;
             spriteRenderer.color = originalColor;
         }
         SetIdle();
@@ -310,7 +318,7 @@ public class PlayerCombatVisual : MonoBehaviour
         if (spriteRenderer != null)
         {
             spriteRenderer.color = new Color(0.45f, 1f, 0.6f, 1f);
-            yield return new WaitForSeconds(0.25f);
+            yield return PulseWait;
             spriteRenderer.color = originalColor;
         }
         SetIdle();

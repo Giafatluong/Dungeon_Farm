@@ -70,14 +70,26 @@ public class PlayerInteraction : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.E))
         {
+            if (IsAnyUIOpen()) return;
+
+            // Prioritize chest when in range - never sleep while interacting with chest
+            if (HomeChest.Instance != null && HomeChest.Instance.playerInRange)
+                return;
+
+            // Prioritize kitchen cooking station when in range
+            if (KitchenStation.Instance != null && KitchenStation.Instance.playerInRange)
+                return;
+
             InteractBed();
         }
     }
 
     private bool IsAnyUIOpen()
     {
+        if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen) return true;
         if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return true;
         if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return true;
+        if (HomeChest.Instance != null && HomeChest.Instance.isOpen) return true;
         if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return true;
         if (DungeonEntranceUI.Instance != null && DungeonEntranceUI.Instance.IsOpen) return true;
         return false;

@@ -15,6 +15,18 @@ public class BedInteraction : MonoBehaviour, IInteractable
 
     public void Interact()
     {
+        if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen)
+            return;
+
+        if (ChestUI.Instance != null && ChestUI.Instance.IsOpen)
+            return;
+
+        if (HomeChest.Instance != null && (HomeChest.Instance.isOpen || HomeChest.Instance.playerInRange))
+            return;
+
+        if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen)
+            return;
+
         if (dayManager == null)
         {
             dayManager = DayManager.Instance ?? FindFirstObjectByType<DayManager>();
