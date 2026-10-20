@@ -10,28 +10,32 @@ using TMPro;
 public class StatueUI : MonoBehaviour
 {
     private static StatueUI _instance;
-    public static StatueUI Instance
+    public static StatueUI Instance => _instance;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
     {
-        get
+        _instance = null;
+    }
+
+    public static StatueUI EnsureInstance()
+    {
+        if (_instance != null) return _instance;
+
+        _instance = FindFirstObjectByType<StatueUI>(FindObjectsInactive.Include);
+        if (_instance != null) return _instance;
+
+        Canvas c = DungeonUIAssetHelper.GetMainScreenCanvas();
+        if (c != null)
         {
-            if (_instance == null)
-            {
-                _instance = FindFirstObjectByType<StatueUI>(FindObjectsInactive.Include);
-                if (_instance == null)
-                {
-                    Canvas c = DungeonUIAssetHelper.GetMainScreenCanvas();
-                    if (c != null)
-                    {
-                        GameObject go = new GameObject("StatueUI");
-                        go.transform.SetParent(c.transform, false);
-                        _instance = go.AddComponent<StatueUI>();
-                        _instance.canvas = c;
-                    }
-                }
-            }
+            GameObject go = new GameObject("StatueUI");
+            go.transform.SetParent(c.transform, false);
+            _instance = go.AddComponent<StatueUI>();
+            _instance.canvas = c;
             return _instance;
         }
-        private set => _instance = value;
+
+        return null;
     }
 
     [Header("Panels")]
@@ -96,6 +100,10 @@ public class StatueUI : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (_instance == this)
+        {
+            _instance = null;
+        }
         UnsubscribeEvents();
     }
 
@@ -172,6 +180,7 @@ public class StatueUI : MonoBehaviour
             }
         }
 
+        InventoryController.Instance?.CloseInventoryPanel();
         EnsureUIBuilt();
 
         if (statuePanel != null)
@@ -701,7 +710,7 @@ public class StatueUI : MonoBehaviour
         cardRT.sizeDelta = new Vector2(0, 116);
 
         Image cardBg = cardGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(cardBg, isDone ? new Color(0.11f, 0.20f, 0.15f, 0.95f) : new Color(0.11f, 0.13f, 0.18f, 0.95f));
+        DungeonUIAssetHelper.StyleSlicedPanel(cardBg, isDone ? DungeonUIAssetHelper.PanelStyle.Wood : DungeonUIAssetHelper.PanelStyle.Slate);
 
         Outline outline = cardGO.AddComponent<Outline>();
         outline.effectColor = isDone ? new Color(0.25f, 0.85f, 0.45f, 0.7f) : new Color(0.65f, 0.55f, 0.25f, 0.6f);
@@ -775,10 +784,10 @@ public class StatueUI : MonoBehaviour
             GameObject btnGO = new GameObject("BtnQuickOffer", typeof(RectTransform), typeof(Image), typeof(Button));
             btnGO.transform.SetParent(headerGO.transform, false);
             Image btnBg = btnGO.GetComponent<Image>();
-            DungeonUIAssetHelper.StyleSlicedFrame(btnBg, new Color(0.20f, 0.52f, 0.35f, 0.95f));
             btnGO.GetComponent<RectTransform>().sizeDelta = new Vector2(110, 24);
 
             Button btn = btnGO.GetComponent<Button>();
+            DungeonUIAssetHelper.StyleTactileButton(btn, btnBg, DungeonUIAssetHelper.ButtonStyle.Victory);
             Offering offRef = off;
             btn.onClick.AddListener(() => QuickOffer(offRef));
 
@@ -1169,7 +1178,7 @@ public class StatueUI : MonoBehaviour
         windowRT.anchoredPosition = Vector2.zero;
 
         Image windowBg = windowGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(windowBg, new Color(0.09f, 0.11f, 0.16f, 0.98f));
+        DungeonUIAssetHelper.StyleSlicedPanel(windowBg, DungeonUIAssetHelper.PanelStyle.Wood);
 
         // 3. Header Section
         // Title
@@ -1221,7 +1230,7 @@ public class StatueUI : MonoBehaviour
         bannerRT.sizeDelta = new Vector2(-48, 34);
 
         Image bannerBg = blessingBannerGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(bannerBg, new Color(0.06f, 0.09f, 0.15f, 0.95f));
+        DungeonUIAssetHelper.StylePlaque(bannerBg, DungeonUIAssetHelper.PlaqueStyle.Gold);
 
         // Blessing Status Text (bên trái bar)
         GameObject bStatusGO = new GameObject("BlessingStatusText", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -1250,9 +1259,8 @@ public class StatueUI : MonoBehaviour
         bBtnRT.offsetMax = new Vector2(-6, -3);
 
         Image bBtnBg = bBtnGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(bBtnBg, new Color(0.20f, 0.42f, 0.65f, 0.95f));
-
         blessingSelectButton = bBtnGO.GetComponent<Button>();
+        DungeonUIAssetHelper.StyleTactileButton(blessingSelectButton, bBtnBg, DungeonUIAssetHelper.ButtonStyle.Victory);
         blessingSelectButton.onClick.RemoveAllListeners();
         blessingSelectButton.onClick.AddListener(ShowBlessingSelectionModal);
 
@@ -1303,9 +1311,8 @@ public class StatueUI : MonoBehaviour
         closeRT.sizeDelta = new Vector2(30, 30);
 
         Image closeBg = closeGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(closeBg, new Color(0.6f, 0.18f, 0.18f, 0.95f));
-
         closeButton = closeGO.GetComponent<Button>();
+        DungeonUIAssetHelper.StyleTactileButton(closeButton, closeBg, DungeonUIAssetHelper.ButtonStyle.WoodRustic);
         closeButton.onClick.RemoveAllListeners();
         closeButton.onClick.AddListener(Close);
 
@@ -1344,7 +1351,7 @@ public class StatueUI : MonoBehaviour
         footerRT.sizeDelta = new Vector2(-48, 36);
 
         Image footerBg = footerGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(footerBg, new Color(0.06f, 0.08f, 0.12f, 0.95f));
+        DungeonUIAssetHelper.StylePlaque(footerBg, DungeonUIAssetHelper.PlaqueStyle.Wood);
 
         GameObject statsTextGO = new GameObject("StatsText", typeof(RectTransform), typeof(TextMeshProUGUI));
         statsTextGO.layer = uiLayer;
@@ -1375,7 +1382,7 @@ public class StatueUI : MonoBehaviour
         rt.sizeDelta = size;
 
         Image img = colGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(img, new Color(0.07f, 0.08f, 0.12f, 0.92f));
+        DungeonUIAssetHelper.StyleSlicedPanel(img, DungeonUIAssetHelper.PanelStyle.Slate);
 
         // Header Text at top of column
         GameObject headerGO = new GameObject("Header", typeof(RectTransform), typeof(TextMeshProUGUI));

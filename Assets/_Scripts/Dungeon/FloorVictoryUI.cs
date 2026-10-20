@@ -16,6 +16,12 @@ public class FloorVictoryUI : MonoBehaviour
     private static FloorVictoryUI _instance;
     public static FloorVictoryUI Instance => _instance;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        _instance = null;
+    }
+
     public static FloorVictoryUI EnsureInstance()
     {
         if (_instance != null) return _instance;
@@ -274,6 +280,7 @@ public class FloorVictoryUI : MonoBehaviour
             if (containers[i] != null && containers[i].name.ToLower().Contains("homechest"))
             {
                 homeChestContainer = containers[i];
+                HomeChest.LoadContainer(homeChestContainer);
                 break;
             }
         }
@@ -615,6 +622,7 @@ public class FloorVictoryUI : MonoBehaviour
 
             if (storedToHomeChest)
             {
+                HomeChest.SaveContainer(homeChestContainer);
                 SetHint($"<color=#FFD700>Balo đã đầy! {slot.itemData.itemName} đã được chuyển an toàn về Rương Nhà Kho tại Trang Trại!</color>");
             }
             else
@@ -666,6 +674,7 @@ public class FloorVictoryUI : MonoBehaviour
 
         if (homeChestOverflow > 0)
         {
+            HomeChest.SaveContainer(homeChestContainer);
             SetHint($"<color=#55FF88>[V] Đã thu nhận tất cả!</color> <color=#FFD700>({homeChestOverflow} món đầy balo đã tự chuyển về Rương Trang Trại an toàn)</color>");
         }
         else
@@ -688,6 +697,17 @@ public class FloorVictoryUI : MonoBehaviour
     {
         OnLootAllClicked();
         Close();
+
+        DungeonSummaryUI summary = DungeonSummaryUI.EnsureInstance();
+        if (summary != null)
+        {
+            summary.Show(DungeonSummaryUI.ExpeditionResult.Victory, () =>
+            {
+                onReturnCallback?.Invoke();
+            });
+            return;
+        }
+
         onReturnCallback?.Invoke();
     }
 
@@ -709,9 +729,9 @@ public class FloorVictoryUI : MonoBehaviour
             canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
         }
 
-        // 1. Root Modal Overlay
+        // 1. Root Modal Overlay (spans full canvas)
         victoryPanel = new GameObject("VictoryPanel", typeof(RectTransform), typeof(Image));
-        victoryPanel.transform.SetParent(transform, false);
+        victoryPanel.transform.SetParent(canvas != null ? canvas.transform : transform, false);
         RectTransform rootRT = victoryPanel.GetComponent<RectTransform>();
         rootRT.anchorMin = Vector2.zero;
         rootRT.anchorMax = Vector2.one;
@@ -730,7 +750,7 @@ public class FloorVictoryUI : MonoBehaviour
         frameRT.sizeDelta = new Vector2(960, 580);
 
         Image frameImg = frameGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(frameImg, new Color(0.12f, 0.10f, 0.07f, 0.98f));
+        DungeonUIAssetHelper.StyleSlicedPanel(frameImg, DungeonUIAssetHelper.PanelStyle.Wood);
 
         // -------------------------------------------------------------
         // SECTION 1: HEADER (Anchored top, fixed 72px height)
@@ -745,7 +765,7 @@ public class FloorVictoryUI : MonoBehaviour
         headerRT.sizeDelta = new Vector2(-16, 72);
 
         Image headerBg = headerGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(headerBg, new Color(0.22f, 0.16f, 0.06f, 0.95f));
+        DungeonUIAssetHelper.StylePlaque(headerBg, DungeonUIAssetHelper.PlaqueStyle.Victory);
 
         // Trophy/Chest Icon
         GameObject iconGO = new("ChestIcon", typeof(RectTransform), typeof(Image));

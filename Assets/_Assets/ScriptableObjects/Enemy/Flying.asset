@@ -13,12 +13,17 @@ MonoBehaviour:
   m_Name: Flying
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Flying Imp
-  maxHealth: 32
-  ATK: 9
-  DEF: 2
-  speed: 24
-  possibleIntents: 0000000001000000
-  intentEffects: []
+  maxHealth: 24
+  ATK: 8
+  DEF: 1
+  speed: 19
+  possibleIntents: 000000000100000003000000
+  intentEffects:
+  - effect: {fileID: 11400000, guid: 447984b8d628a694299daecc4fdb03c1, type: 2}
+    target: 2
+    value: 2
+    duration: 2
+    durationType: 0
   lootDrops:
   - item: {fileID: 11400000, guid: 7fbf6b6fc33a6a24aa6ccfb21298e0fd, type: 2}
     dropChance: 0.55

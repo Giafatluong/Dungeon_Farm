@@ -27,4 +27,4 @@ MonoBehaviour:
   - buffs: {fileID: 11400000, guid: e4ce13189d79493419e78cd2185a7729, type: 2}
     buffDurationType: 0
     buffDuration: 3
-    buffValue: 11
+    buffValue: 5

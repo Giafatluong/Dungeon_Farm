@@ -5,6 +5,16 @@ public class CameraController : MonoBehaviour
     public GameObject player;
     public Vector3 offset = new Vector3(0,1.5f, 0);
 
+    private void Awake()
+    {
+        Camera cam = GetComponent<Camera>();
+        if (cam != null)
+        {
+            cam.transparencySortMode = TransparencySortMode.CustomAxis;
+            cam.transparencySortAxis = new Vector3(0, 1, 0);
+        }
+    }
+
     private void Start()
     {
         if (player == null)

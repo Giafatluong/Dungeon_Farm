@@ -14,6 +14,12 @@ public class MerchantUI : MonoBehaviour
     private static MerchantUI _instance;
     public static MerchantUI Instance => _instance;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        _instance = null;
+    }
+
     public static MerchantUI EnsureInstance()
     {
         if (_instance != null) return _instance;

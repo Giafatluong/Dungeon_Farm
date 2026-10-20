@@ -13,21 +13,21 @@ MonoBehaviour:
   m_Name: Slime
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Slime
-  maxHealth: 30
-  ATK: 5
+  maxHealth: 22
+  ATK: 4
   DEF: 0
-  speed: 0
+  speed: 8
   possibleIntents: 000000000200000003000000
   intentEffects:
   - effect: {fileID: 11400000, guid: 2c54625ab304a2649b5fcfa7060c0828, type: 2}
     target: 0
     value: 2
-    duration: 3
+    duration: 2
     durationType: 0
   - effect: {fileID: 11400000, guid: 447984b8d628a694299daecc4fdb03c1, type: 2}
     target: 2
     value: 2
-    duration: 3
+    duration: 2
     durationType: 0
   lootDrops:
   - item: {fileID: 11400000, guid: 42b4889df87d85948a0ccdcad13f6420, type: 2}

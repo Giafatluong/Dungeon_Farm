@@ -12,6 +12,11 @@ public class CookingManager : MonoBehaviour
             if (_instance == null)
             {
                 _instance = FindFirstObjectByType<CookingManager>();
+                if (_instance == null && Application.isPlaying)
+                {
+                    GameObject go = new GameObject("CookingManager_Runtime");
+                    _instance = go.AddComponent<CookingManager>();
+                }
             }
             return _instance;
         }
@@ -26,6 +31,12 @@ public class CookingManager : MonoBehaviour
     public event System.Action<string> OnCookFailed;
     #endregion
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        _instance = null;
+    }
+
     #region Unity Lifecycle
     private void Awake()
     {
@@ -36,6 +47,30 @@ public class CookingManager : MonoBehaviour
         }
         _instance = this;
         EnsureDefaultRecipes();
+    }
+
+    private void OnDestroy()
+    {
+        if (_instance == this)
+        {
+            _instance = null;
+        }
+    }
+
+    private void OnEnable()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        EnsureDefaultRecipes();
+        EnsureKitchenStationInBase();
     }
 
     private void Start()
@@ -304,7 +339,7 @@ public class CookingManager : MonoBehaviour
         for (int i = 0; i < recipe.ingredients.Length; i++)
         {
             ItemRequirement req = recipe.ingredients[i];
-            if (req == null || req.item == null || req.amount <= 0) return false;
+            if (req == null || req.item == null || req.amount <= 0) continue;
 
             hasValidIngredient = true;
             if (GetTotalItemCount(req.item, containers) < req.amount)
@@ -349,14 +384,44 @@ public class CookingManager : MonoBehaviour
 
         if (!CanCook(recipe, ingredientContainers))
         {
-            string failMsg = $"Not enough ingredients to cook: {recipe.recipeName}";
+            string failMsg = $"Không đủ nguyên liệu để nấu: {recipe.DisplayName}";
             OnCookFailed?.Invoke(failMsg);
             Debug.Log(failMsg);
             return false;
         }
 
-        // Deduct ingredients sequentially across provided containers
+        // Kiểm tra dung lượng chứa món ăn trước khi trừ nguyên liệu
+        bool hasInitialSpace = primaryResultContainer.CanAddItem(recipe.resultFood);
+        if (!hasInitialSpace)
+        {
+            // Kiểm tra xem việc tiêu thụ nguyên liệu có giải phóng ít nhất 1 ô trong thùng chứa chính không
+            bool willFreeSlot = false;
+            for (int i = 0; i < recipe.ingredients.Length; i++)
+            {
+                ItemRequirement req = recipe.ingredients[i];
+                if (req == null || req.item == null || req.amount <= 0) continue;
+
+                int countInPrimary = primaryResultContainer.GetItemCount(req.item);
+                if (countInPrimary > 0 && countInPrimary <= req.amount)
+                {
+                    willFreeSlot = true;
+                    break;
+                }
+            }
+
+            if (!willFreeSlot)
+            {
+                string failMsg = "Balo đã đầy! Hãy dọn chỗ trống trước khi nấu.";
+                OnCookFailed?.Invoke(failMsg);
+                Debug.LogWarning($"[CookingManager] {failMsg}");
+                return false;
+            }
+        }
+
+        // Deduct ingredients sequentially across provided containers with full rollback protection
+        List<(ItemContainer container, ItemData item, int amount)> deductions = new();
         bool allDeducted = true;
+
         for (int i = 0; i < recipe.ingredients.Length; i++)
         {
             ItemRequirement req = recipe.ingredients[i];
@@ -373,6 +438,7 @@ public class CookingManager : MonoBehaviour
                 {
                     int take = Mathf.Min(remainingToDeduct, hasInThis);
                     cont.RemoveItem(req.item, take);
+                    deductions.Add((cont, req.item, take));
                     remainingToDeduct -= take;
                 }
             }
@@ -384,11 +450,19 @@ public class CookingManager : MonoBehaviour
             }
         }
 
-        if (!allDeducted)
+        if (!allDeducted || !primaryResultContainer.CanAddItem(recipe.resultFood))
         {
-            string failMsg = $"Failed to deduct required ingredients for: {recipe.recipeName}";
+            // Rollback all deductions if any deduction failed or container still has no room
+            for (int d = 0; d < deductions.Count; d++)
+            {
+                deductions[d].container.AddItem(deductions[d].item, deductions[d].amount);
+            }
+
+            string failMsg = !allDeducted
+                ? $"Không đủ nguyên liệu để nấu: {recipe.DisplayName}"
+                : "Balo đã đầy! Không còn chỗ để nhận món ăn.";
             OnCookFailed?.Invoke(failMsg);
-            Debug.LogWarning(failMsg);
+            Debug.LogWarning($"[CookingManager] {failMsg}");
             return false;
         }
 
@@ -400,7 +474,7 @@ public class CookingManager : MonoBehaviour
             ProgressionManager.Instance.DiscoverRecipe(recipe);
         }
 
-        Debug.Log($"Successfully cooked: {recipe.resultFood.itemName} x{recipe.resultAmount}");
+        Debug.Log($"Successfully cooked: {recipe.DisplayName} x{recipe.resultAmount}");
         OnCookSuccess?.Invoke(recipe);
         return true;
     }

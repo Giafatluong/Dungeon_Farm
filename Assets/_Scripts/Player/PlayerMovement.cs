@@ -8,7 +8,7 @@ public class PlayerMovement : MonoBehaviour
     private Rigidbody2D rb;
     private Vector2 movement;
     private Animator anim;
-    private SpriteRenderer spriteRenderer; 
+    private SpriteRenderer spriteRenderer;
     [SerializeField] private CombatManager combatManager;
 
     private static readonly int HorizontalHash = Animator.StringToHash("Horizontal");
@@ -22,12 +22,27 @@ public class PlayerMovement : MonoBehaviour
 
     public static PlayerMovement Instance { get; private set; }
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        Instance = null;
+    }
+
     private void Awake()
     {
         Instance = this;
         if (rb == null) rb = GetComponent<Rigidbody2D>();
-        if (anim == null) anim = GetComponent<Animator>() ?? GetComponentInChildren<Animator>();
-        if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>() ?? GetComponentInChildren<SpriteRenderer>();
+        if (anim == null)
+        {
+            anim = GetComponent<Animator>();
+            if (anim == null) anim = GetComponentInChildren<Animator>();
+        }
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+            if (spriteRenderer == null) spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        }
+        if (spriteRenderer != null) spriteRenderer.sortingOrder = 3;
 
         UpdateSceneCache();
         SceneManager.sceneLoaded += OnSceneLoaded;
@@ -62,10 +77,13 @@ public class PlayerMovement : MonoBehaviour
         return cachedIsDungeonScene;
     }
 
+    private float nextInvSearchTime = 0f;
+
     private bool IsAnyUIOpen()
     {
-        if (inventoryPanel == null)
+        if (inventoryPanel == null && Time.time >= nextInvSearchTime)
         {
+            nextInvSearchTime = Time.time + 1.0f;
             inventoryPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
         }
         if (inventoryPanel != null && inventoryPanel.gameObject.activeSelf) return true;
@@ -122,11 +140,11 @@ public class PlayerMovement : MonoBehaviour
         {
             if (movement.x > 0)
             {
-                spriteRenderer.flipX = false; 
+                spriteRenderer.flipX = false;
             }
             else if (movement.x < 0)
             {
-                spriteRenderer.flipX = true; 
+                spriteRenderer.flipX = true;
             }
         }
     }

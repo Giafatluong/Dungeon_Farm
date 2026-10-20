@@ -117,7 +117,11 @@ public class WaveManager : MonoBehaviour
         if (healthBarManager == null) healthBarManager = GetComponent<HealthBarManager>();
         if (targetSelector == null) targetSelector = GetComponent<EnemyTargetSelector>();
         if (floorGenerator == null) floorGenerator = GetComponent<FloorGenerator>();
-        if (rewardChest == null) rewardChest = GetComponentInChildren<RewardChest>(true) ?? FindFirstObjectByType<RewardChest>(FindObjectsInactive.Include);
+        if (rewardChest == null)
+        {
+            rewardChest = GetComponentInChildren<RewardChest>(true);
+            if (rewardChest == null) rewardChest = FindFirstObjectByType<RewardChest>(FindObjectsInactive.Include);
+        }
     }
 
     private void OnDestroy()
@@ -152,7 +156,10 @@ public class WaveManager : MonoBehaviour
         FloorData activeFloor = GetActiveFloor();
 
         if (floorGenerator == null)
-            floorGenerator = GetComponent<FloorGenerator>() ?? FindFirstObjectByType<FloorGenerator>();
+        {
+            floorGenerator = GetComponent<FloorGenerator>();
+            if (floorGenerator == null) floorGenerator = FindFirstObjectByType<FloorGenerator>();
+        }
 
         // 1. Hand-crafted FloorData
         if (activeFloor != null && activeFloor.waves != null && activeFloor.waves.Length > 0)
@@ -433,6 +440,12 @@ public class WaveManager : MonoBehaviour
             ProgressionManager.Instance.UnlockFloor(nextFloorNum);
         }
 
+        // Giảm thời lượng các buff có hiệu lực theo tầng (Floor buffs)
+        if (combatManager != null && combatManager.playerStats != null)
+        {
+            combatManager.playerStats.ReduceFloorBuffDuration();
+        }
+
         cachedActiveFloor = null;
         currentWaveIndex = -1;
         currentFloorScore = 0;
@@ -656,7 +669,7 @@ public class WaveManager : MonoBehaviour
     {
         Debug.Log("[WaveManager] Reached Event Stage!");
 
-        DungeonEventManager eventMgr = DungeonEventManager.Instance ?? FindFirstObjectByType<DungeonEventManager>(FindObjectsInactive.Include);
+        DungeonEventManager eventMgr = DungeonEventManager.Instance != null ? DungeonEventManager.Instance : FindFirstObjectByType<DungeonEventManager>(FindObjectsInactive.Include);
         if (eventMgr == null)
         {
             GameObject emGO = new("DungeonEventManager");
@@ -788,7 +801,8 @@ public class WaveManager : MonoBehaviour
 
         if (rewardChest == null)
         {
-            rewardChest = GetComponentInChildren<RewardChest>(true) ?? FindFirstObjectByType<RewardChest>(FindObjectsInactive.Include);
+            rewardChest = GetComponentInChildren<RewardChest>(true);
+            if (rewardChest == null) rewardChest = FindFirstObjectByType<RewardChest>(FindObjectsInactive.Include);
             if (rewardChest == null)
             {
                 GameObject chestGO = new GameObject("RewardChest");
@@ -989,7 +1003,8 @@ public class WaveManager : MonoBehaviour
         if (enemyObj != null)
         {
             enemyObj.transform.position = toPos;
-            EnemyCombatVisual visual = enemyObj.GetComponent<EnemyCombatVisual>() ?? enemyObj.AddComponent<EnemyCombatVisual>();
+            EnemyCombatVisual visual = enemyObj.GetComponent<EnemyCombatVisual>();
+            if (visual == null) visual = enemyObj.AddComponent<EnemyCombatVisual>();
             visual.SetOriginalPosition(toPos);
 
             if (enemyAnim != null && enemyAnim.isActiveAndEnabled)
@@ -1015,6 +1030,8 @@ public class WaveManager : MonoBehaviour
         return currentWaveIndex;
     }
 
+    public int currentStageIndex => currentWaveIndex;
+
     public int GetTotalStages()
     {
         if (runtimeWaves != null && runtimeWaves.Length > 0)
@@ -1026,5 +1043,9 @@ public class WaveManager : MonoBehaviour
 
         return 0;
     }
+
+    public int TotalStagesCount => GetTotalStages();
+
+    public int CurrentFloorNumber => GetActiveFloor() != null ? GetActiveFloor().floorNumber : (ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1);
     #endregion
 }

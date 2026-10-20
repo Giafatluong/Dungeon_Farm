@@ -8028,11 +8028,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e5b181a54582e94293eb76413ee3c6a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStats
-  maxHealth: 20
-  currentHealth: 20
-  ATK: 5
-  DEF: 0
-  speed: 10
+  maxHealth: 50
+  currentHealth: 50
+  ATK: 10
+  DEF: 2
+  speed: 16
   defendCount: 0
   defendValue: 5
   maxAP: 3

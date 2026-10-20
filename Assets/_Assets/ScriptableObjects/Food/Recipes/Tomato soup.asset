@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c63989b7d70655d4eb98239d5836f0e2, type: 3}
   m_Name: Tomato soup
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
-  recipeName: 
+  recipeName: "S\xFAp C\xE0 Chua B\u1EAFp C\u1EA3i (Tomato Cabbage Soup)"
   ingredients:
   - item: {fileID: 11400000, guid: 87d1b2164c734434682f1fc6e72fba3a, type: 2}
     amount: 2

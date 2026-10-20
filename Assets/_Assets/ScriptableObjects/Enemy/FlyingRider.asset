@@ -13,16 +13,21 @@ MonoBehaviour:
   m_Name: FlyingRider
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Dark Flying Rider (Boss)
-  maxHealth: 155
-  ATK: 19
-  DEF: 6
-  speed: 28
-  possibleIntents: 000000000100000002000000
+  maxHealth: 110
+  ATK: 14
+  DEF: 3
+  speed: 19
+  possibleIntents: 00000000010000000200000003000000
   intentEffects:
   - effect: {fileID: 11400000, guid: 6fbdc716dfd5399429b38f2c719b3694, type: 2}
     target: 0
     value: 4
-    duration: 3
+    duration: 2
+    durationType: 0
+  - effect: {fileID: 11400000, guid: 2ae4be7e5f27de942be4d3810cbef226, type: 2}
+    target: 2
+    value: 4
+    duration: 2
     durationType: 0
   lootDrops:
   - item: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}

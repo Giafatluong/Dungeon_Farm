@@ -13,6 +13,7 @@ public class EnemyStats : MonoBehaviour
     public bool hasActedThisRound = false;
     public bool isDefending = false;
     public int defendBonus = 5;
+    public int defenseReduction = 0;
     public List<ActiveBuff> activeBuffs = new List<ActiveBuff>();
 
     [Header("Placement Configuration")]
@@ -33,6 +34,7 @@ public class EnemyStats : MonoBehaviour
 
     protected virtual void Awake()
     {
+        defenseReduction = 0;
         if (enemyData != null)
         {
             currentHealth = enemyData.maxHealth;
@@ -89,6 +91,7 @@ public class EnemyStats : MonoBehaviour
     {
         int value = enemyData != null ? enemyData.DEF : 0;
         if (isDefending) value += defendBonus;
+        value -= defenseReduction;
         for (int i = 0; i < activeBuffs.Count; i++)
         {
             if (activeBuffs[i] != null && activeBuffs[i].buff != null &&
@@ -98,6 +101,13 @@ public class EnemyStats : MonoBehaviour
             }
         }
         return Mathf.Max(0, value);
+    }
+
+    public void ReduceDEF(int amount)
+    {
+        if (amount <= 0) return;
+        defenseReduction += amount;
+        DamagePopupManager.ShowText(transform.position + Vector3.up * 1.5f, $"-{amount} DEF", new Color(0.8f, 0.4f, 0.9f), 4.2f);
     }
 
     public int GetCurrentSpeed()
@@ -136,9 +146,9 @@ public class EnemyStats : MonoBehaviour
 
     #region Combat Actions
 
-    public virtual void TakeDamage(int damage)
+    public virtual int TakeDamage(int damage)
     {
-        if (currentHealth <= 0) return;
+        if (currentHealth <= 0) return 0;
 
         int def = GetCurrentDEF();
         int reducedDamage = Mathf.Max(1, damage - def);
@@ -171,6 +181,8 @@ public class EnemyStats : MonoBehaviour
             currentHealth = 0;
             Dead();
         }
+
+        return reducedDamage;
     }
 
     public void Heal(int amount)
@@ -250,7 +262,7 @@ public class EnemyStats : MonoBehaviour
         switch (currentIntent)
         {
             case EnemyData.EnemyIntent.Attack:
-                int dmg = Mathf.Max(1, GetCurrentATK() - playerStats.GetCurrentDEF() - (playerStats.defendCount * playerStats.defendValue));
+                int dmg = Mathf.Max(0, GetCurrentATK() - playerStats.GetCurrentDEF() - (playerStats.defendCount * playerStats.defendValue));
                 playerStats.TakeDamage(dmg);
                 Debug.Log($"[EnemyStats] {enemyData?.enemyName} attacks for {dmg} damage!");
 
@@ -330,8 +342,6 @@ public class EnemyStats : MonoBehaviour
                     if (playerStats != null)
                     {
                         playerStats.AddBuff(effect.effect, finalValue, effect.duration, effect.durationType);
-                        Color pColor = finalValue < 0 ? new Color(0.95f, 0.35f, 0.85f) : new Color(0.4f, 0.85f, 1f);
-                        DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.1f, $"{sign}{finalValue} {bName}", pColor, 4.8f);
                     }
                     break;
             }

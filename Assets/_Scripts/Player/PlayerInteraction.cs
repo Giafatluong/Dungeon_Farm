@@ -80,6 +80,14 @@ public class PlayerInteraction : MonoBehaviour
             if (KitchenStation.Instance != null && KitchenStation.Instance.playerInRange)
                 return;
 
+            // Prioritize statue when in range
+            if (Statue.Instance != null && Statue.Instance.playerInRange)
+                return;
+
+            // Prioritize dungeon entrance when in range
+            if (DungeonEntrance.Instance != null && DungeonEntrance.Instance.playerInRange)
+                return;
+
             InteractBed();
         }
     }
@@ -92,6 +100,12 @@ public class PlayerInteraction : MonoBehaviour
         if (HomeChest.Instance != null && HomeChest.Instance.isOpen) return true;
         if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return true;
         if (DungeonEntranceUI.Instance != null && DungeonEntranceUI.Instance.IsOpen) return true;
+        if (RewardUI.Instance != null && RewardUI.Instance.IsOpen) return true;
+        if (LootUI.Instance != null && LootUI.Instance.IsOpen) return true;
+        if (CampUI.Instance != null && CampUI.Instance.IsOpen) return true;
+        if (DungeonEventUI.Instance != null && DungeonEventUI.Instance.IsOpen) return true;
+        if (FloorVictoryUI.Instance != null && FloorVictoryUI.Instance.IsOpen) return true;
+        if (MerchantUI.Instance != null && MerchantUI.Instance.IsOpen) return true;
         return false;
     }
 
@@ -100,17 +114,34 @@ public class PlayerInteraction : MonoBehaviour
         if (mainCam == null) mainCam = Camera.main;
         if (mainCam == null) return;
         Vector2 mousePosition = mainCam.ScreenToWorldPoint(Input.mousePosition);
-        Collider2D hit = Physics2D.OverlapPoint(mousePosition, farmPlotLayer);
 
-        if (hit == null)
+        Collider2D[] hits = (farmPlotLayer.value != 0)
+            ? Physics2D.OverlapPointAll(mousePosition, farmPlotLayer)
+            : Physics2D.OverlapPointAll(mousePosition);
+
+        if (hits == null || hits.Length == 0)
             return;
 
-        FarmPlot farmPlot = hit.GetComponent<FarmPlot>();
+        FarmPlot farmPlot = null;
+        for (int i = 0; i < hits.Length; i++)
+        {
+            if (hits[i] != null)
+            {
+                farmPlot = hits[i].GetComponent<FarmPlot>();
+                if (farmPlot != null) break;
+            }
+        }
 
         if (farmPlot == null)
             return;
 
-        if (!currentFarmPlots.Contains(farmPlot))
+        for (int i = currentFarmPlots.Count - 1; i >= 0; i--)
+        {
+            if (currentFarmPlots[i] == null) currentFarmPlots.RemoveAt(i);
+        }
+
+        bool isNearPlot = currentFarmPlots.Contains(farmPlot) || Vector2.Distance(transform.position, farmPlot.transform.position) <= 2.5f;
+        if (!isNearPlot)
             return;
 
         if (farmPlot.currentState == FarmPlot.State.Empty)
@@ -120,6 +151,16 @@ public class PlayerInteraction : MonoBehaviour
         else if (farmPlot.currentState == FarmPlot.State.Ready)
         {
             farmPlot.Harvest();
+        }
+        else if (farmPlot.currentState == FarmPlot.State.Planted && farmPlot.currentCrop != null)
+        {
+            int totalStages = (farmPlot.currentCrop.growthStages != null && farmPlot.currentCrop.growthStages.Length > 0)
+                ? farmPlot.currentCrop.growthStages.Length
+                : 1;
+            int stageNum = farmPlot.currentStage + 1;
+            int daysNeeded = Mathf.Max(1, farmPlot.currentCrop.growthTime) - farmPlot.daysInCurrentStage;
+            string progressMsg = $"{farmPlot.currentCrop.cropName}: Giai đoạn {stageNum}/{totalStages} (còn ~{daysNeeded} ngày)";
+            DamagePopupManager.ShowText(farmPlot.transform.position + Vector3.up * 0.8f, progressMsg, new Color(0.4f, 0.85f, 1f), 3.5f);
         }
     }
 
@@ -133,10 +174,17 @@ public class PlayerInteraction : MonoBehaviour
         if (nearestBed == null)
             return;
 
+        // Strictly verify that the player is physically within range of this bed!
+        if (!nearestBed.IsPlayerInRange(transform.position))
+        {
+            currentBeds.Remove(nearestBed);
+            return;
+        }
+
         nearestBed.Interact();
     }
 
-    private BedInteraction GetNearestBed()
+    public BedInteraction GetNearestBed()
     {
         BedInteraction nearestBed = null;
         float nearestDistance = Mathf.Infinity;
@@ -149,10 +197,17 @@ public class PlayerInteraction : MonoBehaviour
                 continue;
             }
 
-            float distance = Vector2.Distance(
-                transform.position,
-                currentBeds[i].transform.position
-            );
+            Collider2D bedCol = currentBeds[i].GetComponent<Collider2D>();
+            Vector2 bedPoint = (bedCol != null) ? bedCol.ClosestPoint(transform.position) : (Vector2)currentBeds[i].transform.position;
+
+            float distance = Vector2.Distance(transform.position, bedPoint);
+
+            // Clean up if far away (e.g. missed trigger exit)
+            if (distance > currentBeds[i].maxInteractDistance * 1.5f)
+            {
+                currentBeds.RemoveAt(i);
+                continue;
+            }
 
             if (distance < nearestDistance)
             {

@@ -43,6 +43,7 @@ public class CombatManager : MonoBehaviour
     #endregion
 
     public bool isPlayerActing { get; private set; } = false;
+    public bool isVictoryPending => victoryCoroutine != null;
 
     private Coroutine preparationCoroutine;
     private Coroutine enemyTurnCoroutine;
@@ -57,12 +58,12 @@ public class CombatManager : MonoBehaviour
         if (turnManager == null) turnManager = GetComponent<TurnManager>();
         if (speedManager == null) speedManager = GetComponent<SpeedManager>();
         if (targetSelector == null) targetSelector = GetComponent<EnemyTargetSelector>();
-        if (playerStats == null) playerStats = PlayerStats.Instance ?? FindFirstObjectByType<PlayerStats>();
+        if (playerStats == null) playerStats = PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>();
     }
 
     private void Start()
     {
-        if (playerStats == null) playerStats = PlayerStats.Instance ?? FindFirstObjectByType<PlayerStats>();
+        if (playerStats == null) playerStats = PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>();
         if (playerStats != null)
         {
             playerStats.OnPlayerDeath += HandlePlayerDeath;
@@ -116,7 +117,9 @@ public class CombatManager : MonoBehaviour
         {
             if (e != null)
             {
+                e.OnEnemyDeath -= HandleEnemyDeath;
                 e.OnEnemyDeath += HandleEnemyDeath;
+                e.defenseReduction = 0;
                 e.hasActedThisRound = false;
                 e.SelectNextIntent();
             }
@@ -125,6 +128,11 @@ public class CombatManager : MonoBehaviour
         if (speedManager != null)
         {
             speedManager.SetEnemies(enemies);
+        }
+
+        if (targetSelector != null)
+        {
+            targetSelector.AutoSelectTarget(enemies);
         }
     }
 
@@ -159,6 +167,11 @@ public class CombatManager : MonoBehaviour
             }
         }
 
+        if (targetSelector != null)
+        {
+            targetSelector.AutoSelectTarget(enemies);
+        }
+
         if (turnManager != null)
         {
             turnManager.ResetCombatRounds();
@@ -190,6 +203,13 @@ public class CombatManager : MonoBehaviour
     }
 
     private bool hasEatenThisTurn = false;
+    private bool hasDefendedThisTurn = false;
+    public EnemyStats currentActingEnemy { get; private set; }
+
+    public bool CanPlayerEatFree()
+    {
+        return ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast) && !hasEatenThisTurn;
+    }
 
     #endregion
 
@@ -205,7 +225,9 @@ public class CombatManager : MonoBehaviour
         SetPlayerActing(false);
 
         currentTurn = Turn.Player;
+        currentActingEnemy = null;
         hasEatenThisTurn = false;
+        hasDefendedThisTurn = false;
 
         if (playerStats != null)
         {
@@ -226,6 +248,8 @@ public class CombatManager : MonoBehaviour
         }
         SetPlayerActing(false);
 
+        currentActingEnemy = enemy;
+
         if (enemy == null || enemy.currentHealth <= 0)
         {
             if (turnManager != null) turnManager.NextTurn();
@@ -244,9 +268,10 @@ public class CombatManager : MonoBehaviour
     {
         yield return new WaitForSeconds(enemyTurnDelay);
 
+        EnemyData.EnemyIntent actionTaken = EnemyData.EnemyIntent.Attack;
         if (enemy != null && enemy.currentHealth > 0 && playerStats != null && playerStats.currentHealth > 0)
         {
-            EnemyData.EnemyIntent actionTaken = enemy.currentIntent;
+            actionTaken = enemy.currentIntent;
             enemy.PerformIntentAction(playerStats);
             LogMessage($"{enemy.enemyData?.enemyName ?? "Enemy"} used {actionTaken}!");
         }
@@ -254,13 +279,13 @@ public class CombatManager : MonoBehaviour
         // Cho animation (tan cong / ho tro) cua quai hoan tat truoc khi chuyen turn
         yield return new WaitForSeconds(0.85f);
 
-        if (!isCombatActive || playerStats == null || playerStats.currentHealth <= 0)
+        if (!isCombatActive || playerStats == null || playerStats.currentHealth <= 0 || isVictoryPending)
         {
             yield break;
         }
 
-        // Reduce enemy turn buffs
-        if (enemy != null)
+        // Reduce enemy turn buffs (không giảm ngay trong chính lượt quái vừa niệm buff)
+        if (enemy != null && actionTaken != EnemyData.EnemyIntent.Buff)
         {
             enemy.ReduceTurnBuffDuration();
         }
@@ -364,18 +389,19 @@ public class CombatManager : MonoBehaviour
             }
         }
 
-        target.TakeDamage(atk);
+        int dealtDamage = target.TakeDamage(atk);
         playerStats.currentAP--;
-        OnPlayerAttackAction?.Invoke(target, atk);
+        OnPlayerAttackAction?.Invoke(target, dealtDamage);
 
-        LogMessage($"You attacked {target.enemyData?.enemyName ?? "enemy"} for {atk} damage!");
+        LogMessage($"You attacked {target.enemyData?.enemyName ?? "enemy"} for {dealtDamage} damage!");
 
-        // Blessing: Món Đắng Bào Mòn (BitterDecay) - Bào mòn giáp và gây độc trực tiếp lên địch
+        // Blessing: Món Đắng Bào Mòn (BitterDecay) - Bào mòn 2 DEF và gây độc trực tiếp lên địch
         if (ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.BitterDecay) && target.currentHealth > 0)
         {
-            target.TakeDamage(4); // Thêm 4 sát thương độc trực tiếp
-            DamagePopupManager.ShowText(target.transform.position + Vector3.up * 1.2f, "Độc Bào Mòn! -4 HP", new Color(0.6f, 0.3f, 0.9f), 4.5f);
-            LogMessage($"[Blessing: BitterDecay] Gây 4 sát thương độc bào mòn lên {target.enemyData?.enemyName ?? "quái vật"}!");
+            target.ReduceDEF(2);
+            int poisonDmg = target.TakeDamage(4); // Thêm 4 sát thương độc trực tiếp
+            DamagePopupManager.ShowText(target.transform.position + Vector3.up * 1.2f, $"Độc Bào Mòn! -{poisonDmg} HP", new Color(0.6f, 0.3f, 0.9f), 4.5f);
+            LogMessage($"[Blessing: BitterDecay] Bào mòn 2 DEF và gây {poisonDmg} sát thương độc lên {target.enemyData?.enemyName ?? "quái vật"}!");
         }
 
         if (target.currentHealth <= 0)
@@ -393,14 +419,26 @@ public class CombatManager : MonoBehaviour
 
         StartPlayerActionCooldown();
 
+        bool hasBastion = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.BastionStrike);
+        bool isFirstDefend = !hasDefendedThisTurn;
+
         playerStats.Defend();
         playerStats.currentAP--;
+
+        // Blessing: Lấy Thủ Làm Công (BastionStrike) - Lần phòng thủ đầu tiên trong lượt hồi lại 1 AP
+        if (hasBastion && isFirstDefend)
+        {
+            hasDefendedThisTurn = true;
+            playerStats.currentAP = Mathf.Min(playerStats.maxAP, playerStats.currentAP + 1);
+            DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.5f, "+1 AP (Thủ Công)!", new Color(1f, 0.8f, 0.2f), 4.5f);
+            LogMessage("[Blessing: BastionStrike] Lấy Thủ Làm Công: Lần phòng thủ đầu tiên hồi lại +1 AP!");
+        }
 
         DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.1f, $"+{playerStats.defendValue} DEF", new Color(0.4f, 0.75f, 1f), 4.6f);
         LogMessage($"You take a defensive stance! (+{playerStats.defendValue} shield per stack, {playerStats.defendCount} stack(s))");
     }
 
-    public void PlayerEat(FoodData food)
+    public void PlayerEat(ItemData food)
     {
         if (playerStats == null || food == null || isPlayerActing) return;
 
@@ -408,13 +446,7 @@ public class CombatManager : MonoBehaviour
 
         if (!isAtEntrance && (!isCombatActive || currentTurn != Turn.Player)) return;
 
-        bool isFreeEat = false;
-        // Blessing: Đại Tiệc Bất Tận (EndlessFeast) - Món ăn đầu tiên trong mỗi lượt không tốn AP
-        if (ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast) && !hasEatenThisTurn)
-        {
-            isFreeEat = true;
-            hasEatenThisTurn = true;
-        }
+        bool isFreeEat = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast) && !hasEatenThisTurn;
 
         if (!isAtEntrance && !isFreeEat && playerStats.currentAP <= 0)
         {
@@ -425,24 +457,25 @@ public class CombatManager : MonoBehaviour
         // Attempt to eat the food item
         if (!playerStats.Eat(food))
         {
-            if (playerStats.currentHunger >= playerStats.maxHunger)
+            if (playerStats.currentHunger >= playerStats.maxHunger && playerStats.currentHealth >= playerStats.maxHealth)
             {
-                LogMessage("Bụng đã quá no, không thể ăn thêm!");
-                DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.3f, "BỤNG ĐÃ QUÁ NO!", Color.yellow, 4.5f);
+                LogMessage("Đã đầy máu và no bụng, không cần ăn thêm!");
+                DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.3f, "ĐÃ ĐẦY MÁU & NO BỤNG!", Color.yellow, 4.5f);
             }
             return;
         }
 
         StartPlayerActionCooldown();
 
-        if (!isAtEntrance && !isFreeEat)
+        if (isFreeEat)
         {
-            playerStats.currentAP--;
-        }
-        else
-        {
+            hasEatenThisTurn = true;
             DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.4f, "Đại Tiệc: 0 AP!", new Color(1f, 0.5f, 0.8f), 4.5f);
             LogMessage($"[Blessing: EndlessFeast] Đại Tiệc Bất Tận: Ăn {food.itemName} không tốn AP!");
+        }
+        else if (!isAtEntrance)
+        {
+            playerStats.currentAP--;
         }
 
         LogMessage($"You ate {food.itemName}!");
@@ -455,16 +488,28 @@ public class CombatManager : MonoBehaviour
     {
         if (reflectedDamage <= 0 || enemies == null) return;
 
-        for (int i = 0; i < enemies.Length; i++)
+        EnemyStats target = currentActingEnemy != null && currentActingEnemy.currentHealth > 0
+            ? currentActingEnemy
+            : null;
+
+        if (target == null)
         {
-            if (enemies[i] != null && enemies[i].currentHealth > 0)
+            for (int i = 0; i < enemies.Length; i++)
             {
-                enemies[i].TakeDamage(reflectedDamage);
-                DamagePopupManager.ShowText(enemies[i].transform.position + Vector3.up * 1.3f, $"Phản {reflectedDamage} DMG!", new Color(0.9f, 0.8f, 0.2f), 4.5f);
-                LogMessage($"[Blessing: GluttonousAegis] Phản đòn {reflectedDamage} sát thương lên {enemies[i].enemyData?.enemyName ?? "kẻ địch"}!");
-                CheckAllEnemiesDead();
-                break;
+                if (enemies[i] != null && enemies[i].currentHealth > 0)
+                {
+                    target = enemies[i];
+                    break;
+                }
             }
+        }
+
+        if (target != null)
+        {
+            int reflectDmg = target.TakeDamage(reflectedDamage);
+            DamagePopupManager.ShowText(target.transform.position + Vector3.up * 1.3f, $"Phản {reflectDmg} DMG!", new Color(0.9f, 0.8f, 0.2f), 4.5f);
+            LogMessage($"[Blessing: GluttonousAegis] Phản đòn {reflectDmg} sát thương lên {target.enemyData?.enemyName ?? "kẻ địch"}!");
+            CheckAllEnemiesDead();
         }
     }
 
@@ -547,6 +592,12 @@ public class CombatManager : MonoBehaviour
         // Khóa hành động người chơi trong lúc chờ quái tan biến
         SetPlayerActing(true);
 
+        if (enemyTurnCoroutine != null)
+        {
+            StopCoroutine(enemyTurnCoroutine);
+            enemyTurnCoroutine = null;
+        }
+
         if (victoryDelay > 0f)
         {
             yield return new WaitForSeconds(victoryDelay);
@@ -588,7 +639,7 @@ public class CombatManager : MonoBehaviour
         {
             LogMessage("Victory! All enemies defeated.");
 
-            WaveManager waveManager = WaveManager.Instance ?? FindFirstObjectByType<WaveManager>();
+            WaveManager waveManager = WaveManager.Instance != null ? WaveManager.Instance : FindFirstObjectByType<WaveManager>();
             int waveIdx = waveManager != null ? waveManager.GetCurrentWaveIndex() : 0;
 
             // Người chơi sẽ kéo các vật phẩm vào inventory chứ không tự động vào inven

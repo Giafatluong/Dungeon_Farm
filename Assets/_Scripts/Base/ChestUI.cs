@@ -42,6 +42,12 @@ public class ChestUI : MonoBehaviour
     private bool isExplicitlyOpened = false;
     public bool IsOpen => isExplicitlyOpened && chestPanel != null && chestPanel.activeSelf;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        _instance = null;
+    }
+
     private void Awake()
     {
         if (_instance != null && _instance != this)
@@ -76,19 +82,49 @@ public class ChestUI : MonoBehaviour
 
         if (chestSlotsParent == null && root != null)
         {
-            Transform t = root.Find("Chest_Frame") ?? root.Find("Chest_Frame/ChestSlots") ?? root.Find("ChestSlots");
+            Transform t = root.Find("Chest_Frame");
+            if (t == null) t = root.Find("Chest_Frame/ChestSlots");
+            if (t == null) t = root.Find("ChestSlots");
             if (t != null) chestSlotsParent = t;
         }
 
         if (backpackSlotsParent == null && root != null)
         {
-            Transform t = root.Find("Backpack_Frame") ?? root.Find("Backpack_Frame/BackpackSlots") ?? root.Find("BackpackSlots");
+            Transform t = root.Find("Backpack_Frame");
+            if (t == null) t = root.Find("Backpack_Frame/BackpackSlots");
+            if (t == null) t = root.Find("BackpackSlots");
             if (t != null) backpackSlotsParent = t;
         }
 
-        Button closeBtn = root.Find("MiddleBar/CloseButton")?.GetComponent<Button>() ?? root.GetComponentInChildren<Button>(true);
+        if (root != null)
+        {
+            Image rootImg = root.GetComponent<Image>();
+            if (rootImg != null) DungeonUIAssetHelper.StyleSlicedPanel(rootImg, DungeonUIAssetHelper.PanelStyle.Wood);
+
+            Transform chestFrameT = root.Find("Chest_Frame");
+            if (chestFrameT != null)
+            {
+                Image cfImg = chestFrameT.GetComponent<Image>();
+                if (cfImg != null) DungeonUIAssetHelper.StyleSlicedPanel(cfImg, DungeonUIAssetHelper.PanelStyle.Slate);
+            }
+
+            Transform backpackFrameT = root.Find("Backpack_Frame");
+            if (backpackFrameT != null)
+            {
+                Image bfImg = backpackFrameT.GetComponent<Image>();
+                if (bfImg != null) DungeonUIAssetHelper.StyleSlicedPanel(bfImg, DungeonUIAssetHelper.PanelStyle.Slate);
+            }
+        }
+
+        Button closeBtn = null;
+        Transform closeBtnT = root != null ? root.Find("MiddleBar/CloseButton") : null;
+        if (closeBtnT != null) closeBtn = closeBtnT.GetComponent<Button>();
+        if (closeBtn == null && root != null) closeBtn = root.GetComponentInChildren<Button>(true);
+
         if (closeBtn != null)
         {
+            Image cImg = closeBtn.GetComponent<Image>();
+            DungeonUIAssetHelper.StyleTactileButton(closeBtn, cImg, DungeonUIAssetHelper.ButtonStyle.WoodRustic);
             closeBtn.onClick.RemoveListener(Close);
             closeBtn.onClick.AddListener(Close);
         }
@@ -132,6 +168,10 @@ public class ChestUI : MonoBehaviour
     private void OnDestroy()
     {
         UnsubscribeEvents();
+        if (_instance == this)
+        {
+            _instance = null;
+        }
     }
 
     private void SubscribeEvents()
@@ -158,6 +198,7 @@ public class ChestUI : MonoBehaviour
         chestContainer = chest;
         backpackContainer = backpack;
 
+        InventoryController.Instance?.CloseInventoryPanel();
         AutoBindReferences();
 
         if (chestPanel != null)
@@ -306,7 +347,7 @@ public class ChestUI : MonoBehaviour
         }
 
         if (targetSlot.itemData != null &&
-            targetSlot.itemData == sourceSlot.itemData &&
+            ItemContainer.IsItemMatch(targetSlot.itemData, sourceSlot.itemData) &&
             sourceSlot.itemData.isStackable)
         {
             targetSlot.amount += sourceSlot.amount;
@@ -329,5 +370,64 @@ public class ChestUI : MonoBehaviour
 
         source.NotifyChange();
         target.NotifyChange();
+    }
+
+    /// <summary>
+    /// Chuyển nhanh vật phẩm giữa Rương (HomeChest) và Ba Lô (Backpack) khi nhấp chuột phải.
+    /// </summary>
+    public static void QuickTransfer(ItemContainer source, int sourceIndex)
+    {
+        if (Instance == null || !Instance.IsOpen) return;
+        if (source == null || source.itemSlots == null) return;
+        if (sourceIndex < 0 || sourceIndex >= source.itemSlots.Length) return;
+
+        ItemSlot sourceSlot = source.itemSlots[sourceIndex];
+        if (sourceSlot == null || sourceSlot.itemData == null || sourceSlot.amount <= 0) return;
+
+        ItemContainer target = (source == Instance.chestContainer) ? Instance.backpackContainer : Instance.chestContainer;
+        if (target == null || target.itemSlots == null) return;
+
+        // 1. Nếu có thể cộng dồn, dồn vào ô cùng loại trong kho đối diện
+        if (sourceSlot.itemData.isStackable)
+        {
+            for (int i = 0; i < target.itemSlots.Length; i++)
+            {
+                if (target.itemSlots[i] != null && ItemContainer.IsItemMatch(target.itemSlots[i].itemData, sourceSlot.itemData))
+                {
+                    target.itemSlots[i].amount += sourceSlot.amount;
+                    sourceSlot.itemData = null;
+                    sourceSlot.amount = 0;
+                    source.NotifyChange();
+                    target.NotifyChange();
+                    return;
+                }
+            }
+        }
+
+        // 2. Chuyển vào ô trống đầu tiên trong kho đối diện
+        int emptySlot = target.GetEmptySlot();
+        if (emptySlot != -1)
+        {
+            if (target.itemSlots[emptySlot] == null) target.itemSlots[emptySlot] = new ItemSlot();
+            target.itemSlots[emptySlot].itemData = sourceSlot.itemData;
+            target.itemSlots[emptySlot].amount = sourceSlot.amount;
+
+            sourceSlot.itemData = null;
+            sourceSlot.amount = 0;
+
+            source.NotifyChange();
+            target.NotifyChange();
+            return;
+        }
+
+        // Thông báo nếu kho đối diện đã đầy
+        if (source == Instance.backpackContainer)
+        {
+            Debug.LogWarning("[ChestUI] Rương đồ đã đầy, không thể chuyển thêm!");
+        }
+        else
+        {
+            Debug.LogWarning("[ChestUI] Ba lô đã đầy, không thể chuyển thêm!");
+        }
     }
 }

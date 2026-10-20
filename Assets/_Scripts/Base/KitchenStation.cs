@@ -28,14 +28,28 @@ public class KitchenStation : MonoBehaviour, IInteractable
     private GameObject promptObject;
     private TextMeshPro promptText;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        Instance = null;
+    }
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
         {
-            Destroy(gameObject);
+            Destroy(this);
             return;
         }
         Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 
     private void Start()
@@ -64,9 +78,7 @@ public class KitchenStation : MonoBehaviour, IInteractable
 
         if (spriteRenderer.sprite == null)
         {
-            Sprite campfireSprite = FindSprite("Campfire_Anim_1")
-                                 ?? FindSprite("Campfire_Anim_0")
-                                 ?? FindSprite("Furnace_Anim_0");
+            Sprite campfireSprite = FindFirstSprite("Campfire_Anim_1", "Campfire_Anim_0", "Furnace_Anim_0");
 
             if (campfireSprite != null)
             {
@@ -144,7 +156,7 @@ public class KitchenStation : MonoBehaviour, IInteractable
 
         if (chestContainer == null)
         {
-            HomeChest homeChest = HomeChest.Instance ?? FindFirstObjectByType<HomeChest>(FindObjectsInactive.Include);
+            HomeChest homeChest = HomeChest.Instance != null ? HomeChest.Instance : FindFirstObjectByType<HomeChest>(FindObjectsInactive.Include);
             if (homeChest != null)
             {
                 chestContainer = homeChest.chestContainer;
@@ -251,8 +263,16 @@ public class KitchenStation : MonoBehaviour, IInteractable
             promptObject.SetActive(false);
         }
 
-        KitchenUI.Instance.Open(this, backpackContainer, chestContainer);
-        Debug.Log("[KitchenStation] Opened Kitchen UI at Base.");
+        KitchenUI ui = KitchenUI.EnsureInstance();
+        if (ui != null)
+        {
+            ui.Open(this, backpackContainer, chestContainer);
+            Debug.Log("[KitchenStation] Opened Kitchen UI at Base.");
+        }
+        else
+        {
+            Debug.LogWarning("[KitchenStation] KitchenUI could not be created or found!");
+        }
     }
 
     public void CloseKitchen()
@@ -270,19 +290,32 @@ public class KitchenStation : MonoBehaviour, IInteractable
 
     private Sprite FindSprite(string spriteName)
     {
+        return FindFirstSprite(spriteName);
+    }
+
+    private Sprite FindFirstSprite(params string[] spriteNames)
+    {
         Sprite[] sprites = Resources.FindObjectsOfTypeAll<Sprite>();
-        for (int i = 0; i < sprites.Length; i++)
+        for (int s = 0; s < spriteNames.Length; s++)
         {
-            if (sprites[i] != null && sprites[i].name.Equals(spriteName, System.StringComparison.OrdinalIgnoreCase))
+            string sName = spriteNames[s];
+            for (int i = 0; i < sprites.Length; i++)
             {
-                return sprites[i];
+                if (sprites[i] != null && sprites[i].name.Equals(sName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return sprites[i];
+                }
             }
         }
-        for (int i = 0; i < sprites.Length; i++)
+        for (int s = 0; s < spriteNames.Length; s++)
         {
-            if (sprites[i] != null && sprites[i].name.IndexOf(spriteName, System.StringComparison.OrdinalIgnoreCase) >= 0)
+            string sName = spriteNames[s];
+            for (int i = 0; i < sprites.Length; i++)
             {
-                return sprites[i];
+                if (sprites[i] != null && sprites[i].name.IndexOf(sName, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return sprites[i];
+                }
             }
         }
         return null;

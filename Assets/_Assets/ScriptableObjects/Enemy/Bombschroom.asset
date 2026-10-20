@@ -13,11 +13,22 @@ MonoBehaviour:
   m_Name: Bombschroom
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Bombschroom
-  maxHealth: 0
-  ATK: 0
+  maxHealth: 16
+  ATK: 8
   DEF: 0
-  speed: 0
-  possibleIntents: 00000000010000000300000002000000
+  speed: 14
+  possibleIntents: 000000000200000003000000
+  intentEffects:
+  - effect: {fileID: 11400000, guid: 6fbdc716dfd5399429b38f2c719b3694, type: 2}
+    target: 0
+    value: 3
+    duration: 2
+    durationType: 0
+  - effect: {fileID: 11400000, guid: 2ae4be7e5f27de942be4d3810cbef226, type: 2}
+    target: 2
+    value: 3
+    duration: 2
+    durationType: 0
   lootDrops:
   - item: {fileID: 11400000, guid: f60f6a8d1006791458c801e045769b06, type: 2}
     dropChance: 0.55

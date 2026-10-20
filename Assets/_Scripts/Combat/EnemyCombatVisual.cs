@@ -28,8 +28,16 @@ public class EnemyCombatVisual : MonoBehaviour
 
     private void Awake()
     {
-        if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>() ?? GetComponentInChildren<SpriteRenderer>();
-        if (animator == null) animator = GetComponent<Animator>() ?? GetComponentInChildren<Animator>();
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+            if (spriteRenderer == null) spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        }
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+            if (animator == null) animator = GetComponentInChildren<Animator>();
+        }
         if (enemyStats == null) enemyStats = GetComponent<EnemyStats>();
 
         originalPosition = transform.position;

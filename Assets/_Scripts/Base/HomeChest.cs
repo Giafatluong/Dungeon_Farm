@@ -41,6 +41,14 @@ public class HomeChest : MonoBehaviour, IInteractable
         if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
     private void Start()
     {
         col = GetComponent<Collider2D>();
@@ -68,6 +76,7 @@ public class HomeChest : MonoBehaviour, IInteractable
             }
         }
 
+        LoadChestData();
         UpdateVisualState(false);
     }
 
@@ -180,6 +189,7 @@ public class HomeChest : MonoBehaviour, IInteractable
             }
         }
 
+        LoadChestData();
         _isOpen = true;
         UpdateVisualState(true);
 
@@ -203,6 +213,7 @@ public class HomeChest : MonoBehaviour, IInteractable
 
     public void CloseChest()
     {
+        SaveChestData();
         _isOpen = false;
         UpdateVisualState(false);
 
@@ -230,7 +241,9 @@ public class HomeChest : MonoBehaviour, IInteractable
         if (chestContainer == null || backpackContainer == null) return false;
         if (item == null || amount <= 0) return false;
 
-        if (!backpackContainer.HasItem(item)) return false;
+        int available = backpackContainer.GetItemCount(item);
+        if (available <= 0) return false;
+        int toStore = Mathf.Min(amount, available);
 
         if (!chestContainer.CanAddItem(item))
         {
@@ -238,10 +251,11 @@ public class HomeChest : MonoBehaviour, IInteractable
             return false;
         }
 
-        chestContainer.AddItem(item, amount);
-        backpackContainer.RemoveItem(item, amount);
+        chestContainer.AddItem(item, toStore);
+        backpackContainer.RemoveItem(item, toStore);
+        SaveChestData();
 
-        Debug.Log($"[HomeChest] Stored {amount}x {item.itemName} into Chest.");
+        Debug.Log($"[HomeChest] Stored {toStore}x {item.itemName} into Chest.");
         OnChestContentsChanged?.Invoke();
         return true;
     }
@@ -251,7 +265,9 @@ public class HomeChest : MonoBehaviour, IInteractable
         if (chestContainer == null || backpackContainer == null) return false;
         if (item == null || amount <= 0) return false;
 
-        if (!chestContainer.HasItem(item)) return false;
+        int available = chestContainer.GetItemCount(item);
+        if (available <= 0) return false;
+        int toRetrieve = Mathf.Min(amount, available);
 
         if (!backpackContainer.CanAddItem(item))
         {
@@ -259,13 +275,97 @@ public class HomeChest : MonoBehaviour, IInteractable
             return false;
         }
 
-        backpackContainer.AddItem(item, amount);
-        chestContainer.RemoveItem(item, amount);
+        backpackContainer.AddItem(item, toRetrieve);
+        chestContainer.RemoveItem(item, toRetrieve);
+        SaveChestData();
 
-        Debug.Log($"[HomeChest] Retrieved {amount}x {item.itemName} from Chest.");
+        Debug.Log($"[HomeChest] Retrieved {toRetrieve}x {item.itemName} from Chest.");
         OnChestContentsChanged?.Invoke();
         return true;
     }
+
+    #region Chest Persistence
+    public void SaveChestData()
+    {
+        if (chestContainer == null) return;
+        SaveContainer(chestContainer);
+    }
+
+    public static void SaveContainer(ItemContainer container)
+    {
+        if (container == null || container.itemSlots == null) return;
+        int count = container.itemSlots.Length;
+        PlayerPrefs.SetInt("HomeChest_SlotCount", count);
+
+        for (int i = 0; i < count; i++)
+        {
+            var slot = container.itemSlots[i];
+            if (slot != null && slot.itemData != null && slot.amount > 0)
+            {
+                PlayerPrefs.SetString($"HomeChest_Slot_{i}_Item", slot.itemData.name);
+                PlayerPrefs.SetInt($"HomeChest_Slot_{i}_Amount", slot.amount);
+            }
+            else
+            {
+                PlayerPrefs.DeleteKey($"HomeChest_Slot_{i}_Item");
+                PlayerPrefs.DeleteKey($"HomeChest_Slot_{i}_Amount");
+            }
+        }
+        PlayerPrefs.Save();
+        Debug.Log($"[HomeChest] Saved chest contents ({count} slots).");
+    }
+
+    public void LoadChestData()
+    {
+        if (chestContainer == null) return;
+        LoadContainer(chestContainer);
+    }
+
+    public static void LoadContainer(ItemContainer container)
+    {
+        if (container == null || container.itemSlots == null) return;
+        if (!PlayerPrefs.HasKey("HomeChest_SlotCount")) return;
+
+        int count = Mathf.Min(container.itemSlots.Length, PlayerPrefs.GetInt("HomeChest_SlotCount", container.itemSlots.Length));
+
+        ItemData[] allItems = GameAssetHelper.LoadAll<ItemData>();
+        var itemMap = new System.Collections.Generic.Dictionary<string, ItemData>(System.StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < allItems.Length; i++)
+        {
+            if (allItems[i] != null)
+            {
+                if (!itemMap.ContainsKey(allItems[i].name)) itemMap[allItems[i].name] = allItems[i];
+                if (!string.IsNullOrEmpty(allItems[i].itemName) && !itemMap.ContainsKey(allItems[i].itemName))
+                {
+                    itemMap[allItems[i].itemName] = allItems[i];
+                }
+            }
+        }
+
+        for (int i = 0; i < container.itemSlots.Length; i++)
+        {
+            if (container.itemSlots[i] == null) container.itemSlots[i] = new ItemSlot();
+
+            if (i < count && PlayerPrefs.HasKey($"HomeChest_Slot_{i}_Item"))
+            {
+                string itemName = PlayerPrefs.GetString($"HomeChest_Slot_{i}_Item", "");
+                int amount = PlayerPrefs.GetInt($"HomeChest_Slot_{i}_Amount", 0);
+                if (!string.IsNullOrEmpty(itemName) && amount > 0 && itemMap.TryGetValue(itemName, out ItemData data))
+                {
+                    container.itemSlots[i].itemData = data;
+                    container.itemSlots[i].amount = amount;
+                    continue;
+                }
+            }
+
+            container.itemSlots[i].itemData = null;
+            container.itemSlots[i].amount = 0;
+        }
+
+        container.NotifyChange();
+        Debug.Log($"[HomeChest] Loaded chest contents ({container.itemSlots.Length} slots).");
+    }
+    #endregion
 
     private void OnTriggerEnter2D(Collider2D other)
     {

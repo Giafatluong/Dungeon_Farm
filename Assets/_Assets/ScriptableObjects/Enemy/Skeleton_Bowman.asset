@@ -13,12 +13,17 @@ MonoBehaviour:
   m_Name: Skeleton_Bowman
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Skeleton Bowman
-  maxHealth: 25
-  ATK: 8
-  DEF: 2
-  speed: 25
-  possibleIntents: 0000000001000000
-  intentEffects: []
+  maxHealth: 20
+  ATK: 7
+  DEF: 1
+  speed: 19
+  possibleIntents: 000000000100000003000000
+  intentEffects:
+  - effect: {fileID: 11400000, guid: 2ae4be7e5f27de942be4d3810cbef226, type: 2}
+    target: 2
+    value: 2
+    duration: 2
+    durationType: 0
   lootDrops:
   - item: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
     dropChance: 0.6

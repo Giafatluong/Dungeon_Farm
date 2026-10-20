@@ -4,9 +4,20 @@ public class DungeonEntrance : MonoBehaviour
 {
     [SerializeField] private DungeonEntranceUI dungeonEntranceUI;
 
-    private bool playerInRange;
+    public static DungeonEntrance Instance { get; private set; }
+    public bool playerInRange { get; private set; }
     private Collider2D col;
     private Transform playerTransform;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
 
     private void Start()
     {

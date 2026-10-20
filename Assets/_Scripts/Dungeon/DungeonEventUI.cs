@@ -365,6 +365,9 @@ public class DungeonEventUI : MonoBehaviour
             DungeonEventChoice choice = currentEvent.choices[i];
             if (choice == null) continue;
 
+            string reason = string.Empty;
+            bool canSelect = choice.isLeaveChoice || choice.CanPlayerSelect(currentPlayer, currentBackpack, out reason);
+
             // Tạo button cho lựa chọn
             GameObject btnGO = new GameObject($"ChoiceButton_{i}", typeof(RectTransform), typeof(UnityEngine.UI.Image), typeof(UnityEngine.UI.Button));
             btnGO.transform.SetParent(choicesContainer, false);
@@ -374,7 +377,17 @@ public class DungeonEventUI : MonoBehaviour
 
             UnityEngine.UI.Image btnImg = btnGO.GetComponent<UnityEngine.UI.Image>();
             UnityEngine.UI.Button btn = btnGO.GetComponent<UnityEngine.UI.Button>();
-            DungeonUIAssetHelper.StyleButton(btn, btnImg, new Color(0.16f, 0.19f, 0.28f, 0.95f), new Color(0.24f, 0.29f, 0.40f, 1f));
+
+            if (canSelect)
+            {
+                DungeonUIAssetHelper.StyleButton(btn, btnImg, new Color(0.16f, 0.19f, 0.28f, 0.95f), new Color(0.24f, 0.29f, 0.40f, 1f));
+                btn.interactable = true;
+            }
+            else
+            {
+                DungeonUIAssetHelper.StyleButton(btn, btnImg, new Color(0.10f, 0.11f, 0.15f, 0.6f), new Color(0.10f, 0.11f, 0.15f, 0.6f));
+                btn.interactable = false;
+            }
 
             // Label text
             GameObject textGO = new GameObject("Label", typeof(RectTransform), typeof(TMPro.TextMeshProUGUI));
@@ -390,9 +403,17 @@ public class DungeonEventUI : MonoBehaviour
             DungeonUIAssetHelper.ApplyFont(label);
             label.fontSize = 12.5f;
             label.alignment = TMPro.TextAlignmentOptions.MidlineLeft;
-            label.text = string.IsNullOrEmpty(choice.choiceDetails)
-                ? $"<b><color=#FFD070>{choice.choiceLabel}</color></b>"
-                : $"<b><color=#FFD070>{choice.choiceLabel}</color></b>   <size=11><color=#C8D0DC>{choice.choiceDetails}</color></size>";
+
+            if (canSelect)
+            {
+                label.text = string.IsNullOrEmpty(choice.choiceDetails)
+                    ? $"<b><color=#FFD070>{choice.choiceLabel}</color></b>"
+                    : $"<b><color=#FFD070>{choice.choiceLabel}</color></b>   <size=11><color=#C8D0DC>{choice.choiceDetails}</color></size>";
+            }
+            else
+            {
+                label.text = $"<b><color=#666666>{choice.choiceLabel}</color></b>   <size=11><color=#FF6666><b>[Thiếu: {reason}]</b></color></size>";
+            }
 
             // Bind listener (capture local index)
             DungeonEventChoice capturedChoice = choice;
@@ -440,6 +461,13 @@ public class DungeonEventUI : MonoBehaviour
         if (!executed)
         {
             Debug.LogWarning("[DungeonEventUI] ExecuteChoice returned false.");
+            Close();
+            return;
+        }
+
+        // Check if player died from cost/trap damage
+        if (currentPlayer != null && currentPlayer.currentHealth <= 0)
+        {
             Close();
             return;
         }

@@ -10,7 +10,7 @@ public class Statue : MonoBehaviour, IInteractable
 
     [Header("Interaction Settings")]
     [Tooltip("Maximum distance from the statue collider for the player to interact")]
-    public float interactDistance = 1.8f;
+    public float interactDistance = 2.2f;
 
     public event System.Action<Offering> OnOfferingSuccess;
     public event System.Action<string> OnOfferingFailed;
@@ -21,15 +21,35 @@ public class Statue : MonoBehaviour, IInteractable
     }
     #endregion
 
+    public static Statue Instance { get; private set; }
+
     #region State & References
     private PlayerStats playerStats;
-    private bool playerInRange = false;
+    public bool playerInRange { get; private set; } = false;
     private Transform playerTransform;
     private Collider2D col;
     private UnityEngine.Tilemaps.Tilemap tilemap;
     #endregion
 
     #region Unity Lifecycle
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
     private void Start()
     {
         col = GetComponent<Collider2D>();
@@ -79,6 +99,7 @@ public class Statue : MonoBehaviour, IInteractable
 
         if (playerInRange && Input.GetKeyDown(KeyCode.E))
         {
+            if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen) return;
             if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return;
             if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return;
             Interact();
@@ -102,15 +123,16 @@ public class Statue : MonoBehaviour, IInteractable
     {
         EnsureReferences();
 
-        if (StatueUI.Instance != null)
+        StatueUI ui = StatueUI.EnsureInstance();
+        if (ui != null)
         {
-            if (StatueUI.Instance.IsOpen)
+            if (ui.IsOpen)
             {
-                StatueUI.Instance.Close();
+                ui.Close();
             }
             else
             {
-                StatueUI.Instance.Open(this, offerings, playerInventory);
+                ui.Open(this, offerings, playerInventory);
             }
         }
         else

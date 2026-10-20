@@ -16,6 +16,28 @@ public class HealthBarManager : MonoBehaviour
     private void Awake()
     {
         if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
+        EnsureReferences();
+    }
+
+    private void EnsureReferences()
+    {
+        if (healthBarCanvas == null)
+        {
+            Canvas canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
+            if (canvas == null) canvas = FindFirstObjectByType<Canvas>();
+            if (canvas != null) healthBarCanvas = canvas.transform;
+        }
+
+        if (healthBarPrefab == null)
+        {
+            healthBarPrefab = Resources.Load<GameObject>("HealthBar");
+#if UNITY_EDITOR
+            if (healthBarPrefab == null)
+            {
+                healthBarPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Assets/_Prefabs/HealthBar.prefab");
+            }
+#endif
+        }
     }
 
     private float nextCleanupTime = 0f;
@@ -43,6 +65,7 @@ public class HealthBarManager : MonoBehaviour
     public void CreateHealthBars()
     {
         ClearAllHealthBars();
+        EnsureReferences();
 
         if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
 

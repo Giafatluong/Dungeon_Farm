@@ -26,10 +26,11 @@ public class Boss : EnemyStats
         currentPhase = 1;
     }
 
-    public override void TakeDamage(int damage)
+    public override int TakeDamage(int damage)
     {
-        base.TakeDamage(damage);
+        int actualDamage = base.TakeDamage(damage);
         CheckPhaseTransition();
+        return actualDamage;
     }
 
     private void CheckPhaseTransition()

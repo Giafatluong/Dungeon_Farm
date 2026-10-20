@@ -13,16 +13,21 @@ MonoBehaviour:
   m_Name: SlimeBoss
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: King Slime (Boss)
-  maxHealth: 120
-  ATK: 16
-  DEF: 5
-  speed: 15
-  possibleIntents: 000000000100000002000000
+  maxHealth: 85
+  ATK: 11
+  DEF: 2
+  speed: 12
+  possibleIntents: 00000000010000000200000003000000
   intentEffects:
   - effect: {fileID: 11400000, guid: 2c54625ab304a2649b5fcfa7060c0828, type: 2}
     target: 0
     value: 3
-    duration: 3
+    duration: 2
+    durationType: 0
+  - effect: {fileID: 11400000, guid: 447984b8d628a694299daecc4fdb03c1, type: 2}
+    target: 2
+    value: 3
+    duration: 2
     durationType: 0
   lootDrops:
   - item: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}

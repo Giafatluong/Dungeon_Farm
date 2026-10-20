@@ -44,16 +44,10 @@ public class DayManager : MonoBehaviour
         {
             _instance = null;
         }
-        if (dayTimerCoroutine != null)
-        {
-            StopCoroutine(dayTimerCoroutine);
-            dayTimerCoroutine = null;
-        }
     }
 
     [Header("Day Settings")]
     public int currentDay = 1;
-    public float dayDuration = 120f; // seconds per day (real time), 0 = manual only
 
     [Header("References")]
     public PlayerStats playerStats;
@@ -61,8 +55,6 @@ public class DayManager : MonoBehaviour
     public event System.Action OnNewDay;
     public event System.Action<int> OnDayChanged;
     public event System.Action OnDaySleep;
-
-    private Coroutine dayTimerCoroutine;
 
     private void Awake()
     {
@@ -78,42 +70,6 @@ public class DayManager : MonoBehaviour
         currentDay = PlayerPrefs.GetInt("Farm_CurrentDay", currentDay);
     }
 
-    private void Start()
-    {
-        if (dayDuration > 0f)
-        {
-            dayTimerCoroutine = StartCoroutine(DayTimer());
-        }
-    }
-
-    private IEnumerator DayTimer()
-    {
-        while (true)
-        {
-            yield return new WaitForSeconds(dayDuration);
-
-            // Chỉ tự động qua ngày khi người chơi đang ở Base (không trong Dungeon Run)
-            if (ProgressionManager.Instance == null || !ProgressionManager.Instance.runActive)
-            {
-                DayTransitionUI transitionUI = DayTransitionUI.Instance ?? FindFirstObjectByType<DayTransitionUI>();
-                if (transitionUI == null && Application.isPlaying)
-                {
-                    GameObject go = new GameObject("DayTransitionUI");
-                    transitionUI = go.AddComponent<DayTransitionUI>();
-                }
-
-                if (transitionUI != null && !transitionUI.IsOpen)
-                {
-                    transitionUI.PlayTransition(currentDay, () => AdvanceDay());
-                }
-                else
-                {
-                    AdvanceDay();
-                }
-            }
-        }
-    }
-
     /// <summary>
     /// Called when the player interacts with the bed to sleep and advance the day.
     /// Triggers the Morning Report & Day Transition UI sequence.
@@ -123,7 +79,7 @@ public class DayManager : MonoBehaviour
         Debug.Log($"[DayManager] Player is sleeping... Advancing from Day {currentDay}.");
         OnDaySleep?.Invoke();
 
-        DayTransitionUI transitionUI = DayTransitionUI.Instance ?? FindFirstObjectByType<DayTransitionUI>();
+        DayTransitionUI transitionUI = DayTransitionUI.Instance != null ? DayTransitionUI.Instance : FindFirstObjectByType<DayTransitionUI>();
         if (transitionUI == null && Application.isPlaying)
         {
             GameObject go = new GameObject("DayTransitionUI");
@@ -144,17 +100,55 @@ public class DayManager : MonoBehaviour
     {
         currentDay++;
         PlayerPrefs.SetInt("Farm_CurrentDay", currentDay);
-        PlayerPrefs.Save();
 
-        // Notify all subscribers (FarmPlots listen to OnNewDay)
-        OnNewDay?.Invoke();
+        // Safe multicast invocation: an exception in one listener will NEVER crash or block others
+        if (OnNewDay != null)
+        {
+            var invocationList = OnNewDay.GetInvocationList();
+            for (int i = 0; i < invocationList.Length; i++)
+            {
+                var d = invocationList[i];
+                try
+                {
+                    if (d.Target is UnityEngine.Object uObj && uObj == null)
+                    {
+                        OnNewDay -= (System.Action)d;
+                        continue;
+                    }
+                    ((System.Action)d).Invoke();
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[DayManager] Handled exception in OnNewDay listener: {ex.Message}");
+                }
+            }
+        }
+
+        // Direct notification to all active FarmPlots in the current scene to guarantee 100% reliable day advancement
+        FarmPlot[] plots = FindObjectsByType<FarmPlot>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        for (int i = 0; i < plots.Length; i++)
+        {
+            if (plots[i] != null)
+            {
+                plots[i].NextDay();
+            }
+        }
+
+        // Flush all saved plot and day data in one batch
+        PlayerPrefs.Save();
 
         // Ở nhà các chỉ số không tự động giảm (Hunger/HP giữ nguyên theo yêu cầu thiết kế)
 
-        // Reset temporary run blessings when day advances
+        // Reset temporary run blessings and food buffs when day advances
         if (ProgressionManager.Instance != null)
         {
             ProgressionManager.Instance.ClearRunBlessing();
+        }
+        if (PlayerStats.Instance != null)
+        {
+            PlayerStats.Instance.ClearTemporaryBuffs();
+            PlayerStats.Instance.Heal(PlayerStats.Instance.maxHealth);
+            PlayerStats.Instance.currentAP = PlayerStats.Instance.maxAP;
         }
 
         Debug.Log($"[DayManager] Day {currentDay} has begun!");

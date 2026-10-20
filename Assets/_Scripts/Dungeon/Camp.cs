@@ -74,7 +74,7 @@ public class Camp : MonoBehaviour
         switch (action)
         {
             case ActionType.Eat:
-                if (parameter is FoodData food)
+                if (parameter is ItemData food)
                 {
                     if (playerStats == null || itemContainer == null) return false;
 
@@ -84,13 +84,12 @@ public class Camp : MonoBehaviour
                         return false;
                     }
 
-                    if (playerStats.currentHunger >= playerStats.maxHunger)
+                    bool eaten = playerStats.Eat(food);
+                    if (!eaten)
                     {
-                        Debug.LogWarning("[Camp] Player fullness is at max!");
+                        Debug.LogWarning("[Camp] Could not eat food (full hunger/health and no buffs)!");
                         return false;
                     }
-
-                    playerStats.Eat(food);
                 }
                 else
                 {
@@ -178,9 +177,21 @@ public class Camp : MonoBehaviour
         CloseCamp();
         OnCampAction?.Invoke(ActionType.ReturnHome, 0f);
 
+        DungeonSummaryUI summary = DungeonSummaryUI.EnsureInstance();
+        if (summary != null)
+        {
+            summary.Show(DungeonSummaryUI.ExpeditionResult.Retreat, PerformCampExit);
+            return;
+        }
+
+        PerformCampExit();
+    }
+
+    private void PerformCampExit()
+    {
         if (ProgressionManager.Instance != null)
         {
-            ProgressionManager.Instance.CompleteRun();
+            ProgressionManager.Instance.RetreatRun();
         }
         else if (SceneTransitionManager.Instance != null)
         {

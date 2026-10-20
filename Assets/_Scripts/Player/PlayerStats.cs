@@ -4,23 +4,23 @@ using UnityEngine;
 public class PlayerStats : MonoBehaviour
 {
     [Header("Health")]
-    public int maxHealth;
-    public int currentHealth;
+    public int maxHealth = 50;
+    public int currentHealth = 50;
 
     [Header("Combat Stats")]
-    public int ATK;
-    public int DEF;
-    public int speed;
+    public int ATK = 10;
+    public int DEF = 2;
+    public int speed = 16;
     public int defendCount;
     public int defendValue = 5;
 
     [Header("Action Point")]
-    public int maxAP;
-    public int currentAP;
+    public int maxAP = 3;
+    public int currentAP = 3;
 
     [Header("Hunger")]
-    public int maxHunger;
-    public int currentHunger;
+    public int maxHunger = 100;
+    public int currentHunger = 100;
 
     [Header("Buffs")]
     public List<ActiveBuff> activeBuffs = new List<ActiveBuff>();
@@ -40,6 +40,12 @@ public class PlayerStats : MonoBehaviour
 
     public static PlayerStats Instance { get; private set; }
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        Instance = null;
+    }
+
     private void Awake()
     {
         Instance = this;
@@ -47,6 +53,23 @@ public class PlayerStats : MonoBehaviour
         baseATK = ATK;
         baseDEF = DEF;
         baseSpeed = speed;
+
+        ResolveItemContainer();
+    }
+
+    public void ResolveItemContainer()
+    {
+        if (itemContainer != null) return;
+
+        ItemContainer[] containers = GameAssetHelper.LoadAll<ItemContainer>();
+        for (int i = 0; i < containers.Length; i++)
+        {
+            if (containers[i] != null && !containers[i].name.ToLower().Contains("chest"))
+            {
+                itemContainer = containers[i];
+                break;
+            }
+        }
     }
 
     private void OnDestroy()
@@ -95,6 +118,13 @@ public class PlayerStats : MonoBehaviour
         currentHunger = maxHunger;
         currentAP = maxAP;
 
+        // Khi ở Base hoặc không trong Dungeon, xóa sạch toàn bộ buff tạm thời
+        UnityEngine.SceneManagement.Scene activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        if (activeScene.IsValid() && (activeScene.name == "Base" || activeScene.name.Contains("Base")))
+        {
+            ClearTemporaryBuffs();
+        }
+
         if (healthBar != null && !healthBar.gameObject.scene.IsValid())
         {
             healthBar = null;
@@ -111,16 +141,17 @@ public class PlayerStats : MonoBehaviour
     public bool Eat(ItemData item)
     {
         if (item == null) return false;
+        ResolveItemContainer();
 
         bool hasRawVitality = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.RawVitality);
         bool hasEndlessFeast = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast);
 
         FoodData food = item as FoodData;
 
-        // Nếu có phước lành RawVitality (Nông Dân Cường Tráng), cho phép ăn cả nông sản thô
+        // Nếu là nông sản thô hoặc thực phẩm chưa qua chế biến
         if (food == null)
         {
-            if (hasRawVitality && (item.itemType == ItemData.ItemType.Produce || item.itemType == ItemData.ItemType.Seed))
+            if (item.itemType == ItemData.ItemType.Produce || item.itemType == ItemData.ItemType.Food || item.itemType == ItemData.ItemType.Seed)
             {
                 if (itemContainer != null && !itemContainer.HasItem(item))
                 {
@@ -128,20 +159,24 @@ public class PlayerStats : MonoBehaviour
                     return false;
                 }
 
-                if (currentHunger >= maxHunger)
+                if (currentHunger >= maxHunger && currentHealth >= maxHealth)
                 {
-                    Debug.Log("Too full to eat");
+                    Debug.Log("Both hunger and health are full, cannot eat more");
                     return false;
                 }
 
-                AddHunger(20);
-                Heal(12);
+                int hungerGain = hasRawVitality ? 20 : 15;
+                int healGain = hasRawVitality ? 12 : 6;
+
+                AddHunger(hungerGain);
+                Heal(healGain);
                 if (itemContainer != null)
                 {
                     itemContainer.RemoveItem(item, 1);
                 }
-                DamagePopupManager.ShowText(transform.position + Vector3.up * 1.1f, "Ăn Sống! +12 HP", new Color(0.4f, 0.9f, 0.3f), 4.5f);
-                Debug.Log($"[Blessing: RawVitality] Ate raw crop {item.itemName} (+12 HP, +20 Hunger)!");
+                string bonusMsg = hasRawVitality ? "Ăn Sống! +12 HP, +20 No" : $"+{healGain} HP, +{hungerGain} No";
+                DamagePopupManager.ShowText(transform.position + Vector3.up * 1.1f, bonusMsg, new Color(0.4f, 0.9f, 0.3f), 4.5f);
+                Debug.Log($"Ate produce/item {item.itemName} (+{healGain} HP, +{hungerGain} Hunger)!");
                 return true;
             }
 
@@ -155,9 +190,10 @@ public class PlayerStats : MonoBehaviour
             return false;
         }
 
-        if (currentHunger >= maxHunger)
+        bool hasBuffs = (food.foodBuff != null && food.foodBuff.Length > 0);
+        if (currentHunger >= maxHunger && currentHealth >= maxHealth && !hasBuffs)
         {
-            Debug.Log("Too full to eat");
+            Debug.Log("Both hunger and health are full, and food has no buffs");
             return false;
         }
 
@@ -197,14 +233,6 @@ public class PlayerStats : MonoBehaviour
     public void Defend()
     {
         defendCount++;
-
-        if (ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.BastionStrike))
-        {
-            currentAP = Mathf.Min(maxAP, currentAP + 1);
-            DamagePopupManager.ShowText(transform.position + Vector3.up * 1.5f, "+1 AP!", new Color(1f, 0.8f, 0.2f), 4.5f);
-            Debug.Log("[Blessing: BastionStrike] Defend restored +1 AP!");
-        }
-
         OnPlayerDefended?.Invoke();
     }
 
@@ -304,15 +332,17 @@ public class PlayerStats : MonoBehaviour
         if (buff == null) return;
 
         int finalValue = (buff.IsDebuff && value > 0) ? -value : value;
+        int safeDuration = Mathf.Max(1, duration);
 
         ActiveBuff newBuff = new()
         {
             buff = buff,
             buffValue = finalValue,
-            remainingDuration = duration,
+            remainingDuration = safeDuration,
             buffDurationType = durationType
         };
 
+        bool merged = false;
         for (int i = activeBuffs.Count - 1; i >= 0; i--)
         {
             if (activeBuffs[i] == null || activeBuffs[i].buff == null) continue;
@@ -333,14 +363,36 @@ public class PlayerStats : MonoBehaviour
 
                 activeBuffs[i].remainingDuration = Mathf.Max(activeBuffs[i].remainingDuration, newBuff.remainingDuration);
             }
-            return;
+            merged = true;
+            break;
         }
 
-        activeBuffs.Add(newBuff);
+        if (!merged)
+        {
+            activeBuffs.Add(newBuff);
+        }
+
+        // Hiển thị thông báo nổi trực quan trên đầu nhân vật
+        string sign = finalValue > 0 ? "+" : "";
+        string durUnit = durationType switch
+        {
+            FoodData.BuffDurationType.Turn => "lượt",
+            FoodData.BuffDurationType.Combat => "trận",
+            FoodData.BuffDurationType.Floor => "tầng",
+            _ => durationType.ToString()
+        };
+        Color popupColor = finalValue >= 0 ? new Color(0.3f, 0.95f, 1f) : new Color(1f, 0.4f, 0.4f);
+        DamagePopupManager.ShowText(transform.position + Vector3.up * 1.3f, $"{buff.buffName} {sign}{finalValue} ({safeDuration} {durUnit})", popupColor, 4.5f);
     }
 
     public void TakeDamage(int damage)
     {
+        if (damage <= 0)
+        {
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 1.1f, "ĐÃ CHẶN!", new Color(0.4f, 0.85f, 1f), 4.2f);
+            return;
+        }
+
         currentHealth -= damage;
 
         // Damage Popup above player
@@ -398,13 +450,26 @@ public class PlayerStats : MonoBehaviour
     public void OnStageTransition()
     {
         ReduceHunger(5);
-        ReduceTurnBuffDuration();
+        ReduceTurnBuffDuration(); // Giảm 1 lượt buff theo lượt khi người chơi di chuyển qua từng stage
     }
 
     public void OnCombatComplete()
     {
+        defendCount = 0;
         ReduceHunger(10);
         ReduceCombatBuffDuration();
+        ClearTurnBuffs();
+    }
+
+    public void ClearTurnBuffs()
+    {
+        for (int i = activeBuffs.Count - 1; i >= 0; i--)
+        {
+            if (activeBuffs[i] == null || activeBuffs[i].buffDurationType == FoodData.BuffDurationType.Turn)
+            {
+                activeBuffs.RemoveAt(i);
+            }
+        }
     }
 
     public void AddHunger(int amount)
@@ -474,6 +539,11 @@ public class PlayerStats : MonoBehaviour
 
             if (activeBuffs[i].remainingDuration <= 0)
             {
+                ActiveBuff b = activeBuffs[i];
+                if (b != null && b.buff != null)
+                {
+                    DamagePopupManager.ShowText(transform.position + Vector3.up * 1.3f, $"Hết {b.buff.buffName}", new Color(0.75f, 0.75f, 0.75f), 3.2f);
+                }
                 activeBuffs.RemoveAt(i);
             }
         }
@@ -496,6 +566,11 @@ public class PlayerStats : MonoBehaviour
 
             if (activeBuffs[i].remainingDuration <= 0)
             {
+                ActiveBuff b = activeBuffs[i];
+                if (b != null && b.buff != null)
+                {
+                    DamagePopupManager.ShowText(transform.position + Vector3.up * 1.3f, $"Hết {b.buff.buffName}", new Color(0.75f, 0.75f, 0.75f), 3.2f);
+                }
                 activeBuffs.RemoveAt(i);
             }
         }
@@ -518,9 +593,22 @@ public class PlayerStats : MonoBehaviour
 
             if (activeBuffs[i].remainingDuration <= 0)
             {
+                ActiveBuff b = activeBuffs[i];
+                if (b != null && b.buff != null)
+                {
+                    DamagePopupManager.ShowText(transform.position + Vector3.up * 1.3f, $"Hết {b.buff.buffName}", new Color(0.75f, 0.75f, 0.75f), 3.2f);
+                }
                 activeBuffs.RemoveAt(i);
             }
         }
+    }
+
+    /// <summary>
+    /// Xóa toàn bộ buff tạm thời (thức ăn, thuốc) khi kết thúc chuyến đi hoặc qua ngày mới.
+    /// </summary>
+    public void ClearTemporaryBuffs()
+    {
+        activeBuffs.Clear();
     }
     #endregion
 }

@@ -11,28 +11,32 @@ using TMPro;
 public class KitchenUI : MonoBehaviour
 {
     private static KitchenUI _instance;
-    public static KitchenUI Instance
+    public static KitchenUI Instance => _instance;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
     {
-        get
+        _instance = null;
+    }
+
+    public static KitchenUI EnsureInstance()
+    {
+        if (_instance != null) return _instance;
+
+        _instance = FindFirstObjectByType<KitchenUI>(FindObjectsInactive.Include);
+        if (_instance != null) return _instance;
+
+        Canvas c = DungeonUIAssetHelper.GetMainScreenCanvas();
+        if (c != null)
         {
-            if (_instance == null)
-            {
-                _instance = FindFirstObjectByType<KitchenUI>(FindObjectsInactive.Include);
-                if (_instance == null)
-                {
-                    Canvas c = DungeonUIAssetHelper.GetMainScreenCanvas();
-                    if (c != null)
-                    {
-                        GameObject go = new GameObject("KitchenUI");
-                        go.transform.SetParent(c.transform, false);
-                        _instance = go.AddComponent<KitchenUI>();
-                        _instance.canvas = c;
-                    }
-                }
-            }
+            GameObject go = new GameObject("KitchenUI");
+            go.transform.SetParent(c.transform, false);
+            _instance = go.AddComponent<KitchenUI>();
+            _instance.canvas = c;
             return _instance;
         }
-        private set => _instance = value;
+
+        return null;
     }
 
     [Header("Panels")]
@@ -63,8 +67,8 @@ public class KitchenUI : MonoBehaviour
     private Button tabNotebookBtn;
     private ScrollRect rightScrollRect;
 
-    // Runtime Cooking Pot Data (Max 4 slots)
-    private const int MAX_POT_SLOTS = 4;
+    // Runtime Cooking Pot Data (Max 5 slots, strictly 1 item per slot)
+    private const int MAX_POT_SLOTS = 5;
     private readonly List<ItemSlot> potSlots = new List<ItemSlot>();
 
     private ItemContainer backpackContainer;
@@ -122,6 +126,8 @@ public class KitchenUI : MonoBehaviour
         backpackContainer = backpack;
         chestContainer = chest;
 
+        InventoryController.Instance?.CloseInventoryPanel();
+
         if (canvas == null)
         {
             canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
@@ -178,9 +184,20 @@ public class KitchenUI : MonoBehaviour
         RefreshUI();
     }
 
+    private void OnDisable()
+    {
+        ReturnAllPotItemsToBackpack();
+        UnsubscribeContainerEvents();
+    }
+
     private void OnDestroy()
     {
+        ReturnAllPotItemsToBackpack();
         UnsubscribeContainerEvents();
+        if (_instance == this)
+        {
+            _instance = null;
+        }
     }
 
     #region Pot Management & Interactions
@@ -193,16 +210,16 @@ public class KitchenUI : MonoBehaviour
             return;
         }
 
+        // Quy tắc: Mỗi ô trong nồi chỉ chứa tối đa đúng 1 nguyên liệu (amount = 1, không cộng dồn)
         if (potSlots.Count >= MAX_POT_SLOTS)
         {
-            ShowToast($"Nồi nấu đã đầy (tối đa {MAX_POT_SLOTS} ô)! Bấm [NẤU] hoặc bấm ô để lấy ra.");
+            ShowToast($"Nồi nấu đã đầy ({MAX_POT_SLOTS}/{MAX_POT_SLOTS} ô, mỗi ô 1 nguyên liệu)! Bấm vào ô trong nồi để bỏ ra.");
             return;
         }
 
         isInternalUpdating = true;
         try
         {
-            // Mỗi ô trong nồi chỉ chứa độc nhất 1 nguyên liệu (số lượng luôn là 1, không cộng dồn vào cùng 1 ô)
             backpackContainer.RemoveItem(item, 1);
             potSlots.Add(new ItemSlot { itemData = item, amount = 1 });
         }
@@ -223,9 +240,9 @@ public class KitchenUI : MonoBehaviour
         try
         {
             ItemSlot slot = potSlots[slotIndex];
-            if (slot != null && slot.itemData != null && slot.amount > 0)
+            if (slot != null && slot.itemData != null)
             {
-                backpackContainer.AddItem(slot.itemData, slot.amount);
+                ReturnItemSafely(slot.itemData, slot.amount > 0 ? slot.amount : 1);
                 potSlots.RemoveAt(slotIndex);
             }
         }
@@ -238,9 +255,56 @@ public class KitchenUI : MonoBehaviour
         RefreshUI();
     }
 
+    /// <summary>
+    /// Trả nguyên liệu an toàn về Balo -> Rương Nhà -> rơi trên đất. Cam kết tuyệt đối không mất đồ.
+    /// </summary>
+    private void ReturnItemSafely(ItemData item, int amount)
+    {
+        if (item == null || amount <= 0) return;
+
+        if (backpackContainer != null && backpackContainer.CanAddItem(item))
+        {
+            backpackContainer.AddItem(item, amount);
+            return;
+        }
+
+        if (chestContainer != null && chestContainer.CanAddItem(item))
+        {
+            chestContainer.AddItem(item, amount);
+            ShowToast($"Balo đầy! Đã chuyển {item.itemName} x{amount} vào Rương.");
+            return;
+        }
+
+        // Rơi xuống đất nếu cả balo và rương đều đầy
+        Vector3 dropPos = currentStation != null ? currentStation.transform.position : transform.position;
+        if (PlayerStats.Instance != null) dropPos = PlayerStats.Instance.transform.position;
+
+        if (item.dropPrefab != null)
+        {
+            for (int i = 0; i < amount; i++)
+            {
+                Vector3 offset = (Vector3)(Random.insideUnitCircle * 0.4f);
+                GameObject dropObj = Instantiate(item.dropPrefab, dropPos + offset, Quaternion.identity);
+                ItemDrop drop = dropObj.GetComponent<ItemDrop>();
+                if (drop != null)
+                {
+                    drop.itemData = item;
+                    drop.amount = 1;
+                    drop.itemContainer = backpackContainer;
+                    drop.PlayDropEffect();
+                }
+            }
+            ShowToast($"Balo đầy! {item.itemName} đã rơi xuống đất.");
+        }
+        else if (backpackContainer != null)
+        {
+            backpackContainer.AddItem(item, amount);
+        }
+    }
+
     public void ReturnAllPotItemsToBackpack()
     {
-        if (backpackContainer == null || potSlots.Count == 0) return;
+        if (potSlots.Count == 0) return;
 
         isInternalUpdating = true;
         try
@@ -250,7 +314,7 @@ public class KitchenUI : MonoBehaviour
                 ItemSlot slot = potSlots[i];
                 if (slot != null && slot.itemData != null && slot.amount > 0)
                 {
-                    backpackContainer.AddItem(slot.itemData, slot.amount);
+                    ReturnItemSafely(slot.itemData, slot.amount);
                 }
             }
             potSlots.Clear();
@@ -279,7 +343,7 @@ public class KitchenUI : MonoBehaviour
         {
             potSlots.Clear();
             ShowCookResult(true, matchedRecipe, isNewDiscovery);
-            ShowToast($"Nấu thành công món: <color=#88FF88>{matchedRecipe.recipeName}</color>!");
+            ShowToast($"Nấu thành công món: <color=#88FF88>{matchedRecipe.DisplayName}</color>!");
         }
         else
         {
@@ -363,10 +427,10 @@ public class KitchenUI : MonoBehaviour
     {
         GameObject slotGO = new GameObject("PotSlot", typeof(RectTransform), typeof(Image), typeof(Button));
         RectTransform rt = slotGO.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(66, 66);
+        rt.sizeDelta = new Vector2(60, 60);
 
         Image bg = slotGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlotImage(bg, slot != null ? new Color(0.22f, 0.28f, 0.38f, 1f) : new Color(0.12f, 0.14f, 0.18f, 0.8f));
+        DungeonUIAssetHelper.StyleSlotImage(bg, slot != null);
 
         Button btn = slotGO.GetComponent<Button>();
         btn.onClick.AddListener(() => onClick?.Invoke());
@@ -385,23 +449,23 @@ public class KitchenUI : MonoBehaviour
             iconImg.sprite = slot.itemData.itemIcon;
             iconImg.color = Color.white;
 
-            // Amount badge
+            // Single item badge (chứa đúng 1 nguyên liệu)
             GameObject amtGO = new GameObject("Amount", typeof(RectTransform), typeof(TextMeshProUGUI));
             amtGO.transform.SetParent(slotGO.transform, false);
             RectTransform amtRT = amtGO.GetComponent<RectTransform>();
             amtRT.anchorMin = new Vector2(1, 0);
             amtRT.anchorMax = new Vector2(1, 0);
             amtRT.pivot = new Vector2(1, 0);
-            amtRT.anchoredPosition = new Vector2(-2, 2);
-            amtRT.sizeDelta = new Vector2(30, 20);
+            amtRT.anchoredPosition = new Vector2(-3, 2);
+            amtRT.sizeDelta = new Vector2(25, 16);
 
             TextMeshProUGUI amtTxt = amtGO.GetComponent<TextMeshProUGUI>();
             DungeonUIAssetHelper.ApplyFont(amtTxt);
-            amtTxt.fontSize = 13;
+            amtTxt.fontSize = 11;
             amtTxt.fontStyle = FontStyles.Bold;
             amtTxt.alignment = TextAlignmentOptions.BottomRight;
-            amtTxt.color = Color.yellow;
-            amtTxt.text = $"x{slot.amount}";
+            amtTxt.color = new Color(0.85f, 1f, 0.85f);
+            amtTxt.text = "1";
         }
         else
         {
@@ -494,7 +558,7 @@ public class KitchenUI : MonoBehaviour
         rt.sizeDelta = new Vector2(320, 52);
 
         Image bg = card.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.14f, 0.16f, 0.22f, 0.95f));
+        DungeonUIAssetHelper.StyleSlicedPanel(bg, DungeonUIAssetHelper.PanelStyle.Wood);
 
         Button btn = card.GetComponent<Button>();
         btn.onClick.AddListener(() => onAdd?.Invoke());
@@ -535,7 +599,7 @@ public class KitchenUI : MonoBehaviour
         badgeRT.anchoredPosition = new Vector2(-36, 0);
         badgeRT.sizeDelta = new Vector2(62, 30);
         Image badgeImg = addBadge.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(badgeImg, new Color(0.2f, 0.5f, 0.25f, 0.9f));
+        DungeonUIAssetHelper.StyleTactileButton(null, badgeImg, DungeonUIAssetHelper.ButtonStyle.Victory);
 
         GameObject addTxtGO = new GameObject("Txt", typeof(RectTransform), typeof(TextMeshProUGUI));
         addTxtGO.transform.SetParent(addBadge.transform, false);
@@ -641,7 +705,10 @@ public class KitchenUI : MonoBehaviour
 
         if (isDiscovered)
         {
+            infoRT.offsetMax = new Vector2(-78, -4);
+
             System.Text.StringBuilder ingSb = new System.Text.StringBuilder();
+            bool hasAll = true;
             if (recipe.ingredients != null)
             {
                 for (int i = 0; i < recipe.ingredients.Length; i++)
@@ -649,24 +716,120 @@ public class KitchenUI : MonoBehaviour
                     ItemRequirement req = recipe.ingredients[i];
                     if (req.item != null)
                     {
+                        int has = backpackContainer != null ? backpackContainer.GetItemCount(req.item) : 0;
+                        for (int p = 0; p < potSlots.Count; p++)
+                        {
+                            if (potSlots[p] != null && ItemContainer.IsItemMatch(potSlots[p].itemData, req.item))
+                            {
+                                has += potSlots[p].amount;
+                            }
+                        }
+                        if (has < req.amount) hasAll = false;
                         ingSb.Append($"{req.item.itemName} x{req.amount}  ");
                     }
                 }
             }
-            infoTxt.text = $"<b><color=#FFD700>{recipe.recipeName}</color></b>\n<size=11><color=#88FF88>Công thức:</color> {ingSb.ToString().TrimEnd()}</size>";
+            infoTxt.text = $"<b><color=#FFD700>{recipe.DisplayName}</color></b>\n<size=11><color=#88FF88>Công thức:</color> {ingSb.ToString().TrimEnd()}</size>";
+
+            // Quick Fill Button: Tự động xếp nguyên liệu vào từng ô trong nồi
+            GameObject fillBtnGO = new GameObject("FillBtn", typeof(RectTransform), typeof(Image), typeof(Button));
+            fillBtnGO.transform.SetParent(card.transform, false);
+            RectTransform fillRT = fillBtnGO.GetComponent<RectTransform>();
+            fillRT.anchorMin = new Vector2(1, 0.5f);
+            fillRT.anchorMax = new Vector2(1, 0.5f);
+            fillRT.pivot = new Vector2(1, 0.5f);
+            fillRT.anchoredPosition = new Vector2(-8, 0);
+            fillRT.sizeDelta = new Vector2(66, 32);
+            Image fillImg = fillBtnGO.GetComponent<Image>();
+            DungeonUIAssetHelper.StyleTactileButton(null, fillImg, hasAll ? DungeonUIAssetHelper.ButtonStyle.PrimaryCook : DungeonUIAssetHelper.ButtonStyle.WoodRustic);
+
+            Button fillBtn = fillBtnGO.GetComponent<Button>();
+            fillBtn.interactable = hasAll;
+            fillBtn.onClick.AddListener(() => AutoFillRecipeToPot(recipe));
+
+            GameObject fillTxtGO = new GameObject("Txt", typeof(RectTransform), typeof(TextMeshProUGUI));
+            fillTxtGO.transform.SetParent(fillBtnGO.transform, false);
+            RectTransform fillTxtRT = fillTxtGO.GetComponent<RectTransform>();
+            fillTxtRT.anchorMin = Vector2.zero;
+            fillTxtRT.anchorMax = Vector2.one;
+            fillTxtRT.sizeDelta = Vector2.zero;
+            TextMeshProUGUI fillTxt = fillTxtGO.GetComponent<TextMeshProUGUI>();
+            DungeonUIAssetHelper.ApplyFont(fillTxt);
+            fillTxt.fontSize = 11;
+            fillTxt.fontStyle = FontStyles.Bold;
+            fillTxt.alignment = TextAlignmentOptions.Center;
+            fillTxt.color = hasAll ? Color.white : new Color(0.7f, 0.7f, 0.7f);
+            fillTxt.text = "XẾP VÀO";
         }
         else
         {
+            infoRT.offsetMax = new Vector2(-10, -4);
             infoTxt.text = "<b><color=#777777>??? Món ăn bí mật ???</color></b>\n<size=11><color=#555555>Chưa khám phá - Hãy thử đoán mò các nguyên liệu!</color></size>";
         }
 
         return card;
     }
 
+    private void AutoFillRecipeToPot(RecipeData recipe)
+    {
+        if (recipe == null || backpackContainer == null) return;
+
+        int totalNeeded = 0;
+        for (int i = 0; i < recipe.ingredients.Length; i++)
+        {
+            var req = recipe.ingredients[i];
+            if (req != null && req.item != null && req.amount > 0)
+            {
+                totalNeeded += req.amount;
+                int has = backpackContainer.GetItemCount(req.item);
+                for (int p = 0; p < potSlots.Count; p++)
+                {
+                    if (potSlots[p] != null && ItemContainer.IsItemMatch(potSlots[p].itemData, req.item))
+                    {
+                        has += potSlots[p].amount;
+                    }
+                }
+
+                if (has < req.amount)
+                {
+                    ShowToast($"Không đủ {req.item.itemName} (cần {req.amount}, hiện có {has})!");
+                    return;
+                }
+            }
+        }
+
+        if (totalNeeded > MAX_POT_SLOTS)
+        {
+            ShowToast($"Món này cần {totalNeeded} nguyên liệu, vượt quá {MAX_POT_SLOTS} ô trong nồi!");
+            return;
+        }
+
+        ReturnAllPotItemsToBackpack();
+
+        for (int i = 0; i < recipe.ingredients.Length; i++)
+        {
+            var req = recipe.ingredients[i];
+            if (req != null && req.item != null && req.amount > 0)
+            {
+                for (int a = 0; a < req.amount; a++)
+                {
+                    AddToPot(req.item);
+                }
+            }
+        }
+
+        ShowToast($"Đã xếp nguyên liệu món <color=#88FF88>{recipe.DisplayName}</color> vào từng ô trong nồi!");
+    }
+
     private void ShowCookResult(bool success, RecipeData recipe, bool isNewDiscovery)
     {
         if (resultBannerGO == null) return;
         resultBannerGO.SetActive(true);
+        Image rbImg = resultBannerGO.GetComponent<Image>();
+        if (rbImg != null)
+        {
+            DungeonUIAssetHelper.StylePlaque(rbImg, success ? DungeonUIAssetHelper.PlaqueStyle.Victory : DungeonUIAssetHelper.PlaqueStyle.Defeat);
+        }
 
         if (success && recipe != null && recipe.resultFood != null)
         {
@@ -710,12 +873,12 @@ public class KitchenUI : MonoBehaviour
         if (tabIngredientsBtn != null)
         {
             Image img = tabIngredientsBtn.GetComponent<Image>();
-            DungeonUIAssetHelper.StyleButton(tabIngredientsBtn, img, currentView == RightTabView.Ingredients ? new Color(0.2f, 0.45f, 0.7f, 1f) : new Color(0.16f, 0.2f, 0.28f, 0.8f));
+            DungeonUIAssetHelper.StyleTactileButton(tabIngredientsBtn, img, currentView == RightTabView.Ingredients ? DungeonUIAssetHelper.ButtonStyle.Defend : DungeonUIAssetHelper.ButtonStyle.WoodRustic);
         }
         if (tabNotebookBtn != null)
         {
             Image img = tabNotebookBtn.GetComponent<Image>();
-            DungeonUIAssetHelper.StyleButton(tabNotebookBtn, img, currentView == RightTabView.RecipeBook ? new Color(0.2f, 0.45f, 0.7f, 1f) : new Color(0.16f, 0.2f, 0.28f, 0.8f));
+            DungeonUIAssetHelper.StyleTactileButton(tabNotebookBtn, img, currentView == RightTabView.RecipeBook ? DungeonUIAssetHelper.ButtonStyle.Defend : DungeonUIAssetHelper.ButtonStyle.WoodRustic);
         }
     }
 
@@ -759,22 +922,34 @@ public class KitchenUI : MonoBehaviour
         if (canvas == null) canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
         if (canvas == null) return;
 
-        // 1. Root Panel
+        // 1. Root Modal Backdrop (Blocks all raycasts to world & hotbars)
         kitchenPanel = new GameObject("KitchenPanel", typeof(RectTransform), typeof(Image));
         kitchenPanel.transform.SetParent(canvas.transform, false);
-        RectTransform rootRT = kitchenPanel.GetComponent<RectTransform>();
+        RectTransform overlayRT = kitchenPanel.GetComponent<RectTransform>();
+        overlayRT.anchorMin = Vector2.zero;
+        overlayRT.anchorMax = Vector2.one;
+        overlayRT.offsetMin = Vector2.zero;
+        overlayRT.offsetMax = Vector2.zero;
+
+        Image overlayBg = kitchenPanel.GetComponent<Image>();
+        overlayBg.color = new Color(0.04f, 0.05f, 0.08f, 0.85f);
+
+        // 2. Central Window Panel
+        GameObject windowGO = new GameObject("KitchenWindow", typeof(RectTransform), typeof(Image));
+        windowGO.transform.SetParent(kitchenPanel.transform, false);
+        RectTransform rootRT = windowGO.GetComponent<RectTransform>();
         rootRT.anchorMin = new Vector2(0.5f, 0.5f);
         rootRT.anchorMax = new Vector2(0.5f, 0.5f);
         rootRT.pivot = new Vector2(0.5f, 0.5f);
         rootRT.sizeDelta = new Vector2(820, 540);
         rootRT.anchoredPosition = Vector2.zero;
 
-        Image rootBg = kitchenPanel.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(rootBg, new Color(0.08f, 0.10f, 0.14f, 0.98f));
+        Image rootBg = windowGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedPanel(rootBg, DungeonUIAssetHelper.PanelStyle.Wood);
 
-        // 2. Header
+        // 3. Header
         GameObject headerGO = new GameObject("Header", typeof(RectTransform), typeof(Image));
-        headerGO.transform.SetParent(kitchenPanel.transform, false);
+        headerGO.transform.SetParent(windowGO.transform, false);
         RectTransform headerRT = headerGO.GetComponent<RectTransform>();
         headerRT.anchorMin = new Vector2(0, 1);
         headerRT.anchorMax = new Vector2(1, 1);
@@ -782,7 +957,7 @@ public class KitchenUI : MonoBehaviour
         headerRT.sizeDelta = new Vector2(0, 72);
         headerRT.anchoredPosition = Vector2.zero;
         Image headerBg = headerGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(headerBg, new Color(0.14f, 0.18f, 0.25f, 0.95f));
+        DungeonUIAssetHelper.StylePlaque(headerBg, DungeonUIAssetHelper.PlaqueStyle.Gold);
 
         // Title
         GameObject titleGO = new GameObject("TitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -810,7 +985,7 @@ public class KitchenUI : MonoBehaviour
         subtitleText = subGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(subtitleText);
         subtitleText.fontSize = 12.5f;
-        subtitleText.text = "Mỗi ô chứa đúng 1 nguyên liệu! Bỏ nguyên liệu vào 4 ô để đoán công thức bí mật.";
+        subtitleText.text = "Tối đa 4 loại nguyên liệu (tự động cộng dồn)! Bỏ nguyên liệu vào nồi để đoán công thức bí mật.";
 
         // Close Button
         GameObject closeGO = new GameObject("CloseButton", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -822,7 +997,7 @@ public class KitchenUI : MonoBehaviour
         closeRT.sizeDelta = new Vector2(36, 36);
         Image closeImg = closeGO.GetComponent<Image>();
         closeButton = closeGO.GetComponent<Button>();
-        DungeonUIAssetHelper.StyleButton(closeButton, closeImg, new Color(0.6f, 0.2f, 0.2f, 0.9f));
+        DungeonUIAssetHelper.StyleTactileButton(closeButton, closeImg, DungeonUIAssetHelper.ButtonStyle.WoodRustic);
         closeButton.onClick.AddListener(Close);
 
         GameObject closeTxtGO = new GameObject("X", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -838,17 +1013,17 @@ public class KitchenUI : MonoBehaviour
         closeTxt.color = Color.white;
         closeTxt.text = "X";
 
-        // 3. Body Layout: Left Side (Pot) & Right Side (Ingredients / Notebook)
+        // 4. Body Layout: Left Side (Pot) & Right Side (Ingredients / Notebook)
         // LEFT COLUMN: COOKING POT
         GameObject leftCol = new GameObject("LeftPotCol", typeof(RectTransform), typeof(Image));
-        leftCol.transform.SetParent(kitchenPanel.transform, false);
+        leftCol.transform.SetParent(windowGO.transform, false);
         RectTransform leftRT = leftCol.GetComponent<RectTransform>();
         leftRT.anchorMin = new Vector2(0, 0);
         leftRT.anchorMax = new Vector2(0.52f, 1);
         leftRT.offsetMin = new Vector2(16, 44);
         leftRT.offsetMax = new Vector2(-8, -76);
         Image leftBg = leftCol.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(leftBg, new Color(0.11f, 0.13f, 0.18f, 0.9f));
+        DungeonUIAssetHelper.StyleSlicedPanel(leftBg, DungeonUIAssetHelper.PanelStyle.Slate);
 
         // Pot Label
         GameObject potLabelGO = new GameObject("PotLabel", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -864,9 +1039,9 @@ public class KitchenUI : MonoBehaviour
         plTxt.fontSize = 14;
         plTxt.alignment = TextAlignmentOptions.Center;
         plTxt.color = new Color(1f, 0.8f, 0.4f);
-        plTxt.text = "🔥 NỒI NẤU (4 Ô - MỖI Ô 1 NGUYÊN LIỆU)";
+        plTxt.text = "🔥 NỒI NẤU (MỖI Ô CHỨA TỐI ĐA 1 NGUYÊN LIỆU)";
 
-        // Pot Slots Row
+        // Pot Slots Row (Supports 5 slots, 1 ingredient per slot)
         GameObject potRowGO = new GameObject("PotSlotsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
         potRowGO.transform.SetParent(leftCol.transform, false);
         potSlotsRow = potRowGO.transform;
@@ -874,10 +1049,10 @@ public class KitchenUI : MonoBehaviour
         prRT.anchorMin = new Vector2(0.5f, 1);
         prRT.anchorMax = new Vector2(0.5f, 1);
         prRT.pivot = new Vector2(0.5f, 1);
-        prRT.sizeDelta = new Vector2(320, 74);
+        prRT.sizeDelta = new Vector2(360, 74);
         prRT.anchoredPosition = new Vector2(0, -48);
         HorizontalLayoutGroup potHlg = potRowGO.GetComponent<HorizontalLayoutGroup>();
-        potHlg.spacing = 10;
+        potHlg.spacing = 8;
         potHlg.childAlignment = TextAnchor.MiddleCenter;
         potHlg.childControlWidth = false;
         potHlg.childControlHeight = false;
@@ -894,7 +1069,7 @@ public class KitchenUI : MonoBehaviour
 
         Image cookBtnImg = cookBtnGO.GetComponent<Image>();
         cookButton = cookBtnGO.GetComponent<Button>();
-        DungeonUIAssetHelper.StyleButton(cookButton, cookBtnImg, new Color(0.85f, 0.45f, 0.12f, 1f));
+        DungeonUIAssetHelper.StyleTactileButton(cookButton, cookBtnImg, DungeonUIAssetHelper.ButtonStyle.PrimaryCook);
         cookButton.onClick.AddListener(ExecuteCook);
 
         GameObject cookTxtGO = new GameObject("Txt", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -909,7 +1084,7 @@ public class KitchenUI : MonoBehaviour
         cookTxt.fontStyle = FontStyles.Bold;
         cookTxt.alignment = TextAlignmentOptions.Center;
         cookTxt.color = Color.white;
-        cookTxt.text = "🍳 BẬT LỬA NẤU";
+        cookTxt.text = "BẬT LỬA NẤU";
 
         // Clear Pot Button
         GameObject clearBtnGO = new GameObject("ClearButton", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -923,7 +1098,7 @@ public class KitchenUI : MonoBehaviour
 
         Image clearBtnImg = clearBtnGO.GetComponent<Image>();
         clearPotButton = clearBtnGO.GetComponent<Button>();
-        DungeonUIAssetHelper.StyleButton(clearPotButton, clearBtnImg, new Color(0.35f, 0.25f, 0.28f, 0.9f));
+        DungeonUIAssetHelper.StyleTactileButton(clearPotButton, clearBtnImg, DungeonUIAssetHelper.ButtonStyle.WoodRustic);
         clearPotButton.onClick.AddListener(ReturnAllPotItemsToBackpack);
 
         GameObject clearTxtGO = new GameObject("Txt", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -949,7 +1124,7 @@ public class KitchenUI : MonoBehaviour
         rbRT.sizeDelta = new Vector2(0, 160);
         rbRT.anchoredPosition = new Vector2(0, 12);
         Image rbImg = resultBannerGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(rbImg, new Color(0.16f, 0.20f, 0.28f, 0.95f));
+        DungeonUIAssetHelper.StylePlaque(rbImg, DungeonUIAssetHelper.PlaqueStyle.Victory);
 
         // Result Icon
         GameObject rIconGO = new GameObject("FoodIcon", typeof(RectTransform), typeof(Image));
@@ -991,14 +1166,14 @@ public class KitchenUI : MonoBehaviour
 
         // RIGHT COLUMN: INGREDIENTS & RECIPE NOTEBOOK
         GameObject rightCol = new GameObject("RightCol", typeof(RectTransform), typeof(Image));
-        rightCol.transform.SetParent(kitchenPanel.transform, false);
+        rightCol.transform.SetParent(windowGO.transform, false);
         RectTransform rightRT = rightCol.GetComponent<RectTransform>();
         rightRT.anchorMin = new Vector2(0.52f, 0);
         rightRT.anchorMax = new Vector2(1f, 1);
         rightRT.offsetMin = new Vector2(8, 44);
         rightRT.offsetMax = new Vector2(-16, -76);
         Image rightBg = rightCol.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(rightBg, new Color(0.11f, 0.13f, 0.18f, 0.9f));
+        DungeonUIAssetHelper.StyleSlicedPanel(rightBg, DungeonUIAssetHelper.PanelStyle.Slate);
 
         // Tab Switch Buttons
         GameObject tabRowGO = new GameObject("TabRow", typeof(RectTransform));
@@ -1070,7 +1245,7 @@ public class KitchenUI : MonoBehaviour
         t2Txt.fontStyle = FontStyles.Bold;
         t2Txt.alignment = TextAlignmentOptions.Center;
         t2Txt.color = Color.white;
-        t2Txt.text = "📖 SỔ TAY CÔNG THỨC";
+        t2Txt.text = "SỔ TAY CÔNG THỨC";
 
         // Scroll Area for Right Column
         GameObject scrollGO = new GameObject("ScrollArea", typeof(RectTransform), typeof(ScrollRect), typeof(Image));
@@ -1168,9 +1343,9 @@ public class KitchenUI : MonoBehaviour
         sr.verticalScrollbar = sb;
         sr.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
 
-        // 4. Toast text bar at bottom
+        // 5. Toast text bar at bottom
         GameObject toastGO = new GameObject("ToastText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        toastGO.transform.SetParent(kitchenPanel.transform, false);
+        toastGO.transform.SetParent(windowGO.transform, false);
         RectTransform toastRT = toastGO.GetComponent<RectTransform>();
         toastRT.anchorMin = new Vector2(0, 0);
         toastRT.anchorMax = new Vector2(1, 0);

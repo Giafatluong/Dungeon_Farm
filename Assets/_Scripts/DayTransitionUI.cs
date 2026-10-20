@@ -205,6 +205,7 @@ public class DayTransitionUI : MonoBehaviour
         int plantedCount = 0;
         int emptyCount = 0;
         Dictionary<string, int> readyCropsSummary = new Dictionary<string, int>();
+        List<string> plantedDetails = new List<string>();
 
         for (int i = 0; i < plots.Length; i++)
         {
@@ -221,6 +222,17 @@ public class DayTransitionUI : MonoBehaviour
                     readyCropsSummary[cropName]++;
                 else
                     readyCropsSummary[cropName] = 1;
+            }
+            else if (plots[i].currentState == FarmPlot.State.Planted && plots[i].currentCrop != null)
+            {
+                plantedCount++;
+                string cName = !string.IsNullOrEmpty(plots[i].currentCrop.cropName) ? plots[i].currentCrop.cropName : "Cây trồng";
+                int totalStages = (plots[i].currentCrop.growthStages != null && plots[i].currentCrop.growthStages.Length > 0)
+                    ? plots[i].currentCrop.growthStages.Length
+                    : 1;
+                int stageNum = plots[i].currentStage + 1;
+                int daysLeftInStage = Mathf.Max(1, plots[i].currentCrop.growthTime) - plots[i].daysInCurrentStage;
+                plantedDetails.Add($"{cName} (Giai đoạn {stageNum}/{totalStages}, còn ~{daysLeftInStage} ngày)");
             }
             else if (plots[i].currentState == FarmPlot.State.Planted)
             {
@@ -250,7 +262,14 @@ public class DayTransitionUI : MonoBehaviour
 
         if (plantedCount > 0)
         {
-            farmSb.AppendLine($"• <color=#FFF59D>{plantedCount} ô cây trồng</color> đang tiếp tục lớn khỏe mạnh.");
+            if (plantedDetails.Count > 0 && plantedDetails.Count <= 3)
+            {
+                farmSb.AppendLine($"• <color=#FFF59D>{plantedCount} ô cây trồng</color> đang lớn: {string.Join(", ", plantedDetails)}.");
+            }
+            else
+            {
+                farmSb.AppendLine($"• <color=#FFF59D>{plantedCount} ô cây trồng</color> đang tiếp tục tăng trưởng theo từng giai đoạn.");
+            }
         }
 
         if (emptyCount > 0)

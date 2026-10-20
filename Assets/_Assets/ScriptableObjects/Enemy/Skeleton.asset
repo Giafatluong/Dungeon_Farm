@@ -13,16 +13,16 @@ MonoBehaviour:
   m_Name: Skeleton
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Skeleton
-  maxHealth: 30
-  ATK: 10
-  DEF: 0
-  speed: 20
+  maxHealth: 26
+  ATK: 8
+  DEF: 1
+  speed: 15
   possibleIntents: 000000000100000002000000
   intentEffects:
   - effect: {fileID: 11400000, guid: 6fbdc716dfd5399429b38f2c719b3694, type: 2}
-    target: 0
+    target: 1
     value: 2
-    duration: 3
+    duration: 2
     durationType: 0
   lootDrops:
   - item: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}

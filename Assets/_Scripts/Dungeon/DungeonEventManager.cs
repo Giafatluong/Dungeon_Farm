@@ -448,6 +448,13 @@ public class DungeonEventManager : MonoBehaviour
             return true;
         }
 
+        if (!choice.CanPlayerSelect(player, backpack, out string failReason))
+        {
+            resultNarrative = $"Không thể thực hiện: {failReason}";
+            isSuccess = false;
+            return false;
+        }
+
         // Deduct costs
         if (choice.hpCost > 0 && player != null)
         {

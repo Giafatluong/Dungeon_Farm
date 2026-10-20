@@ -42,7 +42,6 @@ public class ProgressionManager : MonoBehaviour
     {
         if (_instance == this)
         {
-            isQuitting = true;
             _instance = null;
         }
     }
@@ -84,13 +83,14 @@ public class ProgressionManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        isQuitting = false;
+        if (_instance != null && _instance != this)
         {
             Destroy(gameObject);
             return;
         }
 
-        Instance = this;
+        _instance = this;
         DontDestroyOnLoad(gameObject);
 
         LoadFloorProgression();
@@ -155,9 +155,10 @@ public class ProgressionManager : MonoBehaviour
     #region Discovered Recipes (Sổ tay món ăn đã đoán mò thành công)
     public bool IsRecipeDiscovered(RecipeData recipe)
     {
-        if (recipe == null) return false;
-        string key = !string.IsNullOrEmpty(recipe.recipeName) ? recipe.recipeName : recipe.name;
-        return discoveredRecipes != null && discoveredRecipes.Contains(key);
+        if (recipe == null || discoveredRecipes == null) return false;
+        if (discoveredRecipes.Contains(recipe.DisplayName)) return true;
+        if (!string.IsNullOrEmpty(recipe.recipeName) && discoveredRecipes.Contains(recipe.recipeName)) return true;
+        return discoveredRecipes.Contains(recipe.name);
     }
 
     public bool DiscoverRecipe(RecipeData recipe)
@@ -165,8 +166,8 @@ public class ProgressionManager : MonoBehaviour
         if (recipe == null) return false;
         if (discoveredRecipes == null) discoveredRecipes = new HashSet<string>();
 
-        string key = !string.IsNullOrEmpty(recipe.recipeName) ? recipe.recipeName : recipe.name;
-        if (!discoveredRecipes.Contains(key))
+        string key = recipe.DisplayName;
+        if (!IsRecipeDiscovered(recipe))
         {
             discoveredRecipes.Add(key);
             SaveDiscoveredRecipes();
@@ -562,9 +563,33 @@ public class ProgressionManager : MonoBehaviour
     {
         HandlePlayerDeathWithoutReload(inventory);
 
+        if (!DungeonSummaryUI.HasConfirmedReturn)
+        {
+            DungeonSummaryUI summary = DungeonSummaryUI.EnsureInstance();
+            if (summary != null)
+            {
+                summary.Show(DungeonSummaryUI.ExpeditionResult.Defeat, () =>
+                {
+                    if (SceneTransitionManager.Instance != null)
+                    {
+                        SceneTransitionManager.Instance.LoadBase();
+                    }
+                    else
+                    {
+                        UnityEngine.SceneManagement.SceneManager.LoadScene("Base");
+                    }
+                });
+                return;
+            }
+        }
+
         if (SceneTransitionManager.Instance != null)
         {
             SceneTransitionManager.Instance.LoadBase();
+        }
+        else
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Base");
         }
     }
 
@@ -588,6 +613,7 @@ public class ProgressionManager : MonoBehaviour
 
         // Khi thất bại, mất buff tạm thời
         ClearRunBlessing();
+        PlayerStats.Instance?.ClearTemporaryBuffs();
 
         OnRunEnded?.Invoke(false);
     }
@@ -600,12 +626,79 @@ public class ProgressionManager : MonoBehaviour
 
         // Khi hoàn thành Dungeon, mất buff tạm thời
         ClearRunBlessing();
+        PlayerStats.Instance?.ClearTemporaryBuffs();
 
         OnRunEnded?.Invoke(true);
+
+        if (!DungeonSummaryUI.HasConfirmedReturn)
+        {
+            DungeonSummaryUI summary = DungeonSummaryUI.EnsureInstance();
+            if (summary != null)
+            {
+                summary.Show(DungeonSummaryUI.ExpeditionResult.Victory, () =>
+                {
+                    if (SceneTransitionManager.Instance != null)
+                    {
+                        SceneTransitionManager.Instance.LoadBase();
+                    }
+                    else
+                    {
+                        UnityEngine.SceneManagement.SceneManager.LoadScene("Base");
+                    }
+                });
+                return;
+            }
+        }
 
         if (SceneTransitionManager.Instance != null)
         {
             SceneTransitionManager.Instance.LoadBase();
+        }
+        else
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Base");
+        }
+    }
+
+    public void RetreatRun()
+    {
+        Debug.Log("Player retreated safely from the dungeon! Keeping all loot.");
+        runActive = false;
+
+        // Khi rút lui an toàn: bảo toàn 100% tài sản trong ba lô (không xóa đồ)
+        // Mất buff phước lành tạm thời của lượt đi
+        ClearRunBlessing();
+        PlayerStats.Instance?.ClearTemporaryBuffs();
+
+        OnRunEnded?.Invoke(false);
+
+        if (!DungeonSummaryUI.HasConfirmedReturn)
+        {
+            DungeonSummaryUI summary = DungeonSummaryUI.EnsureInstance();
+            if (summary != null)
+            {
+                summary.Show(DungeonSummaryUI.ExpeditionResult.Retreat, () =>
+                {
+                    if (SceneTransitionManager.Instance != null)
+                    {
+                        SceneTransitionManager.Instance.LoadBase();
+                    }
+                    else
+                    {
+                        UnityEngine.SceneManagement.SceneManager.LoadScene("Base");
+                    }
+                });
+                return;
+            }
+        }
+
+        if (SceneTransitionManager.Instance != null)
+        {
+            SceneTransitionManager.Instance.LoadBase();
+        }
+        else
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Base");
         }
     }
 

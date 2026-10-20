@@ -13,12 +13,17 @@ MonoBehaviour:
   m_Name: Bat
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Cave Bat
-  maxHealth: 24
-  ATK: 7
-  DEF: 1
-  speed: 28
-  possibleIntents: 0000000001000000
-  intentEffects: []
+  maxHealth: 18
+  ATK: 6
+  DEF: 0
+  speed: 20
+  possibleIntents: 0000000003000000
+  intentEffects:
+  - effect: {fileID: 11400000, guid: 447984b8d628a694299daecc4fdb03c1, type: 2}
+    target: 2
+    value: 2
+    duration: 2
+    durationType: 0
   lootDrops:
   - item: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
     dropChance: 0.55

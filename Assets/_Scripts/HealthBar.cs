@@ -178,6 +178,11 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
 
     public void SetEnemyTarget(EnemyStats enemy)
     {
+        if (enemyTarget != null)
+        {
+            enemyTarget.OnIntentChanged -= HandleIntentChanged;
+        }
+
         enemyTarget = enemy;
         playerTarget = null;
         lastHealth = -1;
@@ -186,11 +191,25 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
         lastAtk = -1;
         cachedEnemyCollider = enemy != null ? enemy.GetComponent<Collider2D>() : null;
 
+        if (enemyTarget != null)
+        {
+            enemyTarget.OnIntentChanged -= HandleIntentChanged;
+            enemyTarget.OnIntentChanged += HandleIntentChanged;
+        }
+
         EnsureIntentText();
 
         if (intentText != null)
         {
             intentText.gameObject.SetActive(true);
+        }
+    }
+
+    private void HandleIntentChanged(EnemyStats sender, EnemyData.EnemyIntent newIntent)
+    {
+        if (sender == enemyTarget)
+        {
+            lastIntent = null; // force immediate re-evaluation in next frame
         }
     }
 
@@ -222,6 +241,11 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
 
     public void SetPlayerTarget(PlayerStats player)
     {
+        if (enemyTarget != null)
+        {
+            enemyTarget.OnIntentChanged -= HandleIntentChanged;
+        }
+
         playerTarget = player;
         enemyTarget = null;
         cachedEnemyCollider = null;
@@ -233,6 +257,14 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
         if (intentText != null)
         {
             intentText.gameObject.SetActive(false);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (enemyTarget != null)
+        {
+            enemyTarget.OnIntentChanged -= HandleIntentChanged;
         }
     }
 
@@ -269,43 +301,32 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
 
             if (intentText != null)
             {
-                if (enemyTarget.hasActedThisRound)
-                {
-                    if (lastIntent != null)
-                    {
-                        lastIntent = null;
-                        lastAtk = -1;
-                        intentText.text = "<color=#999999>WAITING</color>";
-                    }
-                }
-                else
-                {
-                    int curAtk = enemyTarget.GetCurrentATK();
-                    EnemyData.EnemyIntent curIntent = enemyTarget.currentIntent;
+                int curAtk = enemyTarget.GetCurrentATK();
+                EnemyData.EnemyIntent curIntent = enemyTarget.currentIntent;
 
-                    if (curIntent != lastIntent || curAtk != lastAtk)
-                    {
-                        lastIntent = curIntent;
-                        lastAtk = curAtk;
+                if (curIntent != lastIntent || curAtk != lastAtk)
+                {
+                    lastIntent = curIntent;
+                    lastAtk = curAtk;
 
-                        switch (curIntent)
-                        {
-                            case EnemyData.EnemyIntent.Attack:
-                                intentText.text = $"<color=#FF5555>ATK {curAtk}</color>";
-                                break;
-                            case EnemyData.EnemyIntent.Defend:
-                                intentText.text = "<color=#55AAFF>DEFEND</color>";
-                                break;
-                            case EnemyData.EnemyIntent.Buff:
-                                intentText.text = "<color=#FFDD44>BUFF</color>";
-                                break;
-                            case EnemyData.EnemyIntent.Debuff:
-                                intentText.text = "<color=#DD55FF>DEBUFF</color>";
-                                break;
-                            default:
-                                intentText.text = $"<color=#FF5555>ATK {curAtk}</color>";
-                                break;
-                        }
+                    switch (curIntent)
+                    {
+                        case EnemyData.EnemyIntent.Attack:
+                            intentText.text = $"<color=#FF5555>ATK {curAtk}</color>";
+                            break;
+                        case EnemyData.EnemyIntent.Defend:
+                            int defVal = (enemyTarget.enemyData != null) ? Mathf.Max(5, enemyTarget.enemyData.DEF) : 5;
+                            intentText.text = $"<color=#55AAFF>DEFEND (+{defVal})</color>";
+                            break;
+                        case EnemyData.EnemyIntent.Buff:
+                            intentText.text = "<color=#FFDD44>BUFF</color>";
+                            break;
+                        case EnemyData.EnemyIntent.Debuff:
+                            intentText.text = "<color=#DD55FF>DEBUFF</color>";
+                            break;
+                        default:
+                            intentText.text = $"<color=#FF5555>ATK {curAtk}</color>";
+                            break;
                     }
                 }
             }

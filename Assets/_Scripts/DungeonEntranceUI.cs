@@ -57,6 +57,12 @@ public class DungeonEntranceUI : MonoBehaviour
     public static DungeonEntranceUI Instance { get; private set; }
     public bool IsOpen => enterDungeonPanel != null && enterDungeonPanel.activeSelf;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        Instance = null;
+    }
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -153,6 +159,7 @@ public class DungeonEntranceUI : MonoBehaviour
 
     public void Open()
     {
+        InventoryController.Instance?.CloseInventoryPanel();
         EnsureUIConstructed();
 
         if (enterDungeonPanel != null)

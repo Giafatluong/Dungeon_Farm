@@ -27,6 +27,11 @@ public class TurnManager : MonoBehaviour
             return;
         }
 
+        if (combatManager != null && combatManager.isVictoryPending)
+        {
+            return;
+        }
+
         if (combatManager != null && combatManager.playerStats != null && combatManager.playerStats.currentHealth <= 0)
         {
             return;
@@ -63,6 +68,7 @@ public class TurnManager : MonoBehaviour
     {
         if (speedManager == null || speedManager.speedOrder == null || speedManager.speedOrder.Count == 0) return;
         if (combatManager != null && !combatManager.isCombatActive && !combatManager.isPreparingCombat) return;
+        if (combatManager != null && combatManager.isVictoryPending) return;
         if (combatManager != null && combatManager.playerStats != null && combatManager.playerStats.currentHealth <= 0) return;
 
         if (currentIndex >= speedManager.speedOrder.Count)
@@ -106,6 +112,11 @@ public class TurnManager : MonoBehaviour
     public void NextTurn()
     {
         if (combatManager != null && (!combatManager.isCombatActive && !combatManager.isPreparingCombat))
+        {
+            return;
+        }
+
+        if (combatManager != null && combatManager.isVictoryPending)
         {
             return;
         }

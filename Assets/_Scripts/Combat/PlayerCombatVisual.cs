@@ -60,7 +60,7 @@ public class PlayerCombatVisual : MonoBehaviour
             playerStats.OnPlayerDeath += OnDeath;
         }
 
-        CombatManager combatManager = CombatManager.Instance ?? FindFirstObjectByType<CombatManager>();
+        CombatManager combatManager = CombatManager.Instance != null ? CombatManager.Instance : FindFirstObjectByType<CombatManager>();
         if (combatManager != null)
         {
             combatManager.OnPlayerAttackAction += OnAttack;
@@ -180,7 +180,7 @@ public class PlayerCombatVisual : MonoBehaviour
             playerStats.OnPlayerDeath -= OnDeath;
         }
 
-        CombatManager combatManager = CombatManager.Instance ?? FindFirstObjectByType<CombatManager>();
+        CombatManager combatManager = CombatManager.Instance != null ? CombatManager.Instance : FindFirstObjectByType<CombatManager>();
         if (combatManager != null)
         {
             combatManager.OnPlayerAttackAction -= OnAttack;

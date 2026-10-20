@@ -13,12 +13,17 @@ MonoBehaviour:
   m_Name: ME2
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Armored Orc
-  maxHealth: 55
-  ATK: 14
-  DEF: 5
-  speed: 15
-  possibleIntents: 0000000001000000
-  intentEffects: []
+  maxHealth: 42
+  ATK: 11
+  DEF: 3
+  speed: 10
+  possibleIntents: 000000000100000002000000
+  intentEffects:
+  - effect: {fileID: 11400000, guid: 2c54625ab304a2649b5fcfa7060c0828, type: 2}
+    target: 1
+    value: 3
+    duration: 2
+    durationType: 0
   lootDrops:
   - item: {fileID: 11400000, guid: 7fbf6b6fc33a6a24aa6ccfb21298e0fd, type: 2}
     dropChance: 0.6

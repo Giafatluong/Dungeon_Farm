@@ -80,15 +80,7 @@ public class DungeonEventChoice
     private int GetItemCount(ItemContainer container, ItemData item)
     {
         if (container == null || item == null) return 0;
-        int count = 0;
-        for (int i = 0; i < container.itemSlots.Length; i++)
-        {
-            if (container.itemSlots[i] != null && container.itemSlots[i].itemData == item)
-            {
-                count += container.itemSlots[i].amount;
-            }
-        }
-        return count;
+        return container.GetItemCount(item);
     }
 }
 

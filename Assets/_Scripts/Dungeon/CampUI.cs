@@ -654,6 +654,17 @@ public class CampUI : MonoBehaviour
         ItemContainer inventory = camp != null ? camp.itemContainer : (playerStats != null ? playerStats.itemContainer : null);
         if (inventory == null)
         {
+            if (playerStats == null) FindReferences();
+            if (playerStats != null)
+            {
+                playerStats.ResolveItemContainer();
+                inventory = playerStats.itemContainer;
+                if (camp != null) camp.itemContainer = inventory;
+            }
+        }
+
+        if (inventory == null)
+        {
             if (noFoodText != null)
             {
                 noFoodText.gameObject.SetActive(true);
@@ -666,9 +677,14 @@ public class CampUI : MonoBehaviour
         for (int i = 0; i < inventory.itemSlots.Length; i++)
         {
             ItemSlot slot = inventory.itemSlots[i];
-            if (slot != null && slot.itemData is FoodData && slot.amount > 0)
+            if (slot != null && slot.itemData != null && slot.amount > 0)
             {
-                foodSlots.Add(slot);
+                if (slot.itemData is FoodData || 
+                    slot.itemData.itemType == ItemData.ItemType.Food || 
+                    slot.itemData.itemType == ItemData.ItemType.Produce)
+                {
+                    foodSlots.Add(slot);
+                }
             }
         }
 
@@ -677,7 +693,7 @@ public class CampUI : MonoBehaviour
             if (noFoodText != null)
             {
                 noFoodText.gameObject.SetActive(true);
-                noFoodText.text = "No food in backpack!\n(Cook meals or harvest food from farm)";
+                noFoodText.text = "Không có đồ ăn hoặc nông sản trong túi!";
             }
             return;
         }
@@ -687,7 +703,7 @@ public class CampUI : MonoBehaviour
         for (int i = 0; i < foodSlots.Count; i++)
         {
             ItemSlot slot = foodSlots[i];
-            FoodData food = slot.itemData as FoodData;
+            ItemData food = slot.itemData;
             int count = slot.amount;
 
             GameObject cardGO = CreateFoodCard(food, count);
@@ -699,8 +715,10 @@ public class CampUI : MonoBehaviour
         }
     }
 
-    private GameObject CreateFoodCard(FoodData food, int count)
+    private GameObject CreateFoodCard(ItemData food, int count)
     {
+        if (food == null) return null;
+
         GameObject row = new GameObject($"Food_{food.itemName}", typeof(RectTransform), typeof(Image));
         RectTransform rt = row.GetComponent<RectTransform>();
         rt.sizeDelta = new Vector2(440, 56);
@@ -731,9 +749,17 @@ public class CampUI : MonoBehaviour
         label.fontSize = 13;
         label.color = Color.white;
         label.alignment = TextAlignmentOptions.MidlineLeft;
-        string buffSummary = GetFoodBuffSummary(food);
-        string buffLine = !string.IsNullOrEmpty(buffSummary) ? $" | {buffSummary}" : "";
-        label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#66FF66>+{food.healthValue} HP</color> | <color=#FFAA33>+{food.hungerValue} Full</color>{buffLine}</size>";
+
+        if (food is FoodData fd)
+        {
+            string buffSummary = GetFoodBuffSummary(fd);
+            string buffLine = !string.IsNullOrEmpty(buffSummary) ? $" | {buffSummary}" : "";
+            label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#66FF66>+{fd.healthValue} HP</color> | <color=#FFAA33>+{fd.hungerValue} Full</color>{buffLine}</size>";
+        }
+        else
+        {
+            label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#66FF66>+6 HP</color> | <color=#FFAA33>+15 Full</color> (Nông sản)</size>";
+        }
 
         // Eat Button
         GameObject btnGO = new GameObject("EatBtn", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -876,7 +902,7 @@ public class CampUI : MonoBehaviour
 
         string rBuff = recipe.resultFood != null ? GetFoodBuffSummary(recipe.resultFood) : "";
         string rBuffLine = !string.IsNullOrEmpty(rBuff) ? $"\n<size=10>Buff: {rBuff}</size>" : "";
-        label.text = $"<b>{recipe.recipeName}</b>{rBuffLine}\n<size=10>Needs: {ingSb.ToString()}</size>";
+        label.text = $"<b>{recipe.DisplayName}</b>{rBuffLine}\n<size=10>Needs: {ingSb.ToString()}</size>";
 
         // Cook Button
         GameObject btnGO = new GameObject("CookBtn", typeof(RectTransform), typeof(Image), typeof(Button));

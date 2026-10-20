@@ -43,6 +43,8 @@ public class ItemDrop : MonoBehaviour
         canCollect = true;
     }
 
+    public bool IsMoving => isMoving;
+
     public void StartMove(GameObject targetPlayer)
     {
         if (isMoving) return;
@@ -89,7 +91,20 @@ public class ItemDrop : MonoBehaviour
 
         if (itemContainer != null && itemData != null)
         {
-            itemContainer.AddItem(itemData, amount);
+            if (!itemContainer.CanAddItem(itemData))
+            {
+                // Ba lô đầy: Không thu thập, không phá hủy vật phẩm rơi!
+                isMoving = false;
+                DamagePopupManager.ShowText(transform.position + Vector3.up * 0.6f, "Ba Lô Đầy!", new Color(1f, 0.4f, 0.4f), 3.0f);
+                return;
+            }
+
+            bool added = itemContainer.AddItem(itemData, amount);
+            if (!added)
+            {
+                isMoving = false;
+                return;
+            }
         }
 
         Destroy(gameObject);

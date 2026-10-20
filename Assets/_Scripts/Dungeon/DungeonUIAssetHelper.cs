@@ -3,11 +3,38 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Central helper to provide existing project visual assets (UI_Frame, UI_Slot, Golden Chest sprite, inventorySlot prefab)
-/// to Dungeon UIs (RewardUI, DungeonEventUI, MerchantUI).
+/// Central helper providing original project pixel-art visual assets (UI_Frame, UI_Slot, UI_Toolbar)
+/// across Base & Dungeon UIs (KitchenUI, StatueUI, MerchantUI, LootUI, CombatUI, etc.).
 /// </summary>
 public static class DungeonUIAssetHelper
 {
+    public enum ButtonStyle
+    {
+        PrimaryCook,
+        Attack,
+        Defend,
+        Eat,
+        EndTurn,
+        Victory,
+        WoodRustic
+    }
+
+    public enum PlaqueStyle
+    {
+        Gold,
+        Victory,
+        Defeat,
+        Wood
+    }
+
+    public enum PanelStyle
+    {
+        Wood,
+        Slate,
+        Parchment
+    }
+
+    #region Cached Sprites
     private static Sprite _frameSprite;
     private static Sprite _slotSprite;
     private static Sprite _toolbarSprite;
@@ -17,6 +44,21 @@ public static class DungeonUIAssetHelper
     private static GameObject _slotPrefab;
     private static TMP_FontAsset _fontAsset;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    public static void ResetStatics()
+    {
+        _frameSprite = null;
+        _slotSprite = null;
+        _toolbarSprite = null;
+        _chestSprite = null;
+        _bossSprite = null;
+        _tentSprite = null;
+        _slotPrefab = null;
+        _fontAsset = null;
+    }
+    #endregion
+
+    #region Sprite Accessors (Original Pixel-Art Assets)
     public static Sprite GetFrameSprite()
     {
         if (_frameSprite != null) return _frameSprite;
@@ -36,6 +78,46 @@ public static class DungeonUIAssetHelper
         if (_toolbarSprite != null) return _toolbarSprite;
         _toolbarSprite = FindSprite("UI_Toolbar");
         return _toolbarSprite;
+    }
+
+    public static Sprite GetPanelSprite(PanelStyle style = PanelStyle.Wood)
+    {
+        return GetFrameSprite();
+    }
+
+    public static Sprite GetPlaqueSprite(PlaqueStyle style = PlaqueStyle.Gold)
+    {
+        return GetToolbarSprite();
+    }
+
+    public static Sprite GetButtonSprite(ButtonStyle style = ButtonStyle.WoodRustic)
+    {
+        return GetFrameSprite();
+    }
+
+    public static Sprite GetCozySlotSprite()
+    {
+        return GetSlotSprite();
+    }
+
+    public static Sprite GetSelectedSlotSprite()
+    {
+        return GetSlotSprite();
+    }
+
+    public static Sprite GetHpFillSprite()
+    {
+        return null;
+    }
+
+    public static Sprite GetHungerFillSprite()
+    {
+        return null;
+    }
+
+    public static Sprite GetApFillSprite()
+    {
+        return null;
     }
 
     public static Sprite GetChestSprite()
@@ -66,8 +148,9 @@ public static class DungeonUIAssetHelper
                    ?? FindSprite("Campfire");
         return _tentSprite;
     }
+    #endregion
 
-
+    #region Prefabs & Fonts
     public static GameObject GetSlotPrefab()
     {
         if (_slotPrefab != null) return _slotPrefab;
@@ -79,8 +162,7 @@ public static class DungeonUIAssetHelper
             InventoryButton btn = invPanel.GetComponentInChildren<InventoryButton>(true);
             if (btn != null)
             {
-                _slotPrefab = btn.gameObject;
-                return _slotPrefab;
+                return btn.gameObject;
             }
         }
 
@@ -90,8 +172,7 @@ public static class DungeonUIAssetHelper
             InventoryButton btn = rewardUI.GetComponentInChildren<InventoryButton>(true);
             if (btn != null)
             {
-                _slotPrefab = btn.gameObject;
-                return _slotPrefab;
+                return btn.gameObject;
             }
         }
 
@@ -101,8 +182,11 @@ public static class DungeonUIAssetHelper
         {
             if (allPrefabs[i] != null && allPrefabs[i].name == "inventorySlot")
             {
-                _slotPrefab = allPrefabs[i];
-                return _slotPrefab;
+                if (allPrefabs[i].scene.name == null)
+                {
+                    _slotPrefab = allPrefabs[i];
+                }
+                return allPrefabs[i];
             }
         }
 
@@ -125,6 +209,82 @@ public static class DungeonUIAssetHelper
         return _fontAsset;
     }
 
+    public static void ApplyFont(TextMeshProUGUI tmp)
+    {
+        if (tmp == null) return;
+        TMP_FontAsset font = GetFontAsset();
+        if (font != null)
+        {
+            tmp.font = font;
+        }
+    }
+    #endregion
+
+    #region Styling Methods (Original Pixel-Art Styling)
+    public static void StyleSlicedPanel(Image img, PanelStyle style = PanelStyle.Wood)
+    {
+        if (img == null) return;
+        Sprite frame = GetFrameSprite();
+        if (frame != null)
+        {
+            img.sprite = frame;
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+        }
+        else
+        {
+            img.color = new Color(0.12f, 0.12f, 0.14f, 0.95f);
+        }
+    }
+
+    public static void StylePlaque(Image img, PlaqueStyle style = PlaqueStyle.Gold)
+    {
+        if (img == null) return;
+        Sprite toolbar = GetToolbarSprite();
+        if (toolbar != null)
+        {
+            img.sprite = toolbar;
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+        }
+        else
+        {
+            img.color = Color.white;
+        }
+    }
+
+    public static void StyleSlotImage(Image img, bool isSelected = false)
+    {
+        if (img == null) return;
+        Sprite slot = GetSlotSprite();
+        if (slot != null)
+        {
+            img.sprite = slot;
+            img.type = Image.Type.Sliced;
+            img.color = isSelected ? new Color(1f, 0.9f, 0.5f, 1f) : Color.white;
+        }
+        else
+        {
+            img.color = isSelected ? new Color(1f, 0.85f, 0.35f, 1f) : new Color(0.18f, 0.2f, 0.26f, 0.95f);
+        }
+    }
+
+    public static void StyleSlotImage(Image img, Color? color = null)
+    {
+        if (img == null) return;
+        Sprite slot = GetSlotSprite();
+        if (slot != null)
+        {
+            img.sprite = slot;
+            img.type = Image.Type.Sliced;
+            img.color = color ?? Color.white;
+        }
+        else
+        {
+            img.color = color ?? new Color(0.18f, 0.2f, 0.26f, 0.95f);
+        }
+    }
+
     public static void StyleSlicedFrame(Image img, Color color)
     {
         if (img == null) return;
@@ -141,30 +301,20 @@ public static class DungeonUIAssetHelper
         }
     }
 
-    public static void StyleSlotImage(Image img, Color? color = null)
+    public static void StyleTactileButton(Button btn, Image img, ButtonStyle style)
     {
-        if (img == null) return;
-        Sprite slot = GetSlotSprite();
-        if (slot != null)
+        Color btnColor = style switch
         {
-            img.sprite = slot;
-            img.type = Image.Type.Simple;
-            img.color = color ?? Color.white;
-        }
-        else
-        {
-            img.color = color ?? new Color(0.18f, 0.2f, 0.26f, 0.95f);
-        }
-    }
+            ButtonStyle.Victory => new Color(0.28f, 0.65f, 0.35f, 1f),
+            ButtonStyle.Attack => new Color(0.78f, 0.28f, 0.28f, 1f),
+            ButtonStyle.Defend => new Color(0.28f, 0.48f, 0.78f, 1f),
+            ButtonStyle.Eat => new Color(0.85f, 0.58f, 0.22f, 1f),
+            ButtonStyle.PrimaryCook => new Color(0.88f, 0.48f, 0.16f, 1f),
+            ButtonStyle.EndTurn => new Color(0.38f, 0.38f, 0.48f, 1f),
+            _ => Color.white
+        };
 
-    public static void ApplyFont(TextMeshProUGUI tmp)
-    {
-        if (tmp == null) return;
-        TMP_FontAsset font = GetFontAsset();
-        if (font != null)
-        {
-            tmp.font = font;
-        }
+        StyleButton(btn, img, btnColor);
     }
 
     public static void StyleButton(Button btn, Image img, Color normalColor, Color? hoverColor = null, Color? pressedColor = null)
@@ -184,11 +334,13 @@ public static class DungeonUIAssetHelper
         cb.colorMultiplier = 1f;
         btn.colors = cb;
     }
+    #endregion
 
+    #region Utilities
     private static Sprite FindSprite(string spriteName)
     {
+        // 1. Direct memory scan pass for loaded sprites
         Sprite[] sprites = Resources.FindObjectsOfTypeAll<Sprite>();
-        // 1. Exact match
         for (int i = 0; i < sprites.Length; i++)
         {
             if (sprites[i] != null && sprites[i].name.Equals(spriteName, System.StringComparison.OrdinalIgnoreCase))
@@ -196,7 +348,22 @@ public static class DungeonUIAssetHelper
                 return sprites[i];
             }
         }
-        // 2. Fallback prefix/contains match
+
+#if UNITY_EDITOR
+        // 2. Editor AssetDatabase pass (finds sprites on disk if not preloaded)
+        string[] guids = UnityEditor.AssetDatabase.FindAssets($"{spriteName} t:Sprite");
+        for (int i = 0; i < guids.Length; i++)
+        {
+            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[i]);
+            Sprite edSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (edSprite != null && edSprite.name.Equals(spriteName, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return edSprite;
+            }
+        }
+#endif
+
+        // 3. Fallback contains match
         for (int i = 0; i < sprites.Length; i++)
         {
             if (sprites[i] != null && sprites[i].name.IndexOf(spriteName, System.StringComparison.OrdinalIgnoreCase) >= 0)
@@ -204,6 +371,7 @@ public static class DungeonUIAssetHelper
                 return sprites[i];
             }
         }
+
         return null;
     }
 
@@ -213,13 +381,11 @@ public static class DungeonUIAssetHelper
     public static Canvas GetMainScreenCanvas()
     {
         Canvas[] allCanvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        // 1. Ưu tiên CombatCanvas
         for (int i = 0; i < allCanvases.Length; i++)
         {
             if (allCanvases[i] != null && allCanvases[i].name.Equals("CombatCanvas", System.StringComparison.OrdinalIgnoreCase))
                 return allCanvases[i];
         }
-        // 2. Ưu tiên bất kỳ Canvas nào không phải World Space
         for (int i = 0; i < allCanvases.Length; i++)
         {
             if (allCanvases[i] != null && allCanvases[i].renderMode != RenderMode.WorldSpace)
@@ -229,7 +395,7 @@ public static class DungeonUIAssetHelper
     }
 
     /// <summary>
-    /// Tạo thanh cuộn slider dọc đẹp mắt chuẩn Fantasy UI cho ScrollRect.
+    /// Tạo thanh cuộn slider dọc cho ScrollRect.
     /// </summary>
     public static Scrollbar CreateVerticalScrollbar(Transform parent, ScrollRect scrollRect, Color handleColor, float width = 12f)
     {
@@ -277,4 +443,5 @@ public static class DungeonUIAssetHelper
 
         return sb;
     }
+    #endregion
 }

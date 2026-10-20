@@ -17,6 +17,12 @@ public class SceneTransitionManager : MonoBehaviour
         private set => _instance = value;
     }
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        _instance = null;
+    }
+
     private void Awake()
     {
         if (_instance != null && _instance != this)
@@ -27,6 +33,14 @@ public class SceneTransitionManager : MonoBehaviour
 
         _instance = this;
         DontDestroyOnLoad(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        if (_instance == this)
+        {
+            _instance = null;
+        }
     }
 
     public void LoadDungeon(int floor = -1)
@@ -42,6 +56,17 @@ public class SceneTransitionManager : MonoBehaviour
 
     public void LoadBase()
     {
+        // Khi người chơi rời khỏi Dungeon về Base, toàn bộ buff (turn, combat, floor) đều biến mất:
+        PlayerStats.Instance?.ClearTemporaryBuffs();
+
+        // Nếu thoát về Base khi chuyến thám hiểm vẫn đang chạy (chưa qua ngày), tự động kích hoạt qua 1 ngày:
+        if (ProgressionManager.Instance != null && ProgressionManager.Instance.runActive)
+        {
+            ProgressionManager.Instance.runActive = false;
+            ProgressionManager.Instance.ClearRunBlessing();
+            DungeonSummaryUI.AdvanceDayOnReturnStatic();
+        }
+
         SceneManager.LoadScene("Base");
     }
 

@@ -17,9 +17,18 @@ public class ItemContainer : ScriptableObject
 
     private void OnEnable()
     {
+        OnInventoryChange = null;
+
         if (itemSlots == null || itemSlots.Length != maxSlots)
         {
-            itemSlots = new ItemSlot[maxSlots];
+            if (itemSlots == null)
+            {
+                itemSlots = new ItemSlot[maxSlots];
+            }
+            else
+            {
+                System.Array.Resize(ref itemSlots, maxSlots);
+            }
         }
 
         for (int i = 0; i < itemSlots.Length; i++)
@@ -31,20 +40,46 @@ public class ItemContainer : ScriptableObject
         }
     }
 
-    public void AddItem(ItemData itemData, int amount)
+    private void TriggerChange()
+    {
+        if (OnInventoryChange == null) return;
+
+        var invocationList = OnInventoryChange.GetInvocationList();
+        for (int i = 0; i < invocationList.Length; i++)
+        {
+            var d = invocationList[i];
+            try
+            {
+                if (d.Target is UnityEngine.Object uObj && uObj == null)
+                {
+                    OnInventoryChange -= (System.Action)d;
+                    continue;
+                }
+                ((System.Action)d).Invoke();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[ItemContainer] Handled listener error: {ex.Message}");
+            }
+        }
+    }
+
+    public bool AddItem(ItemData itemData, int amount)
     {
         if (itemData == null || amount <= 0)
-            return;
+            return false;
+
+        int limit = itemSlots != null ? itemSlots.Length : maxSlots;
 
         if (itemData.isStackable)
         {
-            for (int i = 0; i < maxSlots; i++)
+            for (int i = 0; i < limit; i++)
             {
                 if (itemSlots[i] != null && IsItemMatch(itemSlots[i].itemData, itemData))
                 {
                     itemSlots[i].amount += amount;
-                    OnInventoryChange?.Invoke();
-                    return;
+                    TriggerChange();
+                    return true;
                 }
             }
 
@@ -55,12 +90,15 @@ public class ItemContainer : ScriptableObject
                 if (itemSlots[slot] == null) itemSlots[slot] = new ItemSlot();
                 itemSlots[slot].itemData = itemData;
                 itemSlots[slot].amount = amount;
-                OnInventoryChange?.Invoke();
-                return;
+                TriggerChange();
+                return true;
             }
+
+            return false;
         }
         else
         {
+            bool anyAdded = false;
             for (int i = 0; i < amount; i++)
             {
                 int slot = GetEmptySlot();
@@ -70,10 +108,15 @@ public class ItemContainer : ScriptableObject
                     if (itemSlots[slot] == null) itemSlots[slot] = new ItemSlot();
                     itemSlots[slot].itemData = itemData;
                     itemSlots[slot].amount = 1;
+                    anyAdded = true;
                 }
             }
 
-            OnInventoryChange?.Invoke();
+            if (anyAdded)
+            {
+                TriggerChange();
+            }
+            return anyAdded;
         }
     }
 
@@ -91,8 +134,9 @@ public class ItemContainer : ScriptableObject
             return;
 
         bool changed = false;
+        int limit = itemSlots != null ? itemSlots.Length : maxSlots;
 
-        for (int i = 0; i < maxSlots; i++)
+        for (int i = 0; i < limit; i++)
         {
             if (itemSlots[i] != null && IsItemMatch(itemSlots[i].itemData, itemData) && itemSlots[i].amount > 0)
             {
@@ -122,7 +166,7 @@ public class ItemContainer : ScriptableObject
             {
                 InventoryButton.selectedItem = null;
             }
-            OnInventoryChange?.Invoke();
+            TriggerChange();
         }
     }
 
@@ -130,7 +174,8 @@ public class ItemContainer : ScriptableObject
     {
         if (itemData == null || itemSlots == null) return 0;
         int total = 0;
-        for (int i = 0; i < maxSlots; i++)
+        int limit = itemSlots.Length;
+        for (int i = 0; i < limit; i++)
         {
             if (itemSlots[i] != null && IsItemMatch(itemSlots[i].itemData, itemData) && itemSlots[i].amount > 0)
             {
@@ -150,9 +195,10 @@ public class ItemContainer : ScriptableObject
         if (itemData == null || requiredAmount <= 0)
             return false;
 
+        int limit = itemSlots != null ? itemSlots.Length : maxSlots;
         if (requiredAmount == 1)
         {
-            for (int i = 0; i < maxSlots; i++)
+            for (int i = 0; i < limit; i++)
             {
                 if (itemSlots[i] != null &&
                     IsItemMatch(itemSlots[i].itemData, itemData) &&
@@ -169,7 +215,8 @@ public class ItemContainer : ScriptableObject
 
     public int GetEmptySlot()
     {
-        for (int i = 0; i < maxSlots; i++)
+        int limit = itemSlots != null ? itemSlots.Length : maxSlots;
+        for (int i = 0; i < limit; i++)
         {
             if (itemSlots[i] == null || itemSlots[i].itemData == null)
             {
@@ -180,11 +227,22 @@ public class ItemContainer : ScriptableObject
         return -1;
     }
 
-    public bool CanAddItem(ItemData itemData)
+    public bool CanAddItem(ItemData itemData, int amount = 1)
     {
-        if (itemData == null) return false;
+        if (itemData == null || amount <= 0) return false;
         if (itemData.isStackable && HasItem(itemData)) return true;
-        return GetEmptySlot() != -1;
+
+        int emptyCount = 0;
+        int limit = itemSlots != null ? itemSlots.Length : maxSlots;
+        for (int i = 0; i < limit; i++)
+        {
+            if (itemSlots[i] == null || itemSlots[i].itemData == null)
+            {
+                emptyCount++;
+                if (itemData.isStackable || emptyCount >= amount) return true;
+            }
+        }
+        return false;
     }
 
     public void SwapSlots(int indexA, int indexB)
@@ -210,7 +268,7 @@ public class ItemContainer : ScriptableObject
             itemSlots[indexA].itemData = null;
             itemSlots[indexA].amount = 0;
 
-            OnInventoryChange?.Invoke();
+            TriggerChange();
             return;
         }
 
@@ -223,7 +281,7 @@ public class ItemContainer : ScriptableObject
         itemSlots[indexB].itemData = tempItem;
         itemSlots[indexB].amount = tempAmount;
 
-        OnInventoryChange?.Invoke();
+        TriggerChange();
     }
 
     /// <summary>
@@ -231,6 +289,25 @@ public class ItemContainer : ScriptableObject
     /// </summary>
     public void NotifyChange()
     {
-        OnInventoryChange?.Invoke();
+        TriggerChange();
+    }
+
+    /// <summary>
+    /// Clears all slots in this container
+    /// </summary>
+    public void Clear()
+    {
+        if (itemSlots != null)
+        {
+            for (int i = 0; i < itemSlots.Length; i++)
+            {
+                if (itemSlots[i] != null)
+                {
+                    itemSlots[i].itemData = null;
+                    itemSlots[i].amount = 0;
+                }
+            }
+        }
+        TriggerChange();
     }
 }

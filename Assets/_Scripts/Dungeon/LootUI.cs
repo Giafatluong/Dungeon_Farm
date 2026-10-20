@@ -5,12 +5,12 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Bảng UI Chiến Lợi Phẩm sau khi tiêu diệt quái / kết thúc combat:
-/// - Bên trái: Danh sách vật phẩm quái rơi (Loot Container)
-/// - Bên phải: Toàn bộ ba lô của người chơi (Backpack Container)
-/// - Kéo thả vật phẩm tự do giữa 2 bên để nhặt đồ hoặc sắp xếp ba lô (sử dụng InventoryButton)
-/// - Nút "Loot Hết": tự động gom toàn bộ vật phẩm còn chỗ vào ba lô
-/// - Nút "Tiếp Tục": đóng UI và tiếp tục chuyến thám hiểm
-/// Tự động xây dựng giao diện chất lượng cao với DungeonUIAssetHelper nếu chưa có sẵn trong Scene.
+/// - Thiết kế cân đối đối xứng 50/50 giữa 2 cột: [VẬT PHẨM RƠI] và [BA LÔ CỦA BẠN]
+/// - Cả 2 bên đều dùng lưới chuẩn 6 cột, tự động hoàn thiện hàng cuối (padding 3 slot khóa để đủ 6x6)
+/// - Khi đã nhặt hết: Ẩn các ô trống, hiện bảng thông báo 'ĐÃ THU NHẬP TẤT CẢ!' trang nhã
+/// - Nút [LOOT HẾT] tự động vô hiệu hóa & mờ đi khi không còn đồ để loot
+/// - Nút [TIẾP TỤC] tự động sáng xanh ngọc nổi bật khi đã gom hết đồ, hướng dẫn người chơi đi tiếp
+/// - Khắc phục triệt để lỗi chữ 'Victory! All enemies defeated.' từ CombatUI xuyên qua màn hình
 /// </summary>
 public class LootUI : MonoBehaviour
 {
@@ -28,18 +28,25 @@ public class LootUI : MonoBehaviour
     [Header("Controls")]
     [SerializeField] private Button lootAllButton;
     [SerializeField] private Button continueButton;
+    [SerializeField] private Image lootAllBtnImg;
+    [SerializeField] private Image contBtnImg;
+    [SerializeField] private TextMeshProUGUI lootAllTxt;
+    [SerializeField] private TextMeshProUGUI contTxt;
 
-    [Header("Labels")]
+    [Header("Labels & Notices")]
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private TextMeshProUGUI subtitleText;
     [SerializeField] private TextMeshProUGUI hintText;
+    [SerializeField] private TextMeshProUGUI lootHeaderTitle;
     [SerializeField] private TextMeshProUGUI backpackHeaderTitle;
+    [SerializeField] private GameObject emptyLootNoticeGO;
 
     private ItemContainer lootContainer;
     private ItemContainer backpackContainer;
 
     private readonly List<InventoryButton> lootButtons = new();
     private readonly List<InventoryButton> backpackButtons = new();
+    private readonly List<GameObject> paddingSlots = new();
 
     private System.Action onLootClosed;
 
@@ -131,7 +138,7 @@ public class LootUI : MonoBehaviour
             return;
         }
 
-        // 1. Fullscreen Dark Overlay
+        // 1. Fullscreen Dark Overlay (ngăn chặn triệt để bleed-through từ combat UI phía sau)
         GameObject overlayGO = new("LootPanel", typeof(RectTransform), typeof(Image));
         overlayGO.transform.SetParent(parentCanvas.transform, false);
         lootPanel = overlayGO;
@@ -142,7 +149,7 @@ public class LootUI : MonoBehaviour
         overlayRT.sizeDelta = Vector2.zero;
 
         Image overlayImg = overlayGO.GetComponent<Image>();
-        overlayImg.color = new Color(0.04f, 0.05f, 0.08f, 0.88f);
+        overlayImg.color = new Color(0.02f, 0.03f, 0.05f, 0.94f);
 
         // 2. Main Window Modal with 9-Sliced Frame
         GameObject modalGO = new("LootModal", typeof(RectTransform), typeof(Image));
@@ -152,7 +159,7 @@ public class LootUI : MonoBehaviour
         modalRT.anchorMin = new Vector2(0.5f, 0.5f);
         modalRT.anchorMax = new Vector2(0.5f, 0.5f);
         modalRT.pivot = new Vector2(0.5f, 0.5f);
-        modalRT.sizeDelta = new Vector2(920, 580);
+        modalRT.sizeDelta = new Vector2(940, 580);
 
         Image modalImg = modalGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(modalImg, new Color(0.10f, 0.12f, 0.17f, 0.98f));
@@ -175,7 +182,7 @@ public class LootUI : MonoBehaviour
         RectTransform iconRT = iconGO.GetComponent<RectTransform>();
         iconRT.anchorMin = new Vector2(0, 0.5f);
         iconRT.anchorMax = new Vector2(0, 0.5f);
-        iconRT.anchoredPosition = new Vector2(40, 0);
+        iconRT.anchoredPosition = new Vector2(38, 0);
         iconRT.sizeDelta = new Vector2(48, 48);
 
         Image iconImg = iconGO.GetComponent<Image>();
@@ -188,7 +195,7 @@ public class LootUI : MonoBehaviour
         RectTransform titleRT = titleGO.GetComponent<RectTransform>();
         titleRT.anchorMin = new Vector2(0, 0);
         titleRT.anchorMax = new Vector2(1, 1);
-        titleRT.offsetMin = new Vector2(80, 24);
+        titleRT.offsetMin = new Vector2(76, 24);
         titleRT.offsetMax = new Vector2(-20, -6);
 
         titleText = titleGO.GetComponent<TextMeshProUGUI>();
@@ -205,7 +212,7 @@ public class LootUI : MonoBehaviour
         RectTransform subRT = subGO.GetComponent<RectTransform>();
         subRT.anchorMin = new Vector2(0, 0);
         subRT.anchorMax = new Vector2(1, 1);
-        subRT.offsetMin = new Vector2(80, 4);
+        subRT.offsetMin = new Vector2(76, 4);
         subRT.offsetMax = new Vector2(-20, -32);
 
         subtitleText = subGO.GetComponent<TextMeshProUGUI>();
@@ -215,7 +222,7 @@ public class LootUI : MonoBehaviour
         subtitleText.color = new Color(0.85f, 0.88f, 0.95f);
         subtitleText.alignment = TextAlignmentOptions.MidlineLeft;
 
-        // 4. Body (Two Columns: Loot Left | Backpack Right)
+        // 4. Body (Cân đối 50/50: Cột Trái 48.8% | Khoảng cách giữa 2.4% | Cột Phải 48.8%)
         GameObject bodyGO = new("Body", typeof(RectTransform));
         bodyGO.transform.SetParent(modalGO.transform, false);
         RectTransform bodyRT = bodyGO.GetComponent<RectTransform>();
@@ -224,14 +231,14 @@ public class LootUI : MonoBehaviour
         bodyRT.offsetMin = new Vector2(20, 68);
         bodyRT.offsetMax = new Vector2(-20, -82);
 
-        // --- Left Column: Loot ---
+        // --- Left Column: Loot (48.8% width) ---
         GameObject leftColGO = new("Left_LootColumn", typeof(RectTransform), typeof(Image));
         leftColGO.transform.SetParent(bodyGO.transform, false);
         RectTransform leftColRT = leftColGO.GetComponent<RectTransform>();
         leftColRT.anchorMin = new Vector2(0, 0);
-        leftColRT.anchorMax = new Vector2(0.42f, 1);
+        leftColRT.anchorMax = new Vector2(0.488f, 1);
         leftColRT.offsetMin = Vector2.zero;
-        leftColRT.offsetMax = new Vector2(-6, 0);
+        leftColRT.offsetMax = Vector2.zero;
 
         Image leftBg = leftColGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(leftBg, new Color(0.14f, 0.16f, 0.22f, 0.95f));
@@ -253,13 +260,13 @@ public class LootUI : MonoBehaviour
         leftLabelRT.anchorMax = Vector2.one;
         leftLabelRT.offsetMin = new Vector2(10, 0);
         leftLabelRT.offsetMax = new Vector2(-10, 0);
-        TextMeshProUGUI leftLabel = leftLabelGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(leftLabel);
-        leftLabel.text = "VẬT PHẨM RƠI";
-        leftLabel.fontSize = 12.5f;
-        leftLabel.fontStyle = FontStyles.Bold;
-        leftLabel.color = new Color(1f, 0.85f, 0.35f);
-        leftLabel.alignment = TextAlignmentOptions.MidlineLeft;
+        lootHeaderTitle = leftLabelGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(lootHeaderTitle);
+        lootHeaderTitle.text = "VẬT PHẨM RƠI";
+        lootHeaderTitle.fontSize = 12.5f;
+        lootHeaderTitle.fontStyle = FontStyles.Bold;
+        lootHeaderTitle.color = new Color(1f, 0.85f, 0.35f);
+        lootHeaderTitle.alignment = TextAlignmentOptions.MidlineLeft;
 
         // Left ScrollView
         GameObject leftScrollGO = new("ScrollView", typeof(RectTransform), typeof(ScrollRect), typeof(Image));
@@ -278,7 +285,8 @@ public class LootUI : MonoBehaviour
         RectTransform leftViewRT = leftViewGO.GetComponent<RectTransform>();
         leftViewRT.anchorMin = Vector2.zero;
         leftViewRT.anchorMax = Vector2.one;
-        leftViewRT.sizeDelta = Vector2.zero;
+        leftViewRT.offsetMin = Vector2.zero;
+        leftViewRT.offsetMax = new Vector2(-14, 0);
 
         GameObject leftContentGO = new("Content", typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter));
         leftContentGO.transform.SetParent(leftViewGO.transform, false);
@@ -290,11 +298,11 @@ public class LootUI : MonoBehaviour
         leftContentRT.sizeDelta = new Vector2(0, 300);
 
         GridLayoutGroup leftGrid = leftContentGO.GetComponent<GridLayoutGroup>();
-        leftGrid.cellSize = new Vector2(50, 50);
+        leftGrid.cellSize = new Vector2(54, 54);
         leftGrid.spacing = new Vector2(6, 6);
-        leftGrid.padding = new RectOffset(6, 6, 6, 6);
+        leftGrid.padding = new RectOffset(8, 8, 8, 8);
         leftGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        leftGrid.constraintCount = 5;
+        leftGrid.constraintCount = 6;
 
         ContentSizeFitter leftCsf = leftContentGO.GetComponent<ContentSizeFitter>();
         leftCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -303,14 +311,20 @@ public class LootUI : MonoBehaviour
         lootScrollRect.viewport = leftViewRT;
         lootScrollRect.horizontal = false;
         lootScrollRect.vertical = true;
+        lootScrollRect.scrollSensitivity = 25f;
+        lootScrollRect.movementType = ScrollRect.MovementType.Clamped;
 
-        // --- Right Column: Backpack ---
+        // Scrollbar thanh lịch đồng bộ màu vàng đồng cổ
+        Color themeScrollColor = new(0.75f, 0.60f, 0.30f, 0.95f);
+        DungeonUIAssetHelper.CreateVerticalScrollbar(leftScrollGO.transform, lootScrollRect, themeScrollColor);
+
+        // --- Right Column: Backpack (48.8% width) ---
         GameObject rightColGO = new("Right_BackpackColumn", typeof(RectTransform), typeof(Image));
         rightColGO.transform.SetParent(bodyGO.transform, false);
         RectTransform rightColRT = rightColGO.GetComponent<RectTransform>();
-        rightColRT.anchorMin = new Vector2(0.42f, 0);
+        rightColRT.anchorMin = new Vector2(0.512f, 0);
         rightColRT.anchorMax = new Vector2(1, 1);
-        rightColRT.offsetMin = new Vector2(6, 0);
+        rightColRT.offsetMin = Vector2.zero;
         rightColRT.offsetMax = Vector2.zero;
 
         Image rightBg = rightColGO.GetComponent<Image>();
@@ -358,7 +372,8 @@ public class LootUI : MonoBehaviour
         RectTransform rightViewRT = rightViewGO.GetComponent<RectTransform>();
         rightViewRT.anchorMin = Vector2.zero;
         rightViewRT.anchorMax = Vector2.one;
-        rightViewRT.sizeDelta = Vector2.zero;
+        rightViewRT.offsetMin = Vector2.zero;
+        rightViewRT.offsetMax = new Vector2(-14, 0);
 
         GameObject rightContentGO = new("Content", typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter));
         rightContentGO.transform.SetParent(rightViewGO.transform, false);
@@ -370,9 +385,9 @@ public class LootUI : MonoBehaviour
         rightContentRT.sizeDelta = new Vector2(0, 300);
 
         GridLayoutGroup rightGrid = rightContentGO.GetComponent<GridLayoutGroup>();
-        rightGrid.cellSize = new Vector2(50, 50);
+        rightGrid.cellSize = new Vector2(54, 54);
         rightGrid.spacing = new Vector2(6, 6);
-        rightGrid.padding = new RectOffset(6, 6, 6, 6);
+        rightGrid.padding = new RectOffset(8, 8, 8, 8);
         rightGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         rightGrid.constraintCount = 6;
 
@@ -383,6 +398,10 @@ public class LootUI : MonoBehaviour
         bpScrollRect.viewport = rightViewRT;
         bpScrollRect.horizontal = false;
         bpScrollRect.vertical = true;
+        bpScrollRect.scrollSensitivity = 25f;
+        bpScrollRect.movementType = ScrollRect.MovementType.Clamped;
+
+        DungeonUIAssetHelper.CreateVerticalScrollbar(rightScrollGO.transform, bpScrollRect, themeScrollColor);
 
         // 5. Footer Controls
         GameObject hintGO = new("HintText", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -409,7 +428,8 @@ public class LootUI : MonoBehaviour
         lootAllRT.sizeDelta = new Vector2(145, 38);
 
         lootAllButton = lootAllBtnGO.GetComponent<Button>();
-        DungeonUIAssetHelper.StyleButton(lootAllButton, lootAllBtnGO.GetComponent<Image>(), new Color(0.85f, 0.65f, 0.15f));
+        lootAllBtnImg = lootAllBtnGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleButton(lootAllButton, lootAllBtnImg, new Color(0.85f, 0.65f, 0.15f));
 
         GameObject lootAllTxtGO = new("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         lootAllTxtGO.transform.SetParent(lootAllBtnGO.transform, false);
@@ -417,7 +437,7 @@ public class LootUI : MonoBehaviour
         lootAllTxtRT.anchorMin = Vector2.zero;
         lootAllTxtRT.anchorMax = Vector2.one;
         lootAllTxtRT.sizeDelta = Vector2.zero;
-        TextMeshProUGUI lootAllTxt = lootAllTxtGO.GetComponent<TextMeshProUGUI>();
+        lootAllTxt = lootAllTxtGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(lootAllTxt);
         lootAllTxt.text = "LOOT HẾT";
         lootAllTxt.fontSize = 13f;
@@ -436,7 +456,8 @@ public class LootUI : MonoBehaviour
         contRT.sizeDelta = new Vector2(145, 38);
 
         continueButton = contBtnGO.GetComponent<Button>();
-        DungeonUIAssetHelper.StyleButton(continueButton, contBtnGO.GetComponent<Image>(), new Color(0.18f, 0.55f, 0.28f));
+        contBtnImg = contBtnGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleButton(continueButton, contBtnImg, new Color(0.18f, 0.55f, 0.28f));
 
         GameObject contTxtGO = new("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         contTxtGO.transform.SetParent(contBtnGO.transform, false);
@@ -444,7 +465,7 @@ public class LootUI : MonoBehaviour
         contTxtRT.anchorMin = Vector2.zero;
         contTxtRT.anchorMax = Vector2.one;
         contTxtRT.sizeDelta = Vector2.zero;
-        TextMeshProUGUI contTxt = contTxtGO.GetComponent<TextMeshProUGUI>();
+        contTxt = contTxtGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(contTxt);
         contTxt.text = "TIẾP TỤC [->]";
         contTxt.fontSize = 13f;
@@ -475,15 +496,20 @@ public class LootUI : MonoBehaviour
     {
         EnsureUIBuilt();
 
+        // Ẩn chữ và panel thông báo chiến thắng ở nền sau nếu có để tránh che khuất
+        if (CombatUI.Instance != null)
+        {
+            if (CombatUI.Instance.combatLogText != null) CombatUI.Instance.combatLogText.gameObject.SetActive(false);
+            if (CombatUI.Instance.victoryPanel != null) CombatUI.Instance.victoryPanel.SetActive(false);
+            if (CombatUI.Instance.rewardPanel != null) CombatUI.Instance.rewardPanel.SetActive(false);
+        }
+
         backpackContainer = playerBackpack;
         onLootClosed = onClose;
 
-        // Container cho Loot (15 ô mặc định, 3 hàng x 5 cột)
-        int lootCapacity = 15;
-        if (incomingLoot != null && incomingLoot.Count > lootCapacity)
-        {
-            lootCapacity = Mathf.CeilToInt(incomingLoot.Count / 5f) * 5;
-        }
+        // Tính toán số lượng slot Loot vừa đủ (làm tròn lên bội số của 6 để hàng luôn đầy đủ)
+        int rawLootCount = incomingLoot != null ? incomingLoot.Count : 0;
+        int lootCapacity = Mathf.Max(6, Mathf.CeilToInt(Mathf.Max(1, rawLootCount) / 6f) * 6);
 
         if (lootContainer != null)
         {
@@ -544,8 +570,7 @@ public class LootUI : MonoBehaviour
         {
             if (hintText != null)
             {
-                hintText.text = "Không có vật phẩm mới. Bạn có thể sắp xếp lại ba lô hoặc bấm [TIẾP TỤC].";
-                hintText.color = new Color(0.7f, 0.75f, 0.85f);
+                hintText.text = "<color=#68D391>Không có vật phẩm mới. Bạn có thể sắp xếp lại ba lô hoặc bấm [TIẾP TỤC].</color>";
             }
         }
 
@@ -564,6 +589,11 @@ public class LootUI : MonoBehaviour
     /// </summary>
     public void Close()
     {
+        if (CombatUI.Instance != null && CombatUI.Instance.combatLogText != null)
+        {
+            CombatUI.Instance.combatLogText.gameObject.SetActive(true);
+        }
+
         if (lootContainer != null)
         {
             lootContainer.OnInventoryChange -= RefreshAll;
@@ -645,9 +675,8 @@ public class LootUI : MonoBehaviour
             if (hintText != null)
             {
                 hintText.text = itemsLooted > 0
-                    ? $"Đã gom thành công {itemsLooted} vật phẩm vào Ba Lô! Ấn [TIẾP TỤC] để tiến bước."
-                    : "Đã gom hết đồ. Hãy ấn [TIẾP TỤC]!";
-                hintText.color = new Color(0.4f, 1f, 0.5f);
+                    ? $"<color=#68D391>Đã gom thành công {itemsLooted} vật phẩm vào Ba Lô! Ấn [TIẾP TỤC] để tiến bước.</color>"
+                    : "<color=#68D391>Đã gom hết đồ. Hãy ấn [TIẾP TỤC] để tiến bước!</color>";
             }
         }
     }
@@ -664,7 +693,6 @@ public class LootUI : MonoBehaviour
             slotPrefab = DungeonUIAssetHelper.GetSlotPrefab();
         }
 
-        // Tận dụng các slot con có sẵn
         InventoryButton[] existing = parent.GetComponentsInChildren<InventoryButton>(true);
         slotList.Clear();
 
@@ -692,10 +720,47 @@ public class LootUI : MonoBehaviour
             }
         }
 
-        // Ẩn các slot dư thừa
-        for (int i = container.maxSlots; i < existingCount; i++)
+        // Hoàn thiện hàng cuối cho Ba Lô (33 slot + 3 slot khóa padding = 36 slot, thành lưới 6x6 vuông vức)
+        if (container == backpackContainer && container.maxSlots == 33)
         {
-            existing[i].gameObject.SetActive(false);
+            int neededPadding = 3;
+            for (int p = 0; p < neededPadding; p++)
+            {
+                int padIndex = container.maxSlots + p;
+                InventoryButton padBtn = null;
+                if (padIndex < existingCount)
+                {
+                    padBtn = existing[padIndex];
+                }
+                else if (slotPrefab != null)
+                {
+                    GameObject padObj = Instantiate(slotPrefab, parent);
+                    padObj.name = $"PadSlot_{padIndex}";
+                    padBtn = padObj.GetComponent<InventoryButton>();
+                }
+
+                if (padBtn != null)
+                {
+                    padBtn.gameObject.SetActive(true);
+                    padBtn.ClearItem();
+
+                    Image padImg = padBtn.GetComponent<Image>();
+                    if (padImg != null)
+                    {
+                        padImg.color = new Color(0.12f, 0.15f, 0.22f, 0.45f);
+                    }
+                    Button b = padBtn.GetComponent<Button>();
+                    if (b != null) b.interactable = false;
+                }
+            }
+        }
+        else
+        {
+            // Ẩn các slot dư thừa
+            for (int i = container.maxSlots; i < existingCount; i++)
+            {
+                existing[i].gameObject.SetActive(false);
+            }
         }
     }
 
@@ -704,6 +769,8 @@ public class LootUI : MonoBehaviour
         RefreshPanel(lootButtons, lootContainer);
         RefreshPanel(backpackButtons, backpackContainer);
         UpdateBackpackTitle();
+        UpdateLootHeader();
+        UpdateControlsState();
     }
 
     private void UpdateBackpackTitle()
@@ -718,6 +785,62 @@ public class LootUI : MonoBehaviour
             }
         }
         backpackHeaderTitle.text = $"BA LÔ CỦA BẠN ({filled}/{backpackContainer.maxSlots})";
+    }
+
+    private void UpdateLootHeader()
+    {
+        if (lootHeaderTitle != null)
+        {
+            lootHeaderTitle.text = "VẬT PHẨM RƠI";
+        }
+
+        if (lootSlotsParent != null)
+        {
+            lootSlotsParent.gameObject.SetActive(true);
+        }
+    }
+
+    private void UpdateControlsState()
+    {
+        int remainingCount = 0;
+        if (lootContainer != null)
+        {
+            for (int i = 0; i < lootContainer.itemSlots.Length; i++)
+            {
+                var s = lootContainer.itemSlots[i];
+                if (s != null && s.itemData != null && s.amount > 0)
+                    remainingCount++;
+            }
+        }
+
+        bool hasLoot = remainingCount > 0;
+        if (lootAllButton != null)
+        {
+            lootAllButton.interactable = hasLoot;
+            if (lootAllBtnImg != null)
+            {
+                lootAllBtnImg.color = hasLoot
+                    ? new Color(0.85f, 0.65f, 0.15f, 1f)
+                    : new Color(0.40f, 0.32f, 0.18f, 0.65f);
+            }
+            if (lootAllTxt != null)
+            {
+                lootAllTxt.text = "LOOT HẾT";
+                lootAllTxt.color = hasLoot ? Color.white : new Color(0.7f, 0.7f, 0.7f);
+            }
+        }
+
+        if (continueButton != null)
+        {
+            if (contBtnImg != null)
+            {
+                contBtnImg.color = new Color(0.18f, 0.48f, 0.28f, 1f);
+            }
+            if (contTxt != null)
+            {
+                contTxt.text = "TIẾP TỤC [->]";
+            }
+        }
     }
 
     private void RefreshPanel(List<InventoryButton> buttons, ItemContainer container)

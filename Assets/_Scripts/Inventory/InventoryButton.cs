@@ -8,10 +8,12 @@ public class InventoryButton : MonoBehaviour,
     IBeginDragHandler,
     IDragHandler,
     IEndDragHandler,
-    IDropHandler
+    IDropHandler,
+    IPointerClickHandler
 {
     [SerializeField] private Image itemIcon;
     [SerializeField] private TextMeshProUGUI itemAmount;
+    [SerializeField] private Image slotBackground;
 
     public ItemData currentItem;
     public static ItemData selectedItem;
@@ -23,6 +25,8 @@ public class InventoryButton : MonoBehaviour,
 
     private GameObject dragIcon;
     private Canvas canvas;
+    private Color defaultBgColor = Color.white;
+    private bool defaultColorSaved = false;
 
     // Accessible externally (ChestUI uses container/index for cross-container drops)
     public ItemContainer SlotContainer => itemContainer;
@@ -30,16 +34,44 @@ public class InventoryButton : MonoBehaviour,
 
     private void Awake()
     {
-        if (itemIcon == null)
-        {
-            Transform iconT = transform.Find("Icon") ?? transform.Find("ItemIcon") ?? transform.Find("Image");
-            if (iconT != null) itemIcon = iconT.GetComponent<Image>();
-        }
+        EnsureIcon();
         if (itemAmount == null)
         {
             itemAmount = GetComponentInChildren<TextMeshProUGUI>(true);
         }
+        if (slotBackground == null)
+        {
+            slotBackground = GetComponent<Image>();
+        }
+        if (slotBackground != null && !defaultColorSaved)
+        {
+            defaultBgColor = slotBackground.color;
+            defaultColorSaved = true;
+        }
+
+        Button btn = GetComponent<Button>();
+        if (btn != null)
+        {
+            btn.onClick.RemoveListener(SelectItem);
+            btn.onClick.AddListener(SelectItem);
+        }
+
         FixTextLayout();
+    }
+
+    private void OnEnable()
+    {
+        OnItemSelected += HandleItemSelected;
+        UpdateHighlight();
+    }
+
+    private void EnsureIcon()
+    {
+        if (itemIcon != null) return;
+        Transform iconT = transform.Find("Icon");
+        if (iconT == null) iconT = transform.Find("ItemIcon");
+        if (iconT == null) iconT = transform.Find("Image");
+        if (iconT != null) itemIcon = iconT.GetComponent<Image>();
     }
 
     private void FixTextLayout()
@@ -71,9 +103,39 @@ public class InventoryButton : MonoBehaviour,
 
     private void OnDisable()
     {
+        OnItemSelected -= HandleItemSelected;
         if (dragIcon != null)
         {
             Destroy(dragIcon);
+        }
+    }
+
+    private void HandleItemSelected(ItemData selected)
+    {
+        UpdateHighlight();
+    }
+
+    public void UpdateHighlight()
+    {
+        if (slotBackground == null) slotBackground = GetComponent<Image>();
+        if (slotBackground == null) return;
+        if (!defaultColorSaved)
+        {
+            defaultBgColor = slotBackground.color;
+            defaultColorSaved = true;
+        }
+
+        bool isSelected = (selectedItem != null && currentItem != null && ItemContainer.IsItemMatch(selectedItem, currentItem));
+        Sprite slotSprite = isSelected ? DungeonUIAssetHelper.GetSelectedSlotSprite() : DungeonUIAssetHelper.GetCozySlotSprite();
+        if (slotSprite != null)
+        {
+            slotBackground.sprite = slotSprite;
+            slotBackground.type = Image.Type.Sliced;
+            slotBackground.color = Color.white;
+        }
+        else
+        {
+            slotBackground.color = isSelected ? new Color(1f, 0.85f, 0.35f, 1f) : defaultBgColor;
         }
     }
 
@@ -88,11 +150,7 @@ public class InventoryButton : MonoBehaviour,
     {
         currentItem = itemData;
 
-        if (itemIcon == null)
-        {
-            Transform iconT = transform.Find("Icon") ?? transform.Find("ItemIcon") ?? transform.Find("Image");
-            if (iconT != null) itemIcon = iconT.GetComponent<Image>();
-        }
+        EnsureIcon();
 
         if (itemAmount == null)
         {
@@ -118,6 +176,8 @@ public class InventoryButton : MonoBehaviour,
                 itemAmount.gameObject.SetActive(false);
             }
         }
+
+        UpdateHighlight();
     }
 
     public void ClearItem()
@@ -134,14 +194,40 @@ public class InventoryButton : MonoBehaviour,
         {
             itemAmount.gameObject.SetActive(false);
         }
+
+        UpdateHighlight();
     }
 
     public void SelectItem()
     {
         if (currentItem != null)
         {
-            selectedItem = currentItem;
-            OnItemSelected?.Invoke(currentItem);
+            if (selectedItem != null && ItemContainer.IsItemMatch(selectedItem, currentItem))
+            {
+                // Bấm lại vào ô đang chọn -> hủy chọn
+                selectedItem = null;
+                OnItemSelected?.Invoke(null);
+            }
+            else
+            {
+                selectedItem = currentItem;
+                OnItemSelected?.Invoke(currentItem);
+            }
+        }
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (eventData.button == PointerEventData.InputButton.Left)
+        {
+            SelectItem();
+        }
+        else if (eventData.button == PointerEventData.InputButton.Right)
+        {
+            if (ChestUI.Instance != null && ChestUI.Instance.IsOpen && itemContainer != null)
+            {
+                ChestUI.QuickTransfer(itemContainer, slotIndex);
+            }
         }
     }
 

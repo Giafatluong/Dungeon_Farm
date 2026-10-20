@@ -50,6 +50,7 @@ public class CombatUI : MonoBehaviour
     [Header("Food Selection Panel")]
     public GameObject foodPanel;
     public Transform foodListContainer;
+    public ScrollRect foodScrollRect;
     public GameObject foodItemPrefab;
     public Button closeFoodPanelButton;
     public TextMeshProUGUI noFoodText;
@@ -88,12 +89,81 @@ public class CombatUI : MonoBehaviour
         BindButtons();
         SubscribeEvents();
 
+        EnsureFoodPanelScrollRect();
         if (foodPanel != null) foodPanel.SetActive(false);
         if (victoryPanel != null) victoryPanel.SetActive(false);
         if (defeatPanel != null) defeatPanel.SetActive(false);
         if (rewardPanel != null) rewardPanel.SetActive(false);
 
+        ApplyFigmaGOTYStyling();
         RefreshAll();
+    }
+
+    private void ApplyFigmaGOTYStyling()
+    {
+        // 1. Action Buttons
+        if (attackButton != null)
+            DungeonUIAssetHelper.StyleTactileButton(attackButton, attackButton.GetComponent<Image>(), DungeonUIAssetHelper.ButtonStyle.Attack);
+        if (defendButton != null)
+            DungeonUIAssetHelper.StyleTactileButton(defendButton, defendButton.GetComponent<Image>(), DungeonUIAssetHelper.ButtonStyle.Defend);
+        if (eatButton != null)
+            DungeonUIAssetHelper.StyleTactileButton(eatButton, eatButton.GetComponent<Image>(), DungeonUIAssetHelper.ButtonStyle.Eat);
+        if (endTurnButton != null)
+            DungeonUIAssetHelper.StyleTactileButton(endTurnButton, endTurnButton.GetComponent<Image>(), DungeonUIAssetHelper.ButtonStyle.EndTurn);
+
+        // 2. Secondary & Flow Buttons
+        if (closeFoodPanelButton != null)
+            DungeonUIAssetHelper.StyleTactileButton(closeFoodPanelButton, closeFoodPanelButton.GetComponent<Image>(), DungeonUIAssetHelper.ButtonStyle.WoodRustic);
+        if (victoryReturnButton != null)
+            DungeonUIAssetHelper.StyleTactileButton(victoryReturnButton, victoryReturnButton.GetComponent<Image>(), DungeonUIAssetHelper.ButtonStyle.Victory);
+        if (defeatReturnButton != null)
+            DungeonUIAssetHelper.StyleTactileButton(defeatReturnButton, defeatReturnButton.GetComponent<Image>(), DungeonUIAssetHelper.ButtonStyle.WoodRustic);
+        if (rewardClaimButton != null)
+            DungeonUIAssetHelper.StyleTactileButton(rewardClaimButton, rewardClaimButton.GetComponent<Image>(), DungeonUIAssetHelper.ButtonStyle.PrimaryCook);
+
+        // 3. Status Bar Fills
+        if (hpFillImage != null)
+        {
+            Sprite hpSprite = DungeonUIAssetHelper.GetHpFillSprite();
+            if (hpSprite != null) { hpFillImage.sprite = hpSprite; hpFillImage.type = Image.Type.Sliced; hpFillImage.color = Color.white; }
+        }
+        if (hungerFillImage != null)
+        {
+            Sprite hungerSprite = DungeonUIAssetHelper.GetHungerFillSprite();
+            if (hungerSprite != null) { hungerFillImage.sprite = hungerSprite; hungerFillImage.type = Image.Type.Sliced; hungerFillImage.color = Color.white; }
+        }
+        if (targetHpFill != null)
+        {
+            Sprite hpSprite = DungeonUIAssetHelper.GetHpFillSprite();
+            if (hpSprite != null) { targetHpFill.sprite = hpSprite; targetHpFill.type = Image.Type.Sliced; targetHpFill.color = Color.white; }
+        }
+
+        // 4. Modals & Panels
+        if (targetInfoPanel != null)
+        {
+            Image panelImg = targetInfoPanel.GetComponent<Image>();
+            if (panelImg != null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
+        }
+        if (foodPanel != null)
+        {
+            Image panelImg = foodPanel.GetComponent<Image>();
+            if (panelImg != null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
+        }
+        if (victoryPanel != null)
+        {
+            Image panelImg = victoryPanel.GetComponent<Image>();
+            if (panelImg != null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
+        }
+        if (defeatPanel != null)
+        {
+            Image panelImg = defeatPanel.GetComponent<Image>();
+            if (panelImg != null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
+        }
+        if (rewardPanel != null)
+        {
+            Image panelImg = rewardPanel.GetComponent<Image>();
+            if (panelImg != null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
+        }
     }
 
     private void OnDestroy()
@@ -261,7 +331,34 @@ public class CombatUI : MonoBehaviour
             }
         }
 
-        bool canUseShortcuts = combatManager != null && combatManager.isCombatActive && !combatManager.isPreparingCombat && combatManager.currentTurn == CombatManager.Turn.Player && playerStats != null && playerStats.currentHealth > 0 && !combatManager.isPlayerActing;
+        bool isAtEntrance = waveManager != null && waveManager.isAtEntrance;
+        bool isPlayerAlive = playerStats != null && playerStats.currentHealth > 0;
+        bool isActing = combatManager != null && combatManager.isPlayerActing;
+
+        // Allow toggling food panel at dungeon entrance or during player turn
+        if ((isAtEntrance || (combatManager != null && combatManager.isCombatActive && !combatManager.isPreparingCombat && combatManager.currentTurn == CombatManager.Turn.Player))
+            && isPlayerAlive && !isActing)
+        {
+            if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3))
+            {
+                OnEatClicked();
+                return;
+            }
+        }
+
+        // Close food panel on Escape
+        if (foodPanel != null && foodPanel.activeSelf)
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                foodPanel.SetActive(false);
+                return;
+            }
+            // Do not trigger attack/defend/end turn while browsing food
+            return;
+        }
+
+        bool canUseShortcuts = combatManager != null && combatManager.isCombatActive && !combatManager.isPreparingCombat && combatManager.currentTurn == CombatManager.Turn.Player && isPlayerAlive && !isActing;
         if (!canUseShortcuts) return;
 
         if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
@@ -271,10 +368,6 @@ public class CombatUI : MonoBehaviour
         else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2))
         {
             OnDefendClicked();
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3))
-        {
-            OnEatClicked();
         }
         else if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return))
         {
@@ -364,6 +457,7 @@ public class CombatUI : MonoBehaviour
     private bool? cachedHasAP = null;
     private bool? cachedIsAlive = null;
     private bool? cachedIsActing = null;
+    private bool? cachedCanFreeEat = null;
 
     public void InvalidateHUDCache()
     {
@@ -376,6 +470,7 @@ public class CombatUI : MonoBehaviour
         cachedHasAP = null;
         cachedIsAlive = null;
         cachedIsActing = null;
+        cachedCanFreeEat = null;
     }
 
     public void RefreshAll()
@@ -506,20 +601,24 @@ public class CombatUI : MonoBehaviour
         bool hasAP = playerStats.currentAP > 0;
         bool isAlive = playerStats.currentHealth > 0;
         bool isActing = combatManager.isPlayerActing;
+        bool canFreeEat = isPlayerTurn && combatManager.CanPlayerEatFree();
 
-        if (isPlayerTurn == cachedIsPlayerTurn && hasAP == cachedHasAP && isAlive == cachedIsAlive && isActing == cachedIsActing)
+        if (isPlayerTurn == cachedIsPlayerTurn && hasAP == cachedHasAP && isAlive == cachedIsAlive && isActing == cachedIsActing && canFreeEat == cachedCanFreeEat)
             return;
 
         cachedIsPlayerTurn = isPlayerTurn;
         cachedHasAP = hasAP;
         cachedIsAlive = isAlive;
         cachedIsActing = isActing;
+        cachedCanFreeEat = canFreeEat;
 
         bool isAtEntrance = waveManager != null && waveManager.isAtEntrance;
         bool canAct = isPlayerTurn && hasAP && isAlive && !isActing;
+        bool canEat = isAlive && !isActing && (canAct || (isPlayerTurn && canFreeEat) || isAtEntrance);
+
         if (attackButton != null) attackButton.interactable = canAct;
         if (defendButton != null) defendButton.interactable = canAct;
-        if (eatButton != null) eatButton.interactable = canAct || (isAtEntrance && isAlive && !isActing);
+        if (eatButton != null) eatButton.interactable = canEat;
         if (endTurnButton != null) endTurnButton.interactable = isPlayerTurn && isAlive && !isActing;
     }
 
@@ -542,9 +641,9 @@ public class CombatUI : MonoBehaviour
 
             if (turnBannerBg != null)
             {
-                turnBannerBg.color = combatManager.isAmbushCurrent
-                    ? new Color(0.6f, 0.15f, 0.05f, 0.85f)
-                    : new Color(0.5f, 0.35f, 0.05f, 0.85f);
+                DungeonUIAssetHelper.StylePlaque(turnBannerBg, combatManager.isAmbushCurrent
+                    ? DungeonUIAssetHelper.PlaqueStyle.Defeat
+                    : DungeonUIAssetHelper.PlaqueStyle.Gold);
             }
             return;
         }
@@ -561,7 +660,7 @@ public class CombatUI : MonoBehaviour
                 }
                 if (turnBannerBg != null)
                 {
-                    turnBannerBg.color = new Color(0.12f, 0.20f, 0.32f, 0.90f);
+                    DungeonUIAssetHelper.StylePlaque(turnBannerBg, DungeonUIAssetHelper.PlaqueStyle.Gold);
                 }
                 return;
             }
@@ -575,7 +674,7 @@ public class CombatUI : MonoBehaviour
                 }
                 if (turnBannerBg != null)
                 {
-                    turnBannerBg.color = new Color(0.35f, 0.22f, 0.08f, 0.9f);
+                    DungeonUIAssetHelper.StylePlaque(turnBannerBg, DungeonUIAssetHelper.PlaqueStyle.Wood);
                 }
                 return;
             }
@@ -587,7 +686,7 @@ public class CombatUI : MonoBehaviour
             }
             if (turnBannerBg != null)
             {
-                turnBannerBg.color = new Color(0.1f, 0.3f, 0.2f, 0.7f);
+                DungeonUIAssetHelper.StylePlaque(turnBannerBg, DungeonUIAssetHelper.PlaqueStyle.Victory);
             }
             return;
         }
@@ -596,12 +695,14 @@ public class CombatUI : MonoBehaviour
         if (turnBannerText != null)
         {
             turnBannerText.text = isPlayer ? "YOUR TURN (PLAYER TURN)" : "ENEMY TURN";
-            turnBannerText.color = isPlayer ? new Color(0.2f, 0.9f, 1f) : new Color(1f, 0.3f, 0.3f);
+            turnBannerText.color = isPlayer ? new Color(1f, 0.95f, 0.45f) : new Color(1f, 0.4f, 0.4f);
         }
 
         if (turnBannerBg != null)
         {
-            turnBannerBg.color = isPlayer ? new Color(0.1f, 0.3f, 0.5f, 0.85f) : new Color(0.5f, 0.1f, 0.1f, 0.85f);
+            DungeonUIAssetHelper.StylePlaque(turnBannerBg, isPlayer
+                ? DungeonUIAssetHelper.PlaqueStyle.Gold
+                : DungeonUIAssetHelper.PlaqueStyle.Defeat);
         }
     }
 
@@ -640,17 +741,25 @@ public class CombatUI : MonoBehaviour
 
         if (targetNameText != null)
         {
-            targetNameText.text = $"TARGET: {enemy.enemyData.enemyName}";
+            if (enemy is Boss boss)
+            {
+                targetNameText.text = $"TARGET: <color=#FF5533>[BOSS]</color> {boss.bossName} (Phase {boss.GetCurrentPhase()})";
+            }
+            else
+            {
+                targetNameText.text = $"TARGET: {enemy.enemyData?.enemyName ?? "Enemy"}";
+            }
         }
 
+        int maxHp = enemy.enemyData != null ? enemy.enemyData.maxHealth : 1;
         if (targetHpFill != null)
         {
-            targetHpFill.fillAmount = enemy.enemyData.maxHealth > 0 ? (float)enemy.currentHealth / enemy.enemyData.maxHealth : 0f;
+            targetHpFill.fillAmount = maxHp > 0 ? (float)enemy.currentHealth / maxHp : 0f;
         }
 
         if (targetHpText != null)
         {
-            targetHpText.text = $"HP: {enemy.currentHealth} / {enemy.enemyData.maxHealth}";
+            targetHpText.text = $"HP: {enemy.currentHealth} / {maxHp}";
         }
 
         if (targetIntentText != null)
@@ -816,8 +925,97 @@ public class CombatUI : MonoBehaviour
     #endregion
 
     #region Food Selection Panel
+    private void EnsureFoodPanelScrollRect()
+    {
+        if (foodListContainer == null) return;
+
+        if (foodScrollRect != null && foodScrollRect.verticalScrollbar != null)
+        {
+            return;
+        }
+
+        foodScrollRect = foodListContainer.GetComponentInParent<ScrollRect>();
+        if (foodScrollRect != null)
+        {
+            if (foodScrollRect.verticalScrollbar == null)
+            {
+                DungeonUIAssetHelper.CreateVerticalScrollbar(foodScrollRect.transform, foodScrollRect, new Color(0.85f, 0.65f, 0.2f, 1f));
+            }
+            return;
+        }
+
+        // Tự động bao bọc foodListContainer vào một ScrollView chuẩn với Mask và thanh slider dọc
+        Transform origParent = foodListContainer.parent;
+        int siblingIdx = foodListContainer.GetSiblingIndex();
+
+        GameObject scrollGO = new("FoodScrollView", typeof(RectTransform), typeof(ScrollRect));
+        scrollGO.transform.SetParent(origParent, false);
+        scrollGO.transform.SetSiblingIndex(siblingIdx);
+
+        RectTransform origRT = foodListContainer.GetComponent<RectTransform>();
+        RectTransform scrollRT = scrollGO.GetComponent<RectTransform>();
+        if (origRT != null)
+        {
+            scrollRT.anchorMin = origRT.anchorMin;
+            scrollRT.anchorMax = origRT.anchorMax;
+            scrollRT.pivot = origRT.pivot;
+            scrollRT.anchoredPosition = origRT.anchoredPosition;
+            scrollRT.sizeDelta = origRT.sizeDelta;
+        }
+        else
+        {
+            scrollRT.anchorMin = new Vector2(0.05f, 0.18f);
+            scrollRT.anchorMax = new Vector2(0.95f, 0.84f);
+            scrollRT.sizeDelta = Vector2.zero;
+        }
+
+        foodScrollRect = scrollGO.GetComponent<ScrollRect>();
+        foodScrollRect.horizontal = false;
+        foodScrollRect.vertical = true;
+        foodScrollRect.scrollSensitivity = 25f;
+        foodScrollRect.movementType = ScrollRect.MovementType.Clamped;
+
+        GameObject vpGO = new("Viewport", typeof(RectTransform), typeof(RectMask2D));
+        vpGO.transform.SetParent(scrollGO.transform, false);
+        RectTransform vpRT = vpGO.GetComponent<RectTransform>();
+        vpRT.anchorMin = Vector2.zero;
+        vpRT.anchorMax = Vector2.one;
+        vpRT.offsetMin = Vector2.zero;
+        vpRT.offsetMax = new Vector2(-16, 0); // Dành 16px cho thanh slider dọc bên phải
+
+        foodListContainer.SetParent(vpGO.transform, false);
+        if (origRT != null)
+        {
+            origRT.anchorMin = new Vector2(0, 1);
+            origRT.anchorMax = new Vector2(1, 1);
+            origRT.pivot = new Vector2(0.5f, 1);
+            origRT.anchoredPosition = Vector2.zero;
+            origRT.sizeDelta = new Vector2(0, 0);
+        }
+
+        VerticalLayoutGroup vlg = foodListContainer.GetComponent<VerticalLayoutGroup>();
+        if (vlg == null) vlg = foodListContainer.gameObject.AddComponent<VerticalLayoutGroup>();
+        vlg.childControlWidth = true;
+        vlg.childControlHeight = false;
+        vlg.childForceExpandWidth = true;
+        vlg.childForceExpandHeight = false;
+        vlg.spacing = 6;
+        vlg.padding = new RectOffset(4, 4, 4, 4);
+
+        ContentSizeFitter csf = foodListContainer.GetComponent<ContentSizeFitter>();
+        if (csf == null) csf = foodListContainer.gameObject.AddComponent<ContentSizeFitter>();
+        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        foodScrollRect.viewport = vpRT;
+        foodScrollRect.content = origRT;
+
+        // Tạo thanh slider dọc với màu hoàng kim sang trọng
+        DungeonUIAssetHelper.CreateVerticalScrollbar(scrollGO.transform, foodScrollRect, new Color(0.85f, 0.65f, 0.2f, 1f));
+    }
+
     public void PopulateFoodPanel()
     {
+        EnsureFoodPanelScrollRect();
         if (foodListContainer == null) return;
 
         for (int i = 0; i < activeFoodButtons.Count; i++)
@@ -829,21 +1027,38 @@ public class CombatUI : MonoBehaviour
         }
         activeFoodButtons.Clear();
 
-        if (playerStats == null || playerStats.itemContainer == null)
+        if (playerStats == null) FindReferences();
+        if (playerStats != null && playerStats.itemContainer == null)
+        {
+            playerStats.ResolveItemContainer();
+        }
+
+        ItemContainer inventory = playerStats != null ? playerStats.itemContainer : null;
+        if (inventory == null)
+        {
+            InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+            if (invPanel != null && invPanel.ItemContainer != null) inventory = invPanel.ItemContainer;
+        }
+
+        if (inventory == null)
         {
             if (noFoodText != null) noFoodText.gameObject.SetActive(true);
             return;
         }
 
-        ItemContainer inventory = playerStats.itemContainer;
         List<ItemSlot> foodSlots = new();
 
         for (int i = 0; i < inventory.itemSlots.Length; i++)
         {
             ItemSlot slot = inventory.itemSlots[i];
-            if (slot != null && slot.itemData is FoodData && slot.amount > 0)
+            if (slot != null && slot.itemData != null && slot.amount > 0)
             {
-                foodSlots.Add(slot);
+                if (slot.itemData is FoodData || 
+                    slot.itemData.itemType == ItemData.ItemType.Food || 
+                    slot.itemData.itemType == ItemData.ItemType.Produce)
+                {
+                    foodSlots.Add(slot);
+                }
             }
         }
 
@@ -852,7 +1067,7 @@ public class CombatUI : MonoBehaviour
             if (noFoodText != null)
             {
                 noFoodText.gameObject.SetActive(true);
-                noFoodText.text = "No food in backpack!\n(Cook meals before entering Dungeon)";
+                noFoodText.text = "Không có đồ ăn hoặc nông sản trong túi!";
             }
             return;
         }
@@ -862,14 +1077,13 @@ public class CombatUI : MonoBehaviour
         for (int i = 0; i < foodSlots.Count; i++)
         {
             ItemSlot slot = foodSlots[i];
-            FoodData food = slot.itemData as FoodData;
+            ItemData food = slot.itemData;
             int count = slot.amount;
 
             GameObject rowGO = null;
             if (foodItemPrefab != null)
             {
                 rowGO = Instantiate(foodItemPrefab, foodListContainer);
-                // Bạn có thể gắn script riêng lên Prefab hoặc lấy Button trực tiếp
                 Button btn = rowGO.GetComponentInChildren<Button>();
                 if (btn != null)
                 {
@@ -879,10 +1093,14 @@ public class CombatUI : MonoBehaviour
                         {
                             combatManager.PlayerEat(food);
                             RefreshAll();
-                            if (foodPanel != null) foodPanel.SetActive(false);
+                            PopulateFoodPanel();
                         }
                     });
                 }
+            }
+            else
+            {
+                rowGO = CreateCombatFoodCard(food, count);
             }
 
             if (rowGO != null)
@@ -890,6 +1108,114 @@ public class CombatUI : MonoBehaviour
                 activeFoodButtons.Add(rowGO);
             }
         }
+
+        if (foodScrollRect != null)
+        {
+            foodScrollRect.verticalNormalizedPosition = 1f;
+        }
+    }
+
+    private GameObject CreateCombatFoodCard(ItemData food, int count)
+    {
+        if (food == null || foodListContainer == null) return null;
+
+        GameObject row = new GameObject($"Food_{food.itemName}", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+        row.transform.SetParent(foodListContainer, false);
+        RectTransform rt = row.GetComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(380, 52);
+
+        LayoutElement le = row.GetComponent<LayoutElement>();
+        le.minHeight = 52;
+        le.preferredHeight = 52;
+        le.flexibleWidth = 1;
+
+        Image bg = row.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.14f, 0.17f, 0.24f, 0.95f));
+
+        // Icon
+        if (food.itemIcon != null)
+        {
+            GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+            iconGO.transform.SetParent(row.transform, false);
+            RectTransform iconRT = iconGO.GetComponent<RectTransform>();
+            iconRT.anchorMin = new Vector2(0, 0.5f);
+            iconRT.anchorMax = new Vector2(0, 0.5f);
+            iconRT.pivot = new Vector2(0, 0.5f);
+            iconRT.anchoredPosition = new Vector2(10, 0);
+            iconRT.sizeDelta = new Vector2(36, 36);
+            Image iconImg = iconGO.GetComponent<Image>();
+            iconImg.sprite = food.itemIcon;
+            iconImg.preserveAspect = true;
+        }
+
+        // Label Info
+        GameObject labelGO = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+        labelGO.transform.SetParent(row.transform, false);
+        RectTransform labelRT = labelGO.GetComponent<RectTransform>();
+        labelRT.anchorMin = new Vector2(0, 0);
+        labelRT.anchorMax = new Vector2(1, 1);
+        labelRT.offsetMin = new Vector2(52, 4);
+        labelRT.offsetMax = new Vector2(-90, -4);
+        TextMeshProUGUI label = labelGO.GetComponent<TextMeshProUGUI>();
+        label.fontSize = 12;
+        label.color = Color.white;
+        label.alignment = TextAlignmentOptions.MidlineLeft;
+
+        string statInfo;
+        bool hasRawVitality = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.RawVitality);
+        if (food is FoodData fd)
+        {
+            statInfo = $"<color=#66FF66>+{fd.healthValue} HP</color> | <color=#FFAA33>+{fd.hungerValue} No</color>";
+        }
+        else
+        {
+            int hp = hasRawVitality ? 12 : 6;
+            int hunger = hasRawVitality ? 20 : 15;
+            string bonus = hasRawVitality ? " (Cường Tráng)" : " (Nông sản)";
+            statInfo = $"<color=#66FF66>+{hp} HP</color> | <color=#FFAA33>+{hunger} No</color>{bonus}";
+        }
+        label.text = $"<b>{food.itemName}</b> x{count}\n<size=10>{statInfo}</size>";
+
+        // Eat Button
+        GameObject btnGO = new GameObject("EatBtn", typeof(RectTransform), typeof(Image), typeof(Button));
+        btnGO.transform.SetParent(row.transform, false);
+        RectTransform btnRT = btnGO.GetComponent<RectTransform>();
+        btnRT.anchorMin = new Vector2(1, 0.5f);
+        btnRT.anchorMax = new Vector2(1, 0.5f);
+        btnRT.pivot = new Vector2(1, 0.5f);
+        btnRT.anchoredPosition = new Vector2(-8, 0);
+        btnRT.sizeDelta = new Vector2(75, 34);
+
+        Image btnBg = btnGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(btnBg, new Color(0.2f, 0.55f, 0.28f, 1f));
+
+        Button btn = btnGO.GetComponent<Button>();
+        btn.targetGraphic = btnBg;
+        btn.onClick.AddListener(() =>
+        {
+            if (combatManager != null && !combatManager.isPlayerActing)
+            {
+                combatManager.PlayerEat(food);
+                RefreshAll();
+                PopulateFoodPanel();
+            }
+        });
+
+        GameObject btnTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        btnTextGO.transform.SetParent(btnGO.transform, false);
+        RectTransform btnTextRT = btnTextGO.GetComponent<RectTransform>();
+        btnTextRT.anchorMin = Vector2.zero;
+        btnTextRT.anchorMax = Vector2.one;
+        btnTextRT.offsetMin = Vector2.zero;
+        btnTextRT.offsetMax = Vector2.zero;
+        TextMeshProUGUI btnText = btnTextGO.GetComponent<TextMeshProUGUI>();
+        btnText.text = "ĂN";
+        btnText.fontSize = 13;
+        btnText.fontStyle = FontStyles.Bold;
+        btnText.color = Color.white;
+        btnText.alignment = TextAlignmentOptions.Center;
+
+        return row;
     }
     #endregion
 
@@ -934,6 +1260,30 @@ public class CombatUI : MonoBehaviour
 
     public void OnReturnToBaseClicked()
     {
+        DungeonSummaryUI summary = DungeonSummaryUI.EnsureInstance();
+        if (summary != null)
+        {
+            summary.Show(DungeonSummaryUI.ExpeditionResult.Victory, PerformReturnToBase);
+            return;
+        }
+
+        PerformReturnToBase();
+    }
+
+    public void OnReturnToBaseAfterDefeatClicked()
+    {
+        DungeonSummaryUI summary = DungeonSummaryUI.EnsureInstance();
+        if (summary != null)
+        {
+            summary.Show(DungeonSummaryUI.ExpeditionResult.Defeat, PerformReturnToBase);
+            return;
+        }
+
+        PerformReturnToBase();
+    }
+
+    private void PerformReturnToBase()
+    {
         if (SceneTransitionManager.Instance != null)
         {
             SceneTransitionManager.Instance.LoadBase();
@@ -942,11 +1292,6 @@ public class CombatUI : MonoBehaviour
         {
             UnityEngine.SceneManagement.SceneManager.LoadScene("Base");
         }
-    }
-
-    public void OnReturnToBaseAfterDefeatClicked()
-    {
-        OnReturnToBaseClicked();
     }
 
     public void ShowRewardScreen(string rewardDesc)

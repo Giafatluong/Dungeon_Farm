@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c63989b7d70655d4eb98239d5836f0e2, type: 3}
   m_Name: Spicy tomato cabbage carrot
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
-  recipeName: 
+  recipeName: "Canh Th\u1EADp C\u1EA9m Cay (Spicy Mixed Soup)"
   ingredients:
   - item: {fileID: 11400000, guid: 3df971529d87e11458e9cca160be2dad, type: 2}
     amount: 1
