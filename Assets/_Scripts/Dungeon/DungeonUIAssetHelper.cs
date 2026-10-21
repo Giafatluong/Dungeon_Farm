@@ -376,7 +376,7 @@ public static class DungeonUIAssetHelper
     }
 
     /// <summary>
-    /// Tìm Canvas chính trên màn hình (Screen Space Overlay / Camera) thay vì nhầm lẫn sang World Space Canvas (như HealthBarCanvas).
+    /// Finds the main screen-space Canvas (Screen Space Overlay / Camera) rather than confusing it with World Space Canvases (e.g. HealthBarCanvas).
     /// </summary>
     public static Canvas GetMainScreenCanvas()
     {
@@ -395,7 +395,7 @@ public static class DungeonUIAssetHelper
     }
 
     /// <summary>
-    /// Tạo thanh cuộn slider dọc cho ScrollRect.
+    /// Creates a vertical scrollbar slider for a ScrollRect.
     /// </summary>
     public static Scrollbar CreateVerticalScrollbar(Transform parent, ScrollRect scrollRect, Color handleColor, float width = 12f)
     {

@@ -53,7 +53,7 @@ public class DungeonEntranceArrowUI : MonoBehaviour
         }
         Instance = this;
 
-        // Gán containerRT để animation bounce trong Update() hoạt động
+        // Assign containerRT so bounce animation in Update() works
         if (container != null)
         {
             containerRT = container.GetComponent<RectTransform>();
@@ -105,12 +105,12 @@ public class DungeonEntranceArrowUI : MonoBehaviour
 
         if (titleText != null)
         {
-            titleText.text = "TIẾN LÊN";
+            titleText.text = "PROCEED";
         }
 
         if (hintText != null)
         {
-            hintText.text = totalStages > 0 ? $"Vào Ải 1/{totalStages} [->]" : "Vào Ải 1 [Space / ->]";
+            hintText.text = totalStages > 0 ? $"Enter Stage 1/{totalStages} [->]" : "Enter Stage 1 [Space / ->]";
         }
 
         if (container != null)
@@ -167,8 +167,8 @@ public class DungeonEntranceArrowUI : MonoBehaviour
         arrowRT.anchoredPosition = new Vector2(-12f, 0f);
 
         arrowTMP = arrowGO.GetComponent<TextMeshProUGUI>();
-        arrowTMP.text = "➔";
-        arrowTMP.fontSize = 36f;
+        arrowTMP.text = "->";
+        arrowTMP.fontSize = 32f;
         arrowTMP.alignment = TextAlignmentOptions.Center;
         arrowTMP.color = new Color(1f, 0.85f, 0.25f);
         arrowIconRT = arrowRT;
@@ -184,7 +184,7 @@ public class DungeonEntranceArrowUI : MonoBehaviour
         titleRT.sizeDelta = new Vector2(130f, 30f);
 
         titleText = titleGO.GetComponent<TextMeshProUGUI>();
-        titleText.text = "TIẾN LÊN";
+        titleText.text = "PROCEED";
         titleText.fontSize = 20f;
         titleText.fontStyle = FontStyles.Bold;
         titleText.color = Color.white;
@@ -200,7 +200,7 @@ public class DungeonEntranceArrowUI : MonoBehaviour
         hintRT.sizeDelta = new Vector2(130f, 24f);
 
         hintText = hintGO.GetComponent<TextMeshProUGUI>();
-        hintText.text = "Vào Ải 1 [Space / ->]";
+        hintText.text = "Enter Stage 1 [Space / ->]";
         hintText.fontSize = 12f;
         hintText.color = new Color(0.75f, 0.85f, 1f);
     }

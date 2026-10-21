@@ -324,7 +324,11 @@ public class HomeChest : MonoBehaviour, IInteractable
     public static void LoadContainer(ItemContainer container)
     {
         if (container == null || container.itemSlots == null) return;
-        if (!PlayerPrefs.HasKey("HomeChest_SlotCount")) return;
+        if (!PlayerPrefs.HasKey("HomeChest_SlotCount"))
+        {
+            container.Clear();
+            return;
+        }
 
         int count = Mathf.Min(container.itemSlots.Length, PlayerPrefs.GetInt("HomeChest_SlotCount", container.itemSlots.Length));
 

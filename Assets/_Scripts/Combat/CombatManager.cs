@@ -27,9 +27,9 @@ public class CombatManager : MonoBehaviour
 
     [Header("Config")]
     public float preparationTime = 3f;
-    public float enemyTurnDelay = 1.2f;
+    public float enemyTurnDelay = 0.35f;
     public float playerActionDelay = 0.35f;
-    [Tooltip("Thời gian chờ sau khi quái cuối cùng chết trước khi hiện UI kết thúc")]
+    [Tooltip("Delay time after final enemy dies before showing victory UI")]
     public float victoryDelay = 1.0f;
 
     #region Events
@@ -49,6 +49,18 @@ public class CombatManager : MonoBehaviour
     private Coroutine enemyTurnCoroutine;
     private Coroutine playerActionDelayCoroutine;
     private Coroutine victoryCoroutine;
+
+    private static readonly WaitForSeconds waitFallbackVisual = new(0.48f);
+    private static readonly Dictionary<float, WaitForSeconds> _waitCache = new();
+    private static WaitForSeconds GetCachedWait(float seconds)
+    {
+        if (!_waitCache.TryGetValue(seconds, out var w))
+        {
+            w = new WaitForSeconds(seconds);
+            _waitCache[seconds] = w;
+        }
+        return w;
+    }
 
     public static CombatManager Instance { get; private set; }
 
@@ -266,7 +278,7 @@ public class CombatManager : MonoBehaviour
 
     private IEnumerator EnemyTurnRoutine(EnemyStats enemy)
     {
-        yield return new WaitForSeconds(enemyTurnDelay);
+        yield return GetCachedWait(enemyTurnDelay);
 
         EnemyData.EnemyIntent actionTaken = EnemyData.EnemyIntent.Attack;
         if (enemy != null && enemy.currentHealth > 0 && playerStats != null && playerStats.currentHealth > 0)
@@ -276,15 +288,28 @@ public class CombatManager : MonoBehaviour
             LogMessage($"{enemy.enemyData?.enemyName ?? "Enemy"} used {actionTaken}!");
         }
 
-        // Cho animation (tan cong / ho tro) cua quai hoan tat truoc khi chuyen turn
-        yield return new WaitForSeconds(0.85f);
+        // Allow enemy action animation to complete before advancing turn
+        EnemyCombatVisual visual = enemy != null ? enemy.GetComponent<EnemyCombatVisual>() : null;
+        if (visual != null)
+        {
+            float maxWait = 1.8f;
+            while (visual != null && visual.IsVisualActionActive && maxWait > 0f)
+            {
+                maxWait -= Time.deltaTime;
+                yield return null;
+            }
+        }
+        else
+        {
+            yield return waitFallbackVisual;
+        }
 
         if (!isCombatActive || playerStats == null || playerStats.currentHealth <= 0 || isVictoryPending)
         {
             yield break;
         }
 
-        // Reduce enemy turn buffs (không giảm ngay trong chính lượt quái vừa niệm buff)
+        // Reduce enemy turn buffs (not reduced on the same turn it was cast)
         if (enemy != null && actionTaken != EnemyData.EnemyIntent.Buff)
         {
             enemy.ReduceTurnBuffDuration();
@@ -327,7 +352,7 @@ public class CombatManager : MonoBehaviour
     private IEnumerator PlayerActionDelayRoutine(float delay)
     {
         SetPlayerActing(true);
-        yield return new WaitForSeconds(delay);
+        yield return GetCachedWait(delay);
         SetPlayerActing(false);
         playerActionDelayCoroutine = null;
     }
@@ -363,45 +388,49 @@ public class CombatManager : MonoBehaviour
             return;
         }
 
-        StartPlayerActionCooldown();
+        StartPlayerActionCooldown(0.48f);
 
         int atk = playerStats.GetCurrentATK();
 
-        // Blessing: Động Lực Tốc Độ (SwiftMomentum) - Gây thêm sát thương nếu tốc độ cao hơn địch
+        // Blessing: Swift Momentum - Deals extra damage when speed is higher than enemy
         if (ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.SwiftMomentum))
         {
             int speedDiff = Mathf.Max(0, playerStats.GetCurrentSpeed() - target.GetCurrentSpeed());
             if (speedDiff > 0)
             {
                 atk += speedDiff;
-                DamagePopupManager.ShowText(target.transform.position + Vector3.up * 1.5f, $"+{speedDiff} Xung Lực Tốc Độ!", new Color(0.2f, 1f, 0.5f), 4.5f);
+                DamagePopupManager.ShowText(target.transform.position + Vector3.up * 1.5f, $"+{speedDiff} Speed Surge!", new Color(0.2f, 1f, 0.5f), 4.5f);
             }
         }
 
-        // Blessing: Bụng Rỗng Cuồng Nộ (StarvingFury) - Tỷ lệ bạo kích x1.5 sát thương khi đói (<35%)
+        // Blessing: Starving Fury - 1.5x crit damage when hunger < 35%
         if (ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.StarvingFury)
             && playerStats.maxHunger > 0 && playerStats.currentHunger <= playerStats.maxHunger * 0.35f)
         {
             if (Random.value < 0.35f)
             {
                 atk = Mathf.RoundToInt(atk * 1.5f);
-                DamagePopupManager.ShowText(target.transform.position + Vector3.up * 1.6f, "BẠO KÍCH ĐÓI CỒN CÀO!", Color.red, 5f);
+                DamagePopupManager.ShowText(target.transform.position + Vector3.up * 1.6f, "HUNGER CRIT!", Color.red, 5f);
             }
         }
 
-        int dealtDamage = target.TakeDamage(atk);
+        int dealtDamage = target.TakeDamage(atk, showFeedback: false);
         playerStats.currentAP--;
         OnPlayerAttackAction?.Invoke(target, dealtDamage);
 
         LogMessage($"You attacked {target.enemyData?.enemyName ?? "enemy"} for {dealtDamage} damage!");
 
-        // Blessing: Món Đắng Bào Mòn (BitterDecay) - Bào mòn 2 DEF và gây độc trực tiếp lên địch
+        // Blessing: Bitter Decay - Reduces 2 DEF and inflicts direct poison damage
         if (ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.BitterDecay) && target.currentHealth > 0)
         {
             target.ReduceDEF(2);
-            int poisonDmg = target.TakeDamage(4); // Thêm 4 sát thương độc trực tiếp
-            DamagePopupManager.ShowText(target.transform.position + Vector3.up * 1.2f, $"Độc Bào Mòn! -{poisonDmg} HP", new Color(0.6f, 0.3f, 0.9f), 4.5f);
-            LogMessage($"[Blessing: BitterDecay] Bào mòn 2 DEF và gây {poisonDmg} sát thương độc lên {target.enemyData?.enemyName ?? "quái vật"}!");
+            int poisonDmg = target.TakeDamage(4); // Extra 4 direct poison damage
+            DamagePopupManager.ShowText(target.transform.position + Vector3.up * 1.2f, $"Decay Poison! -{poisonDmg} HP", new Color(0.6f, 0.3f, 0.9f), 4.5f);
+            LogMessage($"[Blessing: BitterDecay] Corroded 2 DEF and dealt {poisonDmg} poison damage to {target.enemyData?.enemyName ?? "monster"}!");
+            if (VFXManager.Instance != null)
+            {
+                VFXManager.Instance.PlayAttackAnimationByDamage(target.transform.position, poisonDmg, false, isPoison: true);
+            }
         }
 
         if (target.currentHealth <= 0)
@@ -425,13 +454,13 @@ public class CombatManager : MonoBehaviour
         playerStats.Defend();
         playerStats.currentAP--;
 
-        // Blessing: Lấy Thủ Làm Công (BastionStrike) - Lần phòng thủ đầu tiên trong lượt hồi lại 1 AP
+        // Blessing: Bastion Strike - First defend in a turn restores 1 AP
         if (hasBastion && isFirstDefend)
         {
             hasDefendedThisTurn = true;
             playerStats.currentAP = Mathf.Min(playerStats.maxAP, playerStats.currentAP + 1);
-            DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.5f, "+1 AP (Thủ Công)!", new Color(1f, 0.8f, 0.2f), 4.5f);
-            LogMessage("[Blessing: BastionStrike] Lấy Thủ Làm Công: Lần phòng thủ đầu tiên hồi lại +1 AP!");
+            DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.5f, "+1 AP (Bastion)!", new Color(1f, 0.8f, 0.2f), 4.5f);
+            LogMessage("[Blessing: BastionStrike] Bastion Strike: First defend restored +1 AP!");
         }
 
         DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.1f, $"+{playerStats.defendValue} DEF", new Color(0.4f, 0.75f, 1f), 4.6f);
@@ -459,8 +488,8 @@ public class CombatManager : MonoBehaviour
         {
             if (playerStats.currentHunger >= playerStats.maxHunger && playerStats.currentHealth >= playerStats.maxHealth)
             {
-                LogMessage("Đã đầy máu và no bụng, không cần ăn thêm!");
-                DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.3f, "ĐÃ ĐẦY MÁU & NO BỤNG!", Color.yellow, 4.5f);
+                LogMessage("Health and fullness are full, no need to eat!");
+                DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.3f, "FULL HP & FULLNESS!", Color.yellow, 4.5f);
             }
             return;
         }
@@ -470,19 +499,48 @@ public class CombatManager : MonoBehaviour
         if (isFreeEat)
         {
             hasEatenThisTurn = true;
-            DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.4f, "Đại Tiệc: 0 AP!", new Color(1f, 0.5f, 0.8f), 4.5f);
-            LogMessage($"[Blessing: EndlessFeast] Đại Tiệc Bất Tận: Ăn {food.itemName} không tốn AP!");
+            DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.4f, "Feast: 0 AP!", new Color(1f, 0.5f, 0.8f), 4.5f);
+            LogMessage($"[Blessing: EndlessFeast] Endless Feast: Ate {food.itemName} without consuming AP!");
         }
         else if (!isAtEntrance)
         {
             playerStats.currentAP--;
         }
 
+        if (food is FoodData foodData && foodData.foodBuff != null && foodData.foodBuff.Length > 0)
+        {
+            List<string> bLogs = new();
+            bool hasFeast = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast);
+            for (int i = 0; i < foodData.foodBuff.Length; i++)
+            {
+                var fb = foodData.foodBuff[i];
+                if (fb != null && fb.buffs != null)
+                {
+                    string stat = CombatUI.GetBuffStatLabel(fb.buffs);
+                    int dur = hasFeast ? fb.buffDuration * 2 : fb.buffDuration;
+                    string durUnit = fb.buffDurationType switch
+                    {
+                        FoodData.BuffDurationType.Turn => dur == 1 ? "turn" : "turns",
+                        FoodData.BuffDurationType.Combat => dur == 1 ? "battle" : "battles",
+                        FoodData.BuffDurationType.Floor => dur == 1 ? "floor" : "floors",
+                        _ => fb.buffDurationType.ToString()
+                    };
+                    string sign = fb.buffValue > 0 ? "+" : "";
+                    bLogs.Add($"{sign}{fb.buffValue} {stat} ({dur} {durUnit})");
+                }
+            }
+            if (bLogs.Count > 0)
+            {
+                LogMessage($"You ate {food.itemName}! (Buffs: {string.Join(", ", bLogs)})");
+                return;
+            }
+        }
+
         LogMessage($"You ate {food.itemName}!");
     }
 
     /// <summary>
-    /// Phản lại sát thương lên quái vật khi người chơi có phước lành No Căng Phản Đòn (GluttonousAegis)
+    /// Reflects damage back to monsters when player has Gluttonous Aegis blessing
     /// </summary>
     public void ReflectDamageToCurrentEnemy(int reflectedDamage)
     {
@@ -507,8 +565,8 @@ public class CombatManager : MonoBehaviour
         if (target != null)
         {
             int reflectDmg = target.TakeDamage(reflectedDamage);
-            DamagePopupManager.ShowText(target.transform.position + Vector3.up * 1.3f, $"Phản {reflectDmg} DMG!", new Color(0.9f, 0.8f, 0.2f), 4.5f);
-            LogMessage($"[Blessing: GluttonousAegis] Phản đòn {reflectDmg} sát thương lên {target.enemyData?.enemyName ?? "kẻ địch"}!");
+            DamagePopupManager.ShowText(target.transform.position + Vector3.up * 1.3f, $"Reflected {reflectDmg} DMG!", new Color(0.9f, 0.8f, 0.2f), 4.5f);
+            LogMessage($"[Blessing: GluttonousAegis] Reflected {reflectDmg} damage to {target.enemyData?.enemyName ?? "enemy"}!");
             CheckAllEnemiesDead();
         }
     }
@@ -555,7 +613,7 @@ public class CombatManager : MonoBehaviour
                         currentWaveLoot.Add(new ItemSlot { itemData = drops[i].itemData, amount = drops[i].amount });
                     }
 
-                    LogMessage($"Rơi vật phẩm: {drops[i].itemData.itemName} x{drops[i].amount}");
+                    LogMessage($"Loot drop: {drops[i].itemData.itemName} x{drops[i].amount}");
                 }
             }
         }
@@ -589,7 +647,7 @@ public class CombatManager : MonoBehaviour
 
     private IEnumerator DelayedVictoryRoutine()
     {
-        // Khóa hành động người chơi trong lúc chờ quái tan biến
+        // Lock player actions while waiting for monsters to fade
         SetPlayerActing(true);
 
         if (enemyTurnCoroutine != null)
@@ -600,7 +658,7 @@ public class CombatManager : MonoBehaviour
 
         if (victoryDelay > 0f)
         {
-            yield return new WaitForSeconds(victoryDelay);
+            yield return GetCachedWait(victoryDelay);
         }
 
         victoryCoroutine = null;
@@ -642,7 +700,7 @@ public class CombatManager : MonoBehaviour
             WaveManager waveManager = WaveManager.Instance != null ? WaveManager.Instance : FindFirstObjectByType<WaveManager>();
             int waveIdx = waveManager != null ? waveManager.GetCurrentWaveIndex() : 0;
 
-            // Người chơi sẽ kéo các vật phẩm vào inventory chứ không tự động vào inven
+            // Player manually collects items into inventory rather than automatic collection
             ItemContainer backpack = playerStats != null ? playerStats.itemContainer : null;
             if (backpack == null)
             {

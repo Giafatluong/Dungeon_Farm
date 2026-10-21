@@ -93,9 +93,9 @@ public class ItemDrop : MonoBehaviour
         {
             if (!itemContainer.CanAddItem(itemData))
             {
-                // Ba lô đầy: Không thu thập, không phá hủy vật phẩm rơi!
+                // Backpack full: Do not collect or destroy dropped item!
                 isMoving = false;
-                DamagePopupManager.ShowText(transform.position + Vector3.up * 0.6f, "Ba Lô Đầy!", new Color(1f, 0.4f, 0.4f), 3.0f);
+                DamagePopupManager.ShowText(transform.position + Vector3.up * 0.6f, "Backpack Full!", new Color(1f, 0.4f, 0.4f), 3.0f);
                 return;
             }
 
@@ -104,6 +104,11 @@ public class ItemDrop : MonoBehaviour
             {
                 isMoving = false;
                 return;
+            }
+
+            if (VFXManager.Instance != null)
+            {
+                VFXManager.Instance.PlayItemPickup(transform.position);
             }
         }
 

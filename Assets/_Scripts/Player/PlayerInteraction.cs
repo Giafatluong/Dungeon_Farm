@@ -94,6 +94,7 @@ public class PlayerInteraction : MonoBehaviour
 
     private bool IsAnyUIOpen()
     {
+        if (MainMenuUI.Instance != null && MainMenuUI.Instance.IsOpen) return true;
         if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen) return true;
         if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return true;
         if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return true;
@@ -159,7 +160,7 @@ public class PlayerInteraction : MonoBehaviour
                 : 1;
             int stageNum = farmPlot.currentStage + 1;
             int daysNeeded = Mathf.Max(1, farmPlot.currentCrop.growthTime) - farmPlot.daysInCurrentStage;
-            string progressMsg = $"{farmPlot.currentCrop.cropName}: Giai đoạn {stageNum}/{totalStages} (còn ~{daysNeeded} ngày)";
+            string progressMsg = $"{farmPlot.currentCrop.cropName}: Stage {stageNum}/{totalStages} (~{daysNeeded} days left)";
             DamagePopupManager.ShowText(farmPlot.transform.position + Vector3.up * 0.8f, progressMsg, new Color(0.4f, 0.85f, 1f), 3.5f);
         }
     }

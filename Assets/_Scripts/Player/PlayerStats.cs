@@ -118,7 +118,7 @@ public class PlayerStats : MonoBehaviour
         currentHunger = maxHunger;
         currentAP = maxAP;
 
-        // Khi ở Base hoặc không trong Dungeon, xóa sạch toàn bộ buff tạm thời
+        // When at Base or outside Dungeon, clear all temporary buffs
         UnityEngine.SceneManagement.Scene activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
         if (activeScene.IsValid() && (activeScene.name == "Base" || activeScene.name.Contains("Base")))
         {
@@ -148,7 +148,7 @@ public class PlayerStats : MonoBehaviour
 
         FoodData food = item as FoodData;
 
-        // Nếu là nông sản thô hoặc thực phẩm chưa qua chế biến
+        // If raw produce or unprocessed food
         if (food == null)
         {
             if (item.itemType == ItemData.ItemType.Produce || item.itemType == ItemData.ItemType.Food || item.itemType == ItemData.ItemType.Seed)
@@ -174,7 +174,7 @@ public class PlayerStats : MonoBehaviour
                 {
                     itemContainer.RemoveItem(item, 1);
                 }
-                string bonusMsg = hasRawVitality ? "Ăn Sống! +12 HP, +20 No" : $"+{healGain} HP, +{hungerGain} No";
+                string bonusMsg = hasRawVitality ? "Raw Food! +12 HP, +20 Hunger" : $"+{healGain} HP, +{hungerGain} Hunger";
                 DamagePopupManager.ShowText(transform.position + Vector3.up * 1.1f, bonusMsg, new Color(0.4f, 0.9f, 0.3f), 4.5f);
                 Debug.Log($"Ate produce/item {item.itemName} (+{healGain} HP, +{hungerGain} Hunger)!");
                 return true;
@@ -251,7 +251,7 @@ public class PlayerStats : MonoBehaviour
                 value += Mathf.RoundToInt(GetCurrentDEF() * 0.5f);
             }
 
-            // Blessing: Bụng Rỗng Cuồng Nộ (Độ no < 35% tăng +6 ATK)
+            // Blessing: Starving Fury (Hunger < 35% grants +6 ATK)
             if (ProgressionManager.Instance.HasBlessing(BlessingType.StarvingFury) && maxHunger > 0 && currentHunger <= maxHunger * 0.35f)
             {
                 value += 6;
@@ -300,7 +300,7 @@ public class PlayerStats : MonoBehaviour
 
         if (ProgressionManager.Instance != null)
         {
-            // Blessing: Động Lực Tốc Độ (+4 Tốc độ)
+            // Blessing: Swift Momentum (+4 Speed)
             if (ProgressionManager.Instance.HasBlessing(BlessingType.SwiftMomentum))
             {
                 value += 4;
@@ -372,24 +372,24 @@ public class PlayerStats : MonoBehaviour
             activeBuffs.Add(newBuff);
         }
 
-        // Hiển thị thông báo nổi trực quan trên đầu nhân vật
+        // Display visual floating notice above player head
         string sign = finalValue > 0 ? "+" : "";
         string durUnit = durationType switch
         {
-            FoodData.BuffDurationType.Turn => "lượt",
-            FoodData.BuffDurationType.Combat => "trận",
-            FoodData.BuffDurationType.Floor => "tầng",
+            FoodData.BuffDurationType.Turn => "turns",
+            FoodData.BuffDurationType.Combat => "battles",
+            FoodData.BuffDurationType.Floor => "floors",
             _ => durationType.ToString()
         };
         Color popupColor = finalValue >= 0 ? new Color(0.3f, 0.95f, 1f) : new Color(1f, 0.4f, 0.4f);
-        DamagePopupManager.ShowText(transform.position + Vector3.up * 1.3f, $"{buff.buffName} {sign}{finalValue} ({safeDuration} {durUnit})", popupColor, 4.5f);
+        DamagePopupManager.ShowText(transform.position + Vector3.up * 1.3f, $"{sign}{finalValue} {CombatUI.GetBuffStatLabel(buff)} ({safeDuration} {durUnit})", popupColor, 4.5f);
     }
 
     public void TakeDamage(int damage)
     {
         if (damage <= 0)
         {
-            DamagePopupManager.ShowText(transform.position + Vector3.up * 1.1f, "ĐÃ CHẶN!", new Color(0.4f, 0.85f, 1f), 4.2f);
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 1.1f, "BLOCKED!", new Color(0.4f, 0.85f, 1f), 4.2f);
             return;
         }
 
@@ -403,7 +403,7 @@ public class PlayerStats : MonoBehaviour
             CombatJuice.Instance.OnPlayerDamaged(transform.position, damage);
         }
 
-        // Blessing: No Căng Phản Đòn (GluttonousAegis) - Phản 40% sát thương khi no bụng (>70%)
+        // Blessing: Gluttonous Aegis - Reflect 40% damage when well-fed (>70% Hunger)
         if (damage > 0 && ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.GluttonousAegis)
             && maxHunger > 0 && currentHunger >= maxHunger * 0.70f)
         {
@@ -450,7 +450,7 @@ public class PlayerStats : MonoBehaviour
     public void OnStageTransition()
     {
         ReduceHunger(5);
-        ReduceTurnBuffDuration(); // Giảm 1 lượt buff theo lượt khi người chơi di chuyển qua từng stage
+        ReduceTurnBuffDuration(); // Decrement turn-based buffs when player advances through stages
     }
 
     public void OnCombatComplete()
@@ -542,7 +542,7 @@ public class PlayerStats : MonoBehaviour
                 ActiveBuff b = activeBuffs[i];
                 if (b != null && b.buff != null)
                 {
-                    DamagePopupManager.ShowText(transform.position + Vector3.up * 1.3f, $"Hết {b.buff.buffName}", new Color(0.75f, 0.75f, 0.75f), 3.2f);
+                    DamagePopupManager.ShowText(transform.position + Vector3.up * 1.3f, $"{b.buff.buffName} Expired", new Color(0.75f, 0.75f, 0.75f), 3.2f);
                 }
                 activeBuffs.RemoveAt(i);
             }
@@ -569,7 +569,7 @@ public class PlayerStats : MonoBehaviour
                 ActiveBuff b = activeBuffs[i];
                 if (b != null && b.buff != null)
                 {
-                    DamagePopupManager.ShowText(transform.position + Vector3.up * 1.3f, $"Hết {b.buff.buffName}", new Color(0.75f, 0.75f, 0.75f), 3.2f);
+                    DamagePopupManager.ShowText(transform.position + Vector3.up * 1.3f, $"{b.buff.buffName} Expired", new Color(0.75f, 0.75f, 0.75f), 3.2f);
                 }
                 activeBuffs.RemoveAt(i);
             }
@@ -596,7 +596,7 @@ public class PlayerStats : MonoBehaviour
                 ActiveBuff b = activeBuffs[i];
                 if (b != null && b.buff != null)
                 {
-                    DamagePopupManager.ShowText(transform.position + Vector3.up * 1.3f, $"Hết {b.buff.buffName}", new Color(0.75f, 0.75f, 0.75f), 3.2f);
+                    DamagePopupManager.ShowText(transform.position + Vector3.up * 1.3f, $"{b.buff.buffName} Expired", new Color(0.75f, 0.75f, 0.75f), 3.2f);
                 }
                 activeBuffs.RemoveAt(i);
             }
@@ -604,7 +604,7 @@ public class PlayerStats : MonoBehaviour
     }
 
     /// <summary>
-    /// Xóa toàn bộ buff tạm thời (thức ăn, thuốc) khi kết thúc chuyến đi hoặc qua ngày mới.
+    /// Clears all temporary buffs (food, potions) when expedition ends or advancing to a new day.
     /// </summary>
     public void ClearTemporaryBuffs()
     {

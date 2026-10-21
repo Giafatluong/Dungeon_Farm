@@ -181,7 +181,7 @@ public class MerchantUI : MonoBehaviour
         {
             if (subtitleText != null)
             {
-                subtitleText.text = $"Thương Nhân Tầng {floorNum} | Thời gian ghé thăm còn lại: {daysLeft} ngày";
+                subtitleText.text = $"Floor {floorNum} Traveling Merchant | Visit time remaining: {daysLeft} day(s)";
                 subtitleText.color = new Color(0.78f, 0.82f, 0.92f);
             }
             SetFeedback("Welcome, brave traveler! Browse my rare recipes, barter seeds, or stock up on hot travel rations.");
@@ -191,8 +191,8 @@ public class MerchantUI : MonoBehaviour
             if (subtitleText != null)
             {
                 subtitleText.text = cdLeft > 0
-                    ? $"<color=#FF7777>Thương nhân Tầng {floorNum} đã rời đi! Trở lại sau {cdLeft} ngày.</color>"
-                    : $"<color=#FF7777>Thương nhân Tầng {floorNum} tạm thời đóng quầy hàng.</color>";
+                    ? $"<color=#FF7777>Floor {floorNum} Merchant has departed! Returns in {cdLeft} day(s).</color>"
+                    : $"<color=#FF7777>Floor {floorNum} Merchant stall is temporarily closed.</color>";
             }
             SetFeedback("The merchant packed up and departed to a new land. You can rest for a moment then continue your journey.");
         }

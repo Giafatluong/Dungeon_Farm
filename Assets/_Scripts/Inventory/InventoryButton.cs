@@ -204,7 +204,7 @@ public class InventoryButton : MonoBehaviour,
         {
             if (selectedItem != null && ItemContainer.IsItemMatch(selectedItem, currentItem))
             {
-                // Bấm lại vào ô đang chọn -> hủy chọn
+                // Click already selected slot again -> deselect
                 selectedItem = null;
                 OnItemSelected?.Invoke(null);
             }

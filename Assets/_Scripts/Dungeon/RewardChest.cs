@@ -88,13 +88,13 @@ public class RewardChest : MonoBehaviour
                 ItemData it = allItems[i];
                 if (it == null) continue;
 
-                // Lọc hạt giống theo tầng: Hạt cao cấp chỉ xuất hiện ở tầng cao
+                // Filter seeds by floor: Higher-tier seeds only drop on deeper floors
                 if (it.itemType == ItemData.ItemType.Seed || it.name.ToLower().Contains("seed"))
                 {
                     int minFloor = ProgressionManager.GetSeedMinFloor(it);
                     if (floorNumber < minFloor)
                     {
-                        continue; // Chưa đủ tầng, không cho rơi
+                        continue; // Floor too low, do not drop
                     }
                 }
 
@@ -106,7 +106,7 @@ public class RewardChest : MonoBehaviour
         }
         else
         {
-            // Lọc danh sách candidateItems đã nạp nếu có hạt chưa đủ điều kiện tầng
+            // Filter loaded candidateItems if any seeds do not meet the minimum floor requirement
             for (int i = _cachedCandidates.Count - 1; i >= 0; i--)
             {
                 ItemData it = _cachedCandidates[i];

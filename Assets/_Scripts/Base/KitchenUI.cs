@@ -4,9 +4,9 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Giao diện Nấu Ăn Đoán Mò (Cooking Pot Experimentation) tại Home Base.
-/// Người chơi tự do bỏ các nông sản từ Balo vào Nồi Nấu (tối đa 4 ô).
-/// Khi nguyên liệu và số lượng khớp công thức bí mật, sẽ nấu ra đúng món và ghi vào Sổ Tay!
+/// Cooking Pot Experimentation interface at Home Base.
+/// Players freely place crops from Backpack into the Cooking Pot (up to 5 slots).
+/// When ingredients match a secret recipe, it cooks the dish and records it in the Recipe Notebook!
 /// </summary>
 public class KitchenUI : MonoBehaviour
 {
@@ -206,14 +206,14 @@ public class KitchenUI : MonoBehaviour
         if (item == null || backpackContainer == null) return;
         if (backpackContainer.GetItemCount(item) <= 0)
         {
-            ShowToast($"Không còn {item.itemName} trong Balo!");
+            ShowToast($"No {item.itemName} left in Backpack!");
             return;
         }
 
-        // Quy tắc: Mỗi ô trong nồi chỉ chứa tối đa đúng 1 nguyên liệu (amount = 1, không cộng dồn)
+        // Rule: Each slot in the pot holds at most 1 ingredient (amount = 1, no stacking)
         if (potSlots.Count >= MAX_POT_SLOTS)
         {
-            ShowToast($"Nồi nấu đã đầy ({MAX_POT_SLOTS}/{MAX_POT_SLOTS} ô, mỗi ô 1 nguyên liệu)! Bấm vào ô trong nồi để bỏ ra.");
+            ShowToast($"Cooking pot is full ({MAX_POT_SLOTS}/{MAX_POT_SLOTS} slots, 1 ingredient per slot)! Click a slot to remove it.");
             return;
         }
 
@@ -256,7 +256,7 @@ public class KitchenUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Trả nguyên liệu an toàn về Balo -> Rương Nhà -> rơi trên đất. Cam kết tuyệt đối không mất đồ.
+    /// Returns ingredients safely to Backpack -> Chest -> drops on ground. Guaranteed no item loss.
     /// </summary>
     private void ReturnItemSafely(ItemData item, int amount)
     {
@@ -271,11 +271,11 @@ public class KitchenUI : MonoBehaviour
         if (chestContainer != null && chestContainer.CanAddItem(item))
         {
             chestContainer.AddItem(item, amount);
-            ShowToast($"Balo đầy! Đã chuyển {item.itemName} x{amount} vào Rương.");
+            ShowToast($"Backpack full! Moved {item.itemName} x{amount} to Chest.");
             return;
         }
 
-        // Rơi xuống đất nếu cả balo và rương đều đầy
+        // Drop on ground if both backpack and chest are full
         Vector3 dropPos = currentStation != null ? currentStation.transform.position : transform.position;
         if (PlayerStats.Instance != null) dropPos = PlayerStats.Instance.transform.position;
 
@@ -294,7 +294,7 @@ public class KitchenUI : MonoBehaviour
                     drop.PlayDropEffect();
                 }
             }
-            ShowToast($"Balo đầy! {item.itemName} đã rơi xuống đất.");
+            ShowToast($"Backpack full! {item.itemName} dropped on ground.");
         }
         else if (backpackContainer != null)
         {
@@ -331,7 +331,7 @@ public class KitchenUI : MonoBehaviour
     {
         if (potSlots.Count == 0)
         {
-            ShowToast("<color=#FFCC00>Nồi đang trống! Hãy chọn nguyên liệu từ Balo bỏ vào nồi trước khi nấu.</color>");
+            ShowToast("<color=#FFCC00>Pot is empty! Select ingredients from Backpack before cooking.</color>");
             return;
         }
 
@@ -343,11 +343,11 @@ public class KitchenUI : MonoBehaviour
         {
             potSlots.Clear();
             ShowCookResult(true, matchedRecipe, isNewDiscovery);
-            ShowToast($"Nấu thành công món: <color=#88FF88>{matchedRecipe.DisplayName}</color>!");
+            ShowToast($"Successfully cooked: <color=#88FF88>{matchedRecipe.DisplayName}</color>!");
         }
         else
         {
-            if (failReason.Contains("đầy"))
+            if (failReason != null && failReason.ToLower().Contains("full"))
             {
                 ShowToast($"<color=#FFAA00>{failReason}</color>");
                 return;
@@ -355,7 +355,7 @@ public class KitchenUI : MonoBehaviour
 
             potSlots.Clear();
             ShowCookResult(false, null, false);
-            ShowToast("<color=#FF6666>Kết hợp sai nguyên liệu! Món ăn đã bị cháy khét.</color>");
+            ShowToast("<color=#FF6666>Invalid combination! The ingredients were burnt to a crisp.</color>");
         }
 
         RefreshUI();
@@ -449,7 +449,7 @@ public class KitchenUI : MonoBehaviour
             iconImg.sprite = slot.itemData.itemIcon;
             iconImg.color = Color.white;
 
-            // Single item badge (chứa đúng 1 nguyên liệu)
+            // Single item badge (holds exactly 1 ingredient)
             GameObject amtGO = new GameObject("Amount", typeof(RectTransform), typeof(TextMeshProUGUI));
             amtGO.transform.SetParent(slotGO.transform, false);
             RectTransform amtRT = amtGO.GetComponent<RectTransform>();
@@ -497,7 +497,7 @@ public class KitchenUI : MonoBehaviour
 
         if (inventoryGridContainer == null || backpackContainer == null) return;
 
-        // Lọc tất cả nguyên liệu có trong Balo (rau, củ, quả, ngũ cốc)
+        // Filter all ingredients available in Backpack (vegetables, crops, food)
         Dictionary<ItemData, int> availableItems = new Dictionary<ItemData, int>();
         if (backpackContainer.itemSlots != null)
         {
@@ -506,7 +506,7 @@ public class KitchenUI : MonoBehaviour
                 ItemSlot s = backpackContainer.itemSlots[i];
                 if (s != null && s.itemData != null && s.amount > 0)
                 {
-                    // Chỉ cho phép bỏ vào nồi nếu là Produce hoặc Food (nguyên liệu ăn được)
+                    // Only allow Produce or Food items
                     if (s.itemData.itemType == ItemData.ItemType.Produce || s.itemData.itemType == ItemData.ItemType.Food || s.itemData is FoodData)
                     {
                         ItemData key = null;
@@ -535,7 +535,7 @@ public class KitchenUI : MonoBehaviour
             txt.fontSize = 12;
             txt.alignment = TextAlignmentOptions.Center;
             txt.color = new Color(0.7f, 0.7f, 0.7f);
-            txt.text = "Balo của bạn không có nông sản hoặc nguyên liệu nào!\nHãy thu hoạch cây trồng ở trang trại.";
+            txt.text = "Your backpack has no crops or ingredients!\nHarvest crops from your farm.";
             activeIngredientVisuals.Add(emptyGO);
             return;
         }
@@ -588,7 +588,7 @@ public class KitchenUI : MonoBehaviour
         infoTxt.fontSize = 13;
         infoTxt.alignment = TextAlignmentOptions.MidlineLeft;
         infoTxt.color = Color.white;
-        infoTxt.text = $"<b>{item.itemName}</b>\n<size=11.5><color=#AAAAAA>Có sẵn: <color=#88FF88>{count}</color></color></size>";
+        infoTxt.text = $"<b>{item.itemName}</b>\n<size=11.5><color=#AAAAAA>Available: <color=#88FF88>{count}</color></color></size>";
 
         // Add Button Badge
         GameObject addBadge = new GameObject("AddBadge", typeof(RectTransform), typeof(Image));
@@ -613,7 +613,7 @@ public class KitchenUI : MonoBehaviour
         addTxt.fontStyle = FontStyles.Bold;
         addTxt.alignment = TextAlignmentOptions.Center;
         addTxt.color = Color.white;
-        addTxt.text = "+ THÊM";
+        addTxt.text = "+ ADD";
 
         return card;
     }
@@ -655,7 +655,7 @@ public class KitchenUI : MonoBehaviour
             txt.fontSize = 12;
             txt.alignment = TextAlignmentOptions.Center;
             txt.color = new Color(0.7f, 0.7f, 0.7f);
-            txt.text = "Chưa có công thức nào trong hệ thống!";
+            txt.text = "No recipes found in the system!";
             activeNotebookVisuals.Add(emptyGO);
         }
     }
@@ -729,9 +729,9 @@ public class KitchenUI : MonoBehaviour
                     }
                 }
             }
-            infoTxt.text = $"<b><color=#FFD700>{recipe.DisplayName}</color></b>\n<size=11><color=#88FF88>Công thức:</color> {ingSb.ToString().TrimEnd()}</size>";
+            infoTxt.text = $"<b><color=#FFD700>{recipe.DisplayName}</color></b>\n<size=11><color=#88FF88>Recipe:</color> {ingSb.ToString().TrimEnd()}</size>";
 
-            // Quick Fill Button: Tự động xếp nguyên liệu vào từng ô trong nồi
+            // Quick Fill Button: Automatically place ingredients into pot slots
             GameObject fillBtnGO = new GameObject("FillBtn", typeof(RectTransform), typeof(Image), typeof(Button));
             fillBtnGO.transform.SetParent(card.transform, false);
             RectTransform fillRT = fillBtnGO.GetComponent<RectTransform>();
@@ -759,12 +759,12 @@ public class KitchenUI : MonoBehaviour
             fillTxt.fontStyle = FontStyles.Bold;
             fillTxt.alignment = TextAlignmentOptions.Center;
             fillTxt.color = hasAll ? Color.white : new Color(0.7f, 0.7f, 0.7f);
-            fillTxt.text = "XẾP VÀO";
+            fillTxt.text = "FILL";
         }
         else
         {
             infoRT.offsetMax = new Vector2(-10, -4);
-            infoTxt.text = "<b><color=#777777>??? Món ăn bí mật ???</color></b>\n<size=11><color=#555555>Chưa khám phá - Hãy thử đoán mò các nguyên liệu!</color></size>";
+            infoTxt.text = "<b><color=#777777>??? Secret Recipe ???</color></b>\n<size=11><color=#555555>Undiscovered - Try experimenting with ingredients!</color></size>";
         }
 
         return card;
@@ -792,7 +792,7 @@ public class KitchenUI : MonoBehaviour
 
                 if (has < req.amount)
                 {
-                    ShowToast($"Không đủ {req.item.itemName} (cần {req.amount}, hiện có {has})!");
+                    ShowToast($"Not enough {req.item.itemName} (need {req.amount}, have {has})!");
                     return;
                 }
             }
@@ -800,7 +800,7 @@ public class KitchenUI : MonoBehaviour
 
         if (totalNeeded > MAX_POT_SLOTS)
         {
-            ShowToast($"Món này cần {totalNeeded} nguyên liệu, vượt quá {MAX_POT_SLOTS} ô trong nồi!");
+            ShowToast($"This recipe requires {totalNeeded} ingredients, exceeding {MAX_POT_SLOTS} slots!");
             return;
         }
 
@@ -818,7 +818,7 @@ public class KitchenUI : MonoBehaviour
             }
         }
 
-        ShowToast($"Đã xếp nguyên liệu món <color=#88FF88>{recipe.DisplayName}</color> vào từng ô trong nồi!");
+        ShowToast($"Filled ingredients for <color=#88FF88>{recipe.DisplayName}</color> into pot!");
     }
 
     private void ShowCookResult(bool success, RecipeData recipe, bool isNewDiscovery)
@@ -840,7 +840,7 @@ public class KitchenUI : MonoBehaviour
                 resultFoodIcon.color = Color.white;
             }
 
-            string discoveryTag = isNewDiscovery ? "<color=#FFD700>★ MÓN MỚI KHÁM PHÁ! ĐÃ LƯU VÀO SỔ TAY!</color>\n" : "";
+            string discoveryTag = isNewDiscovery ? "<color=#FFD700>[NEW] NEW DISCOVERY! SAVED TO NOTEBOOK!</color>\n" : "";
             if (resultFoodTitle != null)
             {
                 resultFoodTitle.text = $"{discoveryTag}<b><color=#88FF88>{recipe.resultFood.itemName}</color></b>";
@@ -848,7 +848,7 @@ public class KitchenUI : MonoBehaviour
             if (resultFoodDesc != null)
             {
                 string buffInfo = GetFoodBuffSummary(recipe.resultFood);
-                resultFoodDesc.text = !string.IsNullOrEmpty(buffInfo) ? buffInfo : "Thơm ngon bổ dưỡng!";
+                resultFoodDesc.text = !string.IsNullOrEmpty(buffInfo) ? buffInfo : "Delicious and nourishing!";
             }
         }
         else
@@ -859,11 +859,11 @@ public class KitchenUI : MonoBehaviour
             }
             if (resultFoodTitle != null)
             {
-                resultFoodTitle.text = "<b><color=#FF6666>NẤU THẤT BÀI (CHÁY KHÉT)</color></b>";
+                resultFoodTitle.text = "<b><color=#FF6666>COOKING FAILED (BURNT)</color></b>";
             }
             if (resultFoodDesc != null)
             {
-                resultFoodDesc.text = "<color=#CCCCCC>Nguyên liệu không tạo thành món ăn nào. Hãy thử kết hợp lại!</color>";
+                resultFoodDesc.text = "<color=#CCCCCC>The ingredients did not create any recipe. Try a different combination!</color>";
             }
         }
     }
@@ -896,19 +896,27 @@ public class KitchenUI : MonoBehaviour
         System.Text.StringBuilder sb = new System.Text.StringBuilder();
 
         if (food.healthValue > 0) sb.Append($"<color=#66FF88>+{food.healthValue} HP</color> ");
-        if (food.hungerValue > 0) sb.Append($"<color=#FFCC66>+{food.hungerValue} Độ no</color> ");
+        if (food.hungerValue > 0) sb.Append($"<color=#FFCC66>+{food.hungerValue} Fullness</color> ");
 
         if (food.foodBuff != null && food.foodBuff.Length > 0)
         {
+            bool hasEndlessFeast = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast);
             for (int i = 0; i < food.foodBuff.Length; i++)
             {
                 var fb = food.foodBuff[i];
                 if (fb != null && fb.buffs != null)
                 {
-                    string bName = fb.buffs.buffName;
-                    if (string.IsNullOrEmpty(bName)) bName = fb.buffs.buffType.ToString();
+                    string statLabel = CombatUI.GetBuffStatLabel(fb.buffs);
+                    int dur = hasEndlessFeast ? fb.buffDuration * 2 : fb.buffDuration;
+                    string durType = fb.buffDurationType switch
+                    {
+                        FoodData.BuffDurationType.Turn => dur == 1 ? "Turn" : "Turns",
+                        FoodData.BuffDurationType.Combat => dur == 1 ? "Battle" : "Battles",
+                        FoodData.BuffDurationType.Floor => dur == 1 ? "Floor" : "Floors",
+                        _ => fb.buffDurationType.ToString()
+                    };
                     string sign = fb.buffValue > 0 ? "+" : "";
-                    sb.Append($"<color=#66CCFF>{sign}{fb.buffValue} {bName}</color> ");
+                    sb.Append($"<color=#66CCFF>{sign}{fb.buffValue} {statLabel} ({dur} {durType})</color> ");
                 }
             }
         }
@@ -972,7 +980,7 @@ public class KitchenUI : MonoBehaviour
         titleText.fontSize = 20;
         titleText.fontStyle = FontStyles.Bold;
         titleText.color = new Color(1f, 0.85f, 0.35f);
-        titleText.text = "BẾP NẤU THỬ NGHIỆM (COOKING POT)";
+        titleText.text = "COOKING POT EXPERIMENT";
 
         // Subtitle
         GameObject subGO = new GameObject("SubtitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -985,7 +993,7 @@ public class KitchenUI : MonoBehaviour
         subtitleText = subGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(subtitleText);
         subtitleText.fontSize = 12.5f;
-        subtitleText.text = "Tối đa 4 loại nguyên liệu (tự động cộng dồn)! Bỏ nguyên liệu vào nồi để đoán công thức bí mật.";
+        subtitleText.text = "Place ingredients into the pot to discover secret recipes (up to 5 slots)!";
 
         // Close Button
         GameObject closeGO = new GameObject("CloseButton", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -1039,7 +1047,7 @@ public class KitchenUI : MonoBehaviour
         plTxt.fontSize = 14;
         plTxt.alignment = TextAlignmentOptions.Center;
         plTxt.color = new Color(1f, 0.8f, 0.4f);
-        plTxt.text = "🔥 NỒI NẤU (MỖI Ô CHỨA TỐI ĐA 1 NGUYÊN LIỆU)";
+        plTxt.text = "[ COOKING POT ] - 1 INGREDIENT PER SLOT";
 
         // Pot Slots Row (Supports 5 slots, 1 ingredient per slot)
         GameObject potRowGO = new GameObject("PotSlotsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
@@ -1084,7 +1092,7 @@ public class KitchenUI : MonoBehaviour
         cookTxt.fontStyle = FontStyles.Bold;
         cookTxt.alignment = TextAlignmentOptions.Center;
         cookTxt.color = Color.white;
-        cookTxt.text = "BẬT LỬA NẤU";
+        cookTxt.text = "LIGHT FIRE & COOK";
 
         // Clear Pot Button
         GameObject clearBtnGO = new GameObject("ClearButton", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -1112,7 +1120,7 @@ public class KitchenUI : MonoBehaviour
         clearTxt.fontSize = 12;
         clearTxt.alignment = TextAlignmentOptions.Center;
         clearTxt.color = new Color(0.9f, 0.9f, 0.9f);
-        clearTxt.text = "THU HỒI\n(TRẢ LẠI)";
+        clearTxt.text = "CLEAR POT\n(RETURN)";
 
         // Result Banner Area
         resultBannerGO = new GameObject("ResultBanner", typeof(RectTransform), typeof(Image));
@@ -1185,7 +1193,7 @@ public class KitchenUI : MonoBehaviour
         tabRowRT.sizeDelta = new Vector2(0, 36);
         tabRowRT.anchoredPosition = new Vector2(0, -6);
 
-        // Tab 1: Nguyên liệu
+        // Tab 1: Ingredients
         GameObject tab1GO = new GameObject("TabIngredients", typeof(RectTransform), typeof(Image), typeof(Button));
         tab1GO.transform.SetParent(tabRowGO.transform, false);
         RectTransform tab1RT = tab1GO.GetComponent<RectTransform>();
@@ -1214,9 +1222,9 @@ public class KitchenUI : MonoBehaviour
         t1Txt.fontStyle = FontStyles.Bold;
         t1Txt.alignment = TextAlignmentOptions.Center;
         t1Txt.color = Color.white;
-        t1Txt.text = "NGUYÊN LIỆU (BALO)";
+        t1Txt.text = "INGREDIENTS (BAG)";
 
-        // Tab 2: Sổ tay
+        // Tab 2: Recipe Notebook
         GameObject tab2GO = new GameObject("TabNotebook", typeof(RectTransform), typeof(Image), typeof(Button));
         tab2GO.transform.SetParent(tabRowGO.transform, false);
         RectTransform tab2RT = tab2GO.GetComponent<RectTransform>();
@@ -1245,7 +1253,7 @@ public class KitchenUI : MonoBehaviour
         t2Txt.fontStyle = FontStyles.Bold;
         t2Txt.alignment = TextAlignmentOptions.Center;
         t2Txt.color = Color.white;
-        t2Txt.text = "SỔ TAY CÔNG THỨC";
+        t2Txt.text = "RECIPE NOTEBOOK";
 
         // Scroll Area for Right Column
         GameObject scrollGO = new GameObject("ScrollArea", typeof(RectTransform), typeof(ScrollRect), typeof(Image));

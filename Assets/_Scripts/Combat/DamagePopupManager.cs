@@ -5,17 +5,17 @@ public class DamagePopupManager : MonoBehaviour
 {
     public static DamagePopupManager Instance { get; private set; }
 
-    [Header("Prefabs (Thiết kế trong Unity & kéo thả vào đây)")]
-    [Tooltip("Prefab số dame thường của quái hoặc player")]
+    [Header("Prefabs (Configured in Unity Editor)")]
+    [Tooltip("Prefab for normal monster or player damage numbers")]
     public GameObject normalDamagePrefab;
 
-    [Tooltip("Prefab số dame chí mạng / dame to")]
+    [Tooltip("Prefab for critical / heavy damage numbers")]
     public GameObject critDamagePrefab;
 
-    [Tooltip("Prefab số hồi máu")]
+    [Tooltip("Prefab for healing numbers")]
     public GameObject healPrefab;
 
-    [Tooltip("Prefab text thông báo (Miss, Buff, Shield...)")]
+    [Tooltip("Prefab for status notification text (Miss, Buff, Shield...)")]
     public GameObject statusTextPrefab;
 
     public static DamagePopupManager EnsureInstance()
@@ -43,7 +43,7 @@ public class DamagePopupManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Hiển thị sát thương (Tự động chọn Prefab Chí mạng hoặc Thường theo thiết kế của bạn)
+    /// Displays damage popup (automatically chooses Normal or Crit prefab).
     /// </summary>
     public static void ShowDamage(Vector3 worldPos, int amount, bool isPlayer = false, bool isCrit = false, float damagePercent = 0f, bool isLethal = false)
     {
@@ -55,17 +55,43 @@ public class DamagePopupManager : MonoBehaviour
 
         EnsureInstance();
 
-        // Chọn Prefab: nếu chí mạng / kết liễu thì dùng critDamagePrefab, ngược lại dùng normalDamagePrefab
-        GameObject prefabToSpawn = (isCrit || isLethal) && Instance != null && Instance.critDamagePrefab != null
+        // Synchronize color and scale according to damage tier
+        Color dmgColor;
+        float popupSize;
+
+        if (isPlayer)
+        {
+            dmgColor = new Color(1f, 0.35f, 0.35f);
+            popupSize = 4.2f;
+        }
+        else if (isCrit || isLethal || amount >= 30)
+        {
+            // Tier 3: Fiery red crit / massive damage
+            dmgColor = new Color(1f, 0.25f, 0.18f);
+            popupSize = 5.6f;
+        }
+        else if (amount >= 15)
+        {
+            // Tier 2: Golden amber heavy damage
+            dmgColor = new Color(1f, 0.78f, 0.18f);
+            popupSize = 4.8f;
+        }
+        else
+        {
+            // Tier 1: Silver bright basic damage
+            dmgColor = Color.white;
+            popupSize = 4.0f;
+        }
+
+        GameObject prefabToSpawn = (isCrit || isLethal || amount >= 30) && Instance != null && Instance.critDamagePrefab != null
             ? Instance.critDamagePrefab
             : (Instance != null ? Instance.normalDamagePrefab : null);
 
-        Color dmgColor = isCrit ? new Color(1f, 0.3f, 0.2f) : (isPlayer ? new Color(1f, 0.4f, 0.4f) : Color.white);
-        SpawnPopup(prefabToSpawn, worldPos, $"-{amount}", dmgColor, isCrit ? 5.5f : 4f);
+        SpawnPopup(prefabToSpawn, worldPos, $"-{amount}", dmgColor, popupSize);
     }
 
     /// <summary>
-    /// Hiển thị hồi máu
+    /// Displays healing popup.
     /// </summary>
     public static void ShowHeal(Vector3 worldPos, int amount)
     {
@@ -77,7 +103,7 @@ public class DamagePopupManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Hiển thị text trạng thái (Def, Shield, Miss, Buff...)
+    /// Displays status text (Def, Shield, Miss, Buff...).
     /// </summary>
     public static void ShowText(Vector3 worldPos, string text, Color color = default, float size = 0f)
     {
@@ -101,7 +127,7 @@ public class DamagePopupManager : MonoBehaviour
 
     private static void SpawnPopup(GameObject prefab, Vector3 worldPos, string content, Color customColor = default, float customSize = 0f)
     {
-        // Thêm độ lệch nhẹ ngẫu nhiên để nhiều số dame không đè khít lên nhau
+        // Add slight random offset to prevent multiple damage numbers from overlapping
         Vector3 spawnPos = worldPos + new Vector3(Random.Range(-0.25f, 0.25f), Random.Range(-0.1f, 0.15f), 0f);
         GameObject popup = null;
 
@@ -129,7 +155,7 @@ public class DamagePopupManager : MonoBehaviour
             }
         }
 
-        // Chạy hiệu ứng nảy số, bay lên và mờ dần biến mất
+        // Animate bounce, float upward, and fade out
         if (Instance != null)
         {
             Instance.StartCoroutine(AnimatePopupRoutine(popup, tmp));
@@ -148,7 +174,7 @@ public class DamagePopupManager : MonoBehaviour
         Vector3 startPos = popupTransform.position;
         Vector3 originalScale = popupTransform.localScale;
 
-        // Vận tốc nảy ngẫu nhiên (hơi lệch trái/phải và bay vút lên)
+        // Random bounce velocity (slight left/right variance + upward burst)
         float horizontalSpeed = Random.Range(-0.4f, 0.4f);
         float verticalSpeed = Random.Range(1.8f, 2.3f);
         Vector3 velocity = new Vector3(horizontalSpeed, verticalSpeed, 0f);
@@ -165,27 +191,27 @@ public class DamagePopupManager : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
 
-            // 1. Bay lên & chậm dần (Deceleration)
+            // 1. Float upward & decelerate
             popupTransform.position += velocity * Time.deltaTime;
             velocity = Vector3.Lerp(velocity, Vector3.zero, Time.deltaTime * 3.5f);
 
-            // 2. Hiệu ứng Punch Scale: Nảy to cực nhanh lúc đầu (t < 0.2s) rồi đàn hồi về bình thường
+            // 2. Punch Scale effect: pop quickly at start then settle back to normal
             if (t < 0.2f)
             {
                 float punchT = t / 0.2f;
-                // Phóng to lên 1.35x rồi co lại
+                // Pop up to 1.35x then shrink
                 float scaleMultiplier = Mathf.Lerp(0.5f, 1.35f, punchT);
                 popupTransform.localScale = originalScale * scaleMultiplier;
             }
             else if (t < 0.35f)
             {
                 float settleT = (t - 0.2f) / 0.15f;
-                // Đàn hồi từ 1.35x về 1.0x
+                // Settle from 1.35x to 1.0x
                 float scaleMultiplier = Mathf.Lerp(1.35f, 1.0f, settleT);
                 popupTransform.localScale = originalScale * scaleMultiplier;
             }
 
-            // 3. Mờ dần biến mất (Fade out ở nửa sau animation)
+            // 3. Fade out in second half of animation
             if (t > 0.45f && tmp != null)
             {
                 float fadeT = (t - 0.45f) / (1f - 0.45f);

@@ -350,41 +350,41 @@ public class DungeonEventManager : MonoBehaviour
         });
         runtimeEvents.Add(foragerEvt);
 
-        // 6. EVENT: The Lost Shrine of Blessings (Đền Thờ Phước Lành Cổ Xưa)
+        // 6. EVENT: The Lost Shrine of Blessings
         DungeonEvent blessingEvt = new()
         {
             eventID = "Event_Divine_Blessing",
-            eventTitle = "Đền Thờ Phước Lành Cổ Xưa",
+            eventTitle = "Ancient Shrine of Blessings",
             eventCategory = "SHRINE",
-            narrativeStory = "Một bức tượng cổ xưa tỏa ánh sáng hoàng kim dịu mát giữa lòng hầm ngục u tối.\nCác cổ tự khắc ghi: 'Dâng lên lòng thành, đón nhận ân huệ của các vị thần che chở.'"
+            narrativeStory = "An ancient statue radiates a warm, golden aura amidst the dark and dreary dungeon.\nAncient runes read: 'Offer your sincerity, receive the divine grace of the protector gods.'"
         };
         blessingEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Hiến Tế Nông Sản Thỉnh Phước Lành]",
-            choiceDetails = "Dâng 1 Nông Sản -> Nhận ngay 1 Phước Lành Trợ Chiến ngẫu nhiên suốt Run (kể cả Bảo Hộ Không Rơi Đồ)",
+            choiceLabel = "[Offer Crop for Divine Blessing]",
+            choiceDetails = "Sacrifice 1 Crop -> Receive 1 random Divine Combat Blessing for the run (including Death Protection)",
             requiredItem = wheat != null ? wheat : (carrot != null ? carrot : cabbage),
             requiredItemAmount = 1,
             grantRandomBlessing = true,
-            outcomeNarrative = "Ánh sáng thần thánh bao phủ lấy cơ thể bạn! Năng lượng phước lành cổ xưa thức tỉnh trong huyết quản!"
+            outcomeNarrative = "A holy radiance envelops your body! Ancient divine energy surges through your veins!"
         });
         blessingEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Cầu Nguyện Thành Tâm]",
-            choiceDetails = "Dành thời gian tĩnh tâm (-10 Độ no) -> Nhận buff toàn diện (+3 ATK, +3 DEF, +2 Speed trong 8 lượt, hồi 25 HP)",
+            choiceLabel = "[Pray Devoutly]",
+            choiceDetails = "Take time to meditate (-10 Hunger) -> Gain comprehensive buffs (+3 ATK, +3 DEF, +2 Speed for 8 turns, heal 25 HP)",
             hungerCost = 10,
             hpRecovery = 25,
             atkBuff = 3,
             defBuff = 3,
             speedBuff = 2,
             buffDuration = 8,
-            outcomeNarrative = "Tâm trí bạn hòa làm một với không gian linh thiêng. Sức mạnh và sự bền bỉ được gia tăng vượt bậc!"
+            outcomeNarrative = "Your mind becomes one with the sacred sanctuary. Your battle strength and endurance are greatly bolstered!"
         });
         blessingEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Cúi Đầu Rời Đi]",
-            choiceDetails = "Tỏ lòng tôn kính rồi tiếp tục tiến bước",
+            choiceLabel = "[Bow and Depart]",
+            choiceDetails = "Pay your respects and press forward",
             isLeaveChoice = true,
-            outcomeNarrative = "Bạn cúi đầu tôn kính trước bức tượng cổ rồi vững bước tiến sâu vào ngục tối."
+            outcomeNarrative = "You bow respectfully before the sacred statue and steadily journey deeper into the dungeon."
         });
         runtimeEvents.Add(blessingEvt);
     }
@@ -450,7 +450,7 @@ public class DungeonEventManager : MonoBehaviour
 
         if (!choice.CanPlayerSelect(player, backpack, out string failReason))
         {
-            resultNarrative = $"Không thể thực hiện: {failReason}";
+            resultNarrative = $"Cannot perform: {failReason}";
             isSuccess = false;
             return false;
         }
@@ -551,7 +551,7 @@ public class DungeonEventManager : MonoBehaviour
             }
         }
 
-        // Grant Blessing Rewards (Phước Lành Thần Linh)
+        // Grant Blessing Rewards
         if (choice.grantRandomBlessing && ProgressionManager.Instance != null)
         {
             var randomList = BlessingDatabase.GetRandomChoices(1);
@@ -560,7 +560,7 @@ public class DungeonEventManager : MonoBehaviour
                 var granted = randomList[0];
                 ProgressionManager.Instance.SetBlessing(granted.type);
                 ProgressionManager.Instance.UnlockBlessing(granted.type);
-                resultNarrative += $"\n<color=#55FF88>✨ Thần linh đã ban cho bạn Phước Lành: [{granted.iconSymbol} {granted.title}] (Đã mở khóa vĩnh viễn tại Tượng Thần)!</color>";
+                resultNarrative += $"\n<color=#55FF88>[OK] The gods granted you Blessing: [{granted.iconSymbol} {granted.title}] (Permanently unlocked at Divine Statue)!</color>";
             }
         }
         else if (choice.grantedBlessing != BlessingType.None && ProgressionManager.Instance != null)
@@ -569,7 +569,7 @@ public class DungeonEventManager : MonoBehaviour
             ProgressionManager.Instance.UnlockBlessing(choice.grantedBlessing);
             var info = BlessingDatabase.GetBlessingInfo(choice.grantedBlessing);
             string title = info != null ? $"{info.iconSymbol} {info.title}" : choice.grantedBlessing.ToString();
-            resultNarrative += $"\n<color=#55FF88>✨ Thần linh đã ban cho bạn Phước Lành: [{title}] (Đã mở khóa vĩnh viễn tại Tượng Thần)!</color>";
+            resultNarrative += $"\n<color=#55FF88>[OK] The gods granted you Blessing: [{title}] (Permanently unlocked at Divine Statue)!</color>";
         }
 
         return true;

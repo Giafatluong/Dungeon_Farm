@@ -257,7 +257,7 @@ public class DungeonEventUI : MonoBehaviour
 
         TextMeshProUGUI btnTxt = btnTxtGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(btnTxt);
-        btnTxt.text = "TIẾP TỤC [->]";
+        btnTxt.text = "CONTINUE [->]";
         btnTxt.fontSize = 13f;
         btnTxt.fontStyle = FontStyles.Bold;
         btnTxt.alignment = TextAlignmentOptions.Center;
@@ -346,7 +346,7 @@ public class DungeonEventUI : MonoBehaviour
 
     private void BuildChoiceButtons()
     {
-        // Xóa các button cũ
+        // Remove old buttons
         for (int i = 0; i < activeChoiceButtons.Count; i++)
         {
             if (activeChoiceButtons[i] != null)
@@ -356,7 +356,7 @@ public class DungeonEventUI : MonoBehaviour
         }
         activeChoiceButtons.Clear();
 
-        // Fix Bug 3: Tạo button cho từng lựa chọn trong event
+        // Create button for each choice in event
         if (currentEvent == null || currentEvent.choices == null || choicesContainer == null)
             return;
 
@@ -368,7 +368,7 @@ public class DungeonEventUI : MonoBehaviour
             string reason = string.Empty;
             bool canSelect = choice.isLeaveChoice || choice.CanPlayerSelect(currentPlayer, currentBackpack, out reason);
 
-            // Tạo button cho lựa chọn
+            // Create choice button
             GameObject btnGO = new GameObject($"ChoiceButton_{i}", typeof(RectTransform), typeof(UnityEngine.UI.Image), typeof(UnityEngine.UI.Button));
             btnGO.transform.SetParent(choicesContainer, false);
 
@@ -412,7 +412,7 @@ public class DungeonEventUI : MonoBehaviour
             }
             else
             {
-                label.text = $"<b><color=#666666>{choice.choiceLabel}</color></b>   <size=11><color=#FF6666><b>[Thiếu: {reason}]</b></color></size>";
+                label.text = $"<b><color=#666666>{choice.choiceLabel}</color></b>   <size=11><color=#FF6666><b>[Missing: {reason}]</b></color></size>";
             }
 
             // Bind listener (capture local index)

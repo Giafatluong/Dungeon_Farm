@@ -373,7 +373,7 @@ public class ChestUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Chuyển nhanh vật phẩm giữa Rương (HomeChest) và Ba Lô (Backpack) khi nhấp chuột phải.
+    /// Quick transfer items between Chest (HomeChest) and Backpack when right-clicked.
     /// </summary>
     public static void QuickTransfer(ItemContainer source, int sourceIndex)
     {
@@ -387,7 +387,7 @@ public class ChestUI : MonoBehaviour
         ItemContainer target = (source == Instance.chestContainer) ? Instance.backpackContainer : Instance.chestContainer;
         if (target == null || target.itemSlots == null) return;
 
-        // 1. Nếu có thể cộng dồn, dồn vào ô cùng loại trong kho đối diện
+        // 1. If stackable, stack into matching slot in target container
         if (sourceSlot.itemData.isStackable)
         {
             for (int i = 0; i < target.itemSlots.Length; i++)
@@ -404,7 +404,7 @@ public class ChestUI : MonoBehaviour
             }
         }
 
-        // 2. Chuyển vào ô trống đầu tiên trong kho đối diện
+        // 2. Transfer into first empty slot in target container
         int emptySlot = target.GetEmptySlot();
         if (emptySlot != -1)
         {
@@ -420,14 +420,14 @@ public class ChestUI : MonoBehaviour
             return;
         }
 
-        // Thông báo nếu kho đối diện đã đầy
+        // Notify if target container is full
         if (source == Instance.backpackContainer)
         {
-            Debug.LogWarning("[ChestUI] Rương đồ đã đầy, không thể chuyển thêm!");
+            Debug.LogWarning("[ChestUI] Chest is full, cannot transfer more items!");
         }
         else
         {
-            Debug.LogWarning("[ChestUI] Ba lô đã đầy, không thể chuyển thêm!");
+            Debug.LogWarning("[ChestUI] Backpack is full, cannot transfer more items!");
         }
     }
 }

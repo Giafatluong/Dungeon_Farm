@@ -70,6 +70,17 @@ public class CombatUI : MonoBehaviour
 
     private readonly List<GameObject> activeFoodButtons = new();
     private EnemyStats currentlyBoundTarget = null;
+
+    private Camera cachedCamera;
+    private Camera MainCamera
+    {
+        get
+        {
+            if (cachedCamera == null) cachedCamera = Camera.main;
+            return cachedCamera;
+        }
+    }
+    private static readonly Collider2D[] ClickHitBuffer = new Collider2D[16];
     #endregion
 
     #region Unity Lifecycle
@@ -378,18 +389,18 @@ public class CombatUI : MonoBehaviour
     private void CheckMouseClickEnemy()
     {
         if (targetSelector == null) return;
-        Camera cam = Camera.main;
+        Camera cam = MainCamera;
         if (cam == null) return;
 
         Vector3 mouseScreen = Input.mousePosition;
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreen);
 
-        // 1. Direct point collider check
-        Collider2D[] colliders = Physics2D.OverlapPointAll(mouseWorldPos);
-        for (int i = 0; i < colliders.Length; i++)
+        // 1. Direct point collider check (zero alloc)
+        int hitCount = Physics2D.OverlapPoint(mouseWorldPos, default, ClickHitBuffer);
+        for (int i = 0; i < hitCount; i++)
         {
-            if (colliders[i] == null) continue;
-            EnemyStats enemy = colliders[i].GetComponentInParent<EnemyStats>();
+            if (ClickHitBuffer[i] == null) continue;
+            EnemyStats enemy = ClickHitBuffer[i].GetComponentInParent<EnemyStats>();
             if (enemy != null && enemy.currentHealth > 0)
             {
                 targetSelector.SelectEnemy(enemy);
@@ -397,14 +408,14 @@ public class CombatUI : MonoBehaviour
             }
         }
 
-        // 2. Generous circle area check around mouse position (1.5 units)
-        Collider2D[] circleHits = Physics2D.OverlapCircleAll(mouseWorldPos, 1.5f);
+        // 2. Generous circle area check around mouse position (1.5 units, zero alloc)
+        int circleCount = Physics2D.OverlapCircle(mouseWorldPos, 1.5f, default, ClickHitBuffer);
         EnemyStats nearestEnemy = null;
         float nearestDist = float.MaxValue;
-        for (int i = 0; i < circleHits.Length; i++)
+        for (int i = 0; i < circleCount; i++)
         {
-            if (circleHits[i] == null) continue;
-            EnemyStats enemy = circleHits[i].GetComponentInParent<EnemyStats>();
+            if (ClickHitBuffer[i] == null) continue;
+            EnemyStats enemy = ClickHitBuffer[i].GetComponentInParent<EnemyStats>();
             if (enemy != null && enemy.currentHealth > 0)
             {
                 float dist = Vector2.Distance(mouseWorldPos, enemy.transform.position);
@@ -578,13 +589,14 @@ public class CombatUI : MonoBehaviour
                             string sign = b.buffValue > 0 ? "+" : "";
                             string durType = b.buffDurationType switch
                             {
-                                FoodData.BuffDurationType.Turn => "Turn",
-                                FoodData.BuffDurationType.Combat => "Battle",
-                                FoodData.BuffDurationType.Floor => "Floor",
+                                FoodData.BuffDurationType.Turn => b.remainingDuration == 1 ? "Turn" : "Turns",
+                                FoodData.BuffDurationType.Combat => b.remainingDuration == 1 ? "Battle" : "Battles",
+                                FoodData.BuffDurationType.Floor => b.remainingDuration == 1 ? "Floor" : "Floors",
                                 _ => b.buffDurationType.ToString()
                             };
                             string bColor = b.buffValue >= 0 ? "#66CCFF" : "#FF7777";
-                            sb.Append($"<color={bColor}>[{b.buff.buffName} {sign}{b.buffValue} ({b.remainingDuration} {durType})]</color> ");
+                            string statLabel = GetBuffStatLabel(b.buff);
+                            sb.Append($"<color={bColor}>[{sign}{b.buffValue} {statLabel} ({b.remainingDuration} {durType})]</color> ");
                         }
                     }
                     buffsText.text = sb.ToString().TrimEnd();
@@ -655,7 +667,7 @@ public class CombatUI : MonoBehaviour
                 if (turnBannerText != null)
                 {
                     int floor = ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1;
-                    turnBannerText.text = $"CỬA VÀO HẦM NGỤC - TẦNG {floor} (SẢNH CHỜ)";
+                    turnBannerText.text = $"DUNGEON ENTRANCE - FLOOR {floor} (LOBBY)";
                     turnBannerText.color = new Color(1f, 0.88f, 0.35f);
                 }
                 if (turnBannerBg != null)
@@ -825,13 +837,13 @@ public class CombatUI : MonoBehaviour
             if (waveManager.isAtEntrance)
             {
                 int total = waveManager.GetTotalStages();
-                stageProgressText.text = total > 0 ? $"Sảnh vào (0/{total})" : "Sảnh vào";
+                stageProgressText.text = total > 0 ? $"Entrance (0/{total})" : "Entrance";
             }
             else
             {
                 int current = waveManager.GetCurrentWaveIndex() + 1;
                 int total = waveManager.GetTotalStages();
-                stageProgressText.text = total > 0 ? $"Ải: {current}/{total}" : $"Stage: {current}";
+                stageProgressText.text = total > 0 ? $"Stage: {current}/{total}" : $"Stage: {current}";
             }
         }
     }
@@ -944,7 +956,7 @@ public class CombatUI : MonoBehaviour
             return;
         }
 
-        // Tự động bao bọc foodListContainer vào một ScrollView chuẩn với Mask và thanh slider dọc
+        // Automatically wrap foodListContainer inside a standard ScrollView with Mask and vertical scrollbar
         Transform origParent = foodListContainer.parent;
         int siblingIdx = foodListContainer.GetSiblingIndex();
 
@@ -981,7 +993,7 @@ public class CombatUI : MonoBehaviour
         vpRT.anchorMin = Vector2.zero;
         vpRT.anchorMax = Vector2.one;
         vpRT.offsetMin = Vector2.zero;
-        vpRT.offsetMax = new Vector2(-16, 0); // Dành 16px cho thanh slider dọc bên phải
+        vpRT.offsetMax = new Vector2(-16, 0); // Reserve 16px for vertical scrollbar on the right
 
         foodListContainer.SetParent(vpGO.transform, false);
         if (origRT != null)
@@ -1009,7 +1021,7 @@ public class CombatUI : MonoBehaviour
         foodScrollRect.viewport = vpRT;
         foodScrollRect.content = origRT;
 
-        // Tạo thanh slider dọc với màu hoàng kim sang trọng
+        // Create vertical scrollbar with sleek golden styling
         DungeonUIAssetHelper.CreateVerticalScrollbar(scrollGO.transform, foodScrollRect, new Color(0.85f, 0.65f, 0.2f, 1f));
     }
 
@@ -1067,7 +1079,7 @@ public class CombatUI : MonoBehaviour
             if (noFoodText != null)
             {
                 noFoodText.gameObject.SetActive(true);
-                noFoodText.text = "Không có đồ ăn hoặc nông sản trong túi!";
+                noFoodText.text = "No food or crops in inventory!";
             }
             return;
         }
@@ -1097,6 +1109,7 @@ public class CombatUI : MonoBehaviour
                         }
                     });
                 }
+                BindPrefabFoodData(rowGO, food, count);
             }
             else
             {
@@ -1119,14 +1132,57 @@ public class CombatUI : MonoBehaviour
     {
         if (food == null || foodListContainer == null) return null;
 
+        bool hasRawVitality = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.RawVitality);
+        bool hasEndlessFeast = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast);
+
+        string statInfo;
+        string buffInfo = "";
+        int buffCount = 0;
+
+        if (food is FoodData fd)
+        {
+            statInfo = $"<color=#66FF66>+{fd.healthValue} HP</color> | <color=#FFAA33>+{fd.hungerValue} Fullness</color>";
+
+            if (fd.foodBuff != null && fd.foodBuff.Length > 0)
+            {
+                List<string> bList = new();
+                for (int b = 0; b < fd.foodBuff.Length; b++)
+                {
+                    Foodbuff fb = fd.foodBuff[b];
+                    if (fb != null && fb.buffs != null)
+                    {
+                        string token = FormatFoodBuff(fb, hasEndlessFeast);
+                        if (!string.IsNullOrEmpty(token))
+                        {
+                            bList.Add(token);
+                            buffCount++;
+                        }
+                    }
+                }
+                if (bList.Count > 0)
+                {
+                    buffInfo = string.Join(" | ", bList);
+                }
+            }
+        }
+        else
+        {
+            int hp = hasRawVitality ? 12 : 6;
+            int hunger = hasRawVitality ? 20 : 15;
+            string bonus = hasRawVitality ? " <color=#A8E6CF>(Raw Vitality)</color>" : " <color=#88CCFF>(Raw Crop)</color>";
+            statInfo = $"<color=#66FF66>+{hp} HP</color> | <color=#FFAA33>+{hunger} Fullness</color>{bonus}";
+        }
+
+        float rowHeight = buffCount >= 3 ? 82f : (buffCount > 0 ? 66f : 52f);
+
         GameObject row = new GameObject($"Food_{food.itemName}", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
         row.transform.SetParent(foodListContainer, false);
         RectTransform rt = row.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(380, 52);
+        rt.sizeDelta = new Vector2(380, rowHeight);
 
         LayoutElement le = row.GetComponent<LayoutElement>();
-        le.minHeight = 52;
-        le.preferredHeight = 52;
+        le.minHeight = rowHeight;
+        le.preferredHeight = rowHeight;
         le.flexibleWidth = 1;
 
         Image bg = row.GetComponent<Image>();
@@ -1141,8 +1197,9 @@ public class CombatUI : MonoBehaviour
             iconRT.anchorMin = new Vector2(0, 0.5f);
             iconRT.anchorMax = new Vector2(0, 0.5f);
             iconRT.pivot = new Vector2(0, 0.5f);
-            iconRT.anchoredPosition = new Vector2(10, 0);
-            iconRT.sizeDelta = new Vector2(36, 36);
+            iconRT.anchoredPosition = new Vector2(8, 0);
+            float iconSize = buffCount > 0 ? 40f : 36f;
+            iconRT.sizeDelta = new Vector2(iconSize, iconSize);
             Image iconImg = iconGO.GetComponent<Image>();
             iconImg.sprite = food.itemIcon;
             iconImg.preserveAspect = true;
@@ -1154,27 +1211,28 @@ public class CombatUI : MonoBehaviour
         RectTransform labelRT = labelGO.GetComponent<RectTransform>();
         labelRT.anchorMin = new Vector2(0, 0);
         labelRT.anchorMax = new Vector2(1, 1);
-        labelRT.offsetMin = new Vector2(52, 4);
-        labelRT.offsetMax = new Vector2(-90, -4);
+        labelRT.offsetMin = new Vector2(54, 4);
+        labelRT.offsetMax = new Vector2(-88, -4);
         TextMeshProUGUI label = labelGO.GetComponent<TextMeshProUGUI>();
         label.fontSize = 12;
         label.color = Color.white;
         label.alignment = TextAlignmentOptions.MidlineLeft;
+        label.textWrappingMode = TextWrappingModes.Normal;
+        label.lineSpacing = -8;
 
-        string statInfo;
-        bool hasRawVitality = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.RawVitality);
-        if (food is FoodData fd)
+        if (!string.IsNullOrEmpty(buffInfo))
         {
-            statInfo = $"<color=#66FF66>+{fd.healthValue} HP</color> | <color=#FFAA33>+{fd.hungerValue} No</color>";
+            string feastTag = hasEndlessFeast ? " <color=#FFAAEE>[Feast: 2x Dur]</color>" : "";
+            label.text = $"<b>{food.itemName}</b> <color=#FFD700>x{count}</color>\n<size=10.5>{statInfo}</size>\n<size=9.5><b>Buff:</b> {buffInfo}{feastTag}</size>";
+        }
+        else if (food is not FoodData && hasRawVitality)
+        {
+            label.text = $"<b>{food.itemName}</b> <color=#FFD700>x{count}</color>\n<size=10.5>{statInfo}</size>\n<size=9.5><color=#A8E6CF>Passive: +100% HP & +33% Fullness</color></size>";
         }
         else
         {
-            int hp = hasRawVitality ? 12 : 6;
-            int hunger = hasRawVitality ? 20 : 15;
-            string bonus = hasRawVitality ? " (Cường Tráng)" : " (Nông sản)";
-            statInfo = $"<color=#66FF66>+{hp} HP</color> | <color=#FFAA33>+{hunger} No</color>{bonus}";
+            label.text = $"<b>{food.itemName}</b> <color=#FFD700>x{count}</color>\n<size=10.5>{statInfo}</size>";
         }
-        label.text = $"<b>{food.itemName}</b> x{count}\n<size=10>{statInfo}</size>";
 
         // Eat Button
         GameObject btnGO = new GameObject("EatBtn", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -1209,13 +1267,139 @@ public class CombatUI : MonoBehaviour
         btnTextRT.offsetMin = Vector2.zero;
         btnTextRT.offsetMax = Vector2.zero;
         TextMeshProUGUI btnText = btnTextGO.GetComponent<TextMeshProUGUI>();
-        btnText.text = "ĂN";
+        btnText.text = "EAT";
         btnText.fontSize = 13;
         btnText.fontStyle = FontStyles.Bold;
         btnText.color = Color.white;
         btnText.alignment = TextAlignmentOptions.Center;
 
         return row;
+    }
+
+    private void BindPrefabFoodData(GameObject rowGO, ItemData food, int count)
+    {
+        if (rowGO == null || food == null) return;
+
+        bool hasRawVitality = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.RawVitality);
+        bool hasEndlessFeast = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast);
+
+        string statInfo;
+        string buffInfo = "";
+        if (food is FoodData fd)
+        {
+            statInfo = $"<color=#66FF66>+{fd.healthValue} HP</color> | <color=#FFAA33>+{fd.hungerValue} Fullness</color>";
+            if (fd.foodBuff != null && fd.foodBuff.Length > 0)
+            {
+                List<string> bList = new();
+                for (int b = 0; b < fd.foodBuff.Length; b++)
+                {
+                    Foodbuff fb = fd.foodBuff[b];
+                    if (fb != null && fb.buffs != null)
+                    {
+                        string token = FormatFoodBuff(fb, hasEndlessFeast);
+                        if (!string.IsNullOrEmpty(token)) bList.Add(token);
+                    }
+                }
+                if (bList.Count > 0) buffInfo = string.Join(" | ", bList);
+            }
+        }
+        else
+        {
+            int hp = hasRawVitality ? 12 : 6;
+            int hunger = hasRawVitality ? 20 : 15;
+            string bonus = hasRawVitality ? " (Raw Vitality)" : " (Raw Crop)";
+            statInfo = $"<color=#66FF66>+{hp} HP</color> | <color=#FFAA33>+{hunger} Fullness</color>{bonus}";
+        }
+
+        var tmpTexts = rowGO.GetComponentsInChildren<TextMeshProUGUI>(true);
+        if (tmpTexts != null && tmpTexts.Length > 0)
+        {
+            for (int i = 0; i < tmpTexts.Length; i++)
+            {
+                string n = tmpTexts[i].gameObject.name.ToLower();
+                if (n.Contains("name") || n.Contains("title"))
+                {
+                    tmpTexts[i].text = $"{food.itemName} x{count}";
+                }
+                else if (n.Contains("stat") || n.Contains("desc") || n.Contains("info") || n.Contains("buff"))
+                {
+                    tmpTexts[i].text = !string.IsNullOrEmpty(buffInfo) ? $"{statInfo}\n<b>Buff:</b> {buffInfo}" : statInfo;
+                }
+            }
+        }
+
+        var images = rowGO.GetComponentsInChildren<Image>(true);
+        if (images != null)
+        {
+            for (int i = 0; i < images.Length; i++)
+            {
+                if (images[i].gameObject.name.ToLower().Contains("icon") && food.itemIcon != null)
+                {
+                    images[i].sprite = food.itemIcon;
+                    break;
+                }
+            }
+        }
+    }
+
+    public static string GetBuffStatLabel(StatEffectData buff)
+    {
+        if (buff == null) return "Buff";
+
+        string stat = buff.buffType switch
+        {
+            StatEffectData.BuffType.Attack => "ATK",
+            StatEffectData.BuffType.Defense => "DEF",
+            StatEffectData.BuffType.Speed => "SPD",
+            StatEffectData.BuffType.Health => "Max HP",
+            _ => buff.buffType.ToString()
+        };
+
+        if (!string.IsNullOrEmpty(buff.buffName))
+        {
+            string raw = buff.buffName.Trim();
+            if (raw.IndexOf("ATK", System.StringComparison.OrdinalIgnoreCase) >= 0) return "ATK";
+            if (raw.IndexOf("DEF", System.StringComparison.OrdinalIgnoreCase) >= 0) return "DEF";
+            if (raw.IndexOf("Speed", System.StringComparison.OrdinalIgnoreCase) >= 0 || raw.IndexOf("SPD", System.StringComparison.OrdinalIgnoreCase) >= 0) return "SPD";
+            if (raw.IndexOf("Health", System.StringComparison.OrdinalIgnoreCase) >= 0 || raw.IndexOf("HP", System.StringComparison.OrdinalIgnoreCase) >= 0 || raw.IndexOf("M\u00e1u", System.StringComparison.OrdinalIgnoreCase) >= 0) return "HP";
+
+            if (raw.StartsWith("T\u0103ng ", System.StringComparison.OrdinalIgnoreCase) || raw.StartsWith("Tang ", System.StringComparison.OrdinalIgnoreCase))
+                raw = raw.Substring(5).Trim();
+            else if (raw.StartsWith("Gi\u1ea3m ", System.StringComparison.OrdinalIgnoreCase) || raw.StartsWith("Giam ", System.StringComparison.OrdinalIgnoreCase))
+                raw = raw.Substring(5).Trim();
+            else if (raw.StartsWith("Increase ", System.StringComparison.OrdinalIgnoreCase))
+                raw = raw.Substring(9).Trim();
+            else if (raw.StartsWith("Decrease ", System.StringComparison.OrdinalIgnoreCase))
+                raw = raw.Substring(9).Trim();
+
+            if (!string.IsNullOrEmpty(raw)) stat = raw;
+        }
+
+        return stat;
+    }
+
+    public static string FormatFoodBuff(Foodbuff fb, bool hasEndlessFeast)
+    {
+        if (fb == null || fb.buffs == null) return null;
+
+        string stat = GetBuffStatLabel(fb.buffs);
+        int val = fb.buffValue;
+        if (fb.buffs.IsDebuff && val > 0) val = -val;
+
+        string sign = val > 0 ? "+" : "";
+        int duration = fb.buffDuration;
+        if (hasEndlessFeast) duration *= 2;
+
+        string durUnit = fb.buffDurationType switch
+        {
+            FoodData.BuffDurationType.Turn => duration == 1 ? "Turn" : "Turns",
+            FoodData.BuffDurationType.Combat => duration == 1 ? "Battle" : "Battles",
+            FoodData.BuffDurationType.Floor => duration == 1 ? "Floor" : "Floors",
+            _ => fb.buffDurationType.ToString()
+        };
+
+        string colorHex = val >= 0 ? "#55DDFF" : "#FF7777";
+        return $"<color={colorHex}>{sign}{val} {stat} ({duration} {durUnit})</color>";
     }
     #endregion
 
@@ -1304,7 +1488,7 @@ public class CombatUI : MonoBehaviour
             TextMeshProUGUI titleText = rewardPanel.transform.Find("Box/Title")?.GetComponent<TextMeshProUGUI>();
             if (titleText != null)
             {
-                titleText.text = "PHÒNG THƯỞNG KHO BÁU!";
+                titleText.text = "TREASURE ROOM REWARD!";
             }
 
             if (rewardDescriptionText != null)
@@ -1331,17 +1515,17 @@ public class CombatUI : MonoBehaviour
             TextMeshProUGUI titleText = rewardPanel.transform.Find("Box/Title")?.GetComponent<TextMeshProUGUI>();
             if (titleText != null)
             {
-                titleText.text = $"HOÀN THÀNH WAVE {waveIndex + 1}!";
+                titleText.text = $"WAVE {waveIndex + 1} CLEARED!";
             }
 
             if (rewardDescriptionText != null)
             {
                 System.Text.StringBuilder sb = new();
-                sb.AppendLine("<size=18><color=#B0BEC5>Đã tiêu diệt toàn bộ kẻ địch!</color></size>\n");
+                sb.AppendLine("<size=18><color=#B0BEC5>All enemies defeated!</color></size>\n");
 
                 if (waveLoot != null && waveLoot.Count > 0)
                 {
-                    sb.AppendLine("<size=20><color=#FFD700>Vật phẩm rơi từ quái:</color></size>");
+                    sb.AppendLine("<size=20><color=#FFD700>Loot dropped from monsters:</color></size>");
                     Dictionary<ItemData, int> combined = new();
                     foreach (var slot in waveLoot)
                     {
@@ -1352,12 +1536,12 @@ public class CombatUI : MonoBehaviour
 
                     foreach (var kvp in combined)
                     {
-                        sb.AppendLine($"• <color=#FFFFFF>{kvp.Key.itemName}</color> <color=#A8E6CF>x{kvp.Value}</color>");
+                        sb.AppendLine($"* <color=#FFFFFF>{kvp.Key.itemName}</color> <color=#A8E6CF>x{kvp.Value}</color>");
                     }
                 }
                 else
                 {
-                    sb.AppendLine("<color=#888888>(Không có vật phẩm rơi trong đợt này)</color>");
+                    sb.AppendLine("<color=#888888>(No loot dropped this wave)</color>");
                 }
 
                 rewardDescriptionText.text = sb.ToString();
@@ -1368,7 +1552,7 @@ public class CombatUI : MonoBehaviour
                 TextMeshProUGUI btnText = rewardClaimButton.GetComponentInChildren<TextMeshProUGUI>();
                 if (btnText != null)
                 {
-                    btnText.text = "TIẾP TỤC";
+                    btnText.text = "CONTINUE";
                 }
             }
         }

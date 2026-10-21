@@ -123,7 +123,7 @@ public class RewardUI : MonoBehaviour
         }
         if (leftHeaderTitle != null)
         {
-            leftHeaderTitle.text = !string.IsNullOrEmpty(customTitle) ? "CHIẾN LỢI PHẨM RƠI RA" : "CHEST CACHE CONTENTS";
+            leftHeaderTitle.text = !string.IsNullOrEmpty(customTitle) ? customTitle.ToUpper() : "CHEST CACHE CONTENTS";
         }
 
         currentChest = chest;
@@ -159,7 +159,7 @@ public class RewardUI : MonoBehaviour
 
         RefreshAll();
 
-        SetHint("Bấm <b>[Take]</b> để nhặt từng món hoặc bấm <b>[NHẶT TẤT CẢ]</b> để cất toàn bộ vào balo.");
+        SetHint("Click <b>[Take]</b> to pick up an item or <b>[CLAIM ALL]</b> to store all into backpack.");
         Debug.Log("[RewardUI] Reward/Loot room opened successfully.");
     }
 
@@ -287,7 +287,7 @@ public class RewardUI : MonoBehaviour
             tmp.fontSize = 13;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = new Color(0.85f, 0.9f, 0.95f, 0.95f);
-            tmp.text = "<b>Không còn chiến lợi phẩm nào.</b>\n<size=11><color=#88FF88>Đã nhặt hết vật phẩm!</color> Bấm [TIẾP TỤC] để đi tiếp.</size>";
+            tmp.text = "<b>No more loot remaining.</b>\n<size=11><color=#88FF88>All items claimed!</color> Click [CONTINUE] to proceed.</size>";
         }
 
         emptyNoticeGO.SetActive(true);
@@ -1029,7 +1029,7 @@ public class RewardUI : MonoBehaviour
         laText.fontStyle = FontStyles.Bold;
         laText.alignment = TextAlignmentOptions.Center;
         laText.color = Color.white;
-        laText.text = "NHẶT TẤT CẢ";
+        laText.text = "CLAIM ALL";
 
         // Button: Continue
         GameObject contGO = new("BtnContinue", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -1060,7 +1060,7 @@ public class RewardUI : MonoBehaviour
         contText.fontStyle = FontStyles.Bold;
         contText.alignment = TextAlignmentOptions.Center;
         contText.color = Color.white;
-        contText.text = "TIẾP TỤC >>";
+        contText.text = "CONTINUE >>";
     }
     #endregion
 }

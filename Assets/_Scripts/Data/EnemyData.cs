@@ -9,6 +9,8 @@ public class EnemyData : ScriptableObject
     public int ATK;
     public int DEF;
     public int speed;
+    [Tooltip("If true, this enemy attacks from range without moving up to the player")]
+    public bool isRanged = false;
 
     public enum EnemyIntent
     {

@@ -26,7 +26,7 @@ public class DungeonEventChoice
     public int speedBuff = 0;
     public int buffDuration = 4;
 
-    [Header("Blessing Rewards (Phước Lành Thần Linh)")]
+    [Header("Blessing Rewards")]
     public BlessingType grantedBlessing = BlessingType.None;
     public bool grantRandomBlessing = false;
 

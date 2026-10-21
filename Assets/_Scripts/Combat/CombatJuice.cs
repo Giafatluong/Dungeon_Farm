@@ -43,6 +43,16 @@ public class CombatJuice : MonoBehaviour
     // Cache for procedural particle systems
     private readonly List<ParticleSystem> sparkPool = new();
 
+    private Camera cachedCam;
+    private Camera MainCam
+    {
+        get
+        {
+            if (cachedCam == null) cachedCam = Camera.main;
+            return cachedCam;
+        }
+    }
+
     private void Awake()
     {
         if (instance != null && instance != this)
@@ -58,7 +68,7 @@ public class CombatJuice : MonoBehaviour
         // Safety: Always restore timeScale when disabled
         Time.timeScale = 1f;
 
-        Camera cam = Camera.main;
+        Camera cam = MainCam;
         if (cam != null && lastAppliedShakeOffset != Vector3.zero)
         {
             cam.transform.position -= lastAppliedShakeOffset;
@@ -68,7 +78,10 @@ public class CombatJuice : MonoBehaviour
 
     private void LateUpdate()
     {
-        Camera cam = Camera.main;
+        // Zero overhead early exit when no shake is active or needs clearing
+        if (shakeTimer <= 0f && lastAppliedShakeOffset == Vector3.zero) return;
+
+        Camera cam = MainCam;
         if (cam == null) return;
 
         // Cleanly undo the previous frame's offset so base position is unaffected

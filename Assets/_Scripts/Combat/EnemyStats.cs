@@ -19,6 +19,8 @@ public class EnemyStats : MonoBehaviour
     [Header("Placement Configuration")]
     public bool isFlying = false;
     public float yOffset = 0f;
+    [Header("Combat Style")]
+    public bool isRanged = false;
 
     public float GetSpawnYOffset()
     {
@@ -38,6 +40,7 @@ public class EnemyStats : MonoBehaviour
         if (enemyData != null)
         {
             currentHealth = enemyData.maxHealth;
+            if (enemyData.isRanged) isRanged = true;
         }
 
         SelectNextIntent();
@@ -148,33 +151,23 @@ public class EnemyStats : MonoBehaviour
 
     public virtual int TakeDamage(int damage)
     {
+        return TakeDamage(damage, true);
+    }
+
+    public virtual int TakeDamage(int damage, bool showFeedback)
+    {
         if (currentHealth <= 0) return 0;
 
         int def = GetCurrentDEF();
         int reducedDamage = Mathf.Max(1, damage - def);
         currentHealth -= reducedDamage;
 
-        // Damage Popup above enemy
-        bool isCrit = damage >= 20 || (def > 0 && damage >= def * 2 && damage >= 12);
-        int maxHp = enemyData != null ? Mathf.Max(1, enemyData.maxHealth) : 1;
-        float damagePercent = (float)reducedDamage / maxHp;
-        bool isLethal = currentHealth <= 0;
-
-        Collider2D col = GetComponent<Collider2D>();
-        float popupY = col != null ? (col.bounds.max.y - transform.position.y + 0.35f) : 1.2f;
-        Vector3 popupPos = transform.position + new Vector3(0, popupY, 0);
-
-        DamagePopupManager.ShowDamage(popupPos, reducedDamage, isPlayer: false, isCrit: isCrit, damagePercent: damagePercent, isLethal: isLethal);
-
-        if (CombatJuice.Instance != null)
+        if (showFeedback)
         {
-            CombatJuice.Instance.OnEnemyDamaged(transform.position, reducedDamage, damagePercent, isLethal);
+            TriggerDamageFeedback(reducedDamage, damage);
         }
 
         Debug.Log($"[EnemyStats] {(enemyData != null ? enemyData.enemyName : "Enemy")} took {reducedDamage} damage (raw: {damage}, DEF: {def}). HP: {currentHealth}");
-
-        EnemyCombatVisual visual = GetComponent<EnemyCombatVisual>();
-        if (visual != null) visual.PlayHitAnimation();
 
         if (currentHealth <= 0)
         {
@@ -183,6 +176,34 @@ public class EnemyStats : MonoBehaviour
         }
 
         return reducedDamage;
+    }
+
+    /// <summary>
+    /// Triggers damage feedback (damage popup, camera shake, recoil, and red flash).
+    /// Called at the exact impact moment of Player's attack for authentic combat feel.
+    /// </summary>
+    public void TriggerDamageFeedback(int dealtDamage, int rawDamage = -1)
+    {
+        if (rawDamage < 0) rawDamage = dealtDamage;
+        int def = GetCurrentDEF();
+        bool isCrit = rawDamage >= 20 || (def > 0 && rawDamage >= def * 2 && rawDamage >= 12);
+        int maxHp = enemyData != null ? Mathf.Max(1, enemyData.maxHealth) : 1;
+        float damagePercent = (float)dealtDamage / maxHp;
+        bool isLethal = currentHealth <= 0;
+
+        Collider2D col = GetComponent<Collider2D>();
+        float popupY = col != null ? (col.bounds.max.y - transform.position.y + 0.35f) : 1.2f;
+        Vector3 popupPos = transform.position + new Vector3(0, popupY, 0);
+
+        DamagePopupManager.ShowDamage(popupPos, dealtDamage, isPlayer: false, isCrit: isCrit, damagePercent: damagePercent, isLethal: isLethal);
+
+        if (CombatJuice.Instance != null)
+        {
+            CombatJuice.Instance.OnEnemyDamaged(transform.position, dealtDamage, damagePercent, isLethal);
+        }
+
+        EnemyCombatVisual visual = GetComponent<EnemyCombatVisual>();
+        if (visual != null) visual.PlayHitAnimation();
     }
 
     public void Heal(int amount)
@@ -263,10 +284,16 @@ public class EnemyStats : MonoBehaviour
         {
             case EnemyData.EnemyIntent.Attack:
                 int dmg = Mathf.Max(0, GetCurrentATK() - playerStats.GetCurrentDEF() - (playerStats.defendCount * playerStats.defendValue));
-                playerStats.TakeDamage(dmg);
                 Debug.Log($"[EnemyStats] {enemyData?.enemyName} attacks for {dmg} damage!");
 
-                if (visual != null) visual.PlayAttackAnimation();
+                if (visual != null)
+                {
+                    visual.PlayAttackAnimation(playerStats, () => playerStats.TakeDamage(dmg));
+                }
+                else
+                {
+                    playerStats.TakeDamage(dmg);
+                }
                 break;
 
             case EnemyData.EnemyIntent.Defend:

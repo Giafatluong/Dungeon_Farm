@@ -269,7 +269,7 @@ public class Statue : MonoBehaviour, IInteractable
         if (playerStats != null)
         {
             playerStats.RefreshStatsFromProgression();
-            DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.5f, $"+{offering.rewardAmount} {offering.rewardStat} VĨNH VIỄN!", new Color(1f, 0.85f, 0.2f), 4.5f);
+            DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.5f, $"+{offering.rewardAmount} {offering.rewardStat} PERMANENT!", new Color(1f, 0.85f, 0.2f), 4.5f);
         }
         return true;
     }

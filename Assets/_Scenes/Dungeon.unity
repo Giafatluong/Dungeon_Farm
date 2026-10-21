@@ -7456,7 +7456,7 @@ MonoBehaviour:
   currentTurn: 0
   enemies: []
   preparationTime: 3
-  enemyTurnDelay: 1.2
+  enemyTurnDelay: 0.35
   playerActionDelay: 0.35
   victoryDelay: 1
 --- !u!114 &1363399724
@@ -8200,7 +8200,7 @@ MonoBehaviour:
   animator: {fileID: 1429561008}
   playerStats: {fileID: 1429561004}
   lungeDistance: 1
-  lungeDuration: 0.15
+  lungeDuration: 0.44
 --- !u!1 &1512587622
 GameObject:
   m_ObjectHideFlags: 0

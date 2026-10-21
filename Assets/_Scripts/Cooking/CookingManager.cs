@@ -193,14 +193,14 @@ public class CookingManager : MonoBehaviour
     }
 
     /// <summary>
-    /// So khớp nguyên liệu trong nồi với tất cả các công thức đã có.
-    /// Cơ chế đoán mò: Khi số lượng và loại nguyên liệu trong nồi khớp chính xác với công thức thì ra món!
+    /// Matches ingredients in the pot with all existing recipes.
+    /// Freeform discovery mechanism: When types and quantities match a recipe exactly, the dish is cooked!
     /// </summary>
     public RecipeData MatchRecipe(List<ItemSlot> potItems)
     {
         if (potItems == null || potItems.Count == 0) return null;
 
-        // 1. Gom nhóm nguyên liệu trong nồi theo loại ItemData
+        // 1. Group ingredients in pot by ItemData
         Dictionary<ItemData, int> potSummary = new Dictionary<ItemData, int>();
         for (int i = 0; i < potItems.Count; i++)
         {
@@ -229,14 +229,14 @@ public class CookingManager : MonoBehaviour
 
         if (potSummary.Count == 0) return null;
 
-        // 2. So khớp với từng công thức
+        // 2. Match against each available recipe
         List<RecipeData> allRecipes = GetAllAvailableRecipes();
         for (int r = 0; r < allRecipes.Count; r++)
         {
             RecipeData recipe = allRecipes[r];
             if (!IsValidRecipe(recipe)) continue;
 
-            // Số loại nguyên liệu phải bằng nhau
+            // Number of ingredient types must match
             int validReqCount = 0;
             for (int i = 0; i < recipe.ingredients.Length; i++)
             {
@@ -248,7 +248,7 @@ public class CookingManager : MonoBehaviour
 
             if (potSummary.Count != validReqCount) continue;
 
-            // Kiểm tra từng nguyên liệu yêu cầu
+            // Check each required ingredient
             bool isMatch = true;
             for (int i = 0; i < recipe.ingredients.Length; i++)
             {
@@ -265,7 +265,7 @@ public class CookingManager : MonoBehaviour
                     }
                 }
 
-                // Phải đúng chính xác số lượng yêu cầu
+                // Must match exact required quantity
                 if (amountInPot != req.amount)
                 {
                     isMatch = false;
@@ -279,11 +279,11 @@ public class CookingManager : MonoBehaviour
             }
         }
 
-        return null; // Không khớp công thức nào
+        return null; // No matching recipe found
     }
 
     /// <summary>
-    /// Thực hiện nấu nồi thức ăn thử nghiệm (đoán mò).
+    /// Attempts to cook experimental pot ingredients (freeform cooking).
     /// </summary>
     public bool TryCookPot(List<ItemSlot> potItems, ItemContainer destinationContainer, out RecipeData matchedRecipe, out bool isNewDiscovery)
     {
@@ -302,7 +302,7 @@ public class CookingManager : MonoBehaviour
             {
                 if (!destinationContainer.CanAddItem(matchedRecipe.resultFood))
                 {
-                    failReason = "Balo đã đầy! Hãy dọn chỗ trống trước khi nấu.";
+                    failReason = "Backpack is full! Free up space before cooking.";
                     OnCookFailed?.Invoke(failReason);
                     return false;
                 }
@@ -315,10 +315,19 @@ public class CookingManager : MonoBehaviour
             }
 
             OnCookSuccess?.Invoke(matchedRecipe);
+
+            if (VFXManager.Instance != null)
+            {
+                Vector3 kitchenPos = (KitchenStation.Instance != null)
+                    ? KitchenStation.Instance.transform.position
+                    : (PlayerStats.Instance != null ? PlayerStats.Instance.transform.position : Vector3.zero);
+                VFXManager.Instance.PlayCookingSparkles(kitchenPos);
+            }
+
             return true;
         }
 
-        failReason = "Kết hợp nguyên liệu không thành công! Món ăn bị cháy khét.";
+        failReason = "Ingredient combination failed! The dish was burnt.";
         OnCookFailed?.Invoke(failReason);
         return false;
     }
@@ -384,17 +393,17 @@ public class CookingManager : MonoBehaviour
 
         if (!CanCook(recipe, ingredientContainers))
         {
-            string failMsg = $"Không đủ nguyên liệu để nấu: {recipe.DisplayName}";
+            string failMsg = $"Not enough ingredients to cook: {recipe.DisplayName}";
             OnCookFailed?.Invoke(failMsg);
             Debug.Log(failMsg);
             return false;
         }
 
-        // Kiểm tra dung lượng chứa món ăn trước khi trừ nguyên liệu
+        // Check dish storage capacity before deducting ingredients
         bool hasInitialSpace = primaryResultContainer.CanAddItem(recipe.resultFood);
         if (!hasInitialSpace)
         {
-            // Kiểm tra xem việc tiêu thụ nguyên liệu có giải phóng ít nhất 1 ô trong thùng chứa chính không
+            // Check if consuming ingredients will free up at least 1 slot in the primary container
             bool willFreeSlot = false;
             for (int i = 0; i < recipe.ingredients.Length; i++)
             {
@@ -411,7 +420,7 @@ public class CookingManager : MonoBehaviour
 
             if (!willFreeSlot)
             {
-                string failMsg = "Balo đã đầy! Hãy dọn chỗ trống trước khi nấu.";
+                string failMsg = "Backpack is full! Free up space before cooking.";
                 OnCookFailed?.Invoke(failMsg);
                 Debug.LogWarning($"[CookingManager] {failMsg}");
                 return false;
@@ -459,8 +468,8 @@ public class CookingManager : MonoBehaviour
             }
 
             string failMsg = !allDeducted
-                ? $"Không đủ nguyên liệu để nấu: {recipe.DisplayName}"
-                : "Balo đã đầy! Không còn chỗ để nhận món ăn.";
+                ? $"Not enough ingredients to cook: {recipe.DisplayName}"
+                : "Backpack is full! No space to receive the dish.";
             OnCookFailed?.Invoke(failMsg);
             Debug.LogWarning($"[CookingManager] {failMsg}");
             return false;

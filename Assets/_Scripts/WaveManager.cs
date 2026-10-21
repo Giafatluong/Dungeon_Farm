@@ -204,7 +204,7 @@ public class WaveManager : MonoBehaviour
         if (CombatUI.Instance != null)
         {
             CombatUI.Instance.RefreshAll();
-            CombatUI.Instance.LogMessage($"Chào mừng đến Hầm Ngục Tầng {floorNum}! Nhấn nút mũi tên bên phải để tiến vào ải đầu tiên.");
+            CombatUI.Instance.LogMessage($"Welcome to Dungeon Floor {floorNum}! Press the right arrow to enter the first stage.");
         }
 
         DungeonEntranceArrowUI arrowUI = DungeonEntranceArrowUI.EnsureInstance();
@@ -241,7 +241,7 @@ public class WaveManager : MonoBehaviour
 
         if (CombatUI.Instance != null)
         {
-            CombatUI.Instance.LogMessage("Đang tiến vào ải đầu tiên...");
+            CombatUI.Instance.LogMessage("Entering the first stage...");
         }
 
         yield return new WaitForSeconds(moveDuration);
@@ -265,7 +265,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private float roguelikeMerchantSpawnChance = 0.65f;
     [Tooltip("If true, dynamically places a Merchant stage at a randomized mid-floor stage on each expedition run.")]
     [SerializeField] private bool enableDynamicRoguelikeMerchant = true;
-    [Tooltip("Biến CD thời gian thương nhân xuất hiện trên tầng. Khi đếm về 0 thì tầng sẽ có tỉ lệ xuất hiện thương nhân trở lại bình thường.")]
+    [Tooltip("Merchant appearance cooldown on floor. When counting to 0, merchant spawn chance resumes as normal.")]
     public int merchantCooldown = 0;
 
     public int GetMerchantCooldown()
@@ -307,7 +307,7 @@ public class WaveManager : MonoBehaviour
         {
             if (runtimeWaves[i] != null && runtimeWaves[i].waveType == WaveData.WaveType.Merchant)
             {
-                // Khi sự kiện thương nhân hết thời gian hoặc đang CD, stage đó sẽ trở lại thành ô random
+                // When merchant event has expired or is on cooldown, this stage reverts to a random stage
                 if (!isMerchantActive)
                 {
                     Debug.Log($"[WaveManager] Pre-existing Merchant stage at Stage {i + 1} converted to Random because Merchant has expired/on cooldown (CD: {GetMerchantCooldown()}).");
@@ -440,7 +440,7 @@ public class WaveManager : MonoBehaviour
             ProgressionManager.Instance.UnlockFloor(nextFloorNum);
         }
 
-        // Giảm thời lượng các buff có hiệu lực theo tầng (Floor buffs)
+        // Decrement floor-duration buffs
         if (combatManager != null && combatManager.playerStats != null)
         {
             combatManager.playerStats.ReduceFloorBuffDuration();
@@ -496,7 +496,7 @@ public class WaveManager : MonoBehaviour
             ? ProgressionManager.Instance.currentFloor
             : (GetActiveFloor() != null ? GetActiveFloor().floorNumber : 1);
 
-        // Sau khi sự kiện thương nhân hết thời gian hoặc đang CD, stage đó trở lại thành ô random
+        // When merchant event has expired or is on cooldown, revert stage to a random encounter
         if (effectiveType == WaveData.WaveType.Merchant && (!MerchantEvent.IsMerchantActiveForFloor(currentFloorNum) || GetMerchantCooldown() > 0))
         {
             Debug.Log($"[WaveManager] Merchant event time expired / on cooldown on Floor {currentFloorNum} (CD: {GetMerchantCooldown()}). Stage {currentWaveIndex + 1} reverts to Random tile.");
@@ -579,10 +579,10 @@ public class WaveManager : MonoBehaviour
 
         if (CombatUI.Instance != null)
         {
-            CombatUI.Instance.LogMessage($"[Phòng Boss Trống] Thủ Lĩnh Tầng {floorNum} chưa hồi sinh (Còn {daysLeft} ngày). Khu vực hoàn toàn an toàn!");
+            CombatUI.Instance.LogMessage($"[Empty Boss Room] Floor {floorNum} Boss has not respawned ({daysLeft} days remaining). Area is completely safe!");
             if (CombatUI.Instance.turnBannerText != null)
             {
-                CombatUI.Instance.turnBannerText.text = "PHÒNG THỦ LĨNH TRỐNG (BOSS CHƯA HỒI SINH)";
+                CombatUI.Instance.turnBannerText.text = "EMPTY BOSS ROOM (BOSS NOT RESPAWNED)";
                 CombatUI.Instance.turnBannerText.color = new Color(0.4f, 1f, 0.6f);
             }
             if (CombatUI.Instance.turnBannerBg != null)
@@ -724,7 +724,7 @@ public class WaveManager : MonoBehaviour
 
         bool isMerchantActive = merchantEvent != null && merchantEvent.merchantActive && merchantEvent.remainingDays > 0 && GetMerchantCooldown() <= 0;
 
-        // Khi sự kiện thương nhân hết thời gian thì stage đó chuyển lại thành ô random và chạy logic ô random
+        // When merchant event has expired, revert stage to random encounter
         if (!isMerchantActive)
         {
             Debug.Log("[WaveManager] Merchant event expired / on cooldown during HandleMerchantStage. Reverting stage to Random!");

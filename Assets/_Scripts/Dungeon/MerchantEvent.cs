@@ -146,9 +146,9 @@ public class MerchantEvent : MonoBehaviour
     {
         if (floor <= 0) floor = 1;
         FloorMerchantStatus status = GetFloorMerchantStatus(floor);
-        // Khi chưa gặp: luôn sẵn sàng cho người chơi gặp (số ngày không giảm)
+        // When unmet: always available for player to discover (remaining days do not decrease)
         if (!status.hasMet) return true;
-        // Khi đã gặp: active nếu còn ngày và không trong cooldown
+        // When already met: active if days remain and not in cooldown
         return status.remainingDays > 0 && status.cooldownDays <= 0;
     }
 
@@ -187,7 +187,7 @@ public class MerchantEvent : MonoBehaviour
         {
             if (!HasMetMerchant(f))
             {
-                // QUAN TRỌNG: "khi chưa gặp thương nhân thì số ngày không giảm"
+                // IMPORTANT: "when merchant is unmet, days do not decrement"
                 continue;
             }
 
@@ -245,8 +245,8 @@ public class MerchantEvent : MonoBehaviour
     }
 
     /// <summary>
-    /// Kết thúc thời gian của sự kiện thương nhân (hết thời gian).
-    /// Chuyển sang trạng thái cooldown.
+    /// Ends merchant visit duration (time expired).
+    /// Transitions into cooldown status.
     /// </summary>
     public void ExpireMerchant()
     {
@@ -259,7 +259,7 @@ public class MerchantEvent : MonoBehaviour
     }
 
     /// <summary>
-    /// Giảm biến cooldown. Khi đếm về 0, thương nhân sẽ xuất hiện trở lại với tỉ lệ bình thường.
+    /// Decrements cooldown days. When reaching 0, merchant reappears normally.
     /// </summary>
     public void DecrementCooldown(int amount = 1)
     {

@@ -42,7 +42,7 @@ public class CurrentItemPanel : MonoBehaviour
 
     private void Update()
     {
-        // Phím tắt 1-9 chọn nhanh vật phẩm trên thanh công cụ khi không ở trong trận chiến và không mở modal/túi đồ
+        // Number keys 1-9 to select items on hotbar when outside combat and no modal/bag is open
         if (CombatManager.Instance != null && (CombatManager.Instance.isCombatActive || CombatManager.Instance.isPreparingCombat))
             return;
 

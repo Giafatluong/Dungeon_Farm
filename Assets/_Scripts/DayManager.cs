@@ -137,7 +137,7 @@ public class DayManager : MonoBehaviour
         // Flush all saved plot and day data in one batch
         PlayerPrefs.Save();
 
-        // Ở nhà các chỉ số không tự động giảm (Hunger/HP giữ nguyên theo yêu cầu thiết kế)
+        // At home base, stats do not automatically decrease (Hunger/HP preserved per design)
 
         // Reset temporary run blessings and food buffs when day advances
         if (ProgressionManager.Instance != null)

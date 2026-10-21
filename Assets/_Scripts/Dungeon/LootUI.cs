@@ -4,13 +4,12 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Bảng UI Chiến Lợi Phẩm sau khi tiêu diệt quái / kết thúc combat:
-/// - Thiết kế cân đối đối xứng 50/50 giữa 2 cột: [VẬT PHẨM RƠI] và [BA LÔ CỦA BẠN]
-/// - Cả 2 bên đều dùng lưới chuẩn 6 cột, tự động hoàn thiện hàng cuối (padding 3 slot khóa để đủ 6x6)
-/// - Khi đã nhặt hết: Ẩn các ô trống, hiện bảng thông báo 'ĐÃ THU NHẬP TẤT CẢ!' trang nhã
-/// - Nút [LOOT HẾT] tự động vô hiệu hóa & mờ đi khi không còn đồ để loot
-/// - Nút [TIẾP TỤC] tự động sáng xanh ngọc nổi bật khi đã gom hết đồ, hướng dẫn người chơi đi tiếp
-/// - Khắc phục triệt để lỗi chữ 'Victory! All enemies defeated.' từ CombatUI xuyên qua màn hình
+/// Combat Loot UI displayed after defeating monsters / ending combat:
+/// - Balanced 50/50 two-column layout: [DROPPED LOOT] and [YOUR BACKPACK]
+/// - Standard 6-column grid with padding slots for neat alignment
+/// - Smooth notifications and transfer animations
+/// - [LOOT ALL] button automatically disables when no items remain
+/// - [CONTINUE] button highlights to guide player forward
 /// </summary>
 public class LootUI : MonoBehaviour
 {
@@ -138,7 +137,7 @@ public class LootUI : MonoBehaviour
             return;
         }
 
-        // 1. Fullscreen Dark Overlay (ngăn chặn triệt để bleed-through từ combat UI phía sau)
+        // 1. Fullscreen Dark Overlay (prevents bleed-through from combat UI behind)
         GameObject overlayGO = new("LootPanel", typeof(RectTransform), typeof(Image));
         overlayGO.transform.SetParent(parentCanvas.transform, false);
         lootPanel = overlayGO;
@@ -200,7 +199,7 @@ public class LootUI : MonoBehaviour
 
         titleText = titleGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(titleText);
-        titleText.text = "CHIẾN LỢI PHẨM QUÁI RƠI";
+        titleText.text = "ENEMY LOOT DROPS";
         titleText.fontSize = 20f;
         titleText.fontStyle = FontStyles.Bold;
         titleText.color = new Color(1f, 0.85f, 0.25f);
@@ -217,12 +216,12 @@ public class LootUI : MonoBehaviour
 
         subtitleText = subGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(subtitleText);
-        subtitleText.text = "Kéo thả vật phẩm vào Ba Lô, hoặc ấn [LOOT HẾT] để gom nhanh toàn bộ đồ.";
+        subtitleText.text = "Drag and drop items into your Backpack, or click [LOOT ALL] to collect everything.";
         subtitleText.fontSize = 12f;
         subtitleText.color = new Color(0.85f, 0.88f, 0.95f);
         subtitleText.alignment = TextAlignmentOptions.MidlineLeft;
 
-        // 4. Body (Cân đối 50/50: Cột Trái 48.8% | Khoảng cách giữa 2.4% | Cột Phải 48.8%)
+        // 4. Body (Balanced 50/50: Left 48.8% | Middle Gap 2.4% | Right 48.8%)
         GameObject bodyGO = new("Body", typeof(RectTransform));
         bodyGO.transform.SetParent(modalGO.transform, false);
         RectTransform bodyRT = bodyGO.GetComponent<RectTransform>();
@@ -262,7 +261,7 @@ public class LootUI : MonoBehaviour
         leftLabelRT.offsetMax = new Vector2(-10, 0);
         lootHeaderTitle = leftLabelGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(lootHeaderTitle);
-        lootHeaderTitle.text = "VẬT PHẨM RƠI";
+        lootHeaderTitle.text = "DROPPED LOOT";
         lootHeaderTitle.fontSize = 12.5f;
         lootHeaderTitle.fontStyle = FontStyles.Bold;
         lootHeaderTitle.color = new Color(1f, 0.85f, 0.35f);
@@ -314,7 +313,7 @@ public class LootUI : MonoBehaviour
         lootScrollRect.scrollSensitivity = 25f;
         lootScrollRect.movementType = ScrollRect.MovementType.Clamped;
 
-        // Scrollbar thanh lịch đồng bộ màu vàng đồng cổ
+        // Elegant bronze-gold vertical scrollbar
         Color themeScrollColor = new(0.75f, 0.60f, 0.30f, 0.95f);
         DungeonUIAssetHelper.CreateVerticalScrollbar(leftScrollGO.transform, lootScrollRect, themeScrollColor);
 
@@ -349,7 +348,7 @@ public class LootUI : MonoBehaviour
         bpTitleRT.offsetMax = new Vector2(-10, 0);
         backpackHeaderTitle = bpTitleGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(backpackHeaderTitle);
-        backpackHeaderTitle.text = "BA LÔ CỦA BẠN";
+        backpackHeaderTitle.text = "YOUR BACKPACK";
         backpackHeaderTitle.fontSize = 12.5f;
         backpackHeaderTitle.fontStyle = FontStyles.Bold;
         backpackHeaderTitle.color = new Color(0.55f, 0.95f, 1f);
@@ -417,7 +416,7 @@ public class LootUI : MonoBehaviour
         hintText.fontSize = 12f;
         hintText.alignment = TextAlignmentOptions.MidlineLeft;
 
-        // Button [LOOT HẾT]
+        // Button [LOOT ALL]
         GameObject lootAllBtnGO = new("LootAllButton", typeof(RectTransform), typeof(Image), typeof(Button));
         lootAllBtnGO.transform.SetParent(modalGO.transform, false);
         RectTransform lootAllRT = lootAllBtnGO.GetComponent<RectTransform>();
@@ -439,13 +438,13 @@ public class LootUI : MonoBehaviour
         lootAllTxtRT.sizeDelta = Vector2.zero;
         lootAllTxt = lootAllTxtGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(lootAllTxt);
-        lootAllTxt.text = "LOOT HẾT";
+        lootAllTxt.text = "LOOT ALL";
         lootAllTxt.fontSize = 13f;
         lootAllTxt.fontStyle = FontStyles.Bold;
         lootAllTxt.alignment = TextAlignmentOptions.Center;
         lootAllTxt.color = Color.white;
 
-        // Button [TIẾP TỤC]
+        // Button [CONTINUE]
         GameObject contBtnGO = new("ContinueButton", typeof(RectTransform), typeof(Image), typeof(Button));
         contBtnGO.transform.SetParent(modalGO.transform, false);
         RectTransform contRT = contBtnGO.GetComponent<RectTransform>();
@@ -467,7 +466,7 @@ public class LootUI : MonoBehaviour
         contTxtRT.sizeDelta = Vector2.zero;
         contTxt = contTxtGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(contTxt);
-        contTxt.text = "TIẾP TỤC [->]";
+        contTxt.text = "CONTINUE [->]";
         contTxt.fontSize = 13f;
         contTxt.fontStyle = FontStyles.Bold;
         contTxt.alignment = TextAlignmentOptions.Center;
@@ -490,13 +489,13 @@ public class LootUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Mở bảng UI nhặt đồ với danh sách chiến lợi phẩm thu được và ba lô người chơi
+    /// Opens the Loot UI modal with dropped items and the player's backpack
     /// </summary>
     public void Open(List<ItemSlot> incomingLoot, ItemContainer playerBackpack, System.Action onClose)
     {
         EnsureUIBuilt();
 
-        // Ẩn chữ và panel thông báo chiến thắng ở nền sau nếu có để tránh che khuất
+        // Hide combat victory messages in the background to avoid overlap
         if (CombatUI.Instance != null)
         {
             if (CombatUI.Instance.combatLogText != null) CombatUI.Instance.combatLogText.gameObject.SetActive(false);
@@ -507,7 +506,7 @@ public class LootUI : MonoBehaviour
         backpackContainer = playerBackpack;
         onLootClosed = onClose;
 
-        // Tính toán số lượng slot Loot vừa đủ (làm tròn lên bội số của 6 để hàng luôn đầy đủ)
+        // Calculate required loot slots (round up to multiple of 6 for full rows)
         int rawLootCount = incomingLoot != null ? incomingLoot.Count : 0;
         int lootCapacity = Mathf.Max(6, Mathf.CeilToInt(Mathf.Max(1, rawLootCount) / 6f) * 6);
 
@@ -562,7 +561,7 @@ public class LootUI : MonoBehaviour
         {
             if (hintText != null)
             {
-                hintText.text = "Kéo thả vật phẩm vào Ba Lô, hoặc ấn [LOOT HẾT] để gom nhanh toàn bộ đồ.";
+                hintText.text = "Drag and drop items into your Backpack, or click [LOOT ALL] to collect everything.";
                 hintText.color = new Color(0.9f, 0.95f, 1f);
             }
         }
@@ -570,7 +569,7 @@ public class LootUI : MonoBehaviour
         {
             if (hintText != null)
             {
-                hintText.text = "<color=#68D391>Không có vật phẩm mới. Bạn có thể sắp xếp lại ba lô hoặc bấm [TIẾP TỤC].</color>";
+                hintText.text = "<color=#68D391>No new items. You can organize your backpack or click [CONTINUE].</color>";
             }
         }
 
@@ -585,7 +584,7 @@ public class LootUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Đóng bảng Loot UI và gọi callback tiếp tục
+    /// Closes the Loot UI and invokes the continuation callback
     /// </summary>
     public void Close()
     {
@@ -666,7 +665,7 @@ public class LootUI : MonoBehaviour
         {
             if (hintText != null)
             {
-                hintText.text = "Ba lô đã đầy! Hãy dọn dẹp hoặc kéo thả bớt vật phẩm qua lại.";
+                hintText.text = "Backpack is full! Free up space or drag items between slots.";
                 hintText.color = new Color(1f, 0.6f, 0.3f);
             }
         }
@@ -675,8 +674,8 @@ public class LootUI : MonoBehaviour
             if (hintText != null)
             {
                 hintText.text = itemsLooted > 0
-                    ? $"<color=#68D391>Đã gom thành công {itemsLooted} vật phẩm vào Ba Lô! Ấn [TIẾP TỤC] để tiến bước.</color>"
-                    : "<color=#68D391>Đã gom hết đồ. Hãy ấn [TIẾP TỤC] để tiến bước!</color>";
+                    ? $"<color=#68D391>Successfully collected {itemsLooted} items into Backpack! Click [CONTINUE] to advance.</color>"
+                    : "<color=#68D391>All loot collected. Click [CONTINUE] to advance!</color>";
             }
         }
     }
@@ -720,7 +719,7 @@ public class LootUI : MonoBehaviour
             }
         }
 
-        // Hoàn thiện hàng cuối cho Ba Lô (33 slot + 3 slot khóa padding = 36 slot, thành lưới 6x6 vuông vức)
+        // Complete final row for Backpack (33 slots + 3 padding locked slots = 36 slots, 6x6 grid)
         if (container == backpackContainer && container.maxSlots == 33)
         {
             int neededPadding = 3;
@@ -756,7 +755,7 @@ public class LootUI : MonoBehaviour
         }
         else
         {
-            // Ẩn các slot dư thừa
+            // Hide surplus slots
             for (int i = container.maxSlots; i < existingCount; i++)
             {
                 existing[i].gameObject.SetActive(false);
@@ -784,14 +783,14 @@ public class LootUI : MonoBehaviour
                 filled++;
             }
         }
-        backpackHeaderTitle.text = $"BA LÔ CỦA BẠN ({filled}/{backpackContainer.maxSlots})";
+        backpackHeaderTitle.text = $"YOUR BACKPACK ({filled}/{backpackContainer.maxSlots})";
     }
 
     private void UpdateLootHeader()
     {
         if (lootHeaderTitle != null)
         {
-            lootHeaderTitle.text = "VẬT PHẨM RƠI";
+            lootHeaderTitle.text = "DROPPED LOOT";
         }
 
         if (lootSlotsParent != null)
@@ -825,7 +824,7 @@ public class LootUI : MonoBehaviour
             }
             if (lootAllTxt != null)
             {
-                lootAllTxt.text = "LOOT HẾT";
+                lootAllTxt.text = "LOOT ALL";
                 lootAllTxt.color = hasLoot ? Color.white : new Color(0.7f, 0.7f, 0.7f);
             }
         }
@@ -838,7 +837,7 @@ public class LootUI : MonoBehaviour
             }
             if (contTxt != null)
             {
-                contTxt.text = "TIẾP TỤC [->]";
+                contTxt.text = "CONTINUE [->]";
             }
         }
     }

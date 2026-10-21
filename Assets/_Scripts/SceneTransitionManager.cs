@@ -56,10 +56,10 @@ public class SceneTransitionManager : MonoBehaviour
 
     public void LoadBase()
     {
-        // Khi người chơi rời khỏi Dungeon về Base, toàn bộ buff (turn, combat, floor) đều biến mất:
+        // When player leaves Dungeon for Base, all buffs (turn, combat, floor) are cleared:
         PlayerStats.Instance?.ClearTemporaryBuffs();
 
-        // Nếu thoát về Base khi chuyến thám hiểm vẫn đang chạy (chưa qua ngày), tự động kích hoạt qua 1 ngày:
+        // If exiting to Base while expedition is active (day hasn't advanced), automatically advance 1 day:
         if (ProgressionManager.Instance != null && ProgressionManager.Instance.runActive)
         {
             ProgressionManager.Instance.runActive = false;

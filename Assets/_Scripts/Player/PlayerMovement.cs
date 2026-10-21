@@ -88,6 +88,7 @@ public class PlayerMovement : MonoBehaviour
         }
         if (inventoryPanel != null && inventoryPanel.gameObject.activeSelf) return true;
 
+        if (MainMenuUI.Instance != null && MainMenuUI.Instance.IsOpen) return true;
         if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return true;
         if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return true;
         if (MerchantUI.Instance != null && MerchantUI.Instance.IsOpen) return true;

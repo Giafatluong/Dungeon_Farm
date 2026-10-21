@@ -5,20 +5,20 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Giao diện Tổng Kết Chuyến Thám Hiểm (Dungeon Expedition Summary UI).
-/// Tự động hiển thị khi người chơi thoát khỏi Dungeon (Chiến thắng, Rút lui an toàn tại Camp, hoặc Tử trận).
-/// - Thống kê chi tiết tầng, chặng vượt qua, trạng thái Boss, phước lành, lượng máu/độ no.
-/// - Hiển thị toàn bộ chiến lợi phẩm mang về trong ba lô với ScrollView + Thanh cuộn slider dọc đẹp mắt, chống tràn.
-/// - Thông báo rõ ràng về bảo hộ rơi đồ (KeepLootOnDefeat / Tân thủ) hoặc vật phẩm đã bảo toàn.
-/// - Nút "Trở Về Nông Trại" hoàn tất chuyến đi và chuyển cảnh an toàn về Base.
+/// Dungeon Expedition Summary UI.
+/// Automatically shown when player leaves the Dungeon (Victory, Safe Retreat at Camp, or Defeat).
+/// - Detailed statistics on floor, stages cleared, Boss status, active blessing, HP/Fullness.
+/// - Displays all loot secured in backpack with clean scrollview.
+/// - Clear notice regarding protection (Divine Protection / Starter Protection) or lost loot.
+/// - "Return to Farm" button completes the run and transitions back to Base.
 /// </summary>
 public class DungeonSummaryUI : MonoBehaviour
 {
     public enum ExpeditionResult
     {
-        Victory,    // Tiêu diệt Boss hoặc hoàn thành tầng
-        Retreat,    // Chủ động rút lui an toàn tại Camp
-        Defeat      // Hết máu / Tử trận
+        Victory,    // Defeated Boss or cleared floor
+        Retreat,    // Safely retreated at Camp
+        Defeat      // Depleted HP / Fallen in battle
     }
 
     #region Singleton & Factory
@@ -141,7 +141,7 @@ public class DungeonSummaryUI : MonoBehaviour
 
     #region Public API
     /// <summary>
-    /// Hiển thị bảng tổng kết chuyến thám hiểm với kết quả tương ứng.
+    /// Shows the expedition summary modal with corresponding result.
     /// </summary>
     public void Show(ExpeditionResult result, Action onConfirmReturn = null)
     {
@@ -214,37 +214,37 @@ public class DungeonSummaryUI : MonoBehaviour
         // 3. Stats Column
         if (statFloorText != null)
         {
-            statFloorText.text = $"🏰 <b>Tầng Thám Hiểm:</b> <color=#FFE066>Tầng {floorNum}</color>";
+            statFloorText.text = $"<b>[Exploration Floor]</b> <color=#FFE066>Floor {floorNum}</color>";
         }
 
         if (statStagesText != null)
         {
-            statStagesText.text = $"⚔️ <b>Chặng Đã Vượt:</b> <color=#A0E8AF>{stagesCleared}/{totalStages} Chặng</color>";
+            statStagesText.text = $"<b>[Stages Cleared]</b> <color=#A0E8AF>{stagesCleared}/{totalStages} Stages</color>";
         }
 
         if (statBossText != null)
         {
             if (bossDefeated)
             {
-                statBossText.text = "👑 <b>Thủ Lĩnh (Boss):</b> <color=#FFD700>ĐÃ TIÊU DIỆT 🏆</color>";
+                statBossText.text = "<b>[Boss Leader]</b> <color=#FFD700>DEFEATED</color>";
             }
             else if (result == ExpeditionResult.Retreat)
             {
-                statBossText.text = "👑 <b>Thủ Lĩnh (Boss):</b> <color=#88CCFF>Rút lui an toàn</color>";
+                statBossText.text = "<b>[Boss Leader]</b> <color=#88CCFF>Safe Retreat</color>";
             }
             else
             {
-                statBossText.text = "👑 <b>Thủ Lĩnh (Boss):</b> <color=#FF7777>Chưa đánh bại</color>";
+                statBossText.text = "<b>[Boss Leader]</b> <color=#FF7777>Undefeated</color>";
             }
         }
 
         if (statHealthText != null && ps != null)
         {
-            statHealthText.text = $"❤️ <b>Sinh Lực:</b> {ps.currentHealth}/{ps.maxHealth} HP   |   🍖 <b>Độ No:</b> {ps.currentHunger}/{ps.maxHunger}";
+            statHealthText.text = $"<b>[Vitality]</b> {ps.currentHealth}/{ps.maxHealth} HP   |   <b>[Fullness]</b> {ps.currentHunger}/{ps.maxHunger}";
         }
         else if (statHealthText != null)
         {
-            statHealthText.text = "❤️ <b>Sinh Lực:</b> Bình an";
+            statHealthText.text = "<b>[Vitality]</b> Healthy";
         }
 
         if (statBlessingText != null)
@@ -253,11 +253,11 @@ public class DungeonSummaryUI : MonoBehaviour
             {
                 BlessingInfo info = BlessingDatabase.GetBlessingInfo(pm.activeBlessing);
                 string bName = info != null ? info.title : pm.activeBlessing.ToString();
-                statBlessingText.text = $"✨ <b>Phước Lành:</b> <color=#88FFDD>{bName}</color>";
+                statBlessingText.text = $"<b>[Blessing]</b> <color=#88FFDD>{bName}</color>";
             }
             else
             {
-                statBlessingText.text = "✨ <b>Phước Lành:</b> <color=#AAAAAA>Không kích hoạt</color>";
+                statBlessingText.text = "<b>[Blessing]</b> <color=#AAAAAA>None active</color>";
             }
         }
 
@@ -266,7 +266,7 @@ public class DungeonSummaryUI : MonoBehaviour
         {
             int curDay = DayManager.Instance != null ? DayManager.Instance.currentDay : PlayerPrefs.GetInt("Farm_CurrentDay", 1);
             int nextDay = curDay + 1;
-            statDayTransitionText.text = $"📅 <b>Thời Gian:</b> <color=#FFE066>Sang Ngày Mới ({nextDay})</color> <i>(+1 Ngày)</i>";
+            statDayTransitionText.text = $"<b>[Time Passed]</b> <color=#FFE066>New Day Arrives ({nextDay})</color> <i>(+1 Day)</i>";
         }
 
         // 4. Special Protection Notice
@@ -277,22 +277,22 @@ public class DungeonSummaryUI : MonoBehaviour
 
             if (result == ExpeditionResult.Victory)
             {
-                specialNoticeText.text = "<color=#66FF88>🌟 HOÀN THÀNH XUẤT SẮC!</color>\nToàn bộ chiến lợi phẩm, kho báu hoàng kim và nông sản đã được chuyển an toàn về trang trại.";
+                specialNoticeText.text = "<color=#66FF88>[EXCELLENT EXPEDITION!]</color>\nAll loot, golden treasures, and harvested crops have been safely brought back to your farm.";
             }
             else if (result == ExpeditionResult.Retreat)
             {
-                specialNoticeText.text = "<color=#66E0FF>🏕️ RÚT LUI CHIẾN THUẬT AN TOÀN!</color>\nBạn đã nghỉ ngơi tại Doanh Trại và trở về căn cứ bình an vô sự. Giữ nguyên 100% tài sản trong túi đồ.";
+                specialNoticeText.text = "<color=#66E0FF>[TACTICAL SAFE RETREAT!]</color>\nYou rested at the Camp and returned home safely. 100% of items in your inventory are preserved.";
             }
             else // Defeat
             {
                 if (hasKeepLoot || isStarter)
                 {
-                    string reason = isStarter ? "Bảo Hộ Tân Thủ Thần Linh" : "Phước Lành Bảo Hộ";
-                    specialNoticeText.text = $"<color=#66FF88>🛡️ {reason} ĐÃ KÍCH HOẠT!</color>\nDù tử trận nhưng bạn được che chở: <b>Giữ nguyên 100% vật phẩm trong ba lô</b> mang về nhà!";
+                    string reason = isStarter ? "Divine Novice Protection" : "Divine Protection Blessing";
+                    specialNoticeText.text = $"<color=#66FF88>[{reason} ACTIVATED!]</color>\nThough defeated, divine protection shields you: <b>100% of backpack items were preserved</b> and brought home!";
                 }
                 else
                 {
-                    specialNoticeText.text = "<color=#FF6666>⚠️ BẠN ĐÃ TỬ TRẬN TRONG DUNGEON!</color>\nBạn đã kiệt sức trước lũ quái vật. Hãy chuẩn bị thêm lương thực và phước lành trước chuyến đi kế tiếp.";
+                    specialNoticeText.text = "<color=#FF6666>[YOU WERE DEFEATED IN THE DUNGEON!]</color>\nYou collapsed before the monsters. Prepare more food and blessings before your next expedition.";
                 }
             }
         }
@@ -312,23 +312,23 @@ public class DungeonSummaryUI : MonoBehaviour
         {
             case ExpeditionResult.Victory:
                 bannerColor = new Color(0.28f, 0.22f, 0.08f, 1f);
-                t = $"🏆 TỔNG KẾT: CHIẾN THẮNG TẦNG {floor}!";
-                sub = "Bạn đã chinh phục thành công toàn bộ quái vật và đánh bại Chúa Tể Ngục Tối!";
+                t = $"SUMMARY: FLOOR {floor} VICTORY!";
+                sub = "You vanquished all monsters and conquered the Dungeon Boss!";
                 iconSp = DungeonUIAssetHelper.GetChestSprite();
                 break;
 
             case ExpeditionResult.Retreat:
                 bannerColor = new Color(0.08f, 0.24f, 0.28f, 1f);
-                t = $"🏕️ TỔNG KẾT: RÚT LUI AN TOÀN - TẦNG {floor}";
-                sub = "Bạn đã chủ động rút lui từ Doanh Trại, bảo toàn vẹn nguyên toàn bộ tài nguyên.";
+                t = $"SUMMARY: SAFE RETREAT - FLOOR {floor}";
+                sub = "You retreated safely from the Camp, preserving all gathered resources.";
                 iconSp = DungeonUIAssetHelper.GetTentSprite();
                 break;
 
             case ExpeditionResult.Defeat:
             default:
                 bannerColor = new Color(0.30f, 0.10f, 0.10f, 1f);
-                t = $"💀 TỔNG KẾT: TỬ TRẬN TẠI TẦNG {floor}";
-                sub = "Chuyến phiêu lưu phải dừng lại trước hiểm nguy trong lòng đất. Hãy rèn luyện và phục thù!";
+                t = $"SUMMARY: DEFEATED ON FLOOR {floor}";
+                sub = "The expedition was cut short by underground perils. Train, prepare, and return stronger!";
                 iconSp = DungeonUIAssetHelper.GetBossSprite();
                 break;
         }
@@ -387,7 +387,7 @@ public class DungeonSummaryUI : MonoBehaviour
 
         if (lootHeaderTitle != null)
         {
-            lootHeaderTitle.text = $"CHIẾN LỢI PHẨM MANG VỀ ({validSlots.Count} MÓN ĐỒ)";
+            lootHeaderTitle.text = $"EXPEDITION LOOT SECURED ({validSlots.Count} ITEMS)";
         }
 
         if (validSlots.Count == 0)
@@ -404,7 +404,7 @@ public class DungeonSummaryUI : MonoBehaviour
                 tmp.fontSize = 13.5f;
                 tmp.color = new Color(0.7f, 0.75f, 0.85f);
                 tmp.alignment = TextAlignmentOptions.Center;
-                tmp.text = "<i>Không có vật phẩm nào trong túi đồ chuyến này.</i>";
+                tmp.text = "<i>No items in your backpack this run.</i>";
             }
             emptyLootNoticeGO.SetActive(true);
             return;
@@ -481,10 +481,10 @@ public class DungeonSummaryUI : MonoBehaviour
 
         string tag = item.itemType switch
         {
-            ItemData.ItemType.Produce => "<color=#88CCFF>[Nông Sản]</color>",
-            ItemData.ItemType.Seed => "<color=#88FF88>[Hạt Giống]</color>",
-            ItemData.ItemType.Food => "<color=#FFAA44>[Món Ăn]</color>",
-            _ => "<color=#E0E0E0>[Vật Phẩm]</color>"
+            ItemData.ItemType.Produce => "<color=#88CCFF>[Crop]</color>",
+            ItemData.ItemType.Seed => "<color=#88FF88>[Seed]</color>",
+            ItemData.ItemType.Food => "<color=#FFAA44>[Food]</color>",
+            _ => "<color=#E0E0E0>[Item]</color>"
         };
 
         labelTMP.text = $"<b>{item.itemName}</b>\n{tag} <color=#FFDD44>x{amount}</color>";
@@ -499,7 +499,7 @@ public class DungeonSummaryUI : MonoBehaviour
         HasConfirmedReturn = true;
         Close();
 
-        // Tự động chuyển qua 1 ngày và phục hồi thể lực sau chuyến thám hiểm
+        // Automatically advance 1 day and restore stamina after expedition
         AdvanceDayOnReturnStatic();
 
         if (onConfirmedReturnCallback != null)
@@ -521,19 +521,19 @@ public class DungeonSummaryUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Phương thức dùng chung để tự động qua 1 ngày, cập nhật ruộng lúa và hồi thể lực khi kết thúc chuyến đi.
-    /// Có thể gọi trực tiếp hoặc từ bất kỳ hệ thống thoát hầm ngục nào.
+    /// Shared static helper to advance 1 day, update farm crops, and restore stamina when ending a run.
+    /// Can be called directly or from any dungeon exit flow.
     /// </summary>
     public static void AdvanceDayOnReturnStatic()
     {
-        // Đảm bảo đánh dấu chuyến đi kết thúc để không bị kích hoạt lặp lại 2 lần khi chuyển scene
+        // Mark run as inactive to avoid duplicate triggers during scene transition
         if (ProgressionManager.Instance != null)
         {
             ProgressionManager.Instance.runActive = false;
             ProgressionManager.Instance.ClearRunBlessing();
         }
 
-        // Chuyển sang ngày mới: Kích hoạt tăng trưởng cây trồng trên ruộng (+1 ngày) và reset boss cooldown
+        // Advance to new day: triggers farm crop growth (+1 day) and resets boss cooldown
         DayManager dm = DayManager.Instance != null ? DayManager.Instance : FindFirstObjectByType<DayManager>();
         if (dm != null)
         {
@@ -545,9 +545,9 @@ public class DungeonSummaryUI : MonoBehaviour
             PlayerPrefs.SetInt("Farm_CurrentDay", curDay + 1);
             PlayerPrefs.Save();
         }
-        Debug.Log("[DungeonSummaryUI] Đã hoàn tất chuyến thám hiểm: Tự động qua 1 ngày (Cây trồng trên ruộng lớn thêm +1 ngày tuổi)!");
+        Debug.Log("[DungeonSummaryUI] Expedition finished: Automatically advanced 1 day (Farm crops grew +1 day older)!");
 
-        // 2. Hồi phục thể lực cơ bản khi qua ngày (ngủ nghỉ sau khi trở về)
+        // 2. Restore baseline health and fullness upon day transition
         PlayerStats ps = PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>();
         if (ps != null)
         {
@@ -569,7 +569,7 @@ public class DungeonSummaryUI : MonoBehaviour
             ps.ClearTemporaryBuffs();
         }
 
-        // 3. Kết thúc run trạng thái trong ProgressionManager
+        // 3. Complete active run state in ProgressionManager
         if (ProgressionManager.Instance != null)
         {
             ProgressionManager.Instance.runActive = false;
@@ -652,7 +652,7 @@ public class DungeonSummaryUI : MonoBehaviour
         titleText.fontSize = 20;
         titleText.fontStyle = FontStyles.Bold;
         titleText.alignment = TextAlignmentOptions.MidlineLeft;
-        titleText.text = "TỔNG KẾT CHUYẾN THÁM HIỂM DUNGEON";
+        titleText.text = "DUNGEON EXPEDITION SUMMARY";
 
         // Subtitle Text
         GameObject subGO = new("SubtitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -667,7 +667,7 @@ public class DungeonSummaryUI : MonoBehaviour
         subtitleText.fontSize = 12;
         subtitleText.color = new Color(0.85f, 0.88f, 0.95f);
         subtitleText.alignment = TextAlignmentOptions.MidlineLeft;
-        subtitleText.text = "Chi tiết tiến độ, số chặng vượt qua và toàn bộ chiến lợi phẩm thu thập được.";
+        subtitleText.text = "Overview of progress, stages cleared, and all secured expedition loot.";
 
         // 4. Body Area (2 Columns)
         GameObject bodyGO = new("Body", typeof(RectTransform));
@@ -713,7 +713,7 @@ public class DungeonSummaryUI : MonoBehaviour
         lhTmp.fontStyle = FontStyles.Bold;
         lhTmp.color = new Color(1f, 0.85f, 0.35f);
         lhTmp.alignment = TextAlignmentOptions.MidlineLeft;
-        lhTmp.text = "THỐNG KÊ CHIẾN LƯỢC";
+        lhTmp.text = "EXPEDITION STATS";
 
         // Stats List Container
         GameObject statsContentGO = new("StatsList", typeof(RectTransform), typeof(VerticalLayoutGroup));
@@ -731,12 +731,12 @@ public class DungeonSummaryUI : MonoBehaviour
         scVLG.childForceExpandWidth = true;
         scVLG.childForceExpandHeight = false;
 
-        statFloorText = CreateStatLine(statsContentGO.transform, "StatFloor", "🏰 Tầng: 1");
-        statStagesText = CreateStatLine(statsContentGO.transform, "StatStages", "⚔️ Chặng: 0/5");
-        statBossText = CreateStatLine(statsContentGO.transform, "StatBoss", "👑 Thủ Lĩnh: Chưa gặp");
-        statHealthText = CreateStatLine(statsContentGO.transform, "StatHealth", "❤️ Sinh Lực: 100/100 HP");
-        statBlessingText = CreateStatLine(statsContentGO.transform, "StatBlessing", "✨ Phước Lành: Không có");
-        statDayTransitionText = CreateStatLine(statsContentGO.transform, "StatDay", "📅 Thời Gian: Sang Ngày Mới (+1 Ngày)");
+        statFloorText = CreateStatLine(statsContentGO.transform, "StatFloor", "[Floor] 1");
+        statStagesText = CreateStatLine(statsContentGO.transform, "StatStages", "[Stages] 0/5");
+        statBossText = CreateStatLine(statsContentGO.transform, "StatBoss", "[Boss] Unmet");
+        statHealthText = CreateStatLine(statsContentGO.transform, "StatHealth", "[Vitality] 100/100 HP");
+        statBlessingText = CreateStatLine(statsContentGO.transform, "StatBlessing", "[Blessing] None");
+        statDayTransitionText = CreateStatLine(statsContentGO.transform, "StatDay", "[Time] New Day (+1 Day)");
 
         // Notice Box at Bottom of Left Column
         GameObject noticeBoxGO = new("NoticeBox", typeof(RectTransform), typeof(Image));
@@ -794,7 +794,7 @@ public class DungeonSummaryUI : MonoBehaviour
         lootHeaderTitle.fontStyle = FontStyles.Bold;
         lootHeaderTitle.color = new Color(0.4f, 0.85f, 1f);
         lootHeaderTitle.alignment = TextAlignmentOptions.MidlineLeft;
-        lootHeaderTitle.text = "VẬT PHẨM MANG VỀ AN TOÀN";
+        lootHeaderTitle.text = "SAFELY SECURED LOOT";
 
         // Scroll Area for Loot Items
         GameObject scrollGO = new("LootScrollArea", typeof(RectTransform), typeof(ScrollRect));
@@ -818,7 +818,7 @@ public class DungeonSummaryUI : MonoBehaviour
         vpRT.anchorMin = Vector2.zero;
         vpRT.anchorMax = Vector2.one;
         vpRT.offsetMin = Vector2.zero;
-        vpRT.offsetMax = new Vector2(-16, 0); // Dành 16px cho thanh slider cuộn
+        vpRT.offsetMax = new Vector2(-16, 0); // 16px space for vertical scrollbar
 
         // Content Container with GridLayoutGroup
         GameObject contentGO = new("Content", typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter));
@@ -843,7 +843,7 @@ public class DungeonSummaryUI : MonoBehaviour
         itemsScrollRect.viewport = vpRT;
         itemsScrollRect.content = contentRT;
 
-        // Thanh slider dọc màu xanh lam ngọc sang trọng
+        // Vertical scrollbar with sleek cyan styling
         DungeonUIAssetHelper.CreateVerticalScrollbar(scrollGO.transform, itemsScrollRect, new Color(0.25f, 0.75f, 0.85f, 1f));
 
         // 5. Footer Controls
@@ -856,7 +856,7 @@ public class DungeonSummaryUI : MonoBehaviour
         footerRT.anchoredPosition = new Vector2(0, 12);
         footerRT.sizeDelta = new Vector2(-24, 46);
 
-        // Button [TRỞ VỀ NÔNG TRẠI]
+        // Button [RETURN TO FARM]
         GameObject btnGO = new("BtnReturnToBase", typeof(RectTransform), typeof(Image), typeof(Button));
         btnGO.transform.SetParent(footerGO.transform, false);
         RectTransform btnRT = btnGO.GetComponent<RectTransform>();
@@ -882,7 +882,7 @@ public class DungeonSummaryUI : MonoBehaviour
         returnButtonText.fontSize = 14;
         returnButtonText.fontStyle = FontStyles.Bold;
         returnButtonText.alignment = TextAlignmentOptions.Center;
-        returnButtonText.text = "TRỞ VỀ NÔNG TRẠI  [ ➔ ]";
+        returnButtonText.text = "RETURN TO FARM  [ -> ]";
         returnButtonText.color = Color.white;
     }
 

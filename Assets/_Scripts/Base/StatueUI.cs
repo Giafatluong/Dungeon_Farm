@@ -54,7 +54,7 @@ public class StatueUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI permanentStatsText;
     [SerializeField] private Button closeButton;
 
-    [Header("Blessing UI (Phước Lành & Hướng Build)")]
+    [Header("Blessing UI (Blessings & Build Paths)")]
     [SerializeField] private TextMeshProUGUI blessingStatusText;
     [SerializeField] private Button blessingSelectButton;
     [SerializeField] private TextMeshProUGUI blessingButtonText;
@@ -264,7 +264,7 @@ public class StatueUI : MonoBehaviour
             if (ps != null)
             {
                 ps.RefreshStatsFromProgression();
-                DamagePopupManager.ShowText(ps.transform.position + Vector3.up * 1.5f, $"+{offering.rewardAmount} {offering.rewardStat} VĨNH VIỄN!", new Color(1f, 0.85f, 0.2f), 4.5f);
+                DamagePopupManager.ShowText(ps.transform.position + Vector3.up * 1.5f, $"+{offering.rewardAmount} {offering.rewardStat} PERMANENT!", new Color(1f, 0.85f, 0.2f), 4.5f);
             }
 
             if (currentStatue != null)
@@ -359,10 +359,10 @@ public class StatueUI : MonoBehaviour
         int totalDef = ps != null ? ps.GetCurrentDEF() : def;
         int totalSpd = ps != null ? ps.GetCurrentSpeed() : (10 + spd);
 
-        permanentStatsText.text = $"<b>Chỉ Số Sau Ban Phước:</b>   <color=#FF7777>ATK: {totalAtk} (+{atk})</color>   |   <color=#77AAFF>DEF: {totalDef} (+{def})</color>   |   <color=#FFFF77>Speed: {totalSpd} (+{spd})</color>";
+        permanentStatsText.text = $"<b>Blessed Permanent Stats:</b>   <color=#FF7777>ATK: {totalAtk} (+{atk})</color>   |   <color=#77AAFF>DEF: {totalDef} (+{def})</color>   |   <color=#FFFF77>Speed: {totalSpd} (+{spd})</color>";
     }
 
-    #region Run Blessings UI (Phước Lành Thần Linh & Hướng Build)
+    #region Run Blessings UI (Divine Blessings & Build Paths)
     public void UpdateBlessingDisplay()
     {
         if (blessingStatusText == null) return;
@@ -372,8 +372,8 @@ public class StatueUI : MonoBehaviour
 
         if (isStarter)
         {
-            blessingStatusText.text = "<b><color=#55CCFF>[TÂN THỦ] [BẢO HỘ] Bảo Hộ Thần Linh:</color></b> Đang tự động bảo vệ hành trang (không rơi đồ khi thua tại Tầng 1-2)!";
-            if (blessingButtonText != null) blessingButtonText.text = "Đổi Phước Lành";
+            blessingStatusText.text = "<b><color=#55CCFF>[STARTER] [PROTECTION] Divine Protection:</color></b> Automatically protecting your inventory (items won't drop upon defeat on Floors 1-2)!";
+            if (blessingButtonText != null) blessingButtonText.text = "Change Blessing";
         }
         else if (currentType != BlessingType.None)
         {
@@ -382,13 +382,13 @@ public class StatueUI : MonoBehaviour
             string title = info != null ? info.title : currentType.ToString();
             string icon = info != null ? info.iconSymbol : "[BUFF]";
             string desc = info != null ? info.description : "";
-            blessingStatusText.text = $"<b><color=#{hex}>[HIỆN TẠI] {icon} {title}:</color></b> {desc} <i><color=#AAAAAA>(Mất khi qua ngày, thua, hoặc xong run)</color></i>";
-            if (blessingButtonText != null) blessingButtonText.text = "Đổi Phước Lành";
+            blessingStatusText.text = $"<b><color=#{hex}>[ACTIVE] {icon} {title}:</color></b> {desc} <i><color=#AAAAAA>(Expires at day end, defeat, or run clear)</color></i>";
+            if (blessingButtonText != null) blessingButtonText.text = "Change Blessing";
         }
         else
         {
-            blessingStatusText.text = "<b><color=#FFCC44>[CHƯA NHẬN PHƯỚC LÀNH]</color></b> Hãy chọn 1 phước lành trợ chiến trước khi bước vào Dungeon!";
-            if (blessingButtonText != null) blessingButtonText.text = "Thỉnh Phước Lành";
+            blessingStatusText.text = "<b><color=#FFCC44>[NO BLESSING CHOSEN]</color></b> Choose a blessing to empower your run before entering the Dungeon!";
+            if (blessingButtonText != null) blessingButtonText.text = "Choose Blessing";
         }
     }
 
@@ -399,7 +399,7 @@ public class StatueUI : MonoBehaviour
         Canvas parentCanvas = GetCanvas();
         if (parentCanvas == null) return;
 
-        // Container phủ modal
+        // Modal Overlay Container
         blessingModalGO = new GameObject("BlessingModal", typeof(RectTransform), typeof(Image));
         blessingModalGO.transform.SetParent(parentCanvas.transform, false);
         blessingModalGO.transform.SetAsLastSibling();
@@ -412,7 +412,7 @@ public class StatueUI : MonoBehaviour
         Image modalOverlay = blessingModalGO.GetComponent<Image>();
         modalOverlay.color = new Color(0.02f, 0.03f, 0.05f, 0.85f);
 
-        // Hộp thoại trung tâm
+        // Center Dialog Box
         GameObject boxGO = new GameObject("DialogBox", typeof(RectTransform), typeof(Image));
         boxGO.transform.SetParent(blessingModalGO.transform, false);
         RectTransform boxRT = boxGO.GetComponent<RectTransform>();
@@ -441,7 +441,7 @@ public class StatueUI : MonoBehaviour
         mTitleTMP.fontSize = 21;
         mTitleTMP.fontStyle = FontStyles.Bold;
         mTitleTMP.alignment = TextAlignmentOptions.Center;
-        mTitleTMP.text = "PHƯỚC LÀNH THẦN LINH (CHỌN HƯỚNG BUILD CHIẾN THUẬT)";
+        mTitleTMP.text = "DIVINE BLESSINGS (CHOOSE BUILD PATH)";
         mTitleTMP.color = new Color(1f, 0.88f, 0.45f);
 
         GameObject mSubGO = new GameObject("Subtitle", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -456,10 +456,10 @@ public class StatueUI : MonoBehaviour
         TextMeshProUGUI mSubTMP = mSubGO.GetComponent<TextMeshProUGUI>();
         mSubTMP.fontSize = 11;
         mSubTMP.alignment = TextAlignmentOptions.Center;
-        mSubTMP.text = "Tự do chọn lối chơi đã mở khóa để khắc chế quái vật tầng cao. Mở khóa thêm bằng cách Vượt Tầng Dungeon hoặc Cúng Dường tại Tượng Thần!";
+        mSubTMP.text = "Freely choose unlocked build paths to counter enemies on higher floors. Unlock more by clearing Dungeon floors or offering at the Statue!";
         mSubTMP.color = new Color(0.75f, 0.85f, 0.95f);
 
-        // Nút Đóng Modal
+        // Close Modal Button
         GameObject mCloseBtnGO = new GameObject("BtnCloseModal", typeof(RectTransform), typeof(Image), typeof(Button));
         mCloseBtnGO.transform.SetParent(boxGO.transform, false);
         RectTransform mCloseRT = mCloseBtnGO.GetComponent<RectTransform>();
@@ -485,7 +485,7 @@ public class StatueUI : MonoBehaviour
         mCloseTMP.color = Color.white;
         mCloseTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(30, 30);
 
-        // Khung chứa 8 Card dạng Grid 2 hàng x 4 cột
+        // Cards Container Grid (2 rows x 4 columns)
         GameObject cardsContainer = new GameObject("CardsContainer", typeof(RectTransform), typeof(GridLayoutGroup));
         cardsContainer.transform.SetParent(boxGO.transform, false);
         RectTransform cRT = cardsContainer.GetComponent<RectTransform>();
@@ -502,7 +502,7 @@ public class StatueUI : MonoBehaviour
         glg.constraintCount = 4;
         glg.childAlignment = TextAnchor.UpperCenter;
 
-        // Hiển thị toàn bộ danh sách 8 phước lành (7 hướng build + Bảo hộ không rơi đồ)
+        // Display all 8 blessings (7 build paths + protection)
         List<BlessingInfo> allBlessings = BlessingDatabase.GetAllBlessings();
         for (int i = 0; i < allBlessings.Count; i++)
         {
@@ -557,7 +557,7 @@ public class StatueUI : MonoBehaviour
         iconTMP.fontSize = 13;
         iconTMP.fontStyle = FontStyles.Bold;
         iconTMP.alignment = TextAlignmentOptions.Center;
-        iconTMP.text = isUnlocked ? info.iconSymbol : "[KHÓA]";
+        iconTMP.text = isUnlocked ? info.iconSymbol : "[LOCKED]";
 
         // Title
         GameObject tGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -575,12 +575,12 @@ public class StatueUI : MonoBehaviour
         tTMP.alignment = TextAlignmentOptions.Center;
         if (!isUnlocked)
         {
-            tTMP.text = $"<color=#888888>{info.title}</color> <color=#FF6666>[KHÓA]</color>";
+            tTMP.text = $"<color=#888888>{info.title}</color> <color=#FF6666>[LOCKED]</color>";
             tTMP.color = new Color(0.6f, 0.62f, 0.68f);
         }
         else
         {
-            tTMP.text = isCurrentActive ? $"{info.title} <color=#FFDD55>[ĐANG CHỌN]</color>" : info.title;
+            tTMP.text = isCurrentActive ? $"{info.title} <color=#FFDD55>[SELECTED]</color>" : info.title;
             tTMP.color = isCurrentActive ? new Color(1f, 0.85f, 0.4f) : info.color;
         }
 
@@ -600,7 +600,7 @@ public class StatueUI : MonoBehaviour
 
         if (!isUnlocked)
         {
-            descTMP.text = $"{info.description}\n\n<color=#FFB833><b>[!] Điều kiện mở khóa:</b>\n{info.unlockRequirement}</color>";
+            descTMP.text = $"{info.description}\n\n<color=#FFB833><b>[!] Unlock Requirement:</b>\n{info.unlockRequirement}</color>";
             descTMP.color = new Color(0.7f, 0.72f, 0.78f);
         }
         else
@@ -639,7 +639,7 @@ public class StatueUI : MonoBehaviour
                 }
                 CloseBlessingSelectionModal();
                 UpdateBlessingDisplay();
-                SetFeedback($"Đã kích hoạt lối chơi: {info.title}!");
+                SetFeedback($"Activated build path: {info.title}!");
             });
         }
 
@@ -657,12 +657,12 @@ public class StatueUI : MonoBehaviour
 
         if (!isUnlocked)
         {
-            btnTxtTMP.text = "[KHÓA] CHƯA MỞ KHÓA";
+            btnTxtTMP.text = "[LOCKED] NOT UNLOCKED";
             btnTxtTMP.color = new Color(0.7f, 0.7f, 0.7f);
         }
         else
         {
-            btnTxtTMP.text = isCurrentActive ? "ĐANG SỬ DỤNG" : "CHỌN LỐI CHƠI NÀY";
+            btnTxtTMP.text = isCurrentActive ? "CURRENTLY ACTIVE" : "CHOOSE THIS BUILD";
             btnTxtTMP.color = Color.white;
         }
     }
@@ -775,7 +775,7 @@ public class StatueUI : MonoBehaviour
             DungeonUIAssetHelper.ApplyFont(doneTMP);
             doneTMP.fontSize = 12;
             doneTMP.fontStyle = FontStyles.Bold;
-            doneTMP.text = "[ĐÃ HOÀN THÀNH]";
+            doneTMP.text = "[COMPLETED]";
             doneTMP.color = new Color(0.35f, 1f, 0.5f);
             doneGO.GetComponent<RectTransform>().sizeDelta = new Vector2(130, 26);
         }
@@ -798,7 +798,7 @@ public class StatueUI : MonoBehaviour
             btnTMP.fontSize = 11;
             btnTMP.fontStyle = FontStyles.Bold;
             btnTMP.alignment = TextAlignmentOptions.Center;
-            btnTMP.text = "Dâng Nhanh";
+            btnTMP.text = "Quick Offer";
             btnTMP.color = Color.white;
             btnTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(110, 24);
         }
@@ -1197,7 +1197,7 @@ public class StatueUI : MonoBehaviour
         titleText.fontSize = 20;
         titleText.fontStyle = FontStyles.Bold;
         titleText.alignment = TextAlignmentOptions.Center;
-        titleText.text = "ĐỀN THỜ CỔ ĐẠI (TƯỢNG THẦN BAN PHƯỚC)";
+        titleText.text = "ANCIENT SHRINE (DIVINE BLESSING STATUE)";
         titleText.color = new Color(1f, 0.86f, 0.35f);
 
         // Subtitle
@@ -1215,7 +1215,7 @@ public class StatueUI : MonoBehaviour
         if (font != null) subtitleText.font = font;
         subtitleText.fontSize = 12;
         subtitleText.alignment = TextAlignmentOptions.Center;
-        subtitleText.text = "Dâng lễ vật linh thiêng để nhận điểm thuộc tính vĩnh viễn và mở khóa các hướng Build chiến thuật.";
+        subtitleText.text = "Make sacred offerings to gain permanent stats and unlock tactical build paths.";
         subtitleText.color = new Color(0.75f, 0.82f, 0.92f);
 
         // Sub-Header Bar (Blessing Banner)
@@ -1232,7 +1232,7 @@ public class StatueUI : MonoBehaviour
         Image bannerBg = blessingBannerGO.GetComponent<Image>();
         DungeonUIAssetHelper.StylePlaque(bannerBg, DungeonUIAssetHelper.PlaqueStyle.Gold);
 
-        // Blessing Status Text (bên trái bar)
+        // Blessing Status Text (left side of bar)
         GameObject bStatusGO = new GameObject("BlessingStatusText", typeof(RectTransform), typeof(TextMeshProUGUI));
         bStatusGO.layer = uiLayer;
         bStatusGO.transform.SetParent(blessingBannerGO.transform, false);
@@ -1248,7 +1248,7 @@ public class StatueUI : MonoBehaviour
         blessingStatusText.alignment = TextAlignmentOptions.MidlineLeft;
         blessingStatusText.color = new Color(0.9f, 0.95f, 1f);
 
-        // Nút Thỉnh Phước Lành (bên phải bar)
+        // Blessing Selection Button (right side of bar)
         GameObject bBtnGO = new GameObject("BtnSelectBlessing", typeof(RectTransform), typeof(Image), typeof(Button));
         bBtnGO.layer = uiLayer;
         bBtnGO.transform.SetParent(blessingBannerGO.transform, false);
@@ -1277,7 +1277,7 @@ public class StatueUI : MonoBehaviour
         blessingButtonText.fontSize = 12;
         blessingButtonText.fontStyle = FontStyles.Bold;
         blessingButtonText.alignment = TextAlignmentOptions.Center;
-        blessingButtonText.text = "Đổi Hướng Build";
+        blessingButtonText.text = "Change Build";
         blessingButtonText.color = Color.white;
 
         // Feedback / Hint Strip
@@ -1296,7 +1296,7 @@ public class StatueUI : MonoBehaviour
         feedbackText.fontSize = 12;
         feedbackText.fontStyle = FontStyles.Italic;
         feedbackText.alignment = TextAlignmentOptions.Center;
-        feedbackText.text = "Kéo thả vật phẩm từ ba lô hoặc click ô yêu cầu để dâng lễ vật.";
+        feedbackText.text = "Drag and drop items from your backpack or click requirement slots to offer.";
         feedbackText.color = new Color(0.85f, 0.92f, 1f);
 
         // Close Button (X)
@@ -1330,12 +1330,12 @@ public class StatueUI : MonoBehaviour
 
         // 4. Columns:
         // Left Column: Offerings Container (610 wide, 465 high)
-        GameObject offColGO = CreateColumnFrame(windowGO.transform, "OfferingsColumn", "DANH SÁCH LỄ VẬT DÂNG THẦN",
+        GameObject offColGO = CreateColumnFrame(windowGO.transform, "OfferingsColumn", "DIVINE OFFERINGS LIST",
             new Vector2(24, -136), new Vector2(610, 465), new Vector2(0, 1), new Color(0.85f, 0.7f, 0.25f), font, uiLayer);
         offeringsContainer = CreateScrollableList(offColGO.transform, "OfferingsContent", new Color(0.85f, 0.65f, 0.2f), uiLayer);
 
         // Right Column: Backpack Section (420 wide, 465 high)
-        GameObject bpColGO = CreateColumnFrame(windowGO.transform, "BackpackColumn", "TÚI ĐỒ NGƯỜI CHƠI (BA LÔ)",
+        GameObject bpColGO = CreateColumnFrame(windowGO.transform, "BackpackColumn", "PLAYER INVENTORY (BACKPACK)",
             new Vector2(-24, -136), new Vector2(420, 465), new Vector2(1, 1), new Color(0.2f, 0.7f, 0.95f), font, uiLayer);
         backpackSlotsParent = CreateScrollableGrid(bpColGO.transform, "BackpackSlots", 5, new Color(0.25f, 0.75f, 0.95f), uiLayer);
 

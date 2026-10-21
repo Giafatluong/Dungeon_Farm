@@ -17,6 +17,7 @@ MonoBehaviour:
   ATK: 12
   DEF: 3
   speed: 15
+  isRanged: 1
   possibleIntents: 00000000010000000200000003000000
   intentEffects:
   - effect: {fileID: 11400000, guid: 6fbdc716dfd5399429b38f2c719b3694, type: 2}

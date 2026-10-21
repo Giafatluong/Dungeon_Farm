@@ -25,6 +25,11 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
 
     private void OnDisable()
     {
+        if (enemyTarget != null)
+        {
+            enemyTarget.OnIntentChanged -= HandleIntentChanged;
+        }
+
         if (ghostDrainRoutine != null)
         {
             StopCoroutine(ghostDrainRoutine);

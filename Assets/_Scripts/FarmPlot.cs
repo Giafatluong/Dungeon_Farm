@@ -53,7 +53,7 @@ public class FarmPlot : MonoBehaviour
         ItemData selectedItem = InventoryButton.selectedItem;
         if (selectedItem == null)
         {
-            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, "Hãy chọn hạt giống!", Color.yellow, 3.5f);
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, "Select a seed first!", Color.yellow, 3.5f);
             return false;
         }
 
@@ -65,7 +65,7 @@ public class FarmPlot : MonoBehaviour
 
         if (itemContainer == null || !itemContainer.HasItem(selectedItem))
         {
-            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, "Hết hạt giống trong túi!", new Color(1f, 0.4f, 0.4f), 3.5f);
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, "Out of seeds in bag!", new Color(1f, 0.4f, 0.4f), 3.5f);
             return false;
         }
 
@@ -86,7 +86,7 @@ public class FarmPlot : MonoBehaviour
 
         if (selectedCrop == null)
         {
-            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, "Vật phẩm này không phải hạt giống!", new Color(1f, 0.4f, 0.4f), 3.5f);
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, "This item is not a seed!", new Color(1f, 0.4f, 0.4f), 3.5f);
             return false;
         }
 
@@ -114,6 +114,12 @@ public class FarmPlot : MonoBehaviour
         }
 
         SavePlotData();
+
+        if (VFXManager.Instance != null)
+        {
+            VFXManager.Instance.PlayPlantingDust(transform.position);
+        }
+
         return true;
     }
 
@@ -173,13 +179,18 @@ public class FarmPlot : MonoBehaviour
                 }
             }
 
-            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, $"Thu hoạch +{harvestCount} {currentCrop.cropName}!", new Color(1f, 0.85f, 0.2f), 4.2f);
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, $"Harvested +{harvestCount} {currentCrop.cropName}!", new Color(1f, 0.85f, 0.2f), 4.2f);
+        }
+
+        if (VFXManager.Instance != null)
+        {
+            VFXManager.Instance.PlayHarvestSparkles(transform.position);
         }
 
         SetDefault();
     }
 
-    private void SetDefault()
+    public void SetDefault()
     {
         currentState = State.Empty;
         currentCrop = null;
@@ -207,7 +218,7 @@ public class FarmPlot : MonoBehaviour
     {
         int curDay = (DayManager.Instance != null) ? DayManager.Instance.GetCurrentDay() : PlayerPrefs.GetInt("Farm_CurrentDay", 1);
         if (_lastAdvancedDay == curDay)
-            return; // Đã tăng trưởng cho ngày này rồi, không cộng dồn trùng lặp
+            return; // Already grown for this day, avoid duplicate stacking
 
         _lastAdvancedDay = curDay;
 
@@ -226,13 +237,13 @@ public class FarmPlot : MonoBehaviour
         currentGrowthDay++;
         daysInCurrentStage++;
 
-        // growthTime là số ngày để phát triển của TỪNG giai đoạn
+        // growthTime is days required for EACH growth stage
         int effectiveGrowthTime = Mathf.Max(1, currentCrop.growthTime);
 
-        // Sau khi tích lũy ĐỦ số ngày cho giai đoạn hiện tại (daysInCurrentStage >= effectiveGrowthTime), mới chuyển qua stage tiếp theo
+        // Once days in current stage reaches effectiveGrowthTime, advance to next stage
         if (daysInCurrentStage >= effectiveGrowthTime)
         {
-            daysInCurrentStage = 0; // Reset số ngày tích lũy cho giai đoạn mới
+            daysInCurrentStage = 0; // Reset accumulated days for new stage
 
             int maxStage = (currentCrop.growthStages != null && currentCrop.growthStages.Length > 0)
                 ? currentCrop.growthStages.Length - 1
@@ -243,7 +254,7 @@ public class FarmPlot : MonoBehaviour
                 currentStage++;
             }
 
-            // Khi đã đạt đến stage tối đa (quả/bông đã lớn hoàn toàn) -> chuyển sang trạng thái Ready (Chín / Thu hoạch được)
+            // When reaching max stage (fully mature), switch to Ready state
             if (currentStage >= maxStage)
             {
                 currentStage = maxStage;

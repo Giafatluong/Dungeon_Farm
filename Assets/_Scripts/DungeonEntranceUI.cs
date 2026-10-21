@@ -114,34 +114,34 @@ public class DungeonEntranceUI : MonoBehaviour
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 1,
-            floorName = "TẦNG 1: HANG ĐỘNG XÁC SỐNG",
-            bossName = "Vua Xương Cổ Đại (Skeleton King)",
-            subTitle = "8 Ải Thử Thách - Hang Động Cổ Đại",
-            description = "Hầm ngục tầng 1 chứa chấp bộ xương và quái vật cơ bản. Hạ gục Vua Xương để mở đường xuống tầng dưới."
+            floorName = "FLOOR 1: CATACOMBS OF THE UNDEAD",
+            bossName = "Skeleton King",
+            subTitle = "8 Challenge Stages - Ancient Catacombs",
+            description = "Floor 1 crawls with restless skeletons and lurking dungeon vermin. Defeat the Skeleton King to open the path deeper."
         });
 
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 2,
-            floorName = "TẦNG 2: ĐẦM LẦY QUÁI VẬT",
-            bossName = "Vua Chất Nhầy (King Slime)",
-            subTitle = "16 Ải Thử Thách - Đầm Lầy Nhầy Nhụa",
-            description = "Khu vực đầm lầy hiểm trở gồm 16 ải thử thách với dơi quỷ, chuột cống, yêu tinh và Vua Chất Nhầy khổng lồ."
+            floorName = "FLOOR 2: MONSTER SWAMPLANDS",
+            bossName = "King Slime",
+            subTitle = "16 Challenge Stages - Murky Swampland",
+            description = "A hazardous swamp spanning 16 grueling stages filled with demon bats, dire rats, goblins, and the towering King Slime."
         });
 
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 3,
-            floorName = "TẦNG 3: THÀNH CỔ QUỶ DỮ",
-            bossName = "Kỵ Sĩ Bay Hắc Ám (Dark Flying Rider)",
-            subTitle = "18 Ải Thử Thách - Thành Cổ Quỷ Dữ",
-            description = "Pháo đài bóng đêm với 18 ải khốc liệt gồm quỷ bay, Orc bọc giáp, cung thủ hắc ám và Kỵ Sĩ Bay huyền thoại."
+            floorName = "FLOOR 3: CITADEL OF DEMONS",
+            bossName = "Dark Flying Rider",
+            subTitle = "18 Challenge Stages - Ancient Demon Citadel",
+            description = "A shadowy bastion with 18 fierce stages featuring flying imps, armored orcs, dark archers, and the legendary Dark Flying Rider."
         });
 
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 4,
-            floorName = "TẦNG 4",
+            floorName = "FLOOR 4",
             bossName = "Abyssal Fire Dragon",
             subTitle = "",
             description = ""
@@ -150,7 +150,7 @@ public class DungeonEntranceUI : MonoBehaviour
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 5,
-            floorName = "TẦNG 5",
+            floorName = "FLOOR 5",
             bossName = "Lord of Darkness",
             subTitle = "",
             description = ""
@@ -377,30 +377,30 @@ public class DungeonEntranceUI : MonoBehaviour
         {
             if (!selUnlocked)
             {
-                detailsText.text = $"<color=#FF5252>Chưa mở khóa: Hạ gục Boss Tầng {selectedFloor - 1} để mở</color>";
+                detailsText.text = $"<color=#FF5252>Locked: Defeat Floor {selectedFloor - 1} Boss to unlock</color>";
             }
             else if (selDefeated)
             {
                 bool bAvailable = ProgressionManager.Instance == null || ProgressionManager.Instance.IsBossAvailable(selectedFloor);
                 if (bAvailable)
                 {
-                    detailsText.text = $"<color=#FFE082>Boss Tầng {selectedFloor} đã hồi sinh! Sẵn sàng khiêu chiến lại để nhận thưởng hiếm.</color>";
+                    detailsText.text = $"<color=#FFE082>Floor {selectedFloor} Boss has respawned! Ready to challenge again for rare rewards.</color>";
                 }
                 else
                 {
                     int daysLeft = ProgressionManager.Instance != null ? ProgressionManager.Instance.GetDaysUntilBossReset(selectedFloor) : 0;
-                    detailsText.text = $"<color=#69F0AE>Đã vượt tầng. Boss chưa hồi sinh (còn {daysLeft} ngày). Phòng Boss sẽ trống, bạn có thể đi thẳng lên tầng sau.</color>";
+                    detailsText.text = $"<color=#69F0AE>Floor cleared. Boss has not respawned ({daysLeft} days remaining). Boss room is empty, you can advance directly to the next floor.</color>";
                 }
             }
             else
             {
-                detailsText.text = $"<color=#FFE082>Tầng đã sẵn sàng. Nhấn [VÀO TẦNG] hoặc phím Enter để xuất phát</color>";
+                detailsText.text = $"<color=#FFE082>Floor is ready. Click [ENTER FLOOR] or press Enter to depart</color>";
             }
         }
 
         if (enterButtonText != null)
         {
-            enterButtonText.text = selUnlocked ? $"VÀO TẦNG {selectedFloor} (ENTER)" : $"TẦNG {selectedFloor} (ĐÃ KHÓA)";
+            enterButtonText.text = selUnlocked ? $"ENTER FLOOR {selectedFloor} (ENTER)" : $"FLOOR {selectedFloor} (LOCKED)";
         }
 
         if (enterButton != null)
@@ -516,7 +516,7 @@ public class DungeonEntranceUI : MonoBehaviour
         titleText.fontSize = 20;
         titleText.fontStyle = FontStyles.Bold;
         titleText.alignment = TextAlignmentOptions.Center;
-        titleText.text = "CHỌN TẦNG DUNGEON";
+        titleText.text = "SELECT DUNGEON FLOOR";
         titleText.color = new Color(1f, 0.85f, 0.35f);
 
         // 3. Subtitle / Prompt
@@ -534,7 +534,7 @@ public class DungeonEntranceUI : MonoBehaviour
         subtitleText.fontSize = 11.5f;
         subtitleText.fontStyle = FontStyles.Italic;
         subtitleText.alignment = TextAlignmentOptions.Center;
-        subtitleText.text = "Hạ gục Boss tầng trước để mở khóa tầng tiếp theo";
+        subtitleText.text = "Defeat the previous floor Boss to unlock the next floor";
         subtitleText.color = new Color(0.70f, 0.75f, 0.85f);
 
         // 4. Decorative divider
@@ -694,7 +694,7 @@ public class DungeonEntranceUI : MonoBehaviour
         enterButtonText.fontSize = 13.5f;
         enterButtonText.fontStyle = FontStyles.Bold;
         enterButtonText.alignment = TextAlignmentOptions.Center;
-        enterButtonText.text = "VÀO TẦNG 1 (ENTER)";
+        enterButtonText.text = "ENTER FLOOR 1 (ENTER)";
         enterButtonText.color = Color.white;
 
         // "Back" Button
@@ -716,7 +716,7 @@ public class DungeonEntranceUI : MonoBehaviour
         closeText.fontSize = 13;
         closeText.fontStyle = FontStyles.Bold;
         closeText.alignment = TextAlignmentOptions.Center;
-        closeText.text = "QUAY LẠI";
+        closeText.text = "BACK";
         closeText.color = new Color(0.9f, 0.9f, 0.9f);
 
         // Top-right 'X' close button
@@ -867,7 +867,7 @@ public class DungeonEntranceUI : MonoBehaviour
         sText.fontSize = 11;
         sText.fontStyle = FontStyles.Bold;
         sText.alignment = TextAlignmentOptions.Center;
-        sText.text = "SẴN SÀNG";
+        sText.text = "READY";
         sText.color = Color.white;
 
         FloorCardUI cardUI = new FloorCardUI

@@ -64,7 +64,7 @@ public class ProgressionManager : MonoBehaviour
     public int currentFloor = 1;
     public int currentStage = 0;
 
-    [Header("Blessing System (Phước Lành & Hướng Build)")]
+    [Header("Blessing System (Blessings & Build Paths)")]
     public BlessingType activeBlessing = BlessingType.None;
     public HashSet<BlessingType> unlockedBlessings = new HashSet<BlessingType>();
 
@@ -72,7 +72,7 @@ public class ProgressionManager : MonoBehaviour
     public int highestUnlockedFloor = 1;
     public List<int> defeatedBossFloors = new List<int>();
     public int selectedFloor = 1;
-    [Tooltip("Số ngày cần để Boss hồi sinh lại sau khi bị đánh bại")]
+    [Tooltip("Days required for Boss to respawn after defeat")]
     public int defaultBossResetDays = 3;
 
     public event System.Action OnProgressionChanged;
@@ -107,7 +107,7 @@ public class ProgressionManager : MonoBehaviour
         if (unlockedItems == null) unlockedItems = new List<ItemData>();
         if (unlockedRecipes == null) unlockedRecipes = new List<RecipeData>();
 
-        // 1. Tự động mở khóa sẵn TẤT CẢ các hạt giống trong hệ thống
+        // 1. Automatically unlock all seeds in the system
         ItemData[] allItems = GameAssetHelper.LoadAll<ItemData>();
         for (int i = 0; i < allItems.Length; i++)
         {
@@ -124,7 +124,7 @@ public class ProgressionManager : MonoBehaviour
             }
         }
 
-        // 2. Tự động mở khóa sẵn TẤT CẢ các công thức trong hệ thống
+        // 2. Automatically unlock all recipes in the system
         RecipeData[] allRecipes = GameAssetHelper.LoadAll<RecipeData>();
         for (int i = 0; i < allRecipes.Length; i++)
         {
@@ -137,10 +137,50 @@ public class ProgressionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Trả về tầng tối thiểu trong Dungeon để hạt giống có thể rơi ngẫu nhiên
+    /// Reset all game progression (New Game): Reset permanent stats, dungeon floors, recipes, and blessings to defaults.
+    /// </summary>
+    public void ResetAllProgression()
+    {
+        permanentATK = 0;
+        permanentDEF = 0;
+        permanentSpeed = 0;
+        permanentMaxHP = 0;
+
+        highestUnlockedFloor = 1;
+        selectedFloor = 1;
+        currentFloor = 1;
+        currentStage = 0;
+        runActive = false;
+
+        if (defeatedBossFloors != null) defeatedBossFloors.Clear();
+        if (completedOfferings != null) completedOfferings.Clear();
+        if (offeringContributions != null) offeringContributions.Clear();
+        if (discoveredRecipes != null) discoveredRecipes.Clear();
+        if (unlockedBlessings != null) unlockedBlessings.Clear();
+        activeBlessing = BlessingType.None;
+
+        if (unlockedSeeds != null) unlockedSeeds.Clear();
+        if (unlockedItems != null) unlockedItems.Clear();
+        if (unlockedRecipes != null) unlockedRecipes.Clear();
+
+        InitializeDefaultUnlocks();
+        CheckAllBlessingUnlocks();
+
+        SavePermanentStats();
+        SaveFloorProgression();
+        SaveDiscoveredRecipes();
+        SaveUnlockedBlessings();
+
+        OnProgressionChanged?.Invoke();
+        OnBlessingChanged?.Invoke(BlessingType.None);
+        Debug.Log("[ProgressionManager] All progression data has been completely reset to New Game defaults.");
+    }
+
+    /// <summary>
+    /// Returns the minimum Dungeon floor required for a seed to drop randomly.
     /// Floor 1: Wheat, Carrot
     /// Floor 2: Cabbage, Cucumber, Tomato, Corn
-    /// Floor 3+: Chilli và các hạt giống cao cấp
+    /// Floor 3+: Chilli and advanced seeds
     /// </summary>
     public static int GetSeedMinFloor(ItemData seed)
     {
@@ -152,7 +192,7 @@ public class ProgressionManager : MonoBehaviour
         return 1;
     }
 
-    #region Discovered Recipes (Sổ tay món ăn đã đoán mò thành công)
+    #region Discovered Recipes
     public bool IsRecipeDiscovered(RecipeData recipe)
     {
         if (recipe == null || discoveredRecipes == null) return false;
@@ -173,8 +213,8 @@ public class ProgressionManager : MonoBehaviour
             SaveDiscoveredRecipes();
             OnRecipeDiscovered?.Invoke(recipe);
             OnProgressionChanged?.Invoke();
-            Debug.Log($"[ProgressionManager] Khám phá món ăn mới: {key}!");
-            return true; // Lần đầu tiên phát hiện
+            Debug.Log($"[ProgressionManager] Discovered new recipe: {key}!");
+            return true; // First time discovered
         }
         return false;
     }
@@ -392,12 +432,12 @@ public class ProgressionManager : MonoBehaviour
         OnProgressionChanged?.Invoke();
     }
 
-    #region Blessing System (Phước Lành Thần Linh & Hướng Build)
+    #region Blessing System (Divine Blessings & Build Paths)
     /// <summary>
-    /// Ở các tầng đầu tiên (Floor 1-2, highestUnlockedFloor <= 2), người chơi là tân thủ
-    /// và được Tượng Thần tự động ban phước "Bảo Hộ Thần Linh" (KeepLootOnDefeat) không rơi đồ khi thua.
-    /// Sau khi mở khóa tầng 3 (highestUnlockedFloor > 2), hiệu ứng tân thủ tự động kết thúc.
-    /// Từ đó người chơi có thể tự chọn Phước Lành tại Tượng Thần (buff không rơi đồ vẫn có thể xuất hiện trong danh sách).
+    /// On initial floors (Floor 1-2, highestUnlockedFloor <= 2), player has novice protection
+    /// and the Divine Statue grants "Divine Protection" (KeepLootOnDefeat) to avoid dropping loot upon defeat.
+    /// After unlocking Floor 3 (highestUnlockedFloor > 2), novice protection ends.
+    /// Players can then choose Blessings at the Divine Statue.
     /// </summary>
     public bool IsStarterProtectionActive()
     {
@@ -405,8 +445,8 @@ public class ProgressionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Kiểm tra người chơi có đang sở hữu loại Phước Lành này không.
-    /// Nếu là KeepLootOnDefeat thì tự động có hiệu lực khi đang trong giai đoạn tân thủ.
+    /// Checks if player currently has this blessing.
+    /// KeepLootOnDefeat is automatically active during starter protection.
     /// </summary>
     public bool HasBlessing(BlessingType blessing)
     {
@@ -421,36 +461,36 @@ public class ProgressionManager : MonoBehaviour
     {
         if (blessing != BlessingType.None && !IsBlessingUnlocked(blessing))
         {
-            Debug.LogWarning($"[ProgressionManager] Phước Lành {blessing} chưa được mở khóa!");
+            Debug.LogWarning($"[ProgressionManager] Blessing {blessing} is not unlocked yet!");
             return;
         }
 
         activeBlessing = blessing;
-        Debug.Log($"[ProgressionManager] Đã nhận Phước Lành Thần Linh: {blessing}");
+        Debug.Log($"[ProgressionManager] Received Divine Blessing: {blessing}");
         OnBlessingChanged?.Invoke(activeBlessing);
     }
 
     /// <summary>
-    /// Xóa Phước Lành hiện tại (khi qua ngày, khi thua trận hoặc khi hoàn thành Dungeon).
+    /// Clears the active run blessing (at day end, defeat, or dungeon completion).
     /// </summary>
     public void ClearRunBlessing()
     {
         if (activeBlessing != BlessingType.None)
         {
-            Debug.Log($"[ProgressionManager] Phước Lành {activeBlessing} đã kết thúc.");
+            Debug.Log($"[ProgressionManager] Blessing {activeBlessing} expired.");
             activeBlessing = BlessingType.None;
             OnBlessingChanged?.Invoke(activeBlessing);
         }
     }
 
     /// <summary>
-    /// Kiểm tra xem Phước Lành đã được mở khóa hay chưa.
-    /// Kết hợp: Mở khóa theo Tầng Dungeon HOẶC Hiến tế tại Tượng Thần HOẶC Sự kiện Dungeon.
+    /// Checks if blessing is unlocked.
+    /// Unlocks by: Dungeon Floor OR Statue Offering OR Dungeon Events.
     /// </summary>
     public bool IsBlessingUnlocked(BlessingType blessing)
     {
         if (blessing == BlessingType.None) return false;
-        // Bảo hộ thần linh luôn mở khóa sẵn từ đầu
+        // Divine protection is always unlocked from the start
         if (blessing == BlessingType.KeepLootOnDefeat) return true;
         if (unlockedBlessings != null && unlockedBlessings.Contains(blessing)) return true;
 
@@ -458,31 +498,31 @@ public class ProgressionManager : MonoBehaviour
         switch (blessing)
         {
             case BlessingType.RawVitality:
-                // Hoàn thành bất kỳ 1 Cúng Dường nông sản nào tại Tượng Thần
+                // Complete any 1 crop offering at the Statue
                 shouldUnlock = completedOfferings != null && completedOfferings.Count >= 1;
                 break;
             case BlessingType.BastionStrike:
-                // Vượt qua Tầng 1 (mở Tầng 2+) HOẶC đã có cúng dường tăng DEF
+                // Clear Floor 1 (Floor 2+ unlocked) OR completed DEF offering
                 shouldUnlock = highestUnlockedFloor >= 2 || permanentDEF > 0;
                 break;
             case BlessingType.SwiftMomentum:
-                // Vượt qua Tầng 1 (mở Tầng 2+) HOẶC đã có cúng dường tăng Tốc Độ
+                // Clear Floor 1 (Floor 2+ unlocked) OR completed Speed offering
                 shouldUnlock = highestUnlockedFloor >= 2 || permanentSpeed > 0;
                 break;
             case BlessingType.StarvingFury:
-                // Vượt qua Tầng 1 (mở Tầng 2+) HOẶC đã có cúng dường tăng ATK
+                // Clear Floor 1 (Floor 2+ unlocked) OR completed ATK offering
                 shouldUnlock = highestUnlockedFloor >= 2 || permanentATK > 0;
                 break;
             case BlessingType.GluttonousAegis:
-                // Đánh bại Boss Tầng 2 và vượt qua Tầng 2 (mở Tầng 3+)
+                // Defeat Floor 2 Boss and clear Floor 2 (Floor 3+ unlocked)
                 shouldUnlock = highestUnlockedFloor >= 3;
                 break;
             case BlessingType.BitterDecay:
-                // Đánh bại Boss Tầng 2 và vượt qua Tầng 2 (mở Tầng 3+)
+                // Defeat Floor 2 Boss and clear Floor 2 (Floor 3+ unlocked)
                 shouldUnlock = highestUnlockedFloor >= 3;
                 break;
             case BlessingType.EndlessFeast:
-                // Hoàn thành từ 2 Cúng Dường trở lên HOẶC vượt qua Tầng 3 (mở Tầng 4+)
+                // Complete 2 or more offerings OR clear Floor 3 (Floor 4+ unlocked)
                 shouldUnlock = (completedOfferings != null && completedOfferings.Count >= 2) || highestUnlockedFloor >= 4;
                 break;
         }
@@ -497,7 +537,7 @@ public class ProgressionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Mở khóa vĩnh viễn một loại Phước Lành.
+    /// Permanently unlocks a blessing.
     /// </summary>
     public bool UnlockBlessing(BlessingType blessing)
     {
@@ -508,7 +548,7 @@ public class ProgressionManager : MonoBehaviour
         {
             unlockedBlessings.Add(blessing);
             SaveUnlockedBlessings();
-            Debug.Log($"<color=#55FF88>[ProgressionManager] ĐÃ MỞ KHÓA PHƯỚC LÀNH MỚI: {blessing}!</color>");
+            Debug.Log($"<color=#55FF88>[ProgressionManager] NEW BLESSING UNLOCKED: {blessing}!</color>");
             OnBlessingUnlocked?.Invoke(blessing);
             OnProgressionChanged?.Invoke();
             return true;
@@ -542,7 +582,7 @@ public class ProgressionManager : MonoBehaviour
     {
         if (unlockedBlessings == null) unlockedBlessings = new HashSet<BlessingType>();
         unlockedBlessings.Clear();
-        unlockedBlessings.Add(BlessingType.KeepLootOnDefeat); // Luôn mở khóa sẵn buff bảo hộ cơ bản
+        unlockedBlessings.Add(BlessingType.KeepLootOnDefeat); // Always unlock basic protection by default
 
         string saved = PlayerPrefs.GetString("Unlocked_Blessings", "");
         if (!string.IsNullOrEmpty(saved))
@@ -603,7 +643,7 @@ public class ProgressionManager : MonoBehaviour
         {
             if (keepLoot)
             {
-                Debug.Log("[ProgressionManager] Phước Lành 'Bảo Hộ Thần Linh' đã kích hoạt! Giữ lại toàn bộ vật phẩm trong túi đồ khi tử trận.");
+                Debug.Log("[ProgressionManager] 'Divine Protection' blessing triggered! Retaining all items in inventory upon defeat.");
             }
             else
             {
@@ -611,7 +651,7 @@ public class ProgressionManager : MonoBehaviour
             }
         }
 
-        // Khi thất bại, mất buff tạm thời
+        // On defeat, clear temporary buffs
         ClearRunBlessing();
         PlayerStats.Instance?.ClearTemporaryBuffs();
 
@@ -624,7 +664,7 @@ public class ProgressionManager : MonoBehaviour
         runActive = false;
         RecordBossDefeated(currentFloor);
 
-        // Khi hoàn thành Dungeon, mất buff tạm thời
+        // On dungeon completion, clear temporary buffs
         ClearRunBlessing();
         PlayerStats.Instance?.ClearTemporaryBuffs();
 
@@ -665,8 +705,8 @@ public class ProgressionManager : MonoBehaviour
         Debug.Log("Player retreated safely from the dungeon! Keeping all loot.");
         runActive = false;
 
-        // Khi rút lui an toàn: bảo toàn 100% tài sản trong ba lô (không xóa đồ)
-        // Mất buff phước lành tạm thời của lượt đi
+        // On safe retreat: preserve 100% of loot in inventory
+        // Clear temporary run blessings
         ClearRunBlessing();
         PlayerStats.Instance?.ClearTemporaryBuffs();
 
@@ -716,9 +756,9 @@ public class ProgressionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Kiểm tra xem Boss của tầng đã hồi sinh lại hay chưa.
-    /// Nếu chưa từng đánh bại Boss -> Luôn sẵn sàng (true).
-    /// Nếu đã đánh bại -> Phải chờ hết số ngày hồi sinh (defaultBossResetDays).
+    /// Checks if the floor Boss has respawned.
+    /// If boss was never defeated -> Always available (true).
+    /// If defeated -> Must wait until cooldown expires (defaultBossResetDays).
     /// </summary>
     public bool IsBossAvailable(int floor)
     {
@@ -731,7 +771,7 @@ public class ProgressionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Trả về số ngày còn lại để Boss tầng này hồi sinh. 0 nếu đã hồi sinh hoặc chưa đánh bại.
+    /// Returns days remaining until the boss respawns. 0 if available or never defeated.
     /// </summary>
     public int GetDaysUntilBossReset(int floor)
     {
@@ -744,7 +784,7 @@ public class ProgressionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Buộc Boss tầng hồi sinh ngay lập tức (phục vụ test hoặc hiệu ứng đặc biệt).
+    /// Forces boss to respawn immediately (for testing or special mechanics).
     /// </summary>
     public void ResetBossCooldown(int floor)
     {
@@ -764,7 +804,7 @@ public class ProgressionManager : MonoBehaviour
             defeatedBossFloors.Add(floor);
         }
 
-        // Đặt mốc ngày hồi sinh tiếp theo cho Boss
+        // Set next respawn day for the Boss
         int currentDay = DayManager.Instance != null ? DayManager.Instance.currentDay : 1;
         int nextAvailableDay = currentDay + defaultBossResetDays;
         PlayerPrefs.SetInt($"Boss_Floor_{floor}_DefeatedDay", currentDay);
@@ -874,14 +914,14 @@ public class ProgressionManager : MonoBehaviour
 public enum BlessingType
 {
     None = 0,
-    KeepLootOnDefeat = 1,   // Bảo Hộ Thần Linh (Không mất đồ khi thua trận trong Dungeon)
-    BastionStrike = 2,      // Lấy Thủ Làm Công (+50% DEF vào ATK; Defend nhận thêm 1 AP)
-    SwiftMomentum = 3,      // Động Lực Tốc Độ (+4 Tốc độ; Tốc độ cao hơn quái gây thêm sát thương)
-    StarvingFury = 4,       // Bụng Rỗng Cuồng Nộ (Độ no < 35% tăng +6 ATK và bạo kích x1.5)
-    GluttonousAegis = 5,    // No Căng Phản Đòn (Độ no > 70% nhận +8 DEF và phản 40% sát thương)
-    EndlessFeast = 6,       // Đại Tiệc Bất Tận (Buff món ăn x2 thời lượng; món đầu mỗi lượt miễn phí AP)
-    BitterDecay = 7,        // Món Đắng Bào Mòn (Đòn đánh găm hiệu ứng Độc và Bào mòn -2 DEF của địch)
-    RawVitality = 8         // Nông Dân Cường Tráng (Cho phép ăn nông sản thô hồi +12 HP và +20 Độ no)
+    KeepLootOnDefeat = 1,   // Divine Protection (Do not lose inventory loot upon defeat in Dungeon)
+    BastionStrike = 2,      // Bastion Strike (+50% DEF added to ATK; Defend grants +1 AP)
+    SwiftMomentum = 3,      // Swift Momentum (+4 Speed; higher speed than enemy deals bonus damage)
+    StarvingFury = 4,       // Starving Fury (Fullness < 35% gives +6 ATK and 35% crit for 150% dmg)
+    GluttonousAegis = 5,    // Gluttonous Aegis (Fullness > 70% gives +8 DEF and reflects 40% dmg)
+    EndlessFeast = 6,       // Endless Feast (Food buffs 2x duration; first food each turn costs 0 AP)
+    BitterDecay = 7,        // Bitter Decay (Attacks inflict Poison and erode enemy DEF by -2)
+    RawVitality = 8         // Raw Vitality (Allows eating raw crops in Dungeon for +12 HP and +20 Fullness)
 }
 
 [System.Serializable]
@@ -913,88 +953,88 @@ public static class BlessingDatabase
             BlessingType.KeepLootOnDefeat,
             new BlessingInfo(
                 BlessingType.KeepLootOnDefeat,
-                "Bảo Hộ Thần Linh",
-                "Khi thất bại hoặc tử trận trong Dungeon, giữ lại toàn bộ vật phẩm trong túi đồ mà không bị rơi rụng.",
-                "[BẢO HỘ]",
+                "Divine Protection",
+                "When defeated in the Dungeon, keep all items in your inventory without dropping them.",
+                "[PROTECTION]",
                 new Color(0.3f, 0.8f, 1f),
-                "Mở khóa sẵn ngay từ đầu."
+                "Unlocked by default from the start."
             )
         },
         {
             BlessingType.BastionStrike,
             new BlessingInfo(
                 BlessingType.BastionStrike,
-                "Lấy Thủ Làm Công",
-                "Cộng thêm 50% chỉ số DEF hiện tại vào ATK. Dùng hành động Phòng Thủ (Defend) sẽ hồi ngay +1 Điểm Hành Động (AP).",
-                "[THỦ CÔNG]",
+                "Bastion Strike",
+                "Add 50% of your current DEF to ATK. Using the Defend action restores +1 Action Point (AP).",
+                "[BASTION]",
                 new Color(1f, 0.7f, 0.2f),
-                "Vượt qua Tầng 1 Dungeon HOẶC Hoàn thành Cúng Dường DEF tại Tượng Thần."
+                "Clear Dungeon Floor 1 OR complete DEF Offering at the Statue."
             )
         },
         {
             BlessingType.SwiftMomentum,
             new BlessingInfo(
                 BlessingType.SwiftMomentum,
-                "Động Lực Tốc Độ",
-                "Tăng vĩnh viễn +4 Tốc độ trong run. Nếu Tốc độ cao hơn quái vật, mỗi đòn đánh gây thêm sát thương chênh lệch tốc độ.",
-                "[TỐC ĐỘ]",
+                "Swift Momentum",
+                "Gain +4 Speed during dungeon runs. If faster than the enemy, attacks deal extra bonus damage based on speed difference.",
+                "[SWIFT]",
                 new Color(0.2f, 1f, 0.5f),
-                "Vượt qua Tầng 1 Dungeon HOẶC Hoàn thành Cúng Dường Tốc Độ tại Tượng Thần."
+                "Clear Dungeon Floor 1 OR complete Speed Offering at the Statue."
             )
         },
         {
             BlessingType.StarvingFury,
             new BlessingInfo(
                 BlessingType.StarvingFury,
-                "Bụng Rỗng Cuồng Nộ",
-                "Khi Độ no dưới 35%, nhận thêm +6 ATK và đòn tấn công có 35% tỷ lệ bạo kích gây 150% sát thương.",
-                "[CUỒNG NỘ]",
+                "Starving Fury",
+                "When Fullness is below 35%, gain +6 ATK and attacks have a 35% chance to critically strike for 150% damage.",
+                "[FURY]",
                 new Color(1f, 0.3f, 0.3f),
-                "Vượt qua Tầng 1 Dungeon HOẶC Hoàn thành Cúng Dường Sức Mạnh (ATK)."
+                "Clear Dungeon Floor 1 OR complete ATK Offering at the Statue."
             )
         },
         {
             BlessingType.GluttonousAegis,
             new BlessingInfo(
                 BlessingType.GluttonousAegis,
-                "No Căng Phản Đòn",
-                "Khi Độ no trên 70%, nhận thêm +8 DEF vững chãi và phản lại 40% sát thương nhận vào cho kẻ địch tấn công.",
-                "[PHẢN ĐÒN]",
+                "Gluttonous Aegis",
+                "When Fullness is above 70%, gain +8 DEF and reflect 40% of incoming damage back to the attacker.",
+                "[REFLECT]",
                 new Color(0.9f, 0.8f, 0.2f),
-                "Đánh bại Boss và Vượt qua Tầng 2 Dungeon."
+                "Defeat Boss and clear Dungeon Floor 2."
             )
         },
         {
             BlessingType.EndlessFeast,
             new BlessingInfo(
                 BlessingType.EndlessFeast,
-                "Đại Tiệc Bất Tận",
-                "Hiệu lực của tất cả các món ăn tăng gấp đôi thời lượng. Món ăn đầu tiên trong mỗi lượt không tiêu tốn Điểm Hành Động (AP).",
-                "[ĐẠI TIỆC]",
+                "Endless Feast",
+                "All food buff durations are doubled. The first food consumed each turn costs 0 Action Points (AP).",
+                "[FEAST]",
                 new Color(1f, 0.5f, 0.8f),
-                "Hoàn thành 2 Cúng Dường tại Tượng Thần HOẶC Vượt qua Tầng 3 Dungeon."
+                "Complete 2 Offerings at the Statue OR clear Dungeon Floor 3."
             )
         },
         {
             BlessingType.BitterDecay,
             new BlessingInfo(
                 BlessingType.BitterDecay,
-                "Món Đắng Bào Mòn",
-                "Mọi đòn đánh thường đều kèm độc dược bào mòn: giảm vĩnh viễn 2 DEF của mục tiêu trong trận đấu và gây thêm 4 sát thương độc.",
-                "[BÀO MÒN]",
+                "Bitter Decay",
+                "All basic attacks inflict corrosive poison: reduce target's DEF by 2 permanently in combat and deal 4 poison damage.",
+                "[DECAY]",
                 new Color(0.6f, 0.3f, 0.9f),
-                "Đánh bại Boss và Vượt qua Tầng 2 Dungeon."
+                "Defeat Boss and clear Dungeon Floor 2."
             )
         },
         {
             BlessingType.RawVitality,
             new BlessingInfo(
                 BlessingType.RawVitality,
-                "Nông Dân Cường Tráng",
-                "Cho phép ăn trực tiếp bất kỳ loại nông sản sống nào (lúa mì, cà rốt, bắp...) ngay trong Dungeon để hồi phục +12 HP và +20 Độ no.",
-                "[CƯỜNG TRÁNG]",
+                "Raw Vitality",
+                "Allows eating raw crops (wheat, carrot, corn...) directly in the Dungeon to restore +12 HP and +20 Fullness.",
+                "[VITALITY]",
                 new Color(0.4f, 0.9f, 0.3f),
-                "Hoàn thành bất kỳ 1 Cúng Dường / Hiến Tế nào tại Tượng Thần."
+                "Complete any crop Offering at the Statue."
             )
         }
     };
@@ -1009,8 +1049,8 @@ public static class BlessingDatabase
     }
 
     /// <summary>
-    /// Trả về toàn bộ danh sách 8 phước lành (7 hướng build + Bảo hộ không rơi đồ)
-    /// để người chơi có thể tự do xem và chọn lối chơi phù hợp với từng tầng.
+    /// Returns the full list of all 8 blessings (7 build paths + protection)
+    /// so players can view and choose the build that best fits their run.
     /// </summary>
     public static List<BlessingInfo> GetAllBlessings()
     {
@@ -1018,8 +1058,8 @@ public static class BlessingDatabase
     }
 
     /// <summary>
-    /// Lấy danh sách n phước lành ngẫu nhiên để người chơi chọn.
-    /// Đảm bảo luôn có buff không rơi đồ (KeepLootOnDefeat) trong danh sách có thể xuất hiện!
+    /// Returns a list of random blessings for the player to choose from.
+    /// Guarantees that Divine Protection is always an eligible choice.
     /// </summary>
     public static List<BlessingInfo> GetRandomChoices(int count = 3)
     {

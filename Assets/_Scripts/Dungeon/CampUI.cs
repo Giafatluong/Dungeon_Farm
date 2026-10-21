@@ -693,7 +693,7 @@ public class CampUI : MonoBehaviour
             if (noFoodText != null)
             {
                 noFoodText.gameObject.SetActive(true);
-                noFoodText.text = "Không có đồ ăn hoặc nông sản trong túi!";
+                noFoodText.text = "No food or crops in your bag!";
             }
             return;
         }
@@ -758,7 +758,7 @@ public class CampUI : MonoBehaviour
         }
         else
         {
-            label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#66FF66>+6 HP</color> | <color=#FFAA33>+15 Full</color> (Nông sản)</size>";
+            label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#66FF66>+6 HP</color> | <color=#FFAA33>+15 Full</color> (Raw Crop)</size>";
         }
 
         // Eat Button
@@ -950,28 +950,24 @@ public class CampUI : MonoBehaviour
         if (food == null) return "";
         if (food.foodBuff != null && food.foodBuff.Length > 0)
         {
+            bool hasEndlessFeast = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast);
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
             for (int i = 0; i < food.foodBuff.Length; i++)
             {
                 var fb = food.foodBuff[i];
                 if (fb != null && fb.buffs != null)
                 {
-                    string bName = fb.buffs.buffName;
-                    if (string.IsNullOrEmpty(bName)) bName = fb.buffs.buffType.ToString();
-
-                    string statLabel = bName;
-                    if (statLabel.StartsWith("Tang ")) statLabel = statLabel.Substring(5);
-                    else if (statLabel.StartsWith("Increase ")) statLabel = statLabel.Substring(9);
-
-                    string sign = fb.buffValue > 0 ? "+" : "";
+                    string statLabel = CombatUI.GetBuffStatLabel(fb.buffs);
+                    int dur = hasEndlessFeast ? fb.buffDuration * 2 : fb.buffDuration;
                     string durType = fb.buffDurationType switch
                     {
-                        FoodData.BuffDurationType.Turn => "Turn",
-                        FoodData.BuffDurationType.Combat => "Battle",
-                        FoodData.BuffDurationType.Floor => "Floor",
+                        FoodData.BuffDurationType.Turn => dur == 1 ? "Turn" : "Turns",
+                        FoodData.BuffDurationType.Combat => dur == 1 ? "Battle" : "Battles",
+                        FoodData.BuffDurationType.Floor => dur == 1 ? "Floor" : "Floors",
                         _ => fb.buffDurationType.ToString()
                     };
-                    sb.Append($"<color=#66CCFF>{sign}{fb.buffValue} {statLabel} ({fb.buffDuration} {durType})</color> ");
+                    string sign = fb.buffValue > 0 ? "+" : "";
+                    sb.Append($"<color=#66CCFF>{sign}{fb.buffValue} {statLabel} ({dur} {durType})</color> ");
                 }
             }
             return sb.ToString().Trim();

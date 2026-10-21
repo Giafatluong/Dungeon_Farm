@@ -6,9 +6,8 @@ using UnityEngine.UI;
 /// <summary>
 /// Grand Floor Victory UI modal.
 /// Displayed when the player clears all waves of a Floor and slays the Floor Boss.
-/// - Chỉ số vĩnh viễn (Permanent Stats) CHỈ ĐƯỢC CỘNG 1 LẦN DUY NHẤT ở lần đầu vượt tầng, vượt lại không được cộng nữa.
-/// - Cả 2 cột (Cột Trái: Chỉ số & Phước lành; Cột Phải: Kho báu phần thưởng) đều được tích hợp ScrollRect và thanh cuộn slider dọc đẹp mắt,
-///   loại bỏ triệt để tình trạng tràn chữ hay che khuất phần tử.
+/// - Permanent Stats are awarded ONCE upon the first clear of each floor.
+/// - Both Left and Right columns feature responsive ScrollRects and sleek vertical scrollbars.
 /// </summary>
 public class FloorVictoryUI : MonoBehaviour
 {
@@ -134,19 +133,19 @@ public class FloorVictoryUI : MonoBehaviour
 
         LoadHomeChestContainer();
 
-        string floorName = !string.IsNullOrEmpty(currentFloor?.floorName) ? currentFloor.floorName : $"Tầng {currentFloorNum}";
-        string bossName = !string.IsNullOrEmpty(currentFloor?.bossName) ? currentFloor.bossName : "Thủ Lĩnh Hầm Ngục";
+        string floorName = !string.IsNullOrEmpty(currentFloor?.floorName) ? currentFloor.floorName : $"Floor {currentFloorNum}";
+        string bossName = !string.IsNullOrEmpty(currentFloor?.bossName) ? currentFloor.bossName : "Dungeon Boss";
 
         if (titleText != null)
         {
-            titleText.text = $"CHIẾN THẮNG TẦNG {currentFloorNum}: {floorName.ToUpper()}!";
+            titleText.text = $"FLOOR {currentFloorNum} VICTORY: {floorName.ToUpper()}!";
         }
         if (subtitleText != null)
         {
-            subtitleText.text = $"TRÙM CUỐI [{bossName.ToUpper()}] ĐÃ BỊ HẠ GỤC HOÀN TOÀN!";
+            subtitleText.text = $"DUNGEON BOSS [{bossName.ToUpper()}] HAS BEEN VANQUISHED!";
         }
 
-        // Cấu hình chỉ số & phước lành
+        // Setup stats & blessings
         SetupPermanentStats();
         SetupBlessingUnlockDisplay();
         SetupFloorLoot();
@@ -155,7 +154,7 @@ public class FloorVictoryUI : MonoBehaviour
         if (lootAllButton != null) lootAllButton.gameObject.SetActive(true);
         if (statusHintText != null)
         {
-            statusHintText.text = "Bấm <b>[NHẬN TẤT CẢ]</b> để cất đồ vào balo (đồ dư tự chuyển về Rương Nhà Kho).";
+            statusHintText.text = "Click <b>[CLAIM ALL]</b> to store items into your backpack (overflow goes to Home Chest).";
         }
 
         if (victoryPanel != null)
@@ -164,7 +163,7 @@ public class FloorVictoryUI : MonoBehaviour
             victoryPanel.transform.SetAsLastSibling();
         }
 
-        // Reset scroll vị trí lên đỉnh
+        // Reset scroll position to top
         if (leftOverviewScrollRect != null) leftOverviewScrollRect.verticalNormalizedPosition = 1f;
         if (rightRewardScrollRect != null) rightRewardScrollRect.verticalNormalizedPosition = 1f;
 
@@ -173,8 +172,8 @@ public class FloorVictoryUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Mở giao diện khi người chơi đến phòng Boss nhưng Boss chưa hồi sinh (phòng trống).
-    /// Người chơi có quyền lựa chọn: Đi tiếp lên tầng tiếp theo hoặc Trở về căn cứ an toàn.
+    /// Opens the modal when player enters an empty boss chamber (boss has not respawned yet).
+    /// Player can choose to proceed to next floor or return safely to farm.
     /// </summary>
     public void OpenEmptyBossRoom(FloorData floorData, int floorNumber, int daysUntilReset, System.Action onReturnToBase, System.Action onNextFloor)
     {
@@ -189,35 +188,35 @@ public class FloorVictoryUI : MonoBehaviour
 
         LoadHomeChestContainer();
 
-        string floorName = !string.IsNullOrEmpty(currentFloor?.floorName) ? currentFloor.floorName : $"Tầng {currentFloorNum}";
-        string bossName = !string.IsNullOrEmpty(currentFloor?.bossName) ? currentFloor.bossName : "Thủ Lĩnh Hầm Ngục";
+        string floorName = !string.IsNullOrEmpty(currentFloor?.floorName) ? currentFloor.floorName : $"Floor {currentFloorNum}";
+        string bossName = !string.IsNullOrEmpty(currentFloor?.bossName) ? currentFloor.bossName : "Dungeon Boss";
 
         if (titleText != null)
         {
-            titleText.text = $"TẦNG {currentFloorNum}: PHÒNG THỦ LĨNH TRỐNG";
+            titleText.text = $"FLOOR {currentFloorNum}: BOSS CHAMBER EMPTY";
         }
         if (subtitleText != null)
         {
-            subtitleText.text = $"THỦ LĨNH [{bossName.ToUpper()}] CHƯA HỒI SINH (CÒN {daysUntilReset} NGÀY)";
+            subtitleText.text = $"BOSS [{bossName.ToUpper()}] HAS NOT RESPAWNED ({daysUntilReset} DAYS REMAINING)";
         }
 
         if (statsSectionGO != null) statsSectionGO.SetActive(true);
         if (statsBadgesText != null)
         {
-            statsBadgesText.text = $"<b>TRẠNG THÁI PHÒNG:</b> <color=#55FF88>[HOÀN TOÀN AN TOÀN]</color>\n\n" +
-                $"<color=#DCE4EC>Thủ Lĩnh <b>{bossName}</b> đã bị bạn hạ gục trước đó.\n" +
-                $"Cần thêm <b>{daysUntilReset} ngày</b> (qua việc ngủ nghỉ tại Căn Cứ) để Boss hồi sinh trở lại.</color>\n\n" +
-                $"<size=11><color=#68D391>[✓] Bạn có thể tự do tiến thẳng lên tầng tiếp theo hoặc trở về Căn Cứ bảo toàn toàn bộ chiến lợi phẩm mang theo!</color></size>";
+            statsBadgesText.text = $"<b>CHAMBER STATUS:</b> <color=#55FF88>[SECURE AND SAFE]</color>\n\n" +
+                $"<color=#DCE4EC>The Boss <b>{bossName}</b> was previously defeated.\n" +
+                $"Needs <b>{daysUntilReset} more day(s)</b> (by resting at your Farm) before the Boss respawns.</color>\n\n" +
+                $"<size=11><color=#68D391>[OK] You can freely proceed to the next floor or return to your Farm to secure your loot!</color></size>";
         }
 
         if (blessingSectionGO != null) blessingSectionGO.SetActive(false);
 
-        // Phần thưởng trống
+        // Empty rewards
         currentRewardLoot.Clear();
         if (lootAllButton != null) lootAllButton.gameObject.SetActive(false);
         if (statusHintText != null)
         {
-            statusHintText.text = "Chọn <b>[TIẾN VÀO TẦNG KẾ]</b> để tiếp tục hành trình, hoặc <b>[VỀ CĂN CỨ]</b> để bảo toàn chiến lợi phẩm.";
+            statusHintText.text = "Choose <b>[NEXT FLOOR]</b> to continue, or <b>[RETURN TO FARM]</b> to safely bring home your loot.";
         }
 
         SetupButtonsState();
@@ -238,7 +237,7 @@ public class FloorVictoryUI : MonoBehaviour
             TextMeshProUGUI tmp = emptyNoticeGO.GetComponentInChildren<TextMeshProUGUI>();
             if (tmp != null)
             {
-                tmp.text = "<b>KHÔNG CÓ PHẦN THƯỞNG BOSS</b>\n<size=10.5><color=#F6AD55>Boss chưa hồi sinh nên không có phần thưởng rơi thêm.</color></size>";
+                tmp.text = "<b>NO BOSS REWARDS</b>\n<size=10.5><color=#F6AD55>The boss has not respawned yet, so no additional boss loot is available.</color></size>";
             }
         }
 
@@ -322,8 +321,7 @@ public class FloorVictoryUI : MonoBehaviour
             }
         }
 
-        // KIỂM TRA ĐIỀU KIỆN LẦN ĐẦU VƯỢT TẦNG:
-        // Chỉ cộng trực tiếp khi LẦN ĐẦU VƯỢT TẦNG, vượt lại tuyệt đối KHÔNG ĐƯỢC CỘNG NỮA!
+        // Check first clear condition
         bool hasClaimedBefore = ProgressionManager.Instance != null && ProgressionManager.Instance.HasClaimedFirstClearStats(currentFloorNum);
         bool shouldGrantFirstClearBonus = isFirstClearOfThisFloor && !hasClaimedBefore;
 
@@ -336,17 +334,17 @@ public class FloorVictoryUI : MonoBehaviour
             }
 
             List<string> badges = new();
-            if (bonusATK > 0) badges.Add($"<color=#FF6B6B>[ATK] +{bonusATK} Sát Thương (ATK)</color>");
-            if (bonusDEF > 0) badges.Add($"<color=#54A0FF>[DEF] +{bonusDEF} Phòng Thủ (DEF)</color>");
-            if (bonusHP > 0) badges.Add($"<color=#1DD1A1>[HP] +{bonusHP} Máu Tối Đa (HP)</color>");
-            if (bonusSpeed > 0) badges.Add($"<color=#FECA57>[SPD] +{bonusSpeed} Tốc Độ Đi Lượt</color>");
+            if (bonusATK > 0) badges.Add($"<color=#FF6B6B>[ATK] +{bonusATK} Attack (ATK)</color>");
+            if (bonusDEF > 0) badges.Add($"<color=#54A0FF>[DEF] +{bonusDEF} Defense (DEF)</color>");
+            if (bonusHP > 0) badges.Add($"<color=#1DD1A1>[HP] +{bonusHP} Max HP (HP)</color>");
+            if (bonusSpeed > 0) badges.Add($"<color=#FECA57>[SPD] +{bonusSpeed} Speed (SPD)</color>");
 
-            statsBadgesText.text = $"<b>PHẦN THƯỞNG LẦN ĐẦU VƯỢT TẦNG:</b>\n{string.Join("\n", badges)}\n\n<size=11><color=#88FF88>[V] Chỉ số đã được cộng vĩnh viễn vào nhân vật tại Trang Trại!</color></size>";
+            statsBadgesText.text = $"<b>FIRST-CLEAR STAT BONUSES:</b>\n{string.Join("\n", badges)}\n\n<size=11><color=#88FF88>[OK] Stats have been permanently added to your character at the Farm!</color></size>";
         }
         else
         {
-            // Đã vượt tầng này trước đó hoặc đã nhận thưởng lần đầu -> KHÔNG CỘNG NỮA
-            statsBadgesText.text = $"<b>CHỈ SỐ VĨNH VIỄN LẦN ĐẦU:</b> <color=#55FF88>[ĐÃ NHẬN]</color>\n\n<color=#D0D4DC>Bạn đã nhận trọn vẹn điểm chỉ số vĩnh viễn ở lần đầu chinh phục Tầng {currentFloorNum}.</color>\n<size=11><color=#FFD070>[!] Vượt lại tầng này sẽ không cộng dồn thêm chỉ số vĩnh viễn.</color></size>";
+            // Already cleared previously or claimed reward
+            statsBadgesText.text = $"<b>FIRST-CLEAR PERMANENT STATS:</b> <color=#55FF88>[ALREADY CLAIMED]</color>\n\n<color=#D0D4DC>You have already received the permanent stat bonus for clearing Floor {currentFloorNum}.</color>\n<size=11><color=#FFD070>[!] Re-clearing this floor does not grant additional permanent stats.</color></size>";
         }
 
         statsSectionGO.SetActive(true);
@@ -360,20 +358,20 @@ public class FloorVictoryUI : MonoBehaviour
         switch (currentFloorNum)
         {
             case 1:
-                blessingLine = "• <color=#FFD700>[THỦ CÔNG] Lấy Thủ Làm Công</color>: Chuyển +DEF vào đòn đánh, Defend hồi +1 AP.\n• <color=#55FF88>[TỐC ĐỘ] Động Lực Tốc Độ</color>: +4 SPD, tăng sát thương khi đi trước.";
+                blessingLine = "* <color=#FFD700>[BASTION] Bastion Strike</color>: Adds +DEF to ATK, Defend restores +1 AP.\n* <color=#55FF88>[SWIFT] Swift Momentum</color>: +4 SPD, bonus damage when moving faster.";
                 break;
             case 2:
-                blessingLine = "• <color=#FFD700>[PHẢN ĐÒN] No Căng Phản Đòn</color>: +8 DEF khi no bụng & phản sát thương cận chiến.\n• <color=#D070FF>[BÀO MÒN] Món Đắng Bào Mòn</color>: Găm độc sâu và giảm 2 DEF của quái vật.";
+                blessingLine = "* <color=#FFD700>[REFLECT] Gluttonous Aegis</color>: +8 DEF when full & reflect melee damage.\n* <color=#D070FF>[DECAY] Bitter Decay</color>: Inflicts deep poison and reduces enemy DEF by 2.";
                 break;
             case 3:
-                blessingLine = "• <color=#FFD700>[ĐẠI TIỆC] Đại Tiệc Bất Tận</color>: Buff thức ăn kéo dài x2 lượt; món đầu tiên trong trận miễn phí AP.";
+                blessingLine = "* <color=#FFD700>[FEAST] Endless Feast</color>: Food buffs last 2x turns; first food each turn costs 0 AP.";
                 break;
             default:
-                blessingLine = "• <color=#FFD700>[THẦN LỰC] Thần Lực Hầm Ngục</color>: Toàn bộ phước lành cổ xưa tiếp tục được kích hoạt tối đa.";
+                blessingLine = "* <color=#FFD700>[DIVINE] Ancient Power</color>: All ancient blessings remain fully accessible.";
                 break;
         }
 
-        blessingDetailsText.text = $"{blessingLine}\n\n<size=11><color=#FFE090>Kích hoạt tại Tượng Thần ở Trang Trại trước mỗi chuyến đi.</color></size>";
+        blessingDetailsText.text = $"{blessingLine}\n\n<size=11><color=#FFE090>Activate at the Divine Statue on your Farm before each run.</color></size>";
         blessingSectionGO.SetActive(true);
     }
 
@@ -455,7 +453,7 @@ public class FloorVictoryUI : MonoBehaviour
             TextMeshProUGUI nextBtnText = nextFloorButton.GetComponentInChildren<TextMeshProUGUI>();
             if (nextBtnText != null)
             {
-                nextBtnText.text = $"TIẾN VÀO TẦNG {currentFloorNum + 1} >>";
+                nextBtnText.text = $"ENTER FLOOR {currentFloorNum + 1} >>";
             }
         }
     }
@@ -543,7 +541,7 @@ public class FloorVictoryUI : MonoBehaviour
             tmp.fontSize = 12;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = new Color(0.85f, 0.95f, 0.85f);
-            tmp.text = "<b>ĐÃ THU NHẬN TOÀN BỘ PHẦN THƯỞNG!</b>\n<size=10.5><color=#88FF88>Vật phẩm đã được cất an toàn vào túi đồ / kho lưu trữ.</color></size>";
+            tmp.text = "<b>ALL REWARDS CLAIMED!</b>\n<size=10.5><color=#88FF88>All items have been safely placed in your backpack or storage chest.</color></size>";
         }
 
         emptyNoticeGO.SetActive(true);
@@ -569,7 +567,7 @@ public class FloorVictoryUI : MonoBehaviour
         TextMeshProUGUI label = row.transform.Find("Label")?.GetComponent<TextMeshProUGUI>();
         if (label != null)
         {
-            string category = item.itemType == ItemData.ItemType.Seed ? "<color=#A0FFA0>[HẠT GIỐNG]</color>" : "<color=#FFA0A0>[MÓN ĂN / VẬT PHẨM]</color>";
+            string category = item.itemType == ItemData.ItemType.Seed ? "<color=#A0FFA0>[SEED]</color>" : "<color=#FFA0A0>[FOOD / ITEM]</color>";
             label.text = $"<b>{item.itemName}</b> <color=#FFD700>x{amount}</color> {category}\n<size=10><color=#C8D4E2>{GetItemDescription(item)}</color></size>";
         }
 
@@ -585,10 +583,10 @@ public class FloorVictoryUI : MonoBehaviour
     private string GetItemDescription(ItemData item)
     {
         if (item == null) return "";
-        if (item.itemType == ItemData.ItemType.Seed) return "Hạt giống quý giá dùng để gieo trồng tại Trang Trại.";
-        if (item.itemType == ItemData.ItemType.Food) return "Món ăn giàu dinh dưỡng hồi phục HP và thể lực.";
-        if (item.itemType == ItemData.ItemType.Produce) return "Nông sản tươi ngon thu hoạch từ đất mẹ.";
-        return "Chiến lợi phẩm quý giá thu được từ hầm ngục.";
+        if (item.itemType == ItemData.ItemType.Seed) return "Valuable seeds for planting at the Farm.";
+        if (item.itemType == ItemData.ItemType.Food) return "Nourishing meal restoring HP and fullness.";
+        if (item.itemType == ItemData.ItemType.Produce) return "Fresh produce harvested from fertile soil.";
+        return "Valuable expedition loot gathered from the dungeon.";
     }
 
     private void OnTakeSingleItem(int index)
@@ -623,16 +621,16 @@ public class FloorVictoryUI : MonoBehaviour
             if (storedToHomeChest)
             {
                 HomeChest.SaveContainer(homeChestContainer);
-                SetHint($"<color=#FFD700>Balo đã đầy! {slot.itemData.itemName} đã được chuyển an toàn về Rương Nhà Kho tại Trang Trại!</color>");
+                SetHint($"<color=#FFD700>Backpack is full! {slot.itemData.itemName} was safely transferred to your Home Chest!</color>");
             }
             else
             {
-                SetHint($"Đã nhận thành công: <b>{slot.amount}x {slot.itemData.itemName}</b> vào túi đồ.");
+                SetHint($"Successfully collected: <b>{slot.amount}x {slot.itemData.itemName}</b> into backpack.");
             }
         }
         else
         {
-            SetHint("<color=#FF6666>Không thể nhận vật phẩm: Túi đồ và Rương đều đã đầy!</color>");
+            SetHint("<color=#FF6666>Cannot claim item: Backpack and Home Chest are both full!</color>");
         }
     }
 
@@ -675,11 +673,11 @@ public class FloorVictoryUI : MonoBehaviour
         if (homeChestOverflow > 0)
         {
             HomeChest.SaveContainer(homeChestContainer);
-            SetHint($"<color=#55FF88>[V] Đã thu nhận tất cả!</color> <color=#FFD700>({homeChestOverflow} món đầy balo đã tự chuyển về Rương Trang Trại an toàn)</color>");
+            SetHint($"<color=#55FF88>[OK] Claimed all rewards!</color> <color=#FFD700>({homeChestOverflow} overflow items sent to Home Chest)</color>");
         }
         else
         {
-            SetHint("<color=#55FF88>[V] Đã nhận toàn bộ phần thưởng đặc biệt vào balo thành công!</color>");
+            SetHint("<color=#55FF88>[OK] All special rewards claimed into backpack!</color>");
         }
     }
 
@@ -886,10 +884,10 @@ public class FloorVictoryUI : MonoBehaviour
         leftOverviewScrollRect.viewport = leftVpRT;
         leftOverviewScrollRect.content = leftContentRT;
 
-        // Thanh slider dọc cho Cột Trái
+        // Vertical scrollbar for Left Column
         DungeonUIAssetHelper.CreateVerticalScrollbar(leftScrollGO.transform, leftOverviewScrollRect, new Color(0.85f, 0.65f, 0.2f, 1f));
 
-        // CARD 1: CƯỜNG HÓA THỂ CHẤT
+        // CARD 1: STAT ENHANCEMENT
         statsSectionGO = new("Card_Stats", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
         statsSectionGO.transform.SetParent(leftContentGO.transform, false);
         Image statsBg = statsSectionGO.GetComponent<Image>();
@@ -913,7 +911,7 @@ public class FloorVictoryUI : MonoBehaviour
         statsTitleTMP.fontSize = 13f;
         statsTitleTMP.fontStyle = FontStyles.Bold;
         statsTitleTMP.color = new Color(1f, 0.85f, 0.3f);
-        statsTitleTMP.text = "CHỈ SỐ CƯỜNG HÓA VĨNH VIỄN";
+        statsTitleTMP.text = "PERMANENT STAT ENHANCEMENT";
 
         GameObject statsTextGO = new("BadgesText", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
         statsTextGO.transform.SetParent(statsSectionGO.transform, false);
@@ -922,7 +920,7 @@ public class FloorVictoryUI : MonoBehaviour
         statsBadgesText.fontSize = 11.5f;
         statsBadgesText.color = Color.white;
 
-        // CARD 2: PHƯỚC LÀNH CỔ XƯA
+        // CARD 2: ANCIENT BLESSINGS
         blessingSectionGO = new("Card_Blessings", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
         blessingSectionGO.transform.SetParent(leftContentGO.transform, false);
         Image blessBg = blessingSectionGO.GetComponent<Image>();
@@ -946,7 +944,7 @@ public class FloorVictoryUI : MonoBehaviour
         blessTitleTMP.fontSize = 13f;
         blessTitleTMP.fontStyle = FontStyles.Bold;
         blessTitleTMP.color = new Color(0.75f, 0.85f, 1f);
-        blessTitleTMP.text = "PHƯỚC LÀNH CỔ XƯA MỞ KHÓA";
+        blessTitleTMP.text = "ANCIENT BLESSINGS UNLOCKED";
 
         GameObject blessTextGO = new("DetailsText", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
         blessTextGO.transform.SetParent(blessingSectionGO.transform, false);
@@ -984,7 +982,7 @@ public class FloorVictoryUI : MonoBehaviour
         ltTMP.fontSize = 12.5f;
         ltTMP.fontStyle = FontStyles.Bold;
         ltTMP.color = new Color(1f, 0.85f, 0.3f);
-        ltTMP.text = "KHO BÁU CHIẾN LỢI PHẨM HOÀNG KIM";
+        ltTMP.text = "EXPEDITION GOLDEN TREASURE";
 
         // Scroll Area for Floor Rewards
         GameObject rightScrollGO = new("ScrollArea", typeof(RectTransform), typeof(ScrollRect));
@@ -1032,7 +1030,7 @@ public class FloorVictoryUI : MonoBehaviour
         rightRewardScrollRect.viewport = rightVpRT;
         rightRewardScrollRect.content = rewardItemsContainer;
 
-        // Thanh slider dọc cho Cột Phải
+        // Vertical scrollbar for Right Column
         DungeonUIAssetHelper.CreateVerticalScrollbar(rightScrollGO.transform, rightRewardScrollRect, new Color(0.85f, 0.65f, 0.15f, 1f));
 
         // -------------------------------------------------------------
@@ -1085,15 +1083,15 @@ public class FloorVictoryUI : MonoBehaviour
         btnHLG.childControlHeight = false;
 
         // 1. Loot All Button (Gold)
-        lootAllButton = CreateStyledButton(btnRowGO.transform, "BtnLootAll", "NHẬN TẤT CẢ", new Color(0.85f, 0.65f, 0.15f), new Vector2(145, 38));
+        lootAllButton = CreateStyledButton(btnRowGO.transform, "BtnLootAll", "CLAIM ALL", new Color(0.85f, 0.65f, 0.15f), new Vector2(145, 38));
         lootAllButton.onClick.AddListener(OnLootAllClicked);
 
         // 2. Return To Base Button (Emerald Green)
-        returnToBaseButton = CreateStyledButton(btnRowGO.transform, "BtnReturn", "VỀ TRANG TRẠI", new Color(0.18f, 0.55f, 0.28f), new Vector2(145, 38));
+        returnToBaseButton = CreateStyledButton(btnRowGO.transform, "BtnReturn", "RETURN TO FARM", new Color(0.18f, 0.55f, 0.28f), new Vector2(145, 38));
         returnToBaseButton.onClick.AddListener(OnReturnToBaseClicked);
 
         // 3. Next Floor Button (Royal Blue)
-        nextFloorButton = CreateStyledButton(btnRowGO.transform, "BtnNextFloor", "TẦNG TIẾP THEO [->]", new Color(0.25f, 0.45f, 0.85f), new Vector2(165, 38));
+        nextFloorButton = CreateStyledButton(btnRowGO.transform, "BtnNextFloor", "NEXT FLOOR [->]", new Color(0.25f, 0.45f, 0.85f), new Vector2(165, 38));
         nextFloorButton.onClick.AddListener(OnNextFloorClicked);
     }
 
@@ -1204,7 +1202,7 @@ public class FloorVictoryUI : MonoBehaviour
         tbtTmp.fontStyle = FontStyles.Bold;
         tbtTmp.alignment = TextAlignmentOptions.Center;
         tbtTmp.color = Color.white;
-        tbtTmp.text = "NHẬN";
+        tbtTmp.text = "CLAIM";
 
         return row;
     }
