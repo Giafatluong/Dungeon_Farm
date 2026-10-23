@@ -3,7 +3,7 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
     public GameObject player;
-    public Vector3 offset = new Vector3(0,1.5f, 0);
+    public Vector3 offset = new Vector3(0, 1.5f, -10f);
 
     private void Awake()
     {
@@ -12,6 +12,11 @@ public class CameraController : MonoBehaviour
         {
             cam.transparencySortMode = TransparencySortMode.CustomAxis;
             cam.transparencySortAxis = new Vector3(0, 1, 0);
+        }
+
+        if (Mathf.Approximately(offset.z, 0f))
+        {
+            offset.z = -10f;
         }
     }
 
@@ -40,7 +45,8 @@ public class CameraController : MonoBehaviour
 
         if (player != null)
         {
-            transform.position = player.transform.position + offset;
+            float targetZ = !Mathf.Approximately(offset.z, 0f) ? offset.z : -10f;
+            transform.position = new Vector3(player.transform.position.x + offset.x, player.transform.position.y + offset.y, targetZ);
         }
     }
 }

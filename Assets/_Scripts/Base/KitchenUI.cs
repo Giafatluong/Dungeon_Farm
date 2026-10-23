@@ -1,15 +1,21 @@
+using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Cooking Pot Experimentation interface at Home Base.
-/// Players freely place crops from Backpack into the Cooking Pot (up to 5 slots).
-/// When ingredients match a secret recipe, it cooks the dish and records it in the Recipe Notebook!
+/// Redesigned Kitchen UI (Bếp Nấu Gia Đình & Sổ Tay Công Thức Ẩm Thực).
+/// Uses serialized Canvas UI hierarchy in the scene/prefab instead of procedural runtime generation.
+/// Divided into 3 columns:
+/// 1. Sổ Tay Công Thức (Recipe Notebook & Filter Tabs)
+/// 2. Nồi Nấu Bếp Lửa (Cooking Pot 4 slots, Cooking Progress Bar, Dish Output Preview, Cook/Cancel actions)
+/// 3. Balo Nguyên Liệu (Backpack Inventory Grid & Quick Sort/Clear)
 /// </summary>
 public class KitchenUI : MonoBehaviour
 {
+    #region Singleton & Statics
     private static KitchenUI _instance;
     public static KitchenUI Instance => _instance;
 
@@ -26,64 +32,130 @@ public class KitchenUI : MonoBehaviour
         _instance = FindFirstObjectByType<KitchenUI>(FindObjectsInactive.Include);
         if (_instance != null) return _instance;
 
-        Canvas c = DungeonUIAssetHelper.GetMainScreenCanvas();
-        if (c != null)
+        // Try find under Canvas in scene
+        Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < canvases.Length; i++)
         {
-            GameObject go = new GameObject("KitchenUI");
-            go.transform.SetParent(c.transform, false);
-            _instance = go.AddComponent<KitchenUI>();
-            _instance.canvas = c;
-            return _instance;
+            if (canvases[i] == null) continue;
+            KitchenUI found = canvases[i].GetComponentInChildren<KitchenUI>(true);
+            if (found != null)
+            {
+                _instance = found;
+                return _instance;
+            }
         }
 
         return null;
     }
+    #endregion
 
-    [Header("Panels")]
-    [SerializeField] private GameObject kitchenPanel;
+    #region Serialized UI References
+    [Header("Root Canvas & Panels")]
     [SerializeField] private Canvas canvas;
+    [SerializeField] private GameObject kitchenPanel; // Fullscreen root panel or overlay
+    [SerializeField] private RectTransform windowRect;
 
-    [Header("Labels & Feedback")]
+    [Header("Top Header")]
     [SerializeField] private TextMeshProUGUI titleText;
-    [SerializeField] private TextMeshProUGUI subtitleText;
-    [SerializeField] private TextMeshProUGUI feedbackToastText;
     [SerializeField] private Button closeButton;
 
-    // View Tabs
-    private enum RightTabView { Ingredients, RecipeBook }
-    private RightTabView currentView = RightTabView.Ingredients;
+    [Header("Left Column: Sổ Tay Công Thức (Recipes)")]
+    [SerializeField] private Button tabAllBtn;
+    [SerializeField] private Button tabRecoveryBtn;
+    [SerializeField] private Button tabSpeedBtn;
+    [SerializeField] private Button tabOtherBtn;
+    [SerializeField] private TextMeshProUGUI tabAllText;
+    [SerializeField] private TextMeshProUGUI tabRecoveryText;
+    [SerializeField] private TextMeshProUGUI tabSpeedText;
+    [SerializeField] private TextMeshProUGUI tabOtherText;
+    [SerializeField] private ScrollRect recipeScrollRect;
+    [SerializeField] private Transform recipeContent;
+    [SerializeField] private GameObject recipeCardTemplate;
 
-    // UI Dynamic Containers
-    private Transform potSlotsRow;
-    private Transform inventoryGridContainer;
-    private Transform notebookContainer;
-    private GameObject resultBannerGO;
-    private Image resultFoodIcon;
-    private TextMeshProUGUI resultFoodTitle;
-    private TextMeshProUGUI resultFoodDesc;
-    private Button cookButton;
-    private Button clearPotButton;
-    private Button tabIngredientsBtn;
-    private Button tabNotebookBtn;
-    private ScrollRect rightScrollRect;
+    [Header("Middle Column: Nồi Nấu Bếp Lửa (Stove)")]
+    [SerializeField] private TextMeshProUGUI stoveHeaderTag;
+    [SerializeField] private Image stovePotIcon;
+    [SerializeField] private Image stoveFireIcon;
+    [SerializeField] private TextMeshProUGUI stoveSubtitleText;
 
-    // Runtime Cooking Pot Data (Max 5 slots, strictly 1 item per slot)
-    private const int MAX_POT_SLOTS = 5;
+    [Header("Stove: 4 Pot Slots")]
+    [SerializeField] private PotSlotUI[] potSlotUIs = new PotSlotUI[4];
+
+    [Header("Stove: Cooking Progress")]
+    [SerializeField] private TextMeshProUGUI progressLabelText;
+    [SerializeField] private Slider progressSlider;
+    [SerializeField] private Image progressFillImage;
+    [SerializeField] private TextMeshProUGUI progressStatusText;
+
+    [Header("Stove: Output Preview Card")]
+    [SerializeField] private GameObject previewCardGO;
+    [SerializeField] private Image previewFoodIcon;
+    [SerializeField] private TextMeshProUGUI previewHeaderLabel;
+    [SerializeField] private TextMeshProUGUI previewFoodTitle;
+    [SerializeField] private TextMeshProUGUI previewFoodStats;
+
+    [Header("Stove: Action Buttons")]
+    [SerializeField] private Button cookButton;
+    [SerializeField] private Button cancelPotButton;
+    [SerializeField] private TextMeshProUGUI cookButtonText;
+
+    [Header("Right Column: Balo Nguyên Liệu (Backpack)")]
+    [SerializeField] private TextMeshProUGUI backpackHeaderTag;
+    [SerializeField] private TextMeshProUGUI backpackSubtitleText;
+    [SerializeField] private ScrollRect backpackScrollRect;
+    [SerializeField] private Transform backpackGridContent;
+    [SerializeField] private GameObject backpackSlotPrefab;
+    [SerializeField] private Button sortBackpackButton;
+    [SerializeField] private Button clearSlotsButton;
+
+    [Header("Feedback Toast")]
+    [SerializeField] private GameObject toastObject;
+    [SerializeField] private TextMeshProUGUI feedbackToastText;
+    #endregion
+
+    #region Nested Classes & Enums
+    [System.Serializable]
+    public class PotSlotUI
+    {
+        public GameObject rootObject;
+        public Button slotButton;
+        public Image slotBackground;
+        public Image itemIcon;
+        public TextMeshProUGUI countText;
+        public GameObject highlightBorder;
+    }
+
+    public enum RecipeFilter
+    {
+        All,
+        Recovery,
+        Speed,
+        Other
+    }
+    #endregion
+
+    #region Runtime Data & State
+    public const int MAX_POT_SLOTS = 4;
     private readonly List<ItemSlot> potSlots = new List<ItemSlot>();
 
     private ItemContainer backpackContainer;
     private ItemContainer chestContainer;
     private KitchenStation currentStation;
 
-    private readonly List<GameObject> activePotVisuals = new List<GameObject>();
-    private readonly List<GameObject> activeIngredientVisuals = new List<GameObject>();
-    private readonly List<GameObject> activeNotebookVisuals = new List<GameObject>();
+    private RecipeFilter currentFilter = RecipeFilter.All;
+    private readonly List<GameObject> activeRecipeCards = new List<GameObject>();
+    private readonly List<GameObject> activeBackpackSlots = new List<GameObject>();
 
     private float toastTimer = 0f;
     private bool isExplicitlyOpened = false;
     private bool isInternalUpdating = false;
-    public bool IsOpen => isExplicitlyOpened && kitchenPanel != null && kitchenPanel.activeSelf;
+    private bool isCooking = false;
+    private Coroutine cookCoroutine;
 
+    public bool IsOpen => isExplicitlyOpened && kitchenPanel != null && kitchenPanel.activeSelf;
+    #endregion
+
+    #region Unity Lifecycle
     private void Awake()
     {
         if (_instance != null && _instance != this)
@@ -92,6 +164,14 @@ public class KitchenUI : MonoBehaviour
             return;
         }
         _instance = this;
+
+        AutoBindReferences();
+        RegisterButtonEvents();
+
+        if (!isExplicitlyOpened && kitchenPanel != null)
+        {
+            kitchenPanel.SetActive(false);
+        }
     }
 
     private void Start()
@@ -107,9 +187,10 @@ public class KitchenUI : MonoBehaviour
         if (toastTimer > 0f)
         {
             toastTimer -= Time.deltaTime;
-            if (toastTimer <= 0f && feedbackToastText != null)
+            if (toastTimer <= 0f)
             {
-                feedbackToastText.gameObject.SetActive(false);
+                if (toastObject != null) toastObject.SetActive(false);
+                else if (feedbackToastText != null) feedbackToastText.gameObject.SetActive(false);
             }
         }
 
@@ -119,6 +200,26 @@ public class KitchenUI : MonoBehaviour
         }
     }
 
+    private void OnDisable()
+    {
+        if (isCooking)
+        {
+            StopCookingCoroutine();
+        }
+        ReturnAllPotItemsToBackpack();
+        UnsubscribeContainerEvents();
+    }
+
+    private void OnDestroy()
+    {
+        if (_instance == this)
+        {
+            _instance = null;
+        }
+    }
+    #endregion
+
+    #region Public Interface
     public void Open(KitchenStation station, ItemContainer backpack, ItemContainer chest)
     {
         isExplicitlyOpened = true;
@@ -128,30 +229,45 @@ public class KitchenUI : MonoBehaviour
 
         InventoryController.Instance?.CloseInventoryPanel();
 
-        if (canvas == null)
-        {
-            canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
-        }
-
         if (kitchenPanel == null)
         {
-            BuildUI();
+            AutoBindReferences();
+        }
+
+        if (canvas != null)
+        {
+            canvas.gameObject.SetActive(true);
+        }
+
+        if (kitchenPanel != null)
+        {
+            kitchenPanel.SetActive(true);
+            kitchenPanel.transform.SetAsLastSibling();
         }
 
         SubscribeContainerEvents();
 
-        kitchenPanel.SetActive(true);
-        kitchenPanel.transform.SetAsLastSibling();
+        isCooking = false;
+        if (cookCoroutine != null) StopCoroutine(cookCoroutine);
 
-        if (resultBannerGO != null) resultBannerGO.SetActive(false);
-        if (feedbackToastText != null) feedbackToastText.gameObject.SetActive(false);
+        if (progressSlider != null) progressSlider.value = 0f;
+        if (progressStatusText != null) progressStatusText.text = "SẴN SÀNG";
+        if (stoveSubtitleText != null) stoveSubtitleText.text = "Bếp Lửa Sôi Sùng Sục • Sẵn Sàng Chế Biến";
 
-        currentView = RightTabView.Ingredients;
+        currentFilter = RecipeFilter.All;
         RefreshUI();
+
+        if (toastObject != null) toastObject.SetActive(false);
+        else if (feedbackToastText != null) feedbackToastText.gameObject.SetActive(false);
     }
 
     public void Close()
     {
+        if (isCooking)
+        {
+            StopCookingCoroutine();
+        }
+
         isExplicitlyOpened = false;
         ReturnAllPotItemsToBackpack();
         UnsubscribeContainerEvents();
@@ -160,6 +276,7 @@ public class KitchenUI : MonoBehaviour
         {
             kitchenPanel.SetActive(false);
         }
+
         if (currentStation != null)
         {
             currentStation.OnUIClosed();
@@ -167,6 +284,24 @@ public class KitchenUI : MonoBehaviour
         }
     }
 
+    public void ShowToast(string message)
+    {
+        if (feedbackToastText == null && toastObject == null) return;
+
+        if (feedbackToastText != null)
+        {
+            feedbackToastText.text = message;
+            feedbackToastText.gameObject.SetActive(true);
+        }
+        if (toastObject != null)
+        {
+            toastObject.SetActive(true);
+        }
+        toastTimer = 3.2f;
+    }
+    #endregion
+
+    #region Container Sync
     private void SubscribeContainerEvents()
     {
         UnsubscribeContainerEvents();
@@ -181,60 +316,72 @@ public class KitchenUI : MonoBehaviour
     private void OnBackpackInventoryChanged()
     {
         if (isInternalUpdating) return;
-        RefreshUI();
+        RefreshBackpackGrid();
+        RefreshRecipeNotebook();
     }
+    #endregion
 
-    private void OnDisable()
-    {
-        ReturnAllPotItemsToBackpack();
-        UnsubscribeContainerEvents();
-    }
-
-    private void OnDestroy()
-    {
-        ReturnAllPotItemsToBackpack();
-        UnsubscribeContainerEvents();
-        if (_instance == this)
-        {
-            _instance = null;
-        }
-    }
-
-    #region Pot Management & Interactions
+    #region Pot Management
     public void AddToPot(ItemData item)
     {
-        if (item == null || backpackContainer == null) return;
+        if (item == null || backpackContainer == null || isCooking) return;
+
         if (backpackContainer.GetItemCount(item) <= 0)
         {
-            ShowToast($"No {item.itemName} left in Backpack!");
+            ShowToast($"Hết <color=#FFD700>{item.itemName}</color> trong Balo!");
             return;
         }
 
-        // Rule: Each slot in the pot holds at most 1 ingredient (amount = 1, no stacking)
-        if (potSlots.Count >= MAX_POT_SLOTS)
+        // Check if item already exists in one of the pot slots (stack into same slot)
+        ItemSlot existingSlot = null;
+        for (int i = 0; i < potSlots.Count; i++)
         {
-            ShowToast($"Cooking pot is full ({MAX_POT_SLOTS}/{MAX_POT_SLOTS} slots, 1 ingredient per slot)! Click a slot to remove it.");
-            return;
+            if (potSlots[i] != null && ItemContainer.IsItemMatch(potSlots[i].itemData, item))
+            {
+                existingSlot = potSlots[i];
+                break;
+            }
         }
 
-        isInternalUpdating = true;
-        try
+        if (existingSlot != null)
         {
-            backpackContainer.RemoveItem(item, 1);
-            potSlots.Add(new ItemSlot { itemData = item, amount = 1 });
+            isInternalUpdating = true;
+            try
+            {
+                backpackContainer.RemoveItem(item, 1);
+                existingSlot.amount += 1;
+            }
+            finally
+            {
+                isInternalUpdating = false;
+            }
         }
-        finally
+        else
         {
-            isInternalUpdating = false;
+            if (potSlots.Count >= MAX_POT_SLOTS)
+            {
+                ShowToast($"Nồi nấu đã đầy ({MAX_POT_SLOTS}/{MAX_POT_SLOTS} ô)! Nhấp vào ô nấu để lấy bớt ra.");
+                return;
+            }
+
+            isInternalUpdating = true;
+            try
+            {
+                backpackContainer.RemoveItem(item, 1);
+                potSlots.Add(new ItemSlot { itemData = item, amount = 1 });
+            }
+            finally
+            {
+                isInternalUpdating = false;
+            }
         }
 
-        if (resultBannerGO != null) resultBannerGO.SetActive(false);
         RefreshUI();
     }
 
     public void RemoveFromPot(int slotIndex)
     {
-        if (slotIndex < 0 || slotIndex >= potSlots.Count || backpackContainer == null) return;
+        if (isCooking || slotIndex < 0 || slotIndex >= potSlots.Count || backpackContainer == null) return;
 
         isInternalUpdating = true;
         try
@@ -242,8 +389,13 @@ public class KitchenUI : MonoBehaviour
             ItemSlot slot = potSlots[slotIndex];
             if (slot != null && slot.itemData != null)
             {
-                ReturnItemSafely(slot.itemData, slot.amount > 0 ? slot.amount : 1);
-                potSlots.RemoveAt(slotIndex);
+                // Return 1 count of item back to backpack
+                ReturnItemSafely(slot.itemData, 1);
+                slot.amount -= 1;
+                if (slot.amount <= 0)
+                {
+                    potSlots.RemoveAt(slotIndex);
+                }
             }
         }
         finally
@@ -251,55 +403,7 @@ public class KitchenUI : MonoBehaviour
             isInternalUpdating = false;
         }
 
-        if (resultBannerGO != null) resultBannerGO.SetActive(false);
         RefreshUI();
-    }
-
-    /// <summary>
-    /// Returns ingredients safely to Backpack -> Chest -> drops on ground. Guaranteed no item loss.
-    /// </summary>
-    private void ReturnItemSafely(ItemData item, int amount)
-    {
-        if (item == null || amount <= 0) return;
-
-        if (backpackContainer != null && backpackContainer.CanAddItem(item))
-        {
-            backpackContainer.AddItem(item, amount);
-            return;
-        }
-
-        if (chestContainer != null && chestContainer.CanAddItem(item))
-        {
-            chestContainer.AddItem(item, amount);
-            ShowToast($"Backpack full! Moved {item.itemName} x{amount} to Chest.");
-            return;
-        }
-
-        // Drop on ground if both backpack and chest are full
-        Vector3 dropPos = currentStation != null ? currentStation.transform.position : transform.position;
-        if (PlayerStats.Instance != null) dropPos = PlayerStats.Instance.transform.position;
-
-        if (item.dropPrefab != null)
-        {
-            for (int i = 0; i < amount; i++)
-            {
-                Vector3 offset = (Vector3)(Random.insideUnitCircle * 0.4f);
-                GameObject dropObj = Instantiate(item.dropPrefab, dropPos + offset, Quaternion.identity);
-                ItemDrop drop = dropObj.GetComponent<ItemDrop>();
-                if (drop != null)
-                {
-                    drop.itemData = item;
-                    drop.amount = 1;
-                    drop.itemContainer = backpackContainer;
-                    drop.PlayDropEffect();
-                }
-            }
-            ShowToast($"Backpack full! {item.itemName} dropped on ground.");
-        }
-        else if (backpackContainer != null)
-        {
-            backpackContainer.AddItem(item, amount);
-        }
     }
 
     public void ReturnAllPotItemsToBackpack()
@@ -327,1046 +431,777 @@ public class KitchenUI : MonoBehaviour
         RefreshUI();
     }
 
-    private void ExecuteCook()
+    private void ReturnItemSafely(ItemData item, int amount)
     {
+        if (item == null || amount <= 0) return;
+
+        if (backpackContainer != null && backpackContainer.CanAddItem(item))
+        {
+            backpackContainer.AddItem(item, amount);
+            return;
+        }
+
+        if (chestContainer != null && chestContainer.CanAddItem(item))
+        {
+            chestContainer.AddItem(item, amount);
+            ShowToast($"Balo đầy! Đã chuyển <color=#FFD700>{item.itemName} x{amount}</color> vào Rương.");
+            return;
+        }
+
+        // Drop on ground
+        Vector3 dropPos = currentStation != null ? currentStation.transform.position : transform.position;
+        if (PlayerStats.Instance != null) dropPos = PlayerStats.Instance.transform.position;
+
+        if (item.dropPrefab != null)
+        {
+            for (int i = 0; i < amount; i++)
+            {
+                Vector3 offset = (Vector3)(Random.insideUnitCircle * 0.4f);
+                GameObject dropObj = Instantiate(item.dropPrefab, dropPos + offset, Quaternion.identity);
+                ItemDrop drop = dropObj.GetComponent<ItemDrop>();
+                if (drop != null)
+                {
+                    drop.itemData = item;
+                    drop.amount = 1;
+                    drop.itemContainer = backpackContainer;
+                    drop.PlayDropEffect();
+                }
+            }
+            ShowToast($"Balo đầy! <color=#FF8888>{item.itemName}</color> đã rơi xuống đất.");
+        }
+        else if (backpackContainer != null)
+        {
+            backpackContainer.AddItem(item, amount);
+        }
+    }
+    #endregion
+
+    #region Auto-Fill Recipe
+    public void AutoFillRecipe(RecipeData recipe)
+    {
+        if (recipe == null || backpackContainer == null || isCooking) return;
+
+        if (!CookingManager.Instance.CanCook(recipe, backpackContainer))
+        {
+            ShowToast($"Không đủ nguyên liệu để nấu <color=#FFAA00>{recipe.DisplayName}</color>!");
+            return;
+        }
+
+        // 1. Return current pot items to backpack
+        ReturnAllPotItemsToBackpack();
+
+        // 2. Transfer required ingredients from backpack to pot
+        isInternalUpdating = true;
+        try
+        {
+            for (int i = 0; i < recipe.ingredients.Length; i++)
+            {
+                ItemRequirement req = recipe.ingredients[i];
+                if (req == null || req.item == null || req.amount <= 0) continue;
+
+                backpackContainer.RemoveItem(req.item, req.amount);
+                potSlots.Add(new ItemSlot { itemData = req.item, amount = req.amount });
+            }
+        }
+        finally
+        {
+            isInternalUpdating = false;
+        }
+
+        ShowToast($"Đã tự điền nguyên liệu cho: <color=#88FF88>{recipe.DisplayName}</color>!");
+        RefreshUI();
+    }
+    #endregion
+
+    #region Cooking Execution & Progress
+    private void OnCookButtonClicked()
+    {
+        if (isCooking) return;
+
         if (potSlots.Count == 0)
         {
-            ShowToast("<color=#FFCC00>Pot is empty! Select ingredients from Backpack before cooking.</color>");
+            ShowToast("<color=#FFCC00>Nồi nấu đang trống! Vui lòng chọn nguyên liệu từ Balo hoặc Sổ Công Thức.</color>");
             return;
         }
 
         if (CookingManager.Instance == null || backpackContainer == null) return;
 
+        cookCoroutine = StartCoroutine(CookProcessRoutine());
+    }
+
+    private void OnCancelButtonClicked()
+    {
+        if (isCooking)
+        {
+            StopCookingCoroutine();
+            ReturnAllPotItemsToBackpack();
+            ShowToast("<color=#FF8888>Đã hủy tiến trình nấu ăn và thu hồi nguyên liệu.</color>");
+            RefreshUI();
+        }
+        else
+        {
+            ReturnAllPotItemsToBackpack();
+            ShowToast("Đã dọn sạch nồi và trả nguyên liệu về Balo.");
+        }
+    }
+
+    private void StopCookingCoroutine()
+    {
+        if (cookCoroutine != null)
+        {
+            StopCoroutine(cookCoroutine);
+            cookCoroutine = null;
+        }
+        isCooking = false;
+        if (progressSlider != null) progressSlider.value = 0f;
+        if (progressStatusText != null) progressStatusText.text = "ĐÃ HỦY";
+        if (stoveSubtitleText != null) stoveSubtitleText.text = "Bếp Lửa Sôi Sùng Sục • Sẵn Sàng Chế Biến";
+        if (cookButtonText != null) cookButtonText.text = "🔥 BẮT ĐẦU NẤU";
+    }
+
+    private IEnumerator CookProcessRoutine()
+    {
+        isCooking = true;
+        float cookDuration = 4.0f; // 4 seconds cook time
+        float elapsed = 0f;
+
+        if (cookButtonText != null) cookButtonText.text = "🔥 ĐANG NẤU...";
+        if (stoveSubtitleText != null) stoveSubtitleText.text = "🔥 Bếp Đang Nấu Sôi Sùng Sục • Chờ Một Chút...";
+
+        while (elapsed < cookDuration)
+        {
+            elapsed += Time.deltaTime;
+            float pct = Mathf.Clamp01(elapsed / cookDuration);
+
+            if (progressSlider != null)
+            {
+                progressSlider.value = pct;
+            }
+
+            if (progressStatusText != null)
+            {
+                progressStatusText.text = $"🔥 ĐANG NẤU... {Mathf.RoundToInt(pct * 100)}% ({elapsed:0.0}s/{cookDuration:0.0}s)";
+            }
+
+            yield return null;
+        }
+
+        // Cook finish
         bool success = CookingManager.Instance.TryCookPot(potSlots, backpackContainer, out RecipeData matchedRecipe, out bool isNewDiscovery, out string failReason);
 
         if (success && matchedRecipe != null)
         {
             potSlots.Clear();
-            ShowCookResult(true, matchedRecipe, isNewDiscovery);
-            ShowToast($"Successfully cooked: <color=#88FF88>{matchedRecipe.DisplayName}</color>!");
+            ShowToast($"Nấu thành công món: <color=#88FF88>{matchedRecipe.DisplayName}</color>!");
+
+            Vector3 kitchenPos = currentStation != null ? currentStation.transform.position : (PlayerStats.Instance != null ? PlayerStats.Instance.transform.position : Vector3.zero);
+            VFXManager.Instance?.PlayCookingSparkles(kitchenPos);
         }
         else
         {
             if (failReason != null && failReason.ToLower().Contains("full"))
             {
                 ShowToast($"<color=#FFAA00>{failReason}</color>");
-                return;
+                StopCookingCoroutine();
+                yield break;
             }
 
             potSlots.Clear();
-            ShowCookResult(false, null, false);
-            ShowToast("<color=#FF6666>Invalid combination! The ingredients were burnt to a crisp.</color>");
+            ShowToast("<color=#FF6666>Nấu thất bại! Các nguyên liệu bị cháy khét thành tro.</color>");
         }
+
+        isCooking = false;
+        cookCoroutine = null;
+
+        if (progressSlider != null) progressSlider.value = 0f;
+        if (progressStatusText != null) progressStatusText.text = success ? "HOÀN THÀNH!" : "THẤT BẠI!";
+        if (stoveSubtitleText != null) stoveSubtitleText.text = "Bếp Lửa Sôi Sùng Sục • Sẵn Sàng Chế Biến";
+        if (cookButtonText != null) cookButtonText.text = "🔥 BẮT ĐẦU NẤU";
 
         RefreshUI();
     }
     #endregion
 
-    #region UI Rendering
+    #region UI Rendering & Refresh
     public void RefreshUI()
     {
-        RefreshPotVisuals();
-
-        if (currentView == RightTabView.Ingredients)
-        {
-            if (inventoryGridContainer != null) inventoryGridContainer.gameObject.SetActive(true);
-            if (notebookContainer != null) notebookContainer.gameObject.SetActive(false);
-            if (rightScrollRect != null && inventoryGridContainer != null)
-            {
-                rightScrollRect.content = inventoryGridContainer.GetComponent<RectTransform>();
-            }
-            RefreshIngredientsGrid();
-        }
-        else
-        {
-            if (inventoryGridContainer != null) inventoryGridContainer.gameObject.SetActive(false);
-            if (notebookContainer != null) notebookContainer.gameObject.SetActive(true);
-            if (rightScrollRect != null && notebookContainer != null)
-            {
-                rightScrollRect.content = notebookContainer.GetComponent<RectTransform>();
-            }
-            RefreshNotebookList();
-        }
-
+        RefreshPotSlots();
+        RefreshOutputPreview();
+        RefreshRecipeNotebook();
+        RefreshBackpackGrid();
         UpdateTabButtonsState();
     }
 
-    private void RefreshPotVisuals()
+    private void RefreshPotSlots()
     {
-        for (int i = 0; i < activePotVisuals.Count; i++)
+        if (potSlotUIs == null) return;
+
+        for (int i = 0; i < potSlotUIs.Length; i++)
         {
-            if (activePotVisuals[i] != null) Destroy(activePotVisuals[i]);
-        }
-        activePotVisuals.Clear();
+            var slotUI = potSlotUIs[i];
+            if (slotUI == null) continue;
 
-        if (potSlotsRow == null) return;
-
-        int totalCount = 0;
-        for (int i = 0; i < MAX_POT_SLOTS; i++)
-        {
-            ItemSlot slotData = i < potSlots.Count ? potSlots[i] : null;
-            if (slotData != null) totalCount += slotData.amount;
-
-            int index = i;
-            GameObject slotGO = CreatePotSlotUI(slotData, () => RemoveFromPot(index));
-            slotGO.transform.SetParent(potSlotsRow, false);
-            activePotVisuals.Add(slotGO);
-        }
-
-        if (cookButton != null)
-        {
-            cookButton.interactable = totalCount > 0;
-        }
-        if (clearPotButton != null)
-        {
-            clearPotButton.interactable = totalCount > 0;
-        }
-    }
-
-    private GameObject CreatePotSlotUI(ItemSlot slot, System.Action onClick)
-    {
-        GameObject slotGO = new GameObject("PotSlot", typeof(RectTransform), typeof(Image), typeof(Button));
-        RectTransform rt = slotGO.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(60, 60);
-
-        Image bg = slotGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlotImage(bg, slot != null);
-
-        Button btn = slotGO.GetComponent<Button>();
-        btn.onClick.AddListener(() => onClick?.Invoke());
-
-        if (slot != null && slot.itemData != null)
-        {
-            // Icon
-            GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-            iconGO.transform.SetParent(slotGO.transform, false);
-            RectTransform iconRT = iconGO.GetComponent<RectTransform>();
-            iconRT.anchorMin = Vector2.zero;
-            iconRT.anchorMax = Vector2.one;
-            iconRT.offsetMin = new Vector2(6, 6);
-            iconRT.offsetMax = new Vector2(-6, -6);
-            Image iconImg = iconGO.GetComponent<Image>();
-            iconImg.sprite = slot.itemData.itemIcon;
-            iconImg.color = Color.white;
-
-            // Single item badge (holds exactly 1 ingredient)
-            GameObject amtGO = new GameObject("Amount", typeof(RectTransform), typeof(TextMeshProUGUI));
-            amtGO.transform.SetParent(slotGO.transform, false);
-            RectTransform amtRT = amtGO.GetComponent<RectTransform>();
-            amtRT.anchorMin = new Vector2(1, 0);
-            amtRT.anchorMax = new Vector2(1, 0);
-            amtRT.pivot = new Vector2(1, 0);
-            amtRT.anchoredPosition = new Vector2(-3, 2);
-            amtRT.sizeDelta = new Vector2(25, 16);
-
-            TextMeshProUGUI amtTxt = amtGO.GetComponent<TextMeshProUGUI>();
-            DungeonUIAssetHelper.ApplyFont(amtTxt);
-            amtTxt.fontSize = 11;
-            amtTxt.fontStyle = FontStyles.Bold;
-            amtTxt.alignment = TextAlignmentOptions.BottomRight;
-            amtTxt.color = new Color(0.85f, 1f, 0.85f);
-            amtTxt.text = "1";
-        }
-        else
-        {
-            // Empty placeholder text '+'
-            GameObject plusGO = new GameObject("Plus", typeof(RectTransform), typeof(TextMeshProUGUI));
-            plusGO.transform.SetParent(slotGO.transform, false);
-            RectTransform plusRT = plusGO.GetComponent<RectTransform>();
-            plusRT.anchorMin = Vector2.zero;
-            plusRT.anchorMax = Vector2.one;
-            plusRT.sizeDelta = Vector2.zero;
-            TextMeshProUGUI plusTxt = plusGO.GetComponent<TextMeshProUGUI>();
-            DungeonUIAssetHelper.ApplyFont(plusTxt);
-            plusTxt.fontSize = 20;
-            plusTxt.alignment = TextAlignmentOptions.Center;
-            plusTxt.color = new Color(0.4f, 0.45f, 0.55f, 0.5f);
-            plusTxt.text = "+";
-        }
-
-        return slotGO;
-    }
-
-    private void RefreshIngredientsGrid()
-    {
-        for (int i = 0; i < activeIngredientVisuals.Count; i++)
-        {
-            if (activeIngredientVisuals[i] != null) Destroy(activeIngredientVisuals[i]);
-        }
-        activeIngredientVisuals.Clear();
-
-        if (inventoryGridContainer == null || backpackContainer == null) return;
-
-        // Filter all ingredients available in Backpack (vegetables, crops, food)
-        Dictionary<ItemData, int> availableItems = new Dictionary<ItemData, int>();
-        if (backpackContainer.itemSlots != null)
-        {
-            for (int i = 0; i < backpackContainer.itemSlots.Length; i++)
+            int slotIdx = i;
+            if (slotUI.slotButton != null)
             {
-                ItemSlot s = backpackContainer.itemSlots[i];
-                if (s != null && s.itemData != null && s.amount > 0)
-                {
-                    // Only allow Produce or Food items
-                    if (s.itemData.itemType == ItemData.ItemType.Produce || s.itemData.itemType == ItemData.ItemType.Food || s.itemData is FoodData)
-                    {
-                        ItemData key = null;
-                        foreach (var kvp in availableItems)
-                        {
-                            if (ItemContainer.IsItemMatch(kvp.Key, s.itemData))
-                            {
-                                key = kvp.Key;
-                                break;
-                            }
-                        }
+                slotUI.slotButton.onClick.RemoveAllListeners();
+                slotUI.slotButton.onClick.AddListener(() => RemoveFromPot(slotIdx));
+            }
 
-                        if (key != null) availableItems[key] += s.amount;
-                        else availableItems[s.itemData] = s.amount;
-                    }
+            if (i < potSlots.Count && potSlots[i] != null && potSlots[i].itemData != null)
+            {
+                var itemSlot = potSlots[i];
+                if (slotUI.itemIcon != null)
+                {
+                    slotUI.itemIcon.gameObject.SetActive(true);
+                    slotUI.itemIcon.sprite = itemSlot.itemData.itemIcon;
+                }
+                if (slotUI.countText != null)
+                {
+                    slotUI.countText.gameObject.SetActive(true);
+                    slotUI.countText.text = itemSlot.amount > 1 ? $"x{itemSlot.amount}" : "x1";
+                }
+                if (slotUI.highlightBorder != null)
+                {
+                    slotUI.highlightBorder.SetActive(true);
+                }
+            }
+            else
+            {
+                if (slotUI.itemIcon != null)
+                {
+                    slotUI.itemIcon.gameObject.SetActive(false);
+                    slotUI.itemIcon.sprite = null;
+                }
+                if (slotUI.countText != null)
+                {
+                    slotUI.countText.gameObject.SetActive(false);
+                    slotUI.countText.text = "";
+                }
+                if (slotUI.highlightBorder != null)
+                {
+                    slotUI.highlightBorder.SetActive(false);
                 }
             }
         }
+    }
 
-        if (availableItems.Count == 0)
+    private void RefreshOutputPreview()
+    {
+        if (previewCardGO == null) return;
+
+        RecipeData matchedRecipe = CookingManager.Instance != null ? CookingManager.Instance.MatchRecipe(potSlots) : null;
+
+        if (matchedRecipe != null && matchedRecipe.resultFood != null)
         {
-            GameObject emptyGO = new GameObject("EmptyLabel", typeof(RectTransform), typeof(TextMeshProUGUI));
-            emptyGO.transform.SetParent(inventoryGridContainer, false);
-            TextMeshProUGUI txt = emptyGO.GetComponent<TextMeshProUGUI>();
-            DungeonUIAssetHelper.ApplyFont(txt);
-            txt.fontSize = 12;
-            txt.alignment = TextAlignmentOptions.Center;
-            txt.color = new Color(0.7f, 0.7f, 0.7f);
-            txt.text = "Your backpack has no crops or ingredients!\nHarvest crops from your farm.";
-            activeIngredientVisuals.Add(emptyGO);
-            return;
+            previewCardGO.SetActive(true);
+            if (previewFoodIcon != null)
+            {
+                previewFoodIcon.gameObject.SetActive(true);
+                previewFoodIcon.sprite = matchedRecipe.resultFood.itemIcon;
+            }
+            if (previewHeaderLabel != null) previewHeaderLabel.text = "MÓN THÀNH PHẨM DỰ KIẾN:";
+            if (previewFoodTitle != null) previewFoodTitle.text = matchedRecipe.DisplayName;
+            if (previewFoodStats != null) previewFoodStats.text = GetFoodStatsDisplay(matchedRecipe.resultFood);
         }
-
-        foreach (var kvp in availableItems)
+        else if (potSlots.Count > 0)
         {
-            ItemData item = kvp.Key;
-            int count = kvp.Value;
-
-            GameObject card = CreateIngredientCard(item, count, () => AddToPot(item));
-            card.transform.SetParent(inventoryGridContainer, false);
-            activeIngredientVisuals.Add(card);
+            previewCardGO.SetActive(true);
+            if (previewFoodIcon != null)
+            {
+                previewFoodIcon.gameObject.SetActive(false);
+            }
+            if (previewHeaderLabel != null) previewHeaderLabel.text = "MÓN THÀNH PHẨM DỰ KIẾN:";
+            if (previewFoodTitle != null) previewFoodTitle.text = "Món Thử Nghiệm (Ẩn số)";
+            if (previewFoodStats != null) previewFoodStats.text = "<color=#FFAA00>??? Thử nấu để khám phá công thức bí mật!</color>";
+        }
+        else
+        {
+            previewCardGO.SetActive(true);
+            if (previewFoodIcon != null) previewFoodIcon.gameObject.SetActive(false);
+            if (previewHeaderLabel != null) previewHeaderLabel.text = "MÓN THÀNH PHẨM DỰ KIẾN:";
+            if (previewFoodTitle != null) previewFoodTitle.text = "(Chưa có nguyên liệu)";
+            if (previewFoodStats != null) previewFoodStats.text = "<color=#8D6E63>Bỏ nguyên liệu từ Balo hoặc chọn Sổ Công Thức để xem trước.</color>";
         }
     }
 
-    private GameObject CreateIngredientCard(ItemData item, int count, System.Action onAdd)
+    private void RefreshRecipeNotebook()
     {
-        GameObject card = new GameObject($"Ing_{item.name}", typeof(RectTransform), typeof(Image), typeof(Button));
-        RectTransform rt = card.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(320, 52);
+        if (recipeContent == null || recipeCardTemplate == null) return;
 
-        Image bg = card.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedPanel(bg, DungeonUIAssetHelper.PanelStyle.Wood);
-
-        Button btn = card.GetComponent<Button>();
-        btn.onClick.AddListener(() => onAdd?.Invoke());
-
-        // Icon
-        GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-        iconGO.transform.SetParent(card.transform, false);
-        RectTransform iconRT = iconGO.GetComponent<RectTransform>();
-        iconRT.anchorMin = new Vector2(0, 0.5f);
-        iconRT.anchorMax = new Vector2(0, 0.5f);
-        iconRT.anchoredPosition = new Vector2(28, 0);
-        iconRT.sizeDelta = new Vector2(38, 38);
-        Image iconImg = iconGO.GetComponent<Image>();
-        iconImg.sprite = item.itemIcon;
-        iconImg.color = Color.white;
-
-        // Name & Count
-        GameObject infoGO = new GameObject("Info", typeof(RectTransform), typeof(TextMeshProUGUI));
-        infoGO.transform.SetParent(card.transform, false);
-        RectTransform infoRT = infoGO.GetComponent<RectTransform>();
-        infoRT.anchorMin = new Vector2(0, 0);
-        infoRT.anchorMax = new Vector2(1, 1);
-        infoRT.offsetMin = new Vector2(58, 4);
-        infoRT.offsetMax = new Vector2(-75, -4);
-        TextMeshProUGUI infoTxt = infoGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(infoTxt);
-        infoTxt.fontSize = 13;
-        infoTxt.alignment = TextAlignmentOptions.MidlineLeft;
-        infoTxt.color = Color.white;
-        infoTxt.text = $"<b>{item.itemName}</b>\n<size=11.5><color=#AAAAAA>Available: <color=#88FF88>{count}</color></color></size>";
-
-        // Add Button Badge
-        GameObject addBadge = new GameObject("AddBadge", typeof(RectTransform), typeof(Image));
-        addBadge.transform.SetParent(card.transform, false);
-        RectTransform badgeRT = addBadge.GetComponent<RectTransform>();
-        badgeRT.anchorMin = new Vector2(1, 0.5f);
-        badgeRT.anchorMax = new Vector2(1, 0.5f);
-        badgeRT.anchoredPosition = new Vector2(-36, 0);
-        badgeRT.sizeDelta = new Vector2(62, 30);
-        Image badgeImg = addBadge.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleTactileButton(null, badgeImg, DungeonUIAssetHelper.ButtonStyle.Victory);
-
-        GameObject addTxtGO = new GameObject("Txt", typeof(RectTransform), typeof(TextMeshProUGUI));
-        addTxtGO.transform.SetParent(addBadge.transform, false);
-        RectTransform addTxtRT = addTxtGO.GetComponent<RectTransform>();
-        addTxtRT.anchorMin = Vector2.zero;
-        addTxtRT.anchorMax = Vector2.one;
-        addTxtRT.sizeDelta = Vector2.zero;
-        TextMeshProUGUI addTxt = addTxtGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(addTxt);
-        addTxt.fontSize = 12;
-        addTxt.fontStyle = FontStyles.Bold;
-        addTxt.alignment = TextAlignmentOptions.Center;
-        addTxt.color = Color.white;
-        addTxt.text = "+ ADD";
-
-        return card;
-    }
-
-    private void RefreshNotebookList()
-    {
-        for (int i = 0; i < activeNotebookVisuals.Count; i++)
+        // Clear existing
+        for (int i = 0; i < activeRecipeCards.Count; i++)
         {
-            if (activeNotebookVisuals[i] != null) Destroy(activeNotebookVisuals[i]);
+            if (activeRecipeCards[i] != null) Destroy(activeRecipeCards[i]);
         }
-        activeNotebookVisuals.Clear();
-
-        if (notebookContainer == null) return;
+        activeRecipeCards.Clear();
 
         List<RecipeData> allRecipes = CookingManager.Instance != null
             ? CookingManager.Instance.GetAllAvailableRecipes()
             : new List<RecipeData>();
 
-        int discoveredCount = 0;
+        // Filter recipes
+        List<RecipeData> filtered = new List<RecipeData>();
         for (int i = 0; i < allRecipes.Count; i++)
         {
             RecipeData r = allRecipes[i];
             if (r == null) continue;
 
-            bool isDiscovered = ProgressionManager.Instance != null && ProgressionManager.Instance.IsRecipeDiscovered(r);
-            if (isDiscovered) discoveredCount++;
+            bool matches = currentFilter switch
+            {
+                RecipeFilter.All => true,
+                RecipeFilter.Recovery => r.resultFood != null && (r.resultFood.healthValue > 0 || r.resultFood.hungerValue > 0),
+                RecipeFilter.Speed => r.resultFood != null && r.resultFood.foodBuff != null && r.resultFood.foodBuff.Length > 0,
+                RecipeFilter.Other => r.resultFood == null || (r.resultFood.healthValue == 0 && r.resultFood.hungerValue == 0 && (r.resultFood.foodBuff == null || r.resultFood.foodBuff.Length == 0)),
+                _ => true
+            };
 
-            GameObject card = CreateNotebookCard(r, isDiscovered);
-            card.transform.SetParent(notebookContainer, false);
-            activeNotebookVisuals.Add(card);
+            if (matches) filtered.Add(r);
         }
 
-        if (allRecipes.Count == 0)
+        // Check if currently selected recipe matches pot slots
+        RecipeData currentPotRecipe = CookingManager.Instance != null ? CookingManager.Instance.MatchRecipe(potSlots) : null;
+
+        for (int i = 0; i < filtered.Count; i++)
         {
-            GameObject emptyGO = new GameObject("EmptyLabel", typeof(RectTransform), typeof(TextMeshProUGUI));
-            emptyGO.transform.SetParent(notebookContainer, false);
-            TextMeshProUGUI txt = emptyGO.GetComponent<TextMeshProUGUI>();
-            DungeonUIAssetHelper.ApplyFont(txt);
-            txt.fontSize = 12;
-            txt.alignment = TextAlignmentOptions.Center;
-            txt.color = new Color(0.7f, 0.7f, 0.7f);
-            txt.text = "No recipes found in the system!";
-            activeNotebookVisuals.Add(emptyGO);
+            RecipeData recipe = filtered[i];
+            if (recipe == null) continue;
+
+            GameObject cardGO = Instantiate(recipeCardTemplate, recipeContent);
+            cardGO.SetActive(true);
+            activeRecipeCards.Add(cardGO);
+
+            // Populate card
+            RecipeCardUI cardUI = cardGO.GetComponent<RecipeCardUI>();
+            if (cardUI != null)
+            {
+                cardUI.Setup(recipe, backpackContainer, currentPotRecipe == recipe, () => AutoFillRecipe(recipe));
+            }
+            else
+            {
+                // Fallback manual binding
+                SetupRecipeCardManual(cardGO, recipe, currentPotRecipe == recipe);
+            }
         }
     }
 
-    private GameObject CreateNotebookCard(RecipeData recipe, bool isDiscovered)
+    private void SetupRecipeCardManual(GameObject cardGO, RecipeData recipe, bool isCurrentlySelected)
     {
-        GameObject card = new GameObject($"Recipe_{recipe.recipeName}", typeof(RectTransform), typeof(Image));
-        RectTransform rt = card.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(320, 60);
+        Image dishIcon = cardGO.transform.Find("IconFrame/DishIcon")?.GetComponent<Image>();
+        TextMeshProUGUI title = cardGO.transform.Find("InfoColumn/TitleRow/TitleText")?.GetComponent<TextMeshProUGUI>();
+        TextMeshProUGUI stars = cardGO.transform.Find("InfoColumn/TitleRow/StarsText")?.GetComponent<TextMeshProUGUI>();
+        TextMeshProUGUI detail = cardGO.transform.Find("InfoColumn/DetailText")?.GetComponent<TextMeshProUGUI>();
+        Button actionBtn = cardGO.transform.Find("ActionButton")?.GetComponent<Button>();
+        Image actionBg = actionBtn != null ? actionBtn.GetComponent<Image>() : null;
+        TextMeshProUGUI actionText = cardGO.transform.Find("ActionButton/ActionText")?.GetComponent<TextMeshProUGUI>();
 
-        Image bg = card.GetComponent<Image>();
-        Color cardColor = isDiscovered ? new Color(0.14f, 0.18f, 0.24f, 0.95f) : new Color(0.10f, 0.11f, 0.14f, 0.7f);
-        DungeonUIAssetHelper.StyleSlicedFrame(bg, cardColor);
-
-        // Icon
-        GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-        iconGO.transform.SetParent(card.transform, false);
-        RectTransform iconRT = iconGO.GetComponent<RectTransform>();
-        iconRT.anchorMin = new Vector2(0, 0.5f);
-        iconRT.anchorMax = new Vector2(0, 0.5f);
-        iconRT.anchoredPosition = new Vector2(30, 0);
-        iconRT.sizeDelta = new Vector2(40, 40);
-        Image iconImg = iconGO.GetComponent<Image>();
-
-        if (isDiscovered && recipe.resultFood != null && recipe.resultFood.itemIcon != null)
+        if (dishIcon != null && recipe.resultFood != null)
         {
-            iconImg.sprite = recipe.resultFood.itemIcon;
-            iconImg.color = Color.white;
-        }
-        else
-        {
-            iconImg.color = new Color(0.3f, 0.3f, 0.3f, 0.6f);
+            dishIcon.sprite = recipe.resultFood.itemIcon;
+            dishIcon.gameObject.SetActive(dishIcon.sprite != null);
         }
 
-        // Info Text
-        GameObject infoGO = new GameObject("Info", typeof(RectTransform), typeof(TextMeshProUGUI));
-        infoGO.transform.SetParent(card.transform, false);
-        RectTransform infoRT = infoGO.GetComponent<RectTransform>();
-        infoRT.anchorMin = new Vector2(0, 0);
-        infoRT.anchorMax = new Vector2(1, 1);
-        infoRT.offsetMin = new Vector2(60, 4);
-        infoRT.offsetMax = new Vector2(-10, -4);
-        TextMeshProUGUI infoTxt = infoGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(infoTxt);
-        infoTxt.fontSize = 12.5f;
-        infoTxt.alignment = TextAlignmentOptions.MidlineLeft;
+        if (title != null) title.text = recipe.DisplayName;
+        if (stars != null) stars.text = "⭐⭐⭐";
 
-        if (isDiscovered)
+        if (detail != null)
         {
-            infoRT.offsetMax = new Vector2(-78, -4);
-
-            System.Text.StringBuilder ingSb = new System.Text.StringBuilder();
-            bool hasAll = true;
+            StringBuilder sb = new StringBuilder();
+            if (recipe.resultFood != null)
+            {
+                if (recipe.resultFood.healthValue > 0) sb.Append($"Hồi {recipe.resultFood.healthValue} HP");
+                if (recipe.resultFood.hungerValue > 0)
+                {
+                    if (sb.Length > 0) sb.Append(" & ");
+                    sb.Append($"{recipe.resultFood.hungerValue} Độ No");
+                }
+            }
+            sb.Append(" | Cần: ");
             if (recipe.ingredients != null)
             {
-                for (int i = 0; i < recipe.ingredients.Length; i++)
+                for (int ing = 0; ing < recipe.ingredients.Length; ing++)
                 {
-                    ItemRequirement req = recipe.ingredients[i];
-                    if (req.item != null)
+                    var req = recipe.ingredients[ing];
+                    if (req != null && req.item != null)
                     {
-                        int has = backpackContainer != null ? backpackContainer.GetItemCount(req.item) : 0;
-                        for (int p = 0; p < potSlots.Count; p++)
-                        {
-                            if (potSlots[p] != null && ItemContainer.IsItemMatch(potSlots[p].itemData, req.item))
-                            {
-                                has += potSlots[p].amount;
-                            }
-                        }
-                        if (has < req.amount) hasAll = false;
-                        ingSb.Append($"{req.item.itemName} x{req.amount}  ");
+                        if (ing > 0) sb.Append(" + ");
+                        sb.Append($"{req.item.itemName}x{req.amount}");
                     }
                 }
             }
-            infoTxt.text = $"<b><color=#FFD700>{recipe.DisplayName}</color></b>\n<size=11><color=#88FF88>Recipe:</color> {ingSb.ToString().TrimEnd()}</size>";
-
-            // Quick Fill Button: Automatically place ingredients into pot slots
-            GameObject fillBtnGO = new GameObject("FillBtn", typeof(RectTransform), typeof(Image), typeof(Button));
-            fillBtnGO.transform.SetParent(card.transform, false);
-            RectTransform fillRT = fillBtnGO.GetComponent<RectTransform>();
-            fillRT.anchorMin = new Vector2(1, 0.5f);
-            fillRT.anchorMax = new Vector2(1, 0.5f);
-            fillRT.pivot = new Vector2(1, 0.5f);
-            fillRT.anchoredPosition = new Vector2(-8, 0);
-            fillRT.sizeDelta = new Vector2(66, 32);
-            Image fillImg = fillBtnGO.GetComponent<Image>();
-            DungeonUIAssetHelper.StyleTactileButton(null, fillImg, hasAll ? DungeonUIAssetHelper.ButtonStyle.PrimaryCook : DungeonUIAssetHelper.ButtonStyle.WoodRustic);
-
-            Button fillBtn = fillBtnGO.GetComponent<Button>();
-            fillBtn.interactable = hasAll;
-            fillBtn.onClick.AddListener(() => AutoFillRecipeToPot(recipe));
-
-            GameObject fillTxtGO = new GameObject("Txt", typeof(RectTransform), typeof(TextMeshProUGUI));
-            fillTxtGO.transform.SetParent(fillBtnGO.transform, false);
-            RectTransform fillTxtRT = fillTxtGO.GetComponent<RectTransform>();
-            fillTxtRT.anchorMin = Vector2.zero;
-            fillTxtRT.anchorMax = Vector2.one;
-            fillTxtRT.sizeDelta = Vector2.zero;
-            TextMeshProUGUI fillTxt = fillTxtGO.GetComponent<TextMeshProUGUI>();
-            DungeonUIAssetHelper.ApplyFont(fillTxt);
-            fillTxt.fontSize = 11;
-            fillTxt.fontStyle = FontStyles.Bold;
-            fillTxt.alignment = TextAlignmentOptions.Center;
-            fillTxt.color = hasAll ? Color.white : new Color(0.7f, 0.7f, 0.7f);
-            fillTxt.text = "FILL";
+            detail.text = sb.ToString();
         }
-        else
+
+        bool canCook = CookingManager.Instance != null && CookingManager.Instance.CanCook(recipe, backpackContainer);
+
+        if (actionBtn != null)
         {
-            infoRT.offsetMax = new Vector2(-10, -4);
-            infoTxt.text = "<b><color=#777777>??? Secret Recipe ???</color></b>\n<size=11><color=#555555>Undiscovered - Try experimenting with ingredients!</color></size>";
+            actionBtn.onClick.RemoveAllListeners();
+            if (isCurrentlySelected)
+            {
+                if (actionText != null) actionText.text = "ĐANG CHỌN";
+                if (actionBg != null) actionBg.color = new Color(1f, 0.6f, 0f, 1f); // Orange
+                actionBtn.interactable = false;
+            }
+            else if (canCook)
+            {
+                if (actionText != null) actionText.text = "TỰ ĐIỀN";
+                if (actionBg != null) actionBg.color = new Color(0.48f, 0.32f, 0.22f, 1f); // Cocoa brown
+                actionBtn.interactable = true;
+                actionBtn.onClick.AddListener(() => AutoFillRecipe(recipe));
+            }
+            else
+            {
+                if (actionText != null) actionText.text = "THIẾU NL";
+                if (actionBg != null) actionBg.color = new Color(0.6f, 0.6f, 0.6f, 0.8f); // Grey
+                actionBtn.interactable = false;
+            }
         }
-
-        return card;
     }
 
-    private void AutoFillRecipeToPot(RecipeData recipe)
+    private void RefreshBackpackGrid()
     {
-        if (recipe == null || backpackContainer == null) return;
+        if (backpackGridContent == null) return;
 
-        int totalNeeded = 0;
-        for (int i = 0; i < recipe.ingredients.Length; i++)
+        for (int i = 0; i < activeBackpackSlots.Count; i++)
         {
-            var req = recipe.ingredients[i];
-            if (req != null && req.item != null && req.amount > 0)
-            {
-                totalNeeded += req.amount;
-                int has = backpackContainer.GetItemCount(req.item);
-                for (int p = 0; p < potSlots.Count; p++)
-                {
-                    if (potSlots[p] != null && ItemContainer.IsItemMatch(potSlots[p].itemData, req.item))
-                    {
-                        has += potSlots[p].amount;
-                    }
-                }
+            if (activeBackpackSlots[i] != null) Destroy(activeBackpackSlots[i]);
+        }
+        activeBackpackSlots.Clear();
 
-                if (has < req.amount)
-                {
-                    ShowToast($"Not enough {req.item.itemName} (need {req.amount}, have {has})!");
-                    return;
-                }
+        if (backpackContainer == null || backpackContainer.itemSlots == null) return;
+
+        for (int i = 0; i < backpackContainer.itemSlots.Length; i++)
+        {
+            ItemSlot slot = backpackContainer.itemSlots[i];
+            if (slot == null || slot.itemData == null || slot.amount <= 0) continue;
+
+            GameObject slotGO = null;
+            if (backpackSlotPrefab != null)
+            {
+                slotGO = Instantiate(backpackSlotPrefab, backpackGridContent);
+            }
+            else
+            {
+                slotGO = CreateBackpackSlotFallback(backpackGridContent);
+            }
+
+            if (slotGO == null) continue;
+            slotGO.SetActive(true);
+            activeBackpackSlots.Add(slotGO);
+
+            // Bind slot visuals
+            Image icon = slotGO.transform.Find("ItemIcon")?.GetComponent<Image>();
+            if (icon == null) icon = slotGO.GetComponentInChildren<Image>();
+            TextMeshProUGUI amountText = slotGO.transform.Find("Text (TMP)")?.GetComponent<TextMeshProUGUI>();
+            if (amountText == null) amountText = slotGO.GetComponentInChildren<TextMeshProUGUI>();
+
+            if (icon != null)
+            {
+                icon.sprite = slot.itemData.itemIcon;
+                icon.color = Color.white;
+            }
+
+            if (amountText != null)
+            {
+                amountText.text = slot.amount > 1 ? $"x{slot.amount}" : "";
+            }
+
+            // Click listener
+            Button btn = slotGO.GetComponent<Button>();
+            if (btn != null)
+            {
+                btn.onClick.RemoveAllListeners();
+                ItemData itemToAdd = slot.itemData;
+                btn.onClick.AddListener(() => AddToPot(itemToAdd));
             }
         }
-
-        if (totalNeeded > MAX_POT_SLOTS)
-        {
-            ShowToast($"This recipe requires {totalNeeded} ingredients, exceeding {MAX_POT_SLOTS} slots!");
-            return;
-        }
-
-        ReturnAllPotItemsToBackpack();
-
-        for (int i = 0; i < recipe.ingredients.Length; i++)
-        {
-            var req = recipe.ingredients[i];
-            if (req != null && req.item != null && req.amount > 0)
-            {
-                for (int a = 0; a < req.amount; a++)
-                {
-                    AddToPot(req.item);
-                }
-            }
-        }
-
-        ShowToast($"Filled ingredients for <color=#88FF88>{recipe.DisplayName}</color> into pot!");
     }
 
-    private void ShowCookResult(bool success, RecipeData recipe, bool isNewDiscovery)
+    private GameObject CreateBackpackSlotFallback(Transform parent)
     {
-        if (resultBannerGO == null) return;
-        resultBannerGO.SetActive(true);
-        Image rbImg = resultBannerGO.GetComponent<Image>();
-        if (rbImg != null)
-        {
-            DungeonUIAssetHelper.StylePlaque(rbImg, success ? DungeonUIAssetHelper.PlaqueStyle.Victory : DungeonUIAssetHelper.PlaqueStyle.Defeat);
-        }
+        GameObject go = new GameObject("BackpackSlot", typeof(RectTransform), typeof(Image), typeof(Button));
+        go.transform.SetParent(parent, false);
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(64, 64);
 
-        if (success && recipe != null && recipe.resultFood != null)
-        {
-            if (resultFoodIcon != null)
-            {
-                resultFoodIcon.gameObject.SetActive(true);
-                resultFoodIcon.sprite = recipe.resultFood.itemIcon;
-                resultFoodIcon.color = Color.white;
-            }
+        Image bg = go.GetComponent<Image>();
+        bg.color = new Color(0.92f, 0.88f, 0.80f, 1f);
 
-            string discoveryTag = isNewDiscovery ? "<color=#FFD700>[NEW] NEW DISCOVERY! SAVED TO NOTEBOOK!</color>\n" : "";
-            if (resultFoodTitle != null)
-            {
-                resultFoodTitle.text = $"{discoveryTag}<b><color=#88FF88>{recipe.resultFood.itemName}</color></b>";
-            }
-            if (resultFoodDesc != null)
-            {
-                string buffInfo = GetFoodBuffSummary(recipe.resultFood);
-                resultFoodDesc.text = !string.IsNullOrEmpty(buffInfo) ? buffInfo : "Delicious and nourishing!";
-            }
-        }
-        else
-        {
-            if (resultFoodIcon != null)
-            {
-                resultFoodIcon.gameObject.SetActive(false);
-            }
-            if (resultFoodTitle != null)
-            {
-                resultFoodTitle.text = "<b><color=#FF6666>COOKING FAILED (BURNT)</color></b>";
-            }
-            if (resultFoodDesc != null)
-            {
-                resultFoodDesc.text = "<color=#CCCCCC>The ingredients did not create any recipe. Try a different combination!</color>";
-            }
-        }
+        GameObject iconGO = new GameObject("ItemIcon", typeof(RectTransform), typeof(Image));
+        iconGO.transform.SetParent(go.transform, false);
+        RectTransform iconRT = iconGO.GetComponent<RectTransform>();
+        iconRT.anchorMin = new Vector2(0.1f, 0.1f);
+        iconRT.anchorMax = new Vector2(0.9f, 0.9f);
+        iconRT.offsetMin = Vector2.zero;
+        iconRT.offsetMax = Vector2.zero;
+
+        GameObject textGO = new GameObject("Text (TMP)", typeof(RectTransform), typeof(TextMeshProUGUI));
+        textGO.transform.SetParent(go.transform, false);
+        RectTransform textRT = textGO.GetComponent<RectTransform>();
+        textRT.anchorMin = new Vector2(0.5f, 0f);
+        textRT.anchorMax = new Vector2(1f, 0.4f);
+        TextMeshProUGUI tmp = textGO.GetComponent<TextMeshProUGUI>();
+        tmp.fontSize = 13f;
+        tmp.alignment = TextAlignmentOptions.BottomRight;
+        tmp.color = Color.black;
+
+        return go;
     }
 
+    private void SortBackpack()
+    {
+        if (backpackContainer == null || backpackContainer.itemSlots == null) return;
+
+        // Collect non-empty slots
+        List<ItemSlot> validSlots = new List<ItemSlot>();
+        for (int i = 0; i < backpackContainer.itemSlots.Length; i++)
+        {
+            var s = backpackContainer.itemSlots[i];
+            if (s != null && s.itemData != null && s.amount > 0)
+            {
+                validSlots.Add(s);
+            }
+        }
+
+        // Sort: Food/Crops first, then by name
+        validSlots.Sort((a, b) =>
+        {
+            bool aIsFood = a.itemData is FoodData;
+            bool bIsFood = b.itemData is FoodData;
+            if (aIsFood && !bIsFood) return -1;
+            if (!aIsFood && bIsFood) return 1;
+            return string.Compare(a.itemData.itemName, b.itemData.itemName, System.StringComparison.OrdinalIgnoreCase);
+        });
+
+        // Reassign
+        isInternalUpdating = true;
+        try
+        {
+            for (int i = 0; i < backpackContainer.itemSlots.Length; i++)
+            {
+                if (i < validSlots.Count) backpackContainer.itemSlots[i] = validSlots[i];
+                else backpackContainer.itemSlots[i] = new ItemSlot();
+            }
+        }
+        finally
+        {
+            isInternalUpdating = false;
+        }
+
+        ShowToast("⚡ Đã sắp xếp lại Balo nguyên liệu gọn gàng!");
+        RefreshBackpackGrid();
+    }
+    #endregion
+
+    #region Tab Controls & Styling
     private void UpdateTabButtonsState()
     {
-        if (tabIngredientsBtn != null)
-        {
-            Image img = tabIngredientsBtn.GetComponent<Image>();
-            DungeonUIAssetHelper.StyleTactileButton(tabIngredientsBtn, img, currentView == RightTabView.Ingredients ? DungeonUIAssetHelper.ButtonStyle.Defend : DungeonUIAssetHelper.ButtonStyle.WoodRustic);
-        }
-        if (tabNotebookBtn != null)
-        {
-            Image img = tabNotebookBtn.GetComponent<Image>();
-            DungeonUIAssetHelper.StyleTactileButton(tabNotebookBtn, img, currentView == RightTabView.RecipeBook ? DungeonUIAssetHelper.ButtonStyle.Defend : DungeonUIAssetHelper.ButtonStyle.WoodRustic);
-        }
+        SetTabStyle(tabAllBtn, tabAllText, currentFilter == RecipeFilter.All);
+        SetTabStyle(tabRecoveryBtn, tabRecoveryText, currentFilter == RecipeFilter.Recovery);
+        SetTabStyle(tabSpeedBtn, tabSpeedText, currentFilter == RecipeFilter.Speed);
+        SetTabStyle(tabOtherBtn, tabOtherText, currentFilter == RecipeFilter.Other);
     }
 
-    private void ShowToast(string message)
+    private void SetTabStyle(Button btn, TextMeshProUGUI txt, bool isActive)
     {
-        if (feedbackToastText == null) return;
-        feedbackToastText.text = message;
-        feedbackToastText.gameObject.SetActive(true);
-        toastTimer = 3.5f;
+        if (btn == null) return;
+        Image img = btn.GetComponent<Image>();
+        if (img != null)
+        {
+            img.color = isActive
+                ? new Color(0.36f, 0.70f, 0.16f, 1f) // Green active (#5CAE28)
+                : new Color(0.92f, 0.86f, 0.78f, 1f); // Cream inactive
+        }
+        if (txt != null)
+        {
+            txt.color = isActive ? Color.white : new Color(0.36f, 0.25f, 0.20f, 1f);
+        }
     }
 
-    private string GetFoodBuffSummary(FoodData food)
+    private string GetFoodStatsDisplay(FoodData food)
     {
         if (food == null) return "";
-        System.Text.StringBuilder sb = new System.Text.StringBuilder();
-
-        if (food.healthValue > 0) sb.Append($"<color=#66FF88>+{food.healthValue} HP</color> ");
-        if (food.hungerValue > 0) sb.Append($"<color=#FFCC66>+{food.hungerValue} Fullness</color> ");
-
-        if (food.foodBuff != null && food.foodBuff.Length > 0)
+        List<string> parts = new List<string>();
+        if (food.healthValue > 0) parts.Add($"<color=#E53935>❤️ +{food.healthValue} HP</color>");
+        if (food.hungerValue > 0) parts.Add($"<color=#FB8C00>🍗 +{food.hungerValue} Độ No</color>");
+        if (food.foodBuff != null)
         {
-            bool hasEndlessFeast = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast);
             for (int i = 0; i < food.foodBuff.Length; i++)
             {
                 var fb = food.foodBuff[i];
                 if (fb != null && fb.buffs != null)
                 {
-                    string statLabel = CombatUI.GetBuffStatLabel(fb.buffs);
-                    int dur = hasEndlessFeast ? fb.buffDuration * 2 : fb.buffDuration;
-                    string durType = fb.buffDurationType switch
-                    {
-                        FoodData.BuffDurationType.Turn => dur == 1 ? "Turn" : "Turns",
-                        FoodData.BuffDurationType.Combat => dur == 1 ? "Battle" : "Battles",
-                        FoodData.BuffDurationType.Floor => dur == 1 ? "Floor" : "Floors",
-                        _ => fb.buffDurationType.ToString()
-                    };
-                    string sign = fb.buffValue > 0 ? "+" : "";
-                    sb.Append($"<color=#66CCFF>{sign}{fb.buffValue} {statLabel} ({dur} {durType})</color> ");
+                    string stat = CombatUI.GetBuffStatLabel(fb.buffs);
+                    parts.Add($"<color=#00ACC1>⚡ +{fb.buffValue} {stat}</color>");
                 }
             }
         }
-        return sb.ToString().Trim();
+        return parts.Count > 0 ? string.Join(" | ", parts) : "Món ăn ngon miệng";
     }
     #endregion
 
-    #region Build UI Structure
-    private void BuildUI()
+    #region AutoBind References
+    public void AutoBindReferences()
     {
-        if (canvas == null) canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
-        if (canvas == null) return;
-
-        // 1. Root Modal Backdrop (Blocks all raycasts to world & hotbars)
-        kitchenPanel = new GameObject("KitchenPanel", typeof(RectTransform), typeof(Image));
-        kitchenPanel.transform.SetParent(canvas.transform, false);
-        RectTransform overlayRT = kitchenPanel.GetComponent<RectTransform>();
-        overlayRT.anchorMin = Vector2.zero;
-        overlayRT.anchorMax = Vector2.one;
-        overlayRT.offsetMin = Vector2.zero;
-        overlayRT.offsetMax = Vector2.zero;
-
-        Image overlayBg = kitchenPanel.GetComponent<Image>();
-        overlayBg.color = new Color(0.04f, 0.05f, 0.08f, 0.85f);
-
-        // 2. Central Window Panel
-        GameObject windowGO = new GameObject("KitchenWindow", typeof(RectTransform), typeof(Image));
-        windowGO.transform.SetParent(kitchenPanel.transform, false);
-        RectTransform rootRT = windowGO.GetComponent<RectTransform>();
-        rootRT.anchorMin = new Vector2(0.5f, 0.5f);
-        rootRT.anchorMax = new Vector2(0.5f, 0.5f);
-        rootRT.pivot = new Vector2(0.5f, 0.5f);
-        rootRT.sizeDelta = new Vector2(820, 540);
-        rootRT.anchoredPosition = Vector2.zero;
-
-        Image rootBg = windowGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedPanel(rootBg, DungeonUIAssetHelper.PanelStyle.Wood);
-
-        // 3. Header
-        GameObject headerGO = new GameObject("Header", typeof(RectTransform), typeof(Image));
-        headerGO.transform.SetParent(windowGO.transform, false);
-        RectTransform headerRT = headerGO.GetComponent<RectTransform>();
-        headerRT.anchorMin = new Vector2(0, 1);
-        headerRT.anchorMax = new Vector2(1, 1);
-        headerRT.pivot = new Vector2(0.5f, 1);
-        headerRT.sizeDelta = new Vector2(0, 72);
-        headerRT.anchoredPosition = Vector2.zero;
-        Image headerBg = headerGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StylePlaque(headerBg, DungeonUIAssetHelper.PlaqueStyle.Gold);
-
-        // Title
-        GameObject titleGO = new GameObject("TitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        titleGO.transform.SetParent(headerGO.transform, false);
-        RectTransform titleRT = titleGO.GetComponent<RectTransform>();
-        titleRT.anchorMin = new Vector2(0, 0);
-        titleRT.anchorMax = new Vector2(1, 1);
-        titleRT.offsetMin = new Vector2(25, 20);
-        titleRT.offsetMax = new Vector2(-60, 0);
-        titleText = titleGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(titleText);
-        titleText.fontSize = 20;
-        titleText.fontStyle = FontStyles.Bold;
-        titleText.color = new Color(1f, 0.85f, 0.35f);
-        titleText.text = "COOKING POT EXPERIMENT";
-
-        // Subtitle
-        GameObject subGO = new GameObject("SubtitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        subGO.transform.SetParent(headerGO.transform, false);
-        RectTransform subRT = subGO.GetComponent<RectTransform>();
-        subRT.anchorMin = new Vector2(0, 0);
-        subRT.anchorMax = new Vector2(1, 1);
-        subRT.offsetMin = new Vector2(25, 4);
-        subRT.offsetMax = new Vector2(-60, -26);
-        subtitleText = subGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(subtitleText);
-        subtitleText.fontSize = 12.5f;
-        subtitleText.text = "Place ingredients into the pot to discover secret recipes (up to 5 slots)!";
-
-        // Close Button
-        GameObject closeGO = new GameObject("CloseButton", typeof(RectTransform), typeof(Image), typeof(Button));
-        closeGO.transform.SetParent(headerGO.transform, false);
-        RectTransform closeRT = closeGO.GetComponent<RectTransform>();
-        closeRT.anchorMin = new Vector2(1, 0.5f);
-        closeRT.anchorMax = new Vector2(1, 0.5f);
-        closeRT.anchoredPosition = new Vector2(-28, 0);
-        closeRT.sizeDelta = new Vector2(36, 36);
-        Image closeImg = closeGO.GetComponent<Image>();
-        closeButton = closeGO.GetComponent<Button>();
-        DungeonUIAssetHelper.StyleTactileButton(closeButton, closeImg, DungeonUIAssetHelper.ButtonStyle.WoodRustic);
-        closeButton.onClick.AddListener(Close);
-
-        GameObject closeTxtGO = new GameObject("X", typeof(RectTransform), typeof(TextMeshProUGUI));
-        closeTxtGO.transform.SetParent(closeGO.transform, false);
-        RectTransform closeTxtRT = closeTxtGO.GetComponent<RectTransform>();
-        closeTxtRT.anchorMin = Vector2.zero;
-        closeTxtRT.anchorMax = Vector2.one;
-        closeTxtRT.sizeDelta = Vector2.zero;
-        TextMeshProUGUI closeTxt = closeTxtGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(closeTxt);
-        closeTxt.fontSize = 14;
-        closeTxt.alignment = TextAlignmentOptions.Center;
-        closeTxt.color = Color.white;
-        closeTxt.text = "X";
-
-        // 4. Body Layout: Left Side (Pot) & Right Side (Ingredients / Notebook)
-        // LEFT COLUMN: COOKING POT
-        GameObject leftCol = new GameObject("LeftPotCol", typeof(RectTransform), typeof(Image));
-        leftCol.transform.SetParent(windowGO.transform, false);
-        RectTransform leftRT = leftCol.GetComponent<RectTransform>();
-        leftRT.anchorMin = new Vector2(0, 0);
-        leftRT.anchorMax = new Vector2(0.52f, 1);
-        leftRT.offsetMin = new Vector2(16, 44);
-        leftRT.offsetMax = new Vector2(-8, -76);
-        Image leftBg = leftCol.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedPanel(leftBg, DungeonUIAssetHelper.PanelStyle.Slate);
-
-        // Pot Label
-        GameObject potLabelGO = new GameObject("PotLabel", typeof(RectTransform), typeof(TextMeshProUGUI));
-        potLabelGO.transform.SetParent(leftCol.transform, false);
-        RectTransform plRT = potLabelGO.GetComponent<RectTransform>();
-        plRT.anchorMin = new Vector2(0, 1);
-        plRT.anchorMax = new Vector2(1, 1);
-        plRT.pivot = new Vector2(0.5f, 1);
-        plRT.sizeDelta = new Vector2(0, 32);
-        plRT.anchoredPosition = new Vector2(0, -10);
-        TextMeshProUGUI plTxt = potLabelGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(plTxt);
-        plTxt.fontSize = 14;
-        plTxt.alignment = TextAlignmentOptions.Center;
-        plTxt.color = new Color(1f, 0.8f, 0.4f);
-        plTxt.text = "[ COOKING POT ] - 1 INGREDIENT PER SLOT";
-
-        // Pot Slots Row (Supports 5 slots, 1 ingredient per slot)
-        GameObject potRowGO = new GameObject("PotSlotsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-        potRowGO.transform.SetParent(leftCol.transform, false);
-        potSlotsRow = potRowGO.transform;
-        RectTransform prRT = potRowGO.GetComponent<RectTransform>();
-        prRT.anchorMin = new Vector2(0.5f, 1);
-        prRT.anchorMax = new Vector2(0.5f, 1);
-        prRT.pivot = new Vector2(0.5f, 1);
-        prRT.sizeDelta = new Vector2(360, 74);
-        prRT.anchoredPosition = new Vector2(0, -48);
-        HorizontalLayoutGroup potHlg = potRowGO.GetComponent<HorizontalLayoutGroup>();
-        potHlg.spacing = 8;
-        potHlg.childAlignment = TextAnchor.MiddleCenter;
-        potHlg.childControlWidth = false;
-        potHlg.childControlHeight = false;
-
-        // Cook Button (Big, Golden-Orange)
-        GameObject cookBtnGO = new GameObject("CookButton", typeof(RectTransform), typeof(Image), typeof(Button));
-        cookBtnGO.transform.SetParent(leftCol.transform, false);
-        RectTransform cookBtnRT = cookBtnGO.GetComponent<RectTransform>();
-        cookBtnRT.anchorMin = new Vector2(0.5f, 1);
-        cookBtnRT.anchorMax = new Vector2(0.5f, 1);
-        cookBtnRT.pivot = new Vector2(0.5f, 1);
-        cookBtnRT.anchoredPosition = new Vector2(-60, -135);
-        cookBtnRT.sizeDelta = new Vector2(180, 48);
-
-        Image cookBtnImg = cookBtnGO.GetComponent<Image>();
-        cookButton = cookBtnGO.GetComponent<Button>();
-        DungeonUIAssetHelper.StyleTactileButton(cookButton, cookBtnImg, DungeonUIAssetHelper.ButtonStyle.PrimaryCook);
-        cookButton.onClick.AddListener(ExecuteCook);
-
-        GameObject cookTxtGO = new GameObject("Txt", typeof(RectTransform), typeof(TextMeshProUGUI));
-        cookTxtGO.transform.SetParent(cookBtnGO.transform, false);
-        RectTransform cookTxtRT = cookTxtGO.GetComponent<RectTransform>();
-        cookTxtRT.anchorMin = Vector2.zero;
-        cookTxtRT.anchorMax = Vector2.one;
-        cookTxtRT.sizeDelta = Vector2.zero;
-        TextMeshProUGUI cookTxt = cookTxtGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(cookTxt);
-        cookTxt.fontSize = 15;
-        cookTxt.fontStyle = FontStyles.Bold;
-        cookTxt.alignment = TextAlignmentOptions.Center;
-        cookTxt.color = Color.white;
-        cookTxt.text = "LIGHT FIRE & COOK";
-
-        // Clear Pot Button
-        GameObject clearBtnGO = new GameObject("ClearButton", typeof(RectTransform), typeof(Image), typeof(Button));
-        clearBtnGO.transform.SetParent(leftCol.transform, false);
-        RectTransform clearBtnRT = clearBtnGO.GetComponent<RectTransform>();
-        clearBtnRT.anchorMin = new Vector2(0.5f, 1);
-        clearBtnRT.anchorMax = new Vector2(0.5f, 1);
-        clearBtnRT.pivot = new Vector2(0.5f, 1);
-        clearBtnRT.anchoredPosition = new Vector2(90, -135);
-        clearBtnRT.sizeDelta = new Vector2(100, 48);
-
-        Image clearBtnImg = clearBtnGO.GetComponent<Image>();
-        clearPotButton = clearBtnGO.GetComponent<Button>();
-        DungeonUIAssetHelper.StyleTactileButton(clearPotButton, clearBtnImg, DungeonUIAssetHelper.ButtonStyle.WoodRustic);
-        clearPotButton.onClick.AddListener(ReturnAllPotItemsToBackpack);
-
-        GameObject clearTxtGO = new GameObject("Txt", typeof(RectTransform), typeof(TextMeshProUGUI));
-        clearTxtGO.transform.SetParent(clearBtnGO.transform, false);
-        RectTransform clearTxtRT = clearTxtGO.GetComponent<RectTransform>();
-        clearTxtRT.anchorMin = Vector2.zero;
-        clearTxtRT.anchorMax = Vector2.one;
-        clearTxtRT.sizeDelta = Vector2.zero;
-        TextMeshProUGUI clearTxt = clearTxtGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(clearTxt);
-        clearTxt.fontSize = 12;
-        clearTxt.alignment = TextAlignmentOptions.Center;
-        clearTxt.color = new Color(0.9f, 0.9f, 0.9f);
-        clearTxt.text = "CLEAR POT\n(RETURN)";
-
-        // Result Banner Area
-        resultBannerGO = new GameObject("ResultBanner", typeof(RectTransform), typeof(Image));
-        resultBannerGO.transform.SetParent(leftCol.transform, false);
-        RectTransform rbRT = resultBannerGO.GetComponent<RectTransform>();
-        rbRT.anchorMin = new Vector2(0, 0);
-        rbRT.anchorMax = new Vector2(1, 0);
-        rbRT.pivot = new Vector2(0.5f, 0);
-        rbRT.sizeDelta = new Vector2(0, 160);
-        rbRT.anchoredPosition = new Vector2(0, 12);
-        Image rbImg = resultBannerGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StylePlaque(rbImg, DungeonUIAssetHelper.PlaqueStyle.Victory);
-
-        // Result Icon
-        GameObject rIconGO = new GameObject("FoodIcon", typeof(RectTransform), typeof(Image));
-        rIconGO.transform.SetParent(resultBannerGO.transform, false);
-        RectTransform rIconRT = rIconGO.GetComponent<RectTransform>();
-        rIconRT.anchorMin = new Vector2(0.5f, 1);
-        rIconRT.anchorMax = new Vector2(0.5f, 1);
-        rIconRT.anchoredPosition = new Vector2(0, -36);
-        rIconRT.sizeDelta = new Vector2(52, 52);
-        resultFoodIcon = rIconGO.GetComponent<Image>();
-
-        // Result Title
-        GameObject rTitleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
-        rTitleGO.transform.SetParent(resultBannerGO.transform, false);
-        RectTransform rTitleRT = rTitleGO.GetComponent<RectTransform>();
-        rTitleRT.anchorMin = new Vector2(0, 0);
-        rTitleRT.anchorMax = new Vector2(1, 0);
-        rTitleRT.sizeDelta = new Vector2(0, 36);
-        rTitleRT.anchoredPosition = new Vector2(0, 48);
-        resultFoodTitle = rTitleGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(resultFoodTitle);
-        resultFoodTitle.fontSize = 13;
-        resultFoodTitle.alignment = TextAlignmentOptions.Center;
-
-        // Result Desc / Buffs
-        GameObject rDescGO = new GameObject("Desc", typeof(RectTransform), typeof(TextMeshProUGUI));
-        rDescGO.transform.SetParent(resultBannerGO.transform, false);
-        RectTransform rDescRT = rDescGO.GetComponent<RectTransform>();
-        rDescRT.anchorMin = new Vector2(0, 0);
-        rDescRT.anchorMax = new Vector2(1, 0);
-        rDescRT.sizeDelta = new Vector2(0, 32);
-        rDescRT.anchoredPosition = new Vector2(0, 16);
-        resultFoodDesc = rDescGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(resultFoodDesc);
-        resultFoodDesc.fontSize = 11;
-        resultFoodDesc.alignment = TextAlignmentOptions.Center;
-
-        resultBannerGO.SetActive(false);
-
-        // RIGHT COLUMN: INGREDIENTS & RECIPE NOTEBOOK
-        GameObject rightCol = new GameObject("RightCol", typeof(RectTransform), typeof(Image));
-        rightCol.transform.SetParent(windowGO.transform, false);
-        RectTransform rightRT = rightCol.GetComponent<RectTransform>();
-        rightRT.anchorMin = new Vector2(0.52f, 0);
-        rightRT.anchorMax = new Vector2(1f, 1);
-        rightRT.offsetMin = new Vector2(8, 44);
-        rightRT.offsetMax = new Vector2(-16, -76);
-        Image rightBg = rightCol.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedPanel(rightBg, DungeonUIAssetHelper.PanelStyle.Slate);
-
-        // Tab Switch Buttons
-        GameObject tabRowGO = new GameObject("TabRow", typeof(RectTransform));
-        tabRowGO.transform.SetParent(rightCol.transform, false);
-        RectTransform tabRowRT = tabRowGO.GetComponent<RectTransform>();
-        tabRowRT.anchorMin = new Vector2(0, 1);
-        tabRowRT.anchorMax = new Vector2(1, 1);
-        tabRowRT.pivot = new Vector2(0.5f, 1);
-        tabRowRT.sizeDelta = new Vector2(0, 36);
-        tabRowRT.anchoredPosition = new Vector2(0, -6);
-
-        // Tab 1: Ingredients
-        GameObject tab1GO = new GameObject("TabIngredients", typeof(RectTransform), typeof(Image), typeof(Button));
-        tab1GO.transform.SetParent(tabRowGO.transform, false);
-        RectTransform tab1RT = tab1GO.GetComponent<RectTransform>();
-        tab1RT.anchorMin = new Vector2(0, 0);
-        tab1RT.anchorMax = new Vector2(0.5f, 1);
-        tab1RT.offsetMin = new Vector2(6, 2);
-        tab1RT.offsetMax = new Vector2(-4, -2);
-        Image tab1Img = tab1GO.GetComponent<Image>();
-        tabIngredientsBtn = tab1GO.GetComponent<Button>();
-        tabIngredientsBtn.onClick.AddListener(() =>
+        if (canvas == null) canvas = GetComponentInParent<Canvas>(true);
+        if (kitchenPanel == null)
         {
-            currentView = RightTabView.Ingredients;
-            if (rightScrollRect != null) rightScrollRect.verticalNormalizedPosition = 1f;
-            RefreshUI();
-        });
+            Transform p = transform.Find("KitchenOverlay");
+            if (p != null) kitchenPanel = p.gameObject;
+            else kitchenPanel = gameObject;
+        }
 
-        GameObject tab1TxtGO = new GameObject("Txt", typeof(RectTransform), typeof(TextMeshProUGUI));
-        tab1TxtGO.transform.SetParent(tab1GO.transform, false);
-        RectTransform tab1TxtRT = tab1TxtGO.GetComponent<RectTransform>();
-        tab1TxtRT.anchorMin = Vector2.zero;
-        tab1TxtRT.anchorMax = Vector2.one;
-        tab1TxtRT.sizeDelta = Vector2.zero;
-        TextMeshProUGUI t1Txt = tab1TxtGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(t1Txt);
-        t1Txt.fontSize = 12;
-        t1Txt.fontStyle = FontStyles.Bold;
-        t1Txt.alignment = TextAlignmentOptions.Center;
-        t1Txt.color = Color.white;
-        t1Txt.text = "INGREDIENTS (BAG)";
+        Transform root = transform;
 
-        // Tab 2: Recipe Notebook
-        GameObject tab2GO = new GameObject("TabNotebook", typeof(RectTransform), typeof(Image), typeof(Button));
-        tab2GO.transform.SetParent(tabRowGO.transform, false);
-        RectTransform tab2RT = tab2GO.GetComponent<RectTransform>();
-        tab2RT.anchorMin = new Vector2(0.5f, 0);
-        tab2RT.anchorMax = new Vector2(1f, 1);
-        tab2RT.offsetMin = new Vector2(4, 2);
-        tab2RT.offsetMax = new Vector2(-6, -2);
-        Image tab2Img = tab2GO.GetComponent<Image>();
-        tabNotebookBtn = tab2GO.GetComponent<Button>();
-        tabNotebookBtn.onClick.AddListener(() =>
+        // Top Header
+        if (titleText == null) titleText = root.Find("KitchenOverlay/KitchenWindow/TopHeaderBar/HeaderTitle")?.GetComponent<TextMeshProUGUI>();
+        if (closeButton == null) closeButton = root.Find("KitchenOverlay/KitchenWindow/TopHeaderBar/CloseButton")?.GetComponent<Button>();
+
+        // Left Panel
+        Transform left = root.Find("KitchenOverlay/KitchenWindow/LeftPanel_Recipes");
+        if (left != null)
         {
-            currentView = RightTabView.RecipeBook;
-            if (rightScrollRect != null) rightScrollRect.verticalNormalizedPosition = 1f;
-            RefreshUI();
-        });
+            if (tabAllBtn == null) tabAllBtn = left.Find("FilterTabBar/Tab_All")?.GetComponent<Button>();
+            if (tabRecoveryBtn == null) tabRecoveryBtn = left.Find("FilterTabBar/Tab_Recovery")?.GetComponent<Button>();
+            if (tabSpeedBtn == null) tabSpeedBtn = left.Find("FilterTabBar/Tab_Speed")?.GetComponent<Button>();
+            if (tabOtherBtn == null) tabOtherBtn = left.Find("FilterTabBar/Tab_Other")?.GetComponent<Button>();
 
-        GameObject tab2TxtGO = new GameObject("Txt", typeof(RectTransform), typeof(TextMeshProUGUI));
-        tab2TxtGO.transform.SetParent(tab2GO.transform, false);
-        RectTransform tab2TxtRT = tab2TxtGO.GetComponent<RectTransform>();
-        tab2TxtRT.anchorMin = Vector2.zero;
-        tab2TxtRT.anchorMax = Vector2.one;
-        tab2TxtRT.sizeDelta = Vector2.zero;
-        TextMeshProUGUI t2Txt = tab2TxtGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(t2Txt);
-        t2Txt.fontSize = 12;
-        t2Txt.fontStyle = FontStyles.Bold;
-        t2Txt.alignment = TextAlignmentOptions.Center;
-        t2Txt.color = Color.white;
-        t2Txt.text = "RECIPE NOTEBOOK";
+            if (tabAllText == null) tabAllText = tabAllBtn?.GetComponentInChildren<TextMeshProUGUI>();
+            if (tabRecoveryText == null) tabRecoveryText = tabRecoveryBtn?.GetComponentInChildren<TextMeshProUGUI>();
+            if (tabSpeedText == null) tabSpeedText = tabSpeedBtn?.GetComponentInChildren<TextMeshProUGUI>();
+            if (tabOtherText == null) tabOtherText = tabOtherBtn?.GetComponentInChildren<TextMeshProUGUI>();
 
-        // Scroll Area for Right Column
-        GameObject scrollGO = new GameObject("ScrollArea", typeof(RectTransform), typeof(ScrollRect), typeof(Image));
-        scrollGO.transform.SetParent(rightCol.transform, false);
-        RectTransform scrollRT = scrollGO.GetComponent<RectTransform>();
-        scrollRT.anchorMin = new Vector2(0, 0);
-        scrollRT.anchorMax = new Vector2(1, 1);
-        scrollRT.offsetMin = new Vector2(8, 8);
-        scrollRT.offsetMax = new Vector2(-8, -48);
-        Image scrollBg = scrollGO.GetComponent<Image>();
-        scrollBg.color = new Color(0.06f, 0.08f, 0.11f, 0.5f);
-        ScrollRect sr = scrollGO.GetComponent<ScrollRect>();
-        sr.horizontal = false;
-        sr.vertical = true;
-        rightScrollRect = sr;
+            if (recipeScrollRect == null) recipeScrollRect = left.Find("RecipeScrollView")?.GetComponent<ScrollRect>();
+            if (recipeContent == null) recipeContent = left.Find("RecipeScrollView/Viewport/Content");
+            if (recipeCardTemplate == null)
+            {
+                Transform t = left.Find("RecipeCardTemplate") ?? left.Find("RecipeScrollView/Viewport/Content/RecipeCardTemplate");
+                if (t != null) recipeCardTemplate = t.gameObject;
+            }
+        }
 
-        GameObject viewportGO = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
-        viewportGO.transform.SetParent(scrollGO.transform, false);
-        RectTransform vpRT = viewportGO.GetComponent<RectTransform>();
-        vpRT.anchorMin = Vector2.zero;
-        vpRT.anchorMax = Vector2.one;
-        vpRT.offsetMin = new Vector2(4, 4);
-        vpRT.offsetMax = new Vector2(-16, -4);
+        // Middle Panel
+        Transform mid = root.Find("KitchenOverlay/KitchenWindow/MiddlePanel_Stove");
+        if (mid != null)
+        {
+            if (stoveHeaderTag == null) stoveHeaderTag = mid.Find("HeaderTag/TagText")?.GetComponent<TextMeshProUGUI>();
+            if (stovePotIcon == null) stovePotIcon = mid.Find("CookingStage/PotIcon")?.GetComponent<Image>();
+            if (stoveFireIcon == null) stoveFireIcon = mid.Find("CookingStage/FireIcon")?.GetComponent<Image>();
+            if (stoveSubtitleText == null) stoveSubtitleText = mid.Find("CookingStage/StageSubtitle")?.GetComponent<TextMeshProUGUI>();
 
-        // Content: Ingredients
-        GameObject ingContentGO = new GameObject("IngredientsContent", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-        ingContentGO.transform.SetParent(viewportGO.transform, false);
-        inventoryGridContainer = ingContentGO.transform;
-        RectTransform igcRT = ingContentGO.GetComponent<RectTransform>();
-        igcRT.anchorMin = new Vector2(0, 1);
-        igcRT.anchorMax = new Vector2(1, 1);
-        igcRT.pivot = new Vector2(0.5f, 1);
-        igcRT.sizeDelta = new Vector2(0, 0);
-        VerticalLayoutGroup vlg1 = ingContentGO.GetComponent<VerticalLayoutGroup>();
-        vlg1.spacing = 6;
-        vlg1.padding = new RectOffset(6, 6, 6, 6);
-        vlg1.childControlWidth = true;
-        vlg1.childControlHeight = false;
-        vlg1.childForceExpandWidth = true;
-        ContentSizeFitter csf1 = ingContentGO.GetComponent<ContentSizeFitter>();
-        csf1.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            // 4 Pot Slots
+            Transform slotsRow = mid.Find("PotSlotsSection/SlotsRow");
+            if (slotsRow != null)
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    Transform sTrans = slotsRow.Find($"PotSlot_{i}");
+                    if (sTrans != null)
+                    {
+                        if (potSlotUIs[i] == null) potSlotUIs[i] = new PotSlotUI();
+                        potSlotUIs[i].rootObject = sTrans.gameObject;
+                        potSlotUIs[i].slotButton = sTrans.GetComponent<Button>();
+                        potSlotUIs[i].slotBackground = sTrans.GetComponent<Image>();
+                        potSlotUIs[i].itemIcon = sTrans.Find("ItemIcon")?.GetComponent<Image>();
+                        potSlotUIs[i].countText = sTrans.Find("CountText")?.GetComponent<TextMeshProUGUI>();
+                        potSlotUIs[i].highlightBorder = sTrans.Find("HighlightBorder")?.gameObject;
+                    }
+                }
+            }
 
-        // Content: Notebook
-        GameObject nbContentGO = new GameObject("NotebookContent", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-        nbContentGO.transform.SetParent(viewportGO.transform, false);
-        notebookContainer = nbContentGO.transform;
-        RectTransform nbcRT = nbContentGO.GetComponent<RectTransform>();
-        nbcRT.anchorMin = new Vector2(0, 1);
-        nbcRT.anchorMax = new Vector2(1, 1);
-        nbcRT.pivot = new Vector2(0.5f, 1);
-        nbcRT.sizeDelta = new Vector2(0, 0);
-        VerticalLayoutGroup vlg2 = nbContentGO.GetComponent<VerticalLayoutGroup>();
-        vlg2.spacing = 6;
-        vlg2.padding = new RectOffset(6, 6, 6, 6);
-        vlg2.childControlWidth = true;
-        vlg2.childControlHeight = false;
-        vlg2.childForceExpandWidth = true;
-        ContentSizeFitter csf2 = nbContentGO.GetComponent<ContentSizeFitter>();
-        csf2.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            // Progress Bar
+            if (progressLabelText == null) progressLabelText = mid.Find("ProgressBarSection/ProgressTitle")?.GetComponent<TextMeshProUGUI>();
+            if (progressSlider == null) progressSlider = mid.Find("ProgressBarSection/CookingSlider")?.GetComponent<Slider>();
+            if (progressFillImage == null) progressFillImage = mid.Find("ProgressBarSection/CookingSlider/Fill Area/Fill")?.GetComponent<Image>();
+            if (progressStatusText == null) progressStatusText = mid.Find("ProgressBarSection/CookingSlider/StatusText")?.GetComponent<TextMeshProUGUI>();
 
-        // Vertical Scrollbar / Slider
-        GameObject sbGO = new GameObject("VerticalScrollbar", typeof(RectTransform), typeof(Image), typeof(Scrollbar));
-        sbGO.transform.SetParent(scrollGO.transform, false);
-        RectTransform sbRT = sbGO.GetComponent<RectTransform>();
-        sbRT.anchorMin = new Vector2(1, 0);
-        sbRT.anchorMax = new Vector2(1, 1);
-        sbRT.pivot = new Vector2(1, 0.5f);
-        sbRT.sizeDelta = new Vector2(10, -8);
-        sbRT.anchoredPosition = new Vector2(-4, 0);
-        Image sbBg = sbGO.GetComponent<Image>();
-        sbBg.color = new Color(0.04f, 0.06f, 0.08f, 0.7f);
+            // Output Preview
+            Transform prev = mid.Find("OutputPreviewCard");
+            if (prev != null)
+            {
+                previewCardGO = prev.gameObject;
+                if (previewFoodIcon == null) previewFoodIcon = prev.Find("PreviewIconFrame/DishIcon")?.GetComponent<Image>();
+                if (previewHeaderLabel == null) previewHeaderLabel = prev.Find("InfoBlock/PreviewHeaderLabel")?.GetComponent<TextMeshProUGUI>();
+                if (previewFoodTitle == null) previewFoodTitle = prev.Find("InfoBlock/PreviewDishName")?.GetComponent<TextMeshProUGUI>();
+                if (previewFoodStats == null) previewFoodStats = prev.Find("InfoBlock/PreviewDishStats")?.GetComponent<TextMeshProUGUI>();
+            }
 
-        Scrollbar sb = sbGO.GetComponent<Scrollbar>();
-        sb.direction = Scrollbar.Direction.BottomToTop;
+            // Action Buttons
+            if (cookButton == null) cookButton = mid.Find("ActionButtonsRow/CookButton")?.GetComponent<Button>();
+            if (cancelPotButton == null) cancelPotButton = mid.Find("ActionButtonsRow/CancelButton")?.GetComponent<Button>();
+            if (cookButtonText == null && cookButton != null) cookButtonText = cookButton.GetComponentInChildren<TextMeshProUGUI>();
+        }
 
-        GameObject handleArea = new GameObject("Sliding Area", typeof(RectTransform));
-        handleArea.transform.SetParent(sbGO.transform, false);
-        RectTransform haRT = handleArea.GetComponent<RectTransform>();
-        haRT.anchorMin = Vector2.zero;
-        haRT.anchorMax = Vector2.one;
-        haRT.sizeDelta = Vector2.zero;
+        // Right Panel
+        Transform right = root.Find("KitchenOverlay/KitchenWindow/RightPanel_Backpack");
+        if (right != null)
+        {
+            if (backpackHeaderTag == null) backpackHeaderTag = right.Find("HeaderTag/TagText")?.GetComponent<TextMeshProUGUI>();
+            if (backpackSubtitleText == null) backpackSubtitleText = right.Find("BackpackSubtitle")?.GetComponent<TextMeshProUGUI>();
+            if (backpackScrollRect == null) backpackScrollRect = right.Find("BackpackScrollView")?.GetComponent<ScrollRect>();
+            if (backpackGridContent == null) backpackGridContent = right.Find("BackpackScrollView/Viewport/Content");
+            if (sortBackpackButton == null) sortBackpackButton = right.Find("BackpackActionButtonsRow/SortButton")?.GetComponent<Button>();
+            if (clearSlotsButton == null) clearSlotsButton = right.Find("BackpackActionButtonsRow/ClearButton")?.GetComponent<Button>();
+        }
 
-        GameObject handle = new GameObject("Handle", typeof(RectTransform), typeof(Image));
-        handle.transform.SetParent(handleArea.transform, false);
-        RectTransform hRT = handle.GetComponent<RectTransform>();
-        hRT.sizeDelta = Vector2.zero;
-        Image handleImg = handle.GetComponent<Image>();
-        handleImg.color = new Color(0.95f, 0.75f, 0.25f, 0.9f);
+        // Toast
+        if (toastObject == null) toastObject = root.Find("KitchenOverlay/FeedbackToast")?.gameObject;
+        if (feedbackToastText == null && toastObject != null) feedbackToastText = toastObject.GetComponentInChildren<TextMeshProUGUI>();
+    }
 
-        sb.targetGraphic = handleImg;
-        sb.handleRect = hRT;
+    private void RegisterButtonEvents()
+    {
+        if (closeButton != null)
+        {
+            closeButton.onClick.RemoveAllListeners();
+            closeButton.onClick.AddListener(Close);
+        }
 
-        sr.viewport = vpRT;
-        sr.content = igcRT;
-        sr.verticalScrollbar = sb;
-        sr.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+        if (tabAllBtn != null)
+        {
+            tabAllBtn.onClick.RemoveAllListeners();
+            tabAllBtn.onClick.AddListener(() => { currentFilter = RecipeFilter.All; RefreshUI(); });
+        }
+        if (tabRecoveryBtn != null)
+        {
+            tabRecoveryBtn.onClick.RemoveAllListeners();
+            tabRecoveryBtn.onClick.AddListener(() => { currentFilter = RecipeFilter.Recovery; RefreshUI(); });
+        }
+        if (tabSpeedBtn != null)
+        {
+            tabSpeedBtn.onClick.RemoveAllListeners();
+            tabSpeedBtn.onClick.AddListener(() => { currentFilter = RecipeFilter.Speed; RefreshUI(); });
+        }
+        if (tabOtherBtn != null)
+        {
+            tabOtherBtn.onClick.RemoveAllListeners();
+            tabOtherBtn.onClick.AddListener(() => { currentFilter = RecipeFilter.Other; RefreshUI(); });
+        }
 
-        // 5. Toast text bar at bottom
-        GameObject toastGO = new GameObject("ToastText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        toastGO.transform.SetParent(windowGO.transform, false);
-        RectTransform toastRT = toastGO.GetComponent<RectTransform>();
-        toastRT.anchorMin = new Vector2(0, 0);
-        toastRT.anchorMax = new Vector2(1, 0);
-        toastRT.pivot = new Vector2(0.5f, 0);
-        toastRT.sizeDelta = new Vector2(0, 38);
-        toastRT.anchoredPosition = Vector2.zero;
-        feedbackToastText = toastGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(feedbackToastText);
-        feedbackToastText.fontSize = 13;
-        feedbackToastText.fontStyle = FontStyles.Bold;
-        feedbackToastText.alignment = TextAlignmentOptions.Center;
-        feedbackToastText.color = new Color(0.9f, 0.95f, 1f);
-        feedbackToastText.gameObject.SetActive(false);
+        if (cookButton != null)
+        {
+            cookButton.onClick.RemoveAllListeners();
+            cookButton.onClick.AddListener(OnCookButtonClicked);
+        }
+
+        if (cancelPotButton != null)
+        {
+            cancelPotButton.onClick.RemoveAllListeners();
+            cancelPotButton.onClick.AddListener(OnCancelButtonClicked);
+        }
+
+        if (sortBackpackButton != null)
+        {
+            sortBackpackButton.onClick.RemoveAllListeners();
+            sortBackpackButton.onClick.AddListener(SortBackpack);
+        }
+
+        if (clearSlotsButton != null)
+        {
+            clearSlotsButton.onClick.RemoveAllListeners();
+            clearSlotsButton.onClick.AddListener(ReturnAllPotItemsToBackpack);
+        }
     }
     #endregion
 }
