@@ -579,8 +579,8 @@ public static class ChestCanvasBuilder
         // 10. Deactivate overlay by default so screen is never covered on load
         overlayGO.SetActive(false);
 
-        // 11. Save Prefab Backup
-        PrefabUtility.SaveAsPrefabAssetAndConnect(canvasGO, PREFAB_PATH, InteractionMode.AutomatedAction);
+        // 11. Save Prefab Backup (without connecting, keeps Canvas as pure scene GameObject)
+        PrefabUtility.SaveAsPrefabAsset(canvasGO, PREFAB_PATH);
         Debug.Log($"[ChestCanvasBuilder] Saved prefab backup to {PREFAB_PATH}");
 
         // 12. Save Scene

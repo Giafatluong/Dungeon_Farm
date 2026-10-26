@@ -94,6 +94,7 @@ public class StatueUI : MonoBehaviour
     {
         if (IsOpen && Input.GetKeyDown(KeyCode.Escape))
         {
+            UIEscapeManager.ConsumeEscape();
             Close();
         }
     }

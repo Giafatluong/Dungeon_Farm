@@ -34,7 +34,9 @@ public static class UIEscapeManager
 
         // Base & Farm Modals
         if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return true;
+        if (HomeChest.Instance != null && HomeChest.Instance.isOpen) return true;
         if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return true;
+        if (KitchenStation.Instance != null && KitchenStation.Instance.isOpen) return true;
         if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return true;
         if (DungeonEntranceUI.Instance != null && DungeonEntranceUI.Instance.IsOpen) return true;
         if (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen) return true;

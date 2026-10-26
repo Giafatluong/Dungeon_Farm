@@ -143,6 +143,7 @@ public class MainMenuUI : MonoBehaviour
         {
             if (isMenuOpen)
             {
+                UIEscapeManager.ConsumeEscape();
                 // If in a subpanel (Settings, HowToPlay, Confirm), return to main menu
                 if (howToPlayPanel != null && howToPlayPanel.activeSelf)
                 {
@@ -163,7 +164,7 @@ public class MainMenuUI : MonoBehaviour
             }
             else
             {
-                // Only open if no other blocking modal is open
+                // Only open if no other blocking modal is open and escape was not consumed this frame
                 if (!IsOtherBlockingUIOpen())
                 {
                     Open();
@@ -174,6 +175,8 @@ public class MainMenuUI : MonoBehaviour
 
     private bool IsOtherBlockingUIOpen()
     {
+        if (UIEscapeManager.IsEscapeConsumedThisFrame()) return true;
+        if (UIEscapeManager.IsAnyOtherUIOpen()) return true;
         if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen) return true;
         if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return true;
         if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return true;

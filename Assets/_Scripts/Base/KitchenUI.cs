@@ -196,6 +196,7 @@ public class KitchenUI : MonoBehaviour
 
         if (IsOpen && Input.GetKeyDown(KeyCode.Escape))
         {
+            UIEscapeManager.ConsumeEscape();
             Close();
         }
     }

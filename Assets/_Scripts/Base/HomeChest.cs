@@ -78,6 +78,7 @@ public class HomeChest : MonoBehaviour, IInteractable
 
         LoadChestData();
         UpdateVisualState(false);
+        ChestUI.EnsureInstance();
     }
 
     private void FindPlayer()
@@ -197,11 +198,12 @@ public class HomeChest : MonoBehaviour, IInteractable
         Debug.Log("[HomeChest] Opened Home Chest. Stored items are 100% safe!");
         OnChestToggled?.Invoke(true);
 
-        if (ChestUI.Instance != null && chestContainer != null && backpackContainer != null)
+        ChestUI ui = ChestUI.EnsureInstance();
+        if (ui != null && chestContainer != null && backpackContainer != null)
         {
-            ChestUI.Instance.Open(chestContainer, backpackContainer);
+            ui.Open(chestContainer, backpackContainer);
         }
-        else if (ChestUI.Instance == null)
+        else if (ui == null)
         {
             Debug.LogWarning("[HomeChest] ChestUI not found in scene!");
         }

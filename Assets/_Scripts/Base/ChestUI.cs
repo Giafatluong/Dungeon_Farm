@@ -23,7 +23,7 @@ public class ChestUI : MonoBehaviour
         {
             if (_instance == null)
             {
-                _instance = FindFirstObjectByType<ChestUI>(FindObjectsInactive.Include);
+                _instance = EnsureInstance();
             }
             return _instance;
         }
@@ -34,6 +34,39 @@ public class ChestUI : MonoBehaviour
     private static void ResetStatics()
     {
         _instance = null;
+    }
+
+    public static ChestUI EnsureInstance()
+    {
+        if (_instance != null) return _instance;
+
+        _instance = FindFirstObjectByType<ChestUI>(FindObjectsInactive.Include);
+        if (_instance != null) return _instance;
+
+        // Try load ChestCanvas prefab from Resources
+        GameObject prefab = Resources.Load<GameObject>("ChestCanvas");
+
+#if UNITY_EDITOR
+        if (prefab == null)
+        {
+            prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/ChestCanvas.prefab")
+                  ?? UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Assets/_Prefabs/ChestCanvas.prefab");
+        }
+#endif
+
+        if (prefab != null)
+        {
+            GameObject go = Instantiate(prefab);
+            go.name = "ChestCanvas";
+            _instance = go.GetComponentInChildren<ChestUI>(true);
+            if (_instance != null)
+            {
+                _instance.AutoBindReferences();
+                return _instance;
+            }
+        }
+
+        return _instance;
     }
     #endregion
 
