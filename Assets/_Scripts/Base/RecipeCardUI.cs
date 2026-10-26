@@ -28,7 +28,7 @@ public class RecipeCardUI : MonoBehaviour
 
         // Visuals
         if (titleText != null) titleText.text = recipe.DisplayName;
-        if (starsText != null) starsText.text = "⭐⭐⭐";
+        if (starsText != null) starsText.gameObject.SetActive(false);
 
         if (dishIcon != null && recipe.resultFood != null)
         {
@@ -74,21 +74,33 @@ public class RecipeCardUI : MonoBehaviour
 
             if (isCurrentlySelected)
             {
-                if (actionButtonText != null) actionButtonText.text = "ĐANG CHỌN";
-                if (actionButtonBackground != null) actionButtonBackground.color = new Color(1f, 0.60f, 0f, 1f); // Vibrant orange
+                if (actionButtonText != null)
+                {
+                    actionButtonText.text = "ĐANG CHỌN";
+                    actionButtonText.color = Color.white;
+                }
+                if (actionButtonBackground != null) actionButtonBackground.color = new Color(0.85f, 0.50f, 0.05f, 1f); // Amber orange
                 actionButton.interactable = false;
             }
             else if (canCook)
             {
-                if (actionButtonText != null) actionButtonText.text = "TỰ ĐIỀN";
-                if (actionButtonBackground != null) actionButtonBackground.color = new Color(0.48f, 0.32f, 0.22f, 1f); // Cocoa brown
+                if (actionButtonText != null)
+                {
+                    actionButtonText.text = "TỰ ĐIỀN";
+                    actionButtonText.color = Color.white;
+                }
+                if (actionButtonBackground != null) actionButtonBackground.color = new Color(0.18f, 0.52f, 0.20f, 1f); // Emerald green
                 actionButton.interactable = true;
                 actionButton.onClick.AddListener(() => onAutoFill?.Invoke());
             }
             else
             {
-                if (actionButtonText != null) actionButtonText.text = "THIẾU NL";
-                if (actionButtonBackground != null) actionButtonBackground.color = new Color(0.65f, 0.62f, 0.58f, 0.85f); // Soft grey/tan
+                if (actionButtonText != null)
+                {
+                    actionButtonText.text = "THIẾU NL";
+                    actionButtonText.color = new Color(0.75f, 0.75f, 0.78f, 0.9f);
+                }
+                if (actionButtonBackground != null) actionButtonBackground.color = new Color(0.24f, 0.26f, 0.32f, 0.85f); // Dark slate
                 actionButton.interactable = false;
             }
         }

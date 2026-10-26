@@ -46,29 +46,29 @@ public class FloorVictoryUI : MonoBehaviour
     }
 
     [Header("UI Panels")]
-    [SerializeField] private GameObject victoryPanel;
-    [SerializeField] private Canvas canvas;
-    [SerializeField] private RectTransform rewardItemsContainer;
-    [SerializeField] private ScrollRect rightRewardScrollRect;
-    [SerializeField] private ScrollRect leftOverviewScrollRect;
+    [SerializeField] public GameObject victoryPanel;
+    [SerializeField] public Canvas canvas;
+    [SerializeField] public RectTransform rewardItemsContainer;
+    [SerializeField] public ScrollRect rightRewardScrollRect;
+    [SerializeField] public ScrollRect leftOverviewScrollRect;
 
     [Header("Header Elements")]
-    [SerializeField] private TextMeshProUGUI titleText;
-    [SerializeField] private TextMeshProUGUI subtitleText;
+    [SerializeField] public TextMeshProUGUI titleText;
+    [SerializeField] public TextMeshProUGUI subtitleText;
 
     [Header("Permanent Stats Section")]
-    [SerializeField] private GameObject statsSectionGO;
-    [SerializeField] private TextMeshProUGUI statsBadgesText;
+    [SerializeField] public GameObject statsSectionGO;
+    [SerializeField] public TextMeshProUGUI statsBadgesText;
 
     [Header("Blessing Section")]
-    [SerializeField] private GameObject blessingSectionGO;
-    [SerializeField] private TextMeshProUGUI blessingDetailsText;
+    [SerializeField] public GameObject blessingSectionGO;
+    [SerializeField] public TextMeshProUGUI blessingDetailsText;
 
     [Header("Action Buttons")]
-    [SerializeField] private Button lootAllButton;
-    [SerializeField] private Button returnToBaseButton;
-    [SerializeField] private Button nextFloorButton;
-    [SerializeField] private TextMeshProUGUI statusHintText;
+    [SerializeField] public Button lootAllButton;
+    [SerializeField] public Button returnToBaseButton;
+    [SerializeField] public Button nextFloorButton;
+    [SerializeField] public TextMeshProUGUI statusHintText;
 
     private FloorData currentFloor;
     private int currentFloorNum;
@@ -101,6 +101,22 @@ public class FloorVictoryUI : MonoBehaviour
         {
             victoryPanel.SetActive(false);
         }
+
+        if (lootAllButton != null)
+        {
+            lootAllButton.onClick.RemoveListener(OnLootAllClicked);
+            lootAllButton.onClick.AddListener(OnLootAllClicked);
+        }
+        if (returnToBaseButton != null)
+        {
+            returnToBaseButton.onClick.RemoveListener(OnReturnToBaseClicked);
+            returnToBaseButton.onClick.AddListener(OnReturnToBaseClicked);
+        }
+        if (nextFloorButton != null)
+        {
+            nextFloorButton.onClick.RemoveListener(OnNextFloorClicked);
+            nextFloorButton.onClick.AddListener(OnNextFloorClicked);
+        }
     }
 
     private void OnDestroy()
@@ -108,6 +124,15 @@ public class FloorVictoryUI : MonoBehaviour
         if (_instance == this)
         {
             _instance = null;
+        }
+    }
+
+    private void Update()
+    {
+        if (IsOpen && Input.GetKeyDown(KeyCode.Escape))
+        {
+            UIEscapeManager.ConsumeEscape();
+            OnReturnToBaseClicked();
         }
     }
     #endregion
@@ -123,6 +148,7 @@ public class FloorVictoryUI : MonoBehaviour
     {
         CloseConflictingPanels();
         EnsureUIBuilt();
+        EnforceBalancedLayout();
 
         currentFloor = floorData;
         currentFloorNum = floorNumber > 0 ? floorNumber : (floorData != null ? floorData.floorNumber : 1);
@@ -133,16 +159,24 @@ public class FloorVictoryUI : MonoBehaviour
 
         LoadHomeChestContainer();
 
+        if (victoryPanel != null)
+        {
+            victoryPanel.SetActive(true);
+            victoryPanel.transform.SetAsLastSibling();
+        }
+
+        EnforceBalancedLayout();
+
         string floorName = !string.IsNullOrEmpty(currentFloor?.floorName) ? currentFloor.floorName : $"Floor {currentFloorNum}";
         string bossName = !string.IsNullOrEmpty(currentFloor?.bossName) ? currentFloor.bossName : "Dungeon Boss";
 
         if (titleText != null)
         {
-            titleText.text = $"FLOOR {currentFloorNum} VICTORY: {floorName.ToUpper()}!";
+            titleText.text = $"CHIẾN THẮNG TẦNG {currentFloorNum}: {floorName.ToUpper()}!";
         }
         if (subtitleText != null)
         {
-            subtitleText.text = $"DUNGEON BOSS [{bossName.ToUpper()}] HAS BEEN VANQUISHED!";
+            subtitleText.text = $"THỦ LĨNH HẦM NGỤC [{bossName.ToUpper()}] ĐÃ BỊ TIÊU DIỆT!";
         }
 
         // Setup stats & blessings
@@ -151,16 +185,9 @@ public class FloorVictoryUI : MonoBehaviour
         SetupFloorLoot();
         SetupButtonsState();
 
-        if (lootAllButton != null) lootAllButton.gameObject.SetActive(true);
         if (statusHintText != null)
         {
-            statusHintText.text = "Click <b>[CLAIM ALL]</b> to store items into your backpack (overflow goes to Home Chest).";
-        }
-
-        if (victoryPanel != null)
-        {
-            victoryPanel.SetActive(true);
-            victoryPanel.transform.SetAsLastSibling();
+            statusHintText.text = "Bấm <b>[NHẬN TẤT CẢ]</b> để nhận đồ vào túi (quá tải sẽ tự động chuyển về Rương Nhà).";
         }
 
         // Reset scroll position to top
@@ -168,6 +195,19 @@ public class FloorVictoryUI : MonoBehaviour
         if (rightRewardScrollRect != null) rightRewardScrollRect.verticalNormalizedPosition = 1f;
 
         RefreshRewardItems();
+        SetupButtonsState();
+
+        // Immediately rebuild layout for non-overlapping display
+        Canvas.ForceUpdateCanvases();
+        if (leftOverviewScrollRect != null && leftOverviewScrollRect.content != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(leftOverviewScrollRect.content);
+        }
+        if (rewardItemsContainer != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rewardItemsContainer);
+        }
+
         Debug.Log($"[FloorVictoryUI] Floor {currentFloorNum} victory opened cleanly (FirstClear: {isFirstClearOfThisFloor}). Rewards: {currentRewardLoot.Count}");
     }
 
@@ -188,57 +228,65 @@ public class FloorVictoryUI : MonoBehaviour
 
         LoadHomeChestContainer();
 
-        string floorName = !string.IsNullOrEmpty(currentFloor?.floorName) ? currentFloor.floorName : $"Floor {currentFloorNum}";
-        string bossName = !string.IsNullOrEmpty(currentFloor?.bossName) ? currentFloor.bossName : "Dungeon Boss";
-
-        if (titleText != null)
-        {
-            titleText.text = $"FLOOR {currentFloorNum}: BOSS CHAMBER EMPTY";
-        }
-        if (subtitleText != null)
-        {
-            subtitleText.text = $"BOSS [{bossName.ToUpper()}] HAS NOT RESPAWNED ({daysUntilReset} DAYS REMAINING)";
-        }
-
-        if (statsSectionGO != null) statsSectionGO.SetActive(true);
-        if (statsBadgesText != null)
-        {
-            statsBadgesText.text = $"<b>CHAMBER STATUS:</b> <color=#55FF88>[SECURE AND SAFE]</color>\n\n" +
-                $"<color=#DCE4EC>The Boss <b>{bossName}</b> was previously defeated.\n" +
-                $"Needs <b>{daysUntilReset} more day(s)</b> (by resting at your Farm) before the Boss respawns.</color>\n\n" +
-                $"<size=11><color=#68D391>[OK] You can freely proceed to the next floor or return to your Farm to secure your loot!</color></size>";
-        }
-
-        if (blessingSectionGO != null) blessingSectionGO.SetActive(false);
-
-        // Empty rewards
-        currentRewardLoot.Clear();
-        if (lootAllButton != null) lootAllButton.gameObject.SetActive(false);
-        if (statusHintText != null)
-        {
-            statusHintText.text = "Choose <b>[NEXT FLOOR]</b> to continue, or <b>[RETURN TO FARM]</b> to safely bring home your loot.";
-        }
-
-        SetupButtonsState();
-
         if (victoryPanel != null)
         {
             victoryPanel.SetActive(true);
             victoryPanel.transform.SetAsLastSibling();
         }
 
+        EnforceBalancedLayout();
+
+        string floorName = !string.IsNullOrEmpty(currentFloor?.floorName) ? currentFloor.floorName : $"Floor {currentFloorNum}";
+        string bossName = !string.IsNullOrEmpty(currentFloor?.bossName) ? currentFloor.bossName : "Dungeon Boss";
+
+        if (titleText != null)
+        {
+            titleText.text = $"TẦNG {currentFloorNum}: PHÒNG TRÙM TRỐNG";
+        }
+        if (subtitleText != null)
+        {
+            subtitleText.text = $"TRÙM [{bossName.ToUpper()}] CHƯA HỒI SINH (CẦN NGHỈ NGƠI {daysUntilReset} NGÀY)";
+        }
+
+        if (statsSectionGO != null) statsSectionGO.SetActive(true);
+        if (statsBadgesText != null)
+        {
+            statsBadgesText.text = $"<b>TRẠNG THÁI PHÒNG:</b> <color=#55FF88>[AN TOÀN]</color>\n\n" +
+                $"<color=#DCE4EC>Thủ lĩnh <b>{bossName}</b> đã bị hạ gục trước đó.\n" +
+                $"Cần nghỉ ngơi <b>{daysUntilReset} ngày</b> tại Nông Trại để trùm hồi sinh.</color>\n\n" +
+                $"<size=11><color=#68D391>✓ Bạn có thể tiếp tục tiến vào tầng tiếp theo hoặc trở về nông trại an toàn!</color></size>";
+        }
+
+        if (blessingSectionGO != null) blessingSectionGO.SetActive(false);
+
+        // Empty rewards
+        currentRewardLoot.Clear();
+        SetupButtonsState();
+
+        if (statusHintText != null)
+        {
+            statusHintText.text = "Chọn <b>[TẦNG KẾ TIẾP]</b> để tiếp tục khám phá, hoặc <b>[VỀ NÔNG TRẠI]</b> để an toàn mang đồ về.";
+        }
+
         if (leftOverviewScrollRect != null) leftOverviewScrollRect.verticalNormalizedPosition = 1f;
         if (rightRewardScrollRect != null) rightRewardScrollRect.verticalNormalizedPosition = 1f;
 
         RefreshRewardItems();
+        SetupButtonsState();
 
         if (emptyNoticeGO != null)
         {
             TextMeshProUGUI tmp = emptyNoticeGO.GetComponentInChildren<TextMeshProUGUI>();
             if (tmp != null)
             {
-                tmp.text = "<b>NO BOSS REWARDS</b>\n<size=10.5><color=#F6AD55>The boss has not respawned yet, so no additional boss loot is available.</color></size>";
+                tmp.text = "<b>KHÔNG CÓ PHẦN THƯỞNG TRÙM</b>\n<size=10.5><color=#F6AD55>Trùm chưa hồi sinh nên không có thêm chiến lợi phẩm đặc biệt.</color></size>";
             }
+        }
+
+        Canvas.ForceUpdateCanvases();
+        if (leftOverviewScrollRect != null && leftOverviewScrollRect.content != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(leftOverviewScrollRect.content);
         }
 
         Debug.Log($"[FloorVictoryUI] Floor {currentFloorNum} Empty Boss Room opened. Days until reset: {daysUntilReset}");
@@ -281,6 +329,370 @@ public class FloorVictoryUI : MonoBehaviour
                 homeChestContainer = containers[i];
                 HomeChest.LoadContainer(homeChestContainer);
                 break;
+            }
+        }
+    }
+    #endregion
+
+    #region Layout Enforcement
+    private void EnforceBalancedLayout()
+    {
+        if (victoryPanel == null) return;
+
+        // 1. Root and Main Frame
+        Transform frameT = victoryPanel.transform.Find("MainFrame");
+        if (frameT is RectTransform frameRT)
+        {
+            frameRT.anchorMin = new Vector2(0.5f, 0.5f);
+            frameRT.anchorMax = new Vector2(0.5f, 0.5f);
+            frameRT.pivot = new Vector2(0.5f, 0.5f);
+            frameRT.anchoredPosition = Vector2.zero;
+            frameRT.sizeDelta = new Vector2(960, 580);
+
+            // Header (72px)
+            Transform headerT = frameT.Find("Header");
+            if (headerT is RectTransform headerRT)
+            {
+                headerRT.anchorMin = new Vector2(0, 1);
+                headerRT.anchorMax = new Vector2(1, 1);
+                headerRT.pivot = new Vector2(0.5f, 1);
+                headerRT.anchoredPosition = new Vector2(0, -6);
+                headerRT.sizeDelta = new Vector2(-16, 72);
+
+                Transform titleT = headerT.Find("TitleText");
+                if (titleT is RectTransform titleRT)
+                {
+                    titleRT.anchorMin = new Vector2(0, 1);
+                    titleRT.anchorMax = new Vector2(1, 1);
+                    titleRT.pivot = new Vector2(0, 1);
+                    titleRT.anchoredPosition = new Vector2(78, -12);
+                    titleRT.sizeDelta = new Vector2(-96, 28);
+                }
+
+                Transform subT = headerT.Find("SubtitleText");
+                if (subT is RectTransform subRT)
+                {
+                    subRT.anchorMin = new Vector2(0, 1);
+                    subRT.anchorMax = new Vector2(1, 1);
+                    subRT.pivot = new Vector2(0, 1);
+                    subRT.anchoredPosition = new Vector2(78, -42);
+                    subRT.sizeDelta = new Vector2(-96, 22);
+                }
+            }
+
+            // Body
+            Transform bodyT = frameT.Find("Body");
+            if (bodyT is RectTransform bodyRT)
+            {
+                bodyRT.anchorMin = Vector2.zero;
+                bodyRT.anchorMax = Vector2.one;
+                bodyRT.offsetMin = new Vector2(16, 68);
+                bodyRT.offsetMax = new Vector2(-16, -84);
+
+                // Left Column Container (49% width)
+                Transform leftColT = bodyT.Find("LeftColumn_Container");
+                if (leftColT is RectTransform leftColRT)
+                {
+                    leftColRT.anchorMin = new Vector2(0, 0);
+                    leftColRT.anchorMax = new Vector2(0.49f, 1);
+                    leftColRT.pivot = new Vector2(0, 0.5f);
+                    leftColRT.offsetMin = Vector2.zero;
+                    leftColRT.offsetMax = new Vector2(-6, 0);
+
+                    Transform leftScrollT = leftColT.Find("LeftScrollView");
+                    if (leftScrollT is RectTransform leftScrollRT)
+                    {
+                        leftScrollRT.anchorMin = Vector2.zero;
+                        leftScrollRT.anchorMax = Vector2.one;
+                        leftScrollRT.offsetMin = new Vector2(6, 6);
+                        leftScrollRT.offsetMax = new Vector2(-6, -6);
+
+                        Transform leftVpT = leftScrollT.Find("Viewport");
+                        if (leftVpT is RectTransform leftVpRT)
+                        {
+                            leftVpRT.anchorMin = Vector2.zero;
+                            leftVpRT.anchorMax = Vector2.one;
+                            leftVpRT.offsetMin = Vector2.zero;
+                            leftVpRT.offsetMax = new Vector2(-14, 0);
+
+                            Transform leftContentT = leftVpT.Find("Content");
+                            if (leftContentT is RectTransform leftContentRT)
+                            {
+                                leftContentRT.anchorMin = new Vector2(0, 1);
+                                leftContentRT.anchorMax = new Vector2(1, 1);
+                                leftContentRT.pivot = new Vector2(0, 1);
+                                leftContentRT.anchoredPosition = Vector2.zero;
+                                leftContentRT.sizeDelta = Vector2.zero;
+
+                                VerticalLayoutGroup leftVLG = leftContentRT.GetComponent<VerticalLayoutGroup>();
+                                if (leftVLG == null) leftVLG = leftContentRT.gameObject.AddComponent<VerticalLayoutGroup>();
+                                leftVLG.padding = new RectOffset(6, 6, 6, 6);
+                                leftVLG.spacing = 10;
+                                leftVLG.childControlWidth = true;
+                                leftVLG.childControlHeight = true;
+                                leftVLG.childForceExpandWidth = true;
+                                leftVLG.childForceExpandHeight = false;
+
+                                ContentSizeFitter leftCsf = leftContentRT.GetComponent<ContentSizeFitter>();
+                                if (leftCsf == null) leftCsf = leftContentRT.gameObject.AddComponent<ContentSizeFitter>();
+                                leftCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                            }
+                        }
+                    }
+                }
+
+                // Configure Card_Stats
+                if (statsSectionGO != null)
+                {
+                    RectTransform statsRT = statsSectionGO.GetComponent<RectTransform>();
+                    statsRT.anchorMin = new Vector2(0, 1);
+                    statsRT.anchorMax = new Vector2(1, 1);
+                    statsRT.pivot = new Vector2(0, 1);
+                    statsRT.anchoredPosition = Vector2.zero;
+
+                    LayoutElement statsLE = statsSectionGO.GetComponent<LayoutElement>();
+                    if (statsLE == null) statsLE = statsSectionGO.AddComponent<LayoutElement>();
+                    statsLE.flexibleWidth = 1f;
+                    statsLE.minHeight = 80f;
+
+                    VerticalLayoutGroup statsVLG = statsSectionGO.GetComponent<VerticalLayoutGroup>();
+                    if (statsVLG == null) statsVLG = statsSectionGO.AddComponent<VerticalLayoutGroup>();
+                    statsVLG.padding = new RectOffset(12, 12, 10, 10);
+                    statsVLG.spacing = 8;
+                    statsVLG.childControlWidth = true;
+                    statsVLG.childControlHeight = true;
+                    statsVLG.childForceExpandWidth = true;
+                    statsVLG.childForceExpandHeight = false;
+
+                    ContentSizeFitter statsCsf = statsSectionGO.GetComponent<ContentSizeFitter>();
+                    if (statsCsf == null) statsCsf = statsSectionGO.AddComponent<ContentSizeFitter>();
+                    statsCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+                    // Title
+                    Transform sTitleT = statsSectionGO.transform.Find("Title");
+                    if (sTitleT is RectTransform sTitleRT)
+                    {
+                        sTitleRT.anchorMin = new Vector2(0, 1);
+                        sTitleRT.anchorMax = new Vector2(1, 1);
+                        sTitleRT.pivot = new Vector2(0, 1);
+                        LayoutElement titleLE = sTitleRT.GetComponent<LayoutElement>();
+                        if (titleLE == null) titleLE = sTitleRT.gameObject.AddComponent<LayoutElement>();
+                        titleLE.minHeight = 22f;
+                        titleLE.preferredHeight = 22f;
+                        titleLE.flexibleHeight = 0f;
+                        titleLE.flexibleWidth = 1f;
+
+                        TextMeshProUGUI sTitleTMP = sTitleRT.GetComponent<TextMeshProUGUI>();
+                        if (sTitleTMP != null)
+                        {
+                            sTitleTMP.text = "CHỈ SỐ VĨNH VIỄN (PERMANENT STATS)";
+                            sTitleTMP.fontSize = 12.5f;
+                            sTitleTMP.fontStyle = FontStyles.Bold;
+                            sTitleTMP.color = new Color(1f, 0.85f, 0.3f);
+                        }
+                    }
+
+                    // BadgesText
+                    if (statsBadgesText != null)
+                    {
+                        RectTransform textRT = statsBadgesText.GetComponent<RectTransform>();
+                        textRT.anchorMin = new Vector2(0, 1);
+                        textRT.anchorMax = new Vector2(1, 1);
+                        textRT.pivot = new Vector2(0, 1);
+                        LayoutElement textLE = textRT.GetComponent<LayoutElement>();
+                        if (textLE == null) textLE = textRT.gameObject.AddComponent<LayoutElement>();
+                        textLE.minHeight = 40f;
+                        textLE.preferredHeight = -1f;
+                        textLE.flexibleHeight = 1f;
+                        textLE.flexibleWidth = 1f;
+                        statsBadgesText.textWrappingMode = TextWrappingModes.Normal;
+                        statsBadgesText.fontSize = 11.5f;
+                        statsBadgesText.alignment = TextAlignmentOptions.TopLeft;
+                    }
+                }
+
+                // Configure Card_Blessings
+                if (blessingSectionGO != null)
+                {
+                    RectTransform blessRT = blessingSectionGO.GetComponent<RectTransform>();
+                    blessRT.anchorMin = new Vector2(0, 1);
+                    blessRT.anchorMax = new Vector2(1, 1);
+                    blessRT.pivot = new Vector2(0, 1);
+                    blessRT.anchoredPosition = Vector2.zero;
+
+                    LayoutElement blessLE = blessingSectionGO.GetComponent<LayoutElement>();
+                    if (blessLE == null) blessLE = blessingSectionGO.AddComponent<LayoutElement>();
+                    blessLE.flexibleWidth = 1f;
+                    blessLE.minHeight = 80f;
+
+                    VerticalLayoutGroup blessVLG = blessingSectionGO.GetComponent<VerticalLayoutGroup>();
+                    if (blessVLG == null) blessVLG = blessingSectionGO.AddComponent<VerticalLayoutGroup>();
+                    blessVLG.padding = new RectOffset(12, 12, 10, 10);
+                    blessVLG.spacing = 8;
+                    blessVLG.childControlWidth = true;
+                    blessVLG.childControlHeight = true;
+                    blessVLG.childForceExpandWidth = true;
+                    blessVLG.childForceExpandHeight = false;
+
+                    ContentSizeFitter blessCsf = blessingSectionGO.GetComponent<ContentSizeFitter>();
+                    if (blessCsf == null) blessCsf = blessingSectionGO.AddComponent<ContentSizeFitter>();
+                    blessCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+                    // Title
+                    Transform bTitleT = blessingSectionGO.transform.Find("Title");
+                    if (bTitleT is RectTransform bTitleRT)
+                    {
+                        bTitleRT.anchorMin = new Vector2(0, 1);
+                        bTitleRT.anchorMax = new Vector2(1, 1);
+                        bTitleRT.pivot = new Vector2(0, 1);
+                        LayoutElement titleLE = bTitleRT.GetComponent<LayoutElement>();
+                        if (titleLE == null) titleLE = bTitleRT.gameObject.AddComponent<LayoutElement>();
+                        titleLE.minHeight = 22f;
+                        titleLE.preferredHeight = 22f;
+                        titleLE.flexibleHeight = 0f;
+                        titleLE.flexibleWidth = 1f;
+
+                        TextMeshProUGUI bTitleTMP = bTitleRT.GetComponent<TextMeshProUGUI>();
+                        if (bTitleTMP != null)
+                        {
+                            bTitleTMP.text = "PHƯỚC LÀNH CỔ XƯA (ANCIENT BLESSINGS)";
+                            bTitleTMP.fontSize = 12.5f;
+                            bTitleTMP.fontStyle = FontStyles.Bold;
+                            bTitleTMP.color = new Color(0.75f, 0.85f, 1f);
+                        }
+                    }
+
+                    // DetailsText
+                    if (blessingDetailsText != null)
+                    {
+                        RectTransform textRT = blessingDetailsText.GetComponent<RectTransform>();
+                        textRT.anchorMin = new Vector2(0, 1);
+                        textRT.anchorMax = new Vector2(1, 1);
+                        textRT.pivot = new Vector2(0, 1);
+                        LayoutElement textLE = textRT.GetComponent<LayoutElement>();
+                        if (textLE == null) textLE = textRT.gameObject.AddComponent<LayoutElement>();
+                        textLE.minHeight = 40f;
+                        textLE.preferredHeight = -1f;
+                        textLE.flexibleHeight = 1f;
+                        textLE.flexibleWidth = 1f;
+                        blessingDetailsText.textWrappingMode = TextWrappingModes.Normal;
+                        blessingDetailsText.fontSize = 11.5f;
+                        blessingDetailsText.alignment = TextAlignmentOptions.TopLeft;
+                    }
+                }
+
+                // Right Column Container (51% width)
+                Transform rightColT = bodyT.Find("RightColumn_Container");
+                if (rightColT is RectTransform rightColRT)
+                {
+                    rightColRT.anchorMin = new Vector2(0.49f, 0);
+                    rightColRT.anchorMax = new Vector2(1, 1);
+                    rightColRT.pivot = new Vector2(1, 0.5f);
+                    rightColRT.offsetMin = new Vector2(6, 0);
+                    rightColRT.offsetMax = Vector2.zero;
+
+                    Transform titleT = rightColT.Find("Title");
+                    if (titleT is RectTransform titleRT)
+                    {
+                        titleRT.anchorMin = new Vector2(0, 1);
+                        titleRT.anchorMax = new Vector2(1, 1);
+                        titleRT.pivot = new Vector2(0.5f, 1);
+                        titleRT.anchoredPosition = new Vector2(0, -8);
+                        titleRT.sizeDelta = new Vector2(-20, 24);
+
+                        TextMeshProUGUI rightTitleTMP = titleRT.GetComponent<TextMeshProUGUI>();
+                        if (rightTitleTMP != null)
+                        {
+                            rightTitleTMP.text = currentRewardLoot.Count > 0 ? "CHIẾN LỢI PHẨM THU ĐƯỢC" : "CHIẾN LỢI PHẨM TẦNG";
+                            rightTitleTMP.fontSize = 12.5f;
+                            rightTitleTMP.fontStyle = FontStyles.Bold;
+                            rightTitleTMP.alignment = TextAlignmentOptions.Center;
+                            rightTitleTMP.color = new Color(1f, 0.85f, 0.3f);
+                        }
+                    }
+
+                    Transform scrollT = rightColT.Find("ScrollArea");
+                    if (scrollT is RectTransform scrollRT)
+                    {
+                        scrollRT.anchorMin = Vector2.zero;
+                        scrollRT.anchorMax = Vector2.one;
+                        scrollRT.offsetMin = new Vector2(8, 8);
+                        scrollRT.offsetMax = new Vector2(-8, -42);
+
+                        Transform vpT = scrollT.Find("Viewport");
+                        if (vpT is RectTransform vpRT)
+                        {
+                            vpRT.anchorMin = Vector2.zero;
+                            vpRT.anchorMax = Vector2.one;
+                            vpRT.offsetMin = Vector2.zero;
+                            vpRT.offsetMax = new Vector2(-14, 0);
+                        }
+                    }
+                }
+            }
+
+            // Configure rewardItemsContainer
+            if (rewardItemsContainer != null)
+            {
+                rewardItemsContainer.anchorMin = new Vector2(0, 1);
+                rewardItemsContainer.anchorMax = new Vector2(1, 1);
+                rewardItemsContainer.pivot = new Vector2(0, 1);
+                rewardItemsContainer.anchoredPosition = Vector2.zero;
+                rewardItemsContainer.sizeDelta = Vector2.zero;
+
+                VerticalLayoutGroup vlg = rewardItemsContainer.GetComponent<VerticalLayoutGroup>();
+                if (vlg != null)
+                {
+                    vlg.padding = new RectOffset(4, 4, 4, 4);
+                    vlg.spacing = 6f;
+                    vlg.childControlWidth = true;
+                    vlg.childControlHeight = true;
+                    vlg.childForceExpandWidth = true;
+                    vlg.childForceExpandHeight = false;
+                }
+
+                ContentSizeFitter csf = rewardItemsContainer.GetComponent<ContentSizeFitter>();
+                if (csf != null)
+                {
+                    csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                }
+            }
+
+            // Footer (56px)
+            Transform footerT = frameT.Find("Footer");
+            if (footerT is RectTransform footerRT)
+            {
+                footerRT.anchorMin = new Vector2(0, 0);
+                footerRT.anchorMax = new Vector2(1, 0);
+                footerRT.pivot = new Vector2(0.5f, 0);
+                footerRT.anchoredPosition = new Vector2(0, 6);
+                footerRT.sizeDelta = new Vector2(-16, 56);
+
+                Transform hintT = footerT.Find("HintText");
+                if (hintT is RectTransform hintRT)
+                {
+                    hintRT.anchorMin = new Vector2(0, 0);
+                    hintRT.anchorMax = new Vector2(0, 1);
+                    hintRT.pivot = new Vector2(0, 0.5f);
+                    hintRT.anchoredPosition = new Vector2(16, 0);
+                    hintRT.sizeDelta = new Vector2(380, 48);
+                }
+
+                Transform btnRowT = footerT.Find("ButtonsRow");
+                if (btnRowT is RectTransform btnRowRT)
+                {
+                    HorizontalLayoutGroup hlg = btnRowRT.GetComponent<HorizontalLayoutGroup>();
+                    if (hlg != null)
+                    {
+                        hlg.enabled = false;
+                    }
+
+                    btnRowRT.anchorMin = new Vector2(1, 0.5f);
+                    btnRowRT.anchorMax = new Vector2(1, 0.5f);
+                    btnRowRT.pivot = new Vector2(1, 0.5f);
+                    btnRowRT.anchoredPosition = new Vector2(-16, 0);
+                    btnRowRT.sizeDelta = new Vector2(520, 42);
+                }
             }
         }
     }
@@ -334,17 +746,17 @@ public class FloorVictoryUI : MonoBehaviour
             }
 
             List<string> badges = new();
-            if (bonusATK > 0) badges.Add($"<color=#FF6B6B>[ATK] +{bonusATK} Attack (ATK)</color>");
-            if (bonusDEF > 0) badges.Add($"<color=#54A0FF>[DEF] +{bonusDEF} Defense (DEF)</color>");
-            if (bonusHP > 0) badges.Add($"<color=#1DD1A1>[HP] +{bonusHP} Max HP (HP)</color>");
-            if (bonusSpeed > 0) badges.Add($"<color=#FECA57>[SPD] +{bonusSpeed} Speed (SPD)</color>");
+            if (bonusATK > 0) badges.Add($"  <color=#FF6B6B>[ATK]</color> +{bonusATK} Tấn công (Attack)");
+            if (bonusDEF > 0) badges.Add($"  <color=#54A0FF>[DEF]</color> +{bonusDEF} Phòng thủ (Defense)");
+            if (bonusHP > 0) badges.Add($"  <color=#1DD1A1>[HP]</color> +{bonusHP} Máu tối đa (Max HP)");
+            if (bonusSpeed > 0) badges.Add($"  <color=#FECA57>[SPD]</color> +{bonusSpeed} Tốc độ (Speed)");
 
-            statsBadgesText.text = $"<b>FIRST-CLEAR STAT BONUSES:</b>\n{string.Join("\n", badges)}\n\n<size=11><color=#88FF88>[OK] Stats have been permanently added to your character at the Farm!</color></size>";
+            statsBadgesText.text = $"<color=#FFE082><b>THƯỞNG LẦN ĐẦU VƯỢT TẦNG:</b></color>\n{string.Join("\n", badges)}\n\n<size=11><color=#88FF88>✓ Các chỉ số này đã được cộng vĩnh viễn vào nhân vật của bạn!</color></size>";
         }
         else
         {
             // Already cleared previously or claimed reward
-            statsBadgesText.text = $"<b>FIRST-CLEAR PERMANENT STATS:</b> <color=#55FF88>[ALREADY CLAIMED]</color>\n\n<color=#D0D4DC>You have already received the permanent stat bonus for clearing Floor {currentFloorNum}.</color>\n<size=11><color=#FFD070>[!] Re-clearing this floor does not grant additional permanent stats.</color></size>";
+            statsBadgesText.text = $"<color=#88FF88><b>TRẠNG THÁI: [ĐÃ NHẬN THƯỞNG]</b></color>\n\n<color=#D0D4DC>Bạn đã nhận chỉ số vĩnh viễn của Tầng {currentFloorNum} ở lần vượt trước.</color>\n\n<size=11><color=#FFD070><i>* Vượt lại tầng này sẽ nhận được chiến lợi phẩm rương, không cộng thêm chỉ số vĩnh viễn.</i></color></size>";
         }
 
         statsSectionGO.SetActive(true);
@@ -358,20 +770,20 @@ public class FloorVictoryUI : MonoBehaviour
         switch (currentFloorNum)
         {
             case 1:
-                blessingLine = "* <color=#FFD700>[BASTION] Bastion Strike</color>: Adds +DEF to ATK, Defend restores +1 AP.\n* <color=#55FF88>[SWIFT] Swift Momentum</color>: +4 SPD, bonus damage when moving faster.";
+                blessingLine = "• <color=#FFD700><b>[BASTION] Pháo Đài Vững Chắc:</b></color>\n   Cộng DEF vào ATK; Phòng thủ hồi +1 AP.\n\n• <color=#55FF88><b>[SWIFT] Động Lực Nhanh Nhẹn:</b></color>\n   +4 SPD, tăng sát thương khi di chuyển nhanh.";
                 break;
             case 2:
-                blessingLine = "* <color=#FFD700>[REFLECT] Gluttonous Aegis</color>: +8 DEF when full & reflect melee damage.\n* <color=#D070FF>[DECAY] Bitter Decay</color>: Inflicts deep poison and reduces enemy DEF by 2.";
+                blessingLine = "• <color=#FFD700><b>[REFLECT] Khiên Hộ Mệnh No Nê:</b></color>\n   +8 DEF khi no bụng & phản đòn cận chiến.\n\n• <color=#D070FF><b>[DECAY] Suy Tàn Ăn Mòn:</b></color>\n   Gây độc sâu và giảm 2 DEF của kẻ thù.";
                 break;
             case 3:
-                blessingLine = "* <color=#FFD700>[FEAST] Endless Feast</color>: Food buffs last 2x turns; first food each turn costs 0 AP.";
+                blessingLine = "• <color=#FFD700><b>[FEAST] Đại Tiệc Bất Tận:</b></color>\n   Hiệu ứng thức ăn kéo dài gấp đôi; món ăn đầu tiên mỗi lượt tốn 0 AP.";
                 break;
             default:
-                blessingLine = "* <color=#FFD700>[DIVINE] Ancient Power</color>: All ancient blessings remain fully accessible.";
+                blessingLine = "• <color=#FFD700><b>[DIVINE] Sức Mạnh Cổ Đại:</b></color>\n   Toàn bộ phước lành cổ đại đã sẵn sàng sử dụng.";
                 break;
         }
 
-        blessingDetailsText.text = $"{blessingLine}\n\n<size=11><color=#FFE090>Activate at the Divine Statue on your Farm before each run.</color></size>";
+        blessingDetailsText.text = $"{blessingLine}\n\n<size=11><color=#FFE090><i>Kích hoạt phước lành tại Tượng Thần ở Nông Trại trước mỗi chuyến đi.</i></color></size>";
         blessingSectionGO.SetActive(true);
     }
 
@@ -444,6 +856,26 @@ public class FloorVictoryUI : MonoBehaviour
 
     private void SetupButtonsState()
     {
+        if (returnToBaseButton != null)
+        {
+            returnToBaseButton.gameObject.SetActive(true);
+            TextMeshProUGUI retBtnText = returnToBaseButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (retBtnText != null)
+            {
+                retBtnText.text = "VỀ NÔNG TRẠI";
+            }
+        }
+
+        if (lootAllButton != null)
+        {
+            lootAllButton.gameObject.SetActive(currentRewardLoot.Count > 0);
+            TextMeshProUGUI laBtnText = lootAllButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (laBtnText != null)
+            {
+                laBtnText.text = "NHẬN TẤT CẢ";
+            }
+        }
+
         if (nextFloorButton != null)
         {
             int totalFloors = 3;
@@ -453,7 +885,67 @@ public class FloorVictoryUI : MonoBehaviour
             TextMeshProUGUI nextBtnText = nextFloorButton.GetComponentInChildren<TextMeshProUGUI>();
             if (nextBtnText != null)
             {
-                nextBtnText.text = $"ENTER FLOOR {currentFloorNum + 1} >>";
+                nextBtnText.text = $"TIẾP TỤC TẦNG {currentFloorNum + 1} >>";
+            }
+        }
+
+        // Explicitly position the footer buttons side-by-side from right to left
+        if (victoryPanel != null)
+        {
+            Transform btnRowT = victoryPanel.transform.Find("MainFrame/Footer/ButtonsRow");
+            if (btnRowT is RectTransform btnRowRT)
+            {
+                HorizontalLayoutGroup hlg = btnRowRT.GetComponent<HorizontalLayoutGroup>();
+                if (hlg != null && hlg.enabled)
+                {
+                    hlg.enabled = false;
+                }
+
+                btnRowRT.anchorMin = new Vector2(1, 0.5f);
+                btnRowRT.anchorMax = new Vector2(1, 0.5f);
+                btnRowRT.pivot = new Vector2(1, 0.5f);
+                btnRowRT.anchoredPosition = new Vector2(-16, 0);
+                btnRowRT.sizeDelta = new Vector2(520, 42);
+
+                float currentX = 0f;
+                const float spacing = 14f;
+                const float btnHeight = 40f;
+
+                // 1. Next Floor Button (Rightmost)
+                if (nextFloorButton != null && nextFloorButton.gameObject.activeSelf)
+                {
+                    RectTransform rt = nextFloorButton.GetComponent<RectTransform>();
+                    rt.anchorMin = new Vector2(1, 0.5f);
+                    rt.anchorMax = new Vector2(1, 0.5f);
+                    rt.pivot = new Vector2(1, 0.5f);
+                    rt.sizeDelta = new Vector2(175f, btnHeight);
+                    rt.anchoredPosition = new Vector2(-currentX, 0);
+                    currentX += 175f + spacing;
+                }
+
+                // 2. Return To Base Button (Next to nextFloorButton)
+                if (returnToBaseButton != null && returnToBaseButton.gameObject.activeSelf)
+                {
+                    RectTransform rt = returnToBaseButton.GetComponent<RectTransform>();
+                    rt.anchorMin = new Vector2(1, 0.5f);
+                    rt.anchorMax = new Vector2(1, 0.5f);
+                    rt.pivot = new Vector2(1, 0.5f);
+                    rt.sizeDelta = new Vector2(155f, btnHeight);
+                    rt.anchoredPosition = new Vector2(-currentX, 0);
+                    currentX += 155f + spacing;
+                }
+
+                // 3. Loot All Button (To the left of returnToBaseButton)
+                if (lootAllButton != null && lootAllButton.gameObject.activeSelf)
+                {
+                    RectTransform rt = lootAllButton.GetComponent<RectTransform>();
+                    rt.anchorMin = new Vector2(1, 0.5f);
+                    rt.anchorMax = new Vector2(1, 0.5f);
+                    rt.pivot = new Vector2(1, 0.5f);
+                    rt.sizeDelta = new Vector2(140f, btnHeight);
+                    rt.anchoredPosition = new Vector2(-currentX, 0);
+                    currentX += 140f + spacing;
+                }
             }
         }
     }
@@ -463,6 +955,17 @@ public class FloorVictoryUI : MonoBehaviour
     private void RefreshRewardItems()
     {
         if (rewardItemsContainer == null) return;
+
+        VerticalLayoutGroup vlg = rewardItemsContainer.GetComponent<VerticalLayoutGroup>();
+        if (vlg != null)
+        {
+            vlg.childControlHeight = true;
+            vlg.childControlWidth = true;
+            vlg.childForceExpandHeight = false;
+            vlg.childForceExpandWidth = true;
+            vlg.spacing = 6;
+            vlg.padding = new RectOffset(4, 4, 4, 4);
+        }
 
         if (currentRewardLoot.Count == 0)
         {
@@ -512,6 +1015,15 @@ public class FloorVictoryUI : MonoBehaviour
         {
             ShowEmptyLootNotice();
         }
+
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(rewardItemsContainer);
+
+        if (rightRewardScrollRect != null)
+        {
+            rightRewardScrollRect.verticalNormalizedPosition = 1f;
+            rightRewardScrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
+        }
     }
 
     private void ShowEmptyLootNotice()
@@ -520,10 +1032,17 @@ public class FloorVictoryUI : MonoBehaviour
 
         if (emptyNoticeGO == null)
         {
-            emptyNoticeGO = new("EmptyNotice", typeof(RectTransform), typeof(Image));
+            emptyNoticeGO = new("EmptyNotice", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
             emptyNoticeGO.transform.SetParent(rewardItemsContainer, false);
             RectTransform rt = emptyNoticeGO.GetComponent<RectTransform>();
             rt.sizeDelta = new Vector2(440, 56);
+
+            LayoutElement le = emptyNoticeGO.GetComponent<LayoutElement>();
+            le.minHeight = 56f;
+            le.preferredHeight = 56f;
+            le.flexibleHeight = 0f;
+            le.minWidth = 300f;
+            le.flexibleWidth = 1f;
 
             Image bg = emptyNoticeGO.GetComponent<Image>();
             DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.1f, 0.14f, 0.18f, 0.95f));
@@ -669,6 +1188,7 @@ public class FloorVictoryUI : MonoBehaviour
         }
 
         RefreshRewardItems();
+        SetupButtonsState();
 
         if (homeChestOverflow > 0)
         {
@@ -1022,7 +1542,7 @@ public class FloorVictoryUI : MonoBehaviour
         vlg.childForceExpandWidth = true;
         vlg.childForceExpandHeight = false;
         vlg.childControlWidth = true;
-        vlg.childControlHeight = false;
+        vlg.childControlHeight = true;
 
         ContentSizeFitter csf = contentGO.GetComponent<ContentSizeFitter>();
         csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -1130,15 +1650,20 @@ public class FloorVictoryUI : MonoBehaviour
     {
         GameObject row = new("RewardRow", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
         RectTransform rowRT = row.GetComponent<RectTransform>();
-        rowRT.sizeDelta = new Vector2(440, 52);
+        rowRT.anchorMin = new Vector2(0, 1);
+        rowRT.anchorMax = new Vector2(1, 1);
+        rowRT.pivot = new Vector2(0, 1);
+        rowRT.sizeDelta = new Vector2(0, 50);
 
         Image rowBg = row.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(rowBg, new Color(0.12f, 0.14f, 0.18f, 0.90f));
 
         LayoutElement le = row.GetComponent<LayoutElement>();
-        le.minHeight = 52;
-        le.preferredHeight = 52;
-        le.flexibleWidth = 1;
+        le.minHeight = 50f;
+        le.preferredHeight = 50f;
+        le.flexibleHeight = 0f;
+        le.minWidth = 300f;
+        le.flexibleWidth = 1f;
 
         // Slot icon box
         GameObject slotBox = new("SlotBox", typeof(RectTransform), typeof(Image));

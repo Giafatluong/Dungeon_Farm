@@ -479,6 +479,11 @@ public class MainMenuUI : MonoBehaviour
         Application.Quit();
 #endif
     }
+
+    public void OnBackToMenuClicked()
+    {
+        ShowSubPanel(mainButtonsPanel);
+    }
     #endregion
 
     #region Procedural UI Builder with Figma GOTY Assets

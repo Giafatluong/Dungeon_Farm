@@ -8,10 +8,10 @@ public class RewardChest : MonoBehaviour
     public ItemSlot[] defaultLootPool;
 
     [Header("Loot Config")]
-    [Range(1, 5)]
-    public int minLootItems = 1;
-    [Range(1, 5)]
-    public int maxLootItems = 3;
+    [Range(1, 8)]
+    public int minLootItems = 3;
+    [Range(1, 8)]
+    public int maxLootItems = 5;
     [Range(0f, 1f)]
     public float dropChance = 0.75f;
 
@@ -141,9 +141,11 @@ public class RewardChest : MonoBehaviour
 
         List<ItemData> candidateItems = _cachedCandidates;
 
-        // 4. Procedurally roll a randomized assortment of 2 to 4 distinct items
+        // 4. Procedurally roll a rich assortment of 3 to 5 distinct items (multiple rows)
         ShuffleList(candidateItems);
-        int rolls = Mathf.Clamp(Random.Range(2, 5) + (bonusRollsPerFloor * Mathf.Max(0, floorNumber - 1)), 2, 6);
+        int minRolls = Mathf.Max(3, minLootItems);
+        int maxRolls = Mathf.Max(minRolls + 1, maxLootItems + 1);
+        int rolls = Mathf.Clamp(Random.Range(minRolls, maxRolls) + (bonusRollsPerFloor * Mathf.Max(0, floorNumber - 1)), minRolls, 6);
         int itemsToPick = Mathf.Min(rolls, candidateItems.Count);
 
         for (int i = 0; i < itemsToPick; i++)

@@ -7,8 +7,8 @@ using TMPro;
 
 /// <summary>
 /// Editor tool that constructs and saves the complete, styled Kitchen Canvas directly in the game.
-/// Matches the visual mockup: Sổ tay công thức, Nồi nấu bếp lửa (4 ô, progress bar, preview), and Balo nguyên liệu.
-/// Saves both into Base.unity scene and as a reusable Prefab asset.
+/// Matches the authentic dark pixel-art fantasy style (UI_Frame, UI_Slot, UI_Toolbar),
+/// perfectly balanced 3-column layout (1260x700), and crisp typography.
 /// </summary>
 public static class KitchenCanvasBuilder
 {
@@ -23,32 +23,33 @@ public static class KitchenCanvasBuilder
 
     public static GameObject BuildAndSaveKitchenCanvas()
     {
-        Debug.Log("[KitchenCanvasBuilder] Building Kitchen Canvas directly in Unity...");
+        Debug.Log("[KitchenCanvasBuilder] Building refined Kitchen Canvas in authentic pixel-art style...");
 
         // Load fonts & sprites
         TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset");
-        Sprite headerPlaqueSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Assets/Assets/Header Plaque.png");
-        Sprite cardBgSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Assets/Assets/Món ăn  (không chọn).png");
-        Sprite previewBoxSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Assets/Assets/Món ăn dự kiến.png");
-        Sprite previewIconFrameSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Assets/Assets/Ảnh món ăn dự kiến.png");
-        Sprite cardIconFrameSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Assets/Assets/Ảnh món ăn.png");
-        Sprite frameSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Assets/Assets/Frame.png");
+        Sprite frameSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Assets/Ui_Inventory/UI_Frame.png") 
+                          ?? AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Assets/Assets/Frame.png");
+        Sprite slotSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Assets/Ui_Inventory/UI_Slot.png");
+        Sprite toolbarSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Assets/Ui_Inventory/UI_Toolbar.png");
+        Sprite headerPlaqueSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Assets/Assets/Header Plaque.png") ?? toolbarSprite;
         Sprite soupIconSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Assets/Ui_Food/01_tomato_soup-removebg-preview.png");
-        Sprite slotPrefab = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Assets/Ui_Inventory/UI_Slot.png");
 
         Sprite fireSprite = null;
         Object[] campfireSprites = AssetDatabase.LoadAllAssetsAtPath("Assets/Kenmi/Cute Fantasy RPG - 16x16 top down pixel art asset pack/Sprites/Outdoor decoration/Campfire_Anim.png");
-        for (int i = 0; i < campfireSprites.Length; i++)
+        if (campfireSprites != null)
         {
-            if (campfireSprites[i] is Sprite s && s.name == "Campfire_Anim_1")
+            for (int i = 0; i < campfireSprites.Length; i++)
             {
-                fireSprite = s;
-                break;
+                if (campfireSprites[i] is Sprite s && s.name == "Campfire_Anim_1")
+                {
+                    fireSprite = s;
+                    break;
+                }
             }
-        }
-        if (fireSprite == null && campfireSprites.Length > 1 && campfireSprites[1] is Sprite sFirst)
-        {
-            fireSprite = sFirst;
+            if (fireSprite == null && campfireSprites.Length > 1 && campfireSprites[1] is Sprite sFirst)
+            {
+                fireSprite = sFirst;
+            }
         }
 
         GameObject backpackSlotPrefabObj = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Assets/_Prefabs/inventorySlot.prefab");
@@ -69,25 +70,25 @@ public static class KitchenCanvasBuilder
         canvasGO.AddComponent<GraphicRaycaster>();
         KitchenUI kitchenUI = canvasGO.AddComponent<KitchenUI>();
 
-        // 2. Fullscreen Overlay (Black 82%)
+        // 2. Fullscreen Overlay (Dark Vignette 88%)
         GameObject overlayGO = CreateUIObject("KitchenOverlay", canvasGO.transform);
         RectTransform overlayRT = overlayGO.GetComponent<RectTransform>();
         SetStretch(overlayRT);
         Image overlayImg = overlayGO.AddComponent<Image>();
-        overlayImg.color = new Color(0.06f, 0.04f, 0.03f, 0.85f);
+        overlayImg.color = new Color(0.04f, 0.03f, 0.03f, 0.88f);
         overlayImg.raycastTarget = true;
 
-        // 3. Central Main Window (1440 x 860)
+        // 3. Central Main Window (1260 x 700 - Perfectly balanced on 1080p)
         GameObject windowGO = CreateUIObject("KitchenWindow", overlayGO.transform);
         RectTransform windowRT = windowGO.GetComponent<RectTransform>();
         windowRT.anchorMin = new Vector2(0.5f, 0.5f);
         windowRT.anchorMax = new Vector2(0.5f, 0.5f);
         windowRT.pivot = new Vector2(0.5f, 0.5f);
-        windowRT.sizeDelta = new Vector2(1440, 860);
+        windowRT.sizeDelta = new Vector2(1260, 700);
         windowRT.anchoredPosition = Vector2.zero;
 
         Image windowImg = windowGO.AddComponent<Image>();
-        windowImg.color = new Color(0.24f, 0.14f, 0.09f, 1f); // Dark rich wood #3D2417
+        windowImg.color = new Color(0.12f, 0.08f, 0.06f, 0.98f); // Dark rich wood
         if (frameSprite != null)
         {
             windowImg.sprite = frameSprite;
@@ -99,23 +100,23 @@ public static class KitchenCanvasBuilder
         RectTransform ibRT = innerBorderGO.GetComponent<RectTransform>();
         ibRT.anchorMin = Vector2.zero;
         ibRT.anchorMax = Vector2.one;
-        ibRT.offsetMin = new Vector2(8, 8);
-        ibRT.offsetMax = new Vector2(-8, -8);
+        ibRT.offsetMin = new Vector2(6, 6);
+        ibRT.offsetMax = new Vector2(-6, -6);
         Image ibImg = innerBorderGO.AddComponent<Image>();
-        ibImg.color = new Color(0.18f, 0.10f, 0.06f, 0.95f);
+        ibImg.color = new Color(0.07f, 0.06f, 0.05f, 0.92f);
         ibImg.raycastTarget = false;
 
-        // 4. Top Header Bar
+        // 4. Top Header Bar (Height 52)
         GameObject headerGO = CreateUIObject("TopHeaderBar", windowGO.transform);
         RectTransform headerRT = headerGO.GetComponent<RectTransform>();
         headerRT.anchorMin = new Vector2(0, 1);
         headerRT.anchorMax = new Vector2(1, 1);
         headerRT.pivot = new Vector2(0.5f, 1);
-        headerRT.anchoredPosition = new Vector2(0, -14);
-        headerRT.sizeDelta = new Vector2(-36, 58);
+        headerRT.anchoredPosition = new Vector2(0, -10);
+        headerRT.sizeDelta = new Vector2(-28, 52);
 
         Image headerBg = headerGO.AddComponent<Image>();
-        headerBg.color = new Color(0.35f, 0.22f, 0.14f, 1f); // Cocoa Plaque #593824
+        headerBg.color = new Color(0.24f, 0.15f, 0.09f, 1f); // Dark warm cocoa
         if (headerPlaqueSprite != null)
         {
             headerBg.sprite = headerPlaqueSprite;
@@ -127,15 +128,15 @@ public static class KitchenCanvasBuilder
         RectTransform titleRT = titleGO.GetComponent<RectTransform>();
         titleRT.anchorMin = new Vector2(0, 0);
         titleRT.anchorMax = new Vector2(0.75f, 1);
-        titleRT.offsetMin = new Vector2(24, 0);
+        titleRT.offsetMin = new Vector2(20, 0);
         titleRT.offsetMax = Vector2.zero;
         TextMeshProUGUI titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         if (font != null) titleTMP.font = font;
-        titleTMP.text = "🍲 BẾP NẤU GIA ĐÌNH & SỔ TAY CÔNG THỨC ẨM THỰC";
-        titleTMP.fontSize = 22;
+        titleTMP.text = "🍲 BẾP NẤU GIA ĐÌNH & SỔ TAY CÔNG THỨC";
+        titleTMP.fontSize = 20;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.alignment = TextAlignmentOptions.MidlineLeft;
-        titleTMP.color = new Color(1f, 0.95f, 0.88f);
+        titleTMP.color = new Color(1f, 0.88f, 0.51f); // Gold amber
 
         // Header Close Button
         GameObject closeBtnGO = CreateUIObject("CloseButton", headerGO.transform);
@@ -143,11 +144,16 @@ public static class KitchenCanvasBuilder
         closeBtnRT.anchorMin = new Vector2(1, 0.5f);
         closeBtnRT.anchorMax = new Vector2(1, 0.5f);
         closeBtnRT.pivot = new Vector2(1, 0.5f);
-        closeBtnRT.anchoredPosition = new Vector2(-16, 0);
-        closeBtnRT.sizeDelta = new Vector2(170, 42);
+        closeBtnRT.anchoredPosition = new Vector2(-14, 0);
+        closeBtnRT.sizeDelta = new Vector2(150, 36);
 
         Image closeBg = closeBtnGO.AddComponent<Image>();
-        closeBg.color = new Color(0.24f, 0.14f, 0.08f, 0.75f);
+        closeBg.color = new Color(0.18f, 0.11f, 0.07f, 0.95f);
+        if (frameSprite != null)
+        {
+            closeBg.sprite = frameSprite;
+            closeBg.type = Image.Type.Sliced;
+        }
         Button closeBtn = closeBtnGO.AddComponent<Button>();
 
         GameObject closeTextGO = CreateUIObject("CloseText", closeBtnGO.transform);
@@ -156,52 +162,86 @@ public static class KitchenCanvasBuilder
         TextMeshProUGUI closeTMP = closeTextGO.AddComponent<TextMeshProUGUI>();
         if (font != null) closeTMP.font = font;
         closeTMP.text = "✕ [ESC] Đóng Bếp";
-        closeTMP.fontSize = 17;
+        closeTMP.fontSize = 15;
         closeTMP.fontStyle = FontStyles.Bold;
         closeTMP.alignment = TextAlignmentOptions.Center;
-        closeTMP.color = new Color(1f, 0.72f, 0.22f); // Amber gold
+        closeTMP.color = new Color(1f, 0.79f, 0.22f); // Amber gold
 
         // ==========================================
         // 5. LEFT COLUMN: SỔ TAY CÔNG THỨC (RECIPES)
+        // Width: 370px, Height: 616px (offsets 14 to -70)
         // ==========================================
         GameObject leftPanelGO = CreateUIObject("LeftPanel_Recipes", windowGO.transform);
         RectTransform leftPanelRT = leftPanelGO.GetComponent<RectTransform>();
-        leftPanelRT.anchorMin = new Vector2(0.016f, 0.024f);
-        leftPanelRT.anchorMax = new Vector2(0.340f, 0.900f);
-        leftPanelRT.offsetMin = Vector2.zero;
-        leftPanelRT.offsetMax = Vector2.zero;
+        leftPanelRT.anchorMin = new Vector2(0, 0);
+        leftPanelRT.anchorMax = new Vector2(0, 1);
+        leftPanelRT.offsetMin = new Vector2(16, 14);
+        leftPanelRT.offsetMax = new Vector2(386, -70);
 
         Image leftBg = leftPanelGO.AddComponent<Image>();
-        leftBg.color = new Color(0.98f, 0.96f, 0.93f, 1f); // Warm ivory #FAF4ED
+        leftBg.color = new Color(0.11f, 0.13f, 0.18f, 0.96f); // Dark slate frame
+        if (frameSprite != null)
+        {
+            leftBg.sprite = frameSprite;
+            leftBg.type = Image.Type.Sliced;
+        }
 
-        // Tab Bar
+        // Header Tag: "SỔ TAY CÔNG THỨC"
+        GameObject leftTagGO = CreateUIObject("HeaderTag", leftPanelGO.transform);
+        RectTransform leftTagRT = leftTagGO.GetComponent<RectTransform>();
+        leftTagRT.anchorMin = new Vector2(0.5f, 1f);
+        leftTagRT.anchorMax = new Vector2(0.5f, 1f);
+        leftTagRT.pivot = new Vector2(0.5f, 0.5f);
+        leftTagRT.anchoredPosition = new Vector2(0, 0);
+        leftTagRT.sizeDelta = new Vector2(220, 32);
+
+        Image leftTagBg = leftTagGO.AddComponent<Image>();
+        leftTagBg.color = new Color(0.24f, 0.16f, 0.10f, 1f);
+        if (toolbarSprite != null)
+        {
+            leftTagBg.sprite = toolbarSprite;
+            leftTagBg.type = Image.Type.Sliced;
+        }
+
+        GameObject leftTagTextGO = CreateUIObject("TagText", leftTagGO.transform);
+        RectTransform leftTagTextRT = leftTagTextGO.GetComponent<RectTransform>();
+        SetStretch(leftTagTextRT);
+        TextMeshProUGUI leftTagTMP = leftTagTextGO.AddComponent<TextMeshProUGUI>();
+        if (font != null) leftTagTMP.font = font;
+        leftTagTMP.text = "SỔ TAY CÔNG THỨC";
+        leftTagTMP.fontSize = 14;
+        leftTagTMP.fontStyle = FontStyles.Bold;
+        leftTagTMP.alignment = TextAlignmentOptions.Center;
+        leftTagTMP.color = new Color(1f, 0.88f, 0.51f);
+
+        // Filter Tab Bar
         GameObject tabRowGO = CreateUIObject("FilterTabBar", leftPanelGO.transform);
         RectTransform tabRowRT = tabRowGO.GetComponent<RectTransform>();
         tabRowRT.anchorMin = new Vector2(0, 1);
         tabRowRT.anchorMax = new Vector2(1, 1);
         tabRowRT.pivot = new Vector2(0.5f, 1);
-        tabRowRT.anchoredPosition = new Vector2(0, -12);
-        tabRowRT.sizeDelta = new Vector2(-20, 42);
+        tabRowRT.anchoredPosition = new Vector2(0, -38);
+        tabRowRT.sizeDelta = new Vector2(-20, 34);
 
         HorizontalLayoutGroup tabLayout = tabRowGO.AddComponent<HorizontalLayoutGroup>();
-        tabLayout.spacing = 6;
+        tabLayout.spacing = 5;
         tabLayout.childForceExpandWidth = true;
         tabLayout.childForceExpandHeight = true;
         tabLayout.childControlWidth = true;
         tabLayout.childControlHeight = true;
 
-        Button tabAll = CreateTabButton("Tab_All", tabRowGO.transform, "TẤT CẢ (12)", new Color(0.36f, 0.70f, 0.16f), Color.white, font);
-        Button tabRec = CreateTabButton("Tab_Recovery", tabRowGO.transform, "HỒI PHỤC", new Color(0.92f, 0.86f, 0.78f), new Color(0.36f, 0.25f, 0.20f), font);
-        Button tabSpd = CreateTabButton("Tab_Speed", tabRowGO.transform, "TĂNG TỐC", new Color(0.92f, 0.86f, 0.78f), new Color(0.36f, 0.25f, 0.20f), font);
-        Button tabOth = CreateTabButton("Tab_Other", tabRowGO.transform, "KHÁC", new Color(0.92f, 0.86f, 0.78f), new Color(0.36f, 0.25f, 0.20f), font);
+        CreateTabButton("Tab_All", tabRowGO.transform, "TẤT CẢ", new Color(0.18f, 0.52f, 0.20f, 1f), Color.white, frameSprite, font);
+        CreateTabButton("Tab_Recovery", tabRowGO.transform, "HỒI PHỤC", new Color(0.14f, 0.16f, 0.22f, 0.95f), new Color(0.70f, 0.75f, 0.82f), frameSprite, font);
+        CreateTabButton("Tab_Speed", tabRowGO.transform, "TĂNG TỐC", new Color(0.14f, 0.16f, 0.22f, 0.95f), new Color(0.70f, 0.75f, 0.82f), frameSprite, font);
+        CreateTabButton("Tab_Other", tabRowGO.transform, "KHÁC", new Color(0.14f, 0.16f, 0.22f, 0.95f), new Color(0.70f, 0.75f, 0.82f), frameSprite, font);
 
         // Recipe Scroll View
         GameObject recipeScrollGO = CreateUIObject("RecipeScrollView", leftPanelGO.transform);
         RectTransform rScrollRT = recipeScrollGO.GetComponent<RectTransform>();
         rScrollRT.anchorMin = new Vector2(0, 0);
         rScrollRT.anchorMax = new Vector2(1, 1);
-        rScrollRT.offsetMin = new Vector2(10, 12);
-        rScrollRT.offsetMax = new Vector2(-10, -62);
+        rScrollRT.offsetMin = new Vector2(8, 10);
+        rScrollRT.offsetMax = new Vector2(-8, -78);
 
         ScrollRect rScroll = recipeScrollGO.AddComponent<ScrollRect>();
         rScroll.horizontal = false;
@@ -222,7 +262,7 @@ public static class KitchenCanvasBuilder
         rContentRT.sizeDelta = new Vector2(0, 0);
 
         VerticalLayoutGroup rLayout = rContentGO.AddComponent<VerticalLayoutGroup>();
-        rLayout.spacing = 8;
+        rLayout.spacing = 6;
         rLayout.childForceExpandWidth = true;
         rLayout.childForceExpandHeight = false;
         rLayout.childControlWidth = true;
@@ -233,21 +273,27 @@ public static class KitchenCanvasBuilder
         rScroll.content = rContentRT;
 
         // Recipe Card Template
-        GameObject cardTemplate = CreateRecipeCardTemplate(leftPanelGO.transform, cardBgSprite, cardIconFrameSprite, soupIconSprite, font);
+        GameObject cardTemplate = CreateRecipeCardTemplate(leftPanelGO.transform, frameSprite, slotSprite, soupIconSprite, font);
         cardTemplate.SetActive(false);
 
         // ==========================================
         // 6. MIDDLE COLUMN: NỒI NẤU BẾP LỬA (STOVE)
+        // Width: 460px, Height: 616px (anchored centered)
         // ==========================================
         GameObject midPanelGO = CreateUIObject("MiddlePanel_Stove", windowGO.transform);
         RectTransform midPanelRT = midPanelGO.GetComponent<RectTransform>();
-        midPanelRT.anchorMin = new Vector2(0.352f, 0.024f);
-        midPanelRT.anchorMax = new Vector2(0.675f, 0.900f);
-        midPanelRT.offsetMin = Vector2.zero;
-        midPanelRT.offsetMax = Vector2.zero;
+        midPanelRT.anchorMin = new Vector2(0.5f, 0);
+        midPanelRT.anchorMax = new Vector2(0.5f, 1);
+        midPanelRT.offsetMin = new Vector2(-230, 14);
+        midPanelRT.offsetMax = new Vector2(230, -70);
 
         Image midBg = midPanelGO.AddComponent<Image>();
-        midBg.color = new Color(0.98f, 0.96f, 0.93f, 1f); // Warm ivory
+        midBg.color = new Color(0.11f, 0.13f, 0.18f, 0.96f); // Dark slate frame
+        if (frameSprite != null)
+        {
+            midBg.sprite = frameSprite;
+            midBg.type = Image.Type.Sliced;
+        }
 
         // Header Tag: "NỒI NẤU BẾP LỬA"
         GameObject midTagGO = CreateUIObject("HeaderTag", midPanelGO.transform);
@@ -256,13 +302,13 @@ public static class KitchenCanvasBuilder
         midTagRT.anchorMax = new Vector2(0.5f, 1f);
         midTagRT.pivot = new Vector2(0.5f, 0.5f);
         midTagRT.anchoredPosition = new Vector2(0, 0);
-        midTagRT.sizeDelta = new Vector2(230, 36);
+        midTagRT.sizeDelta = new Vector2(220, 32);
 
         Image midTagBg = midTagGO.AddComponent<Image>();
-        midTagBg.color = new Color(0.36f, 0.22f, 0.14f, 1f);
-        if (headerPlaqueSprite != null)
+        midTagBg.color = new Color(0.24f, 0.16f, 0.10f, 1f);
+        if (toolbarSprite != null)
         {
-            midTagBg.sprite = headerPlaqueSprite;
+            midTagBg.sprite = toolbarSprite;
             midTagBg.type = Image.Type.Sliced;
         }
 
@@ -272,30 +318,35 @@ public static class KitchenCanvasBuilder
         TextMeshProUGUI midTagTMP = midTagTextGO.AddComponent<TextMeshProUGUI>();
         if (font != null) midTagTMP.font = font;
         midTagTMP.text = "NỒI NẤU BẾP LỬA";
-        midTagTMP.fontSize = 15;
+        midTagTMP.fontSize = 14;
         midTagTMP.fontStyle = FontStyles.Bold;
         midTagTMP.alignment = TextAlignmentOptions.Center;
-        midTagTMP.color = new Color(1f, 0.96f, 0.88f);
+        midTagTMP.color = new Color(1f, 0.88f, 0.51f);
 
-        // Cooking Stage Display (Dark chocolate box with Pot + Flame)
+        // Cooking Stage Display (Ember box with Pot + Flame)
         GameObject stageGO = CreateUIObject("CookingStage", midPanelGO.transform);
         RectTransform stageRT = stageGO.GetComponent<RectTransform>();
         stageRT.anchorMin = new Vector2(0.5f, 1);
         stageRT.anchorMax = new Vector2(0.5f, 1);
         stageRT.pivot = new Vector2(0.5f, 1);
-        stageRT.anchoredPosition = new Vector2(0, -32);
-        stageRT.sizeDelta = new Vector2(430, 160);
+        stageRT.anchoredPosition = new Vector2(0, -28);
+        stageRT.sizeDelta = new Vector2(436, 116);
 
         Image stageBg = stageGO.AddComponent<Image>();
-        stageBg.color = new Color(0.24f, 0.14f, 0.09f, 1f); // Dark cocoa
+        stageBg.color = new Color(0.14f, 0.10f, 0.08f, 0.95f);
+        if (frameSprite != null)
+        {
+            stageBg.sprite = frameSprite;
+            stageBg.type = Image.Type.Sliced;
+        }
 
         // Pot Icon
         GameObject potIconGO = CreateUIObject("PotIcon", stageGO.transform);
         RectTransform potIconRT = potIconGO.GetComponent<RectTransform>();
         potIconRT.anchorMin = new Vector2(0.5f, 0.5f);
         potIconRT.anchorMax = new Vector2(0.5f, 0.5f);
-        potIconRT.anchoredPosition = new Vector2(-42, 14);
-        potIconRT.sizeDelta = new Vector2(80, 80);
+        potIconRT.anchoredPosition = new Vector2(-40, 10);
+        potIconRT.sizeDelta = new Vector2(68, 68);
         Image potIconImg = potIconGO.AddComponent<Image>();
         if (soupIconSprite != null) potIconImg.sprite = soupIconSprite;
 
@@ -304,8 +355,8 @@ public static class KitchenCanvasBuilder
         RectTransform fireIconRT = fireIconGO.GetComponent<RectTransform>();
         fireIconRT.anchorMin = new Vector2(0.5f, 0.5f);
         fireIconRT.anchorMax = new Vector2(0.5f, 0.5f);
-        fireIconRT.anchoredPosition = new Vector2(42, 14);
-        fireIconRT.sizeDelta = new Vector2(68, 68);
+        fireIconRT.anchoredPosition = new Vector2(40, 10);
+        fireIconRT.sizeDelta = new Vector2(56, 56);
         Image fireIconImg = fireIconGO.AddComponent<Image>();
         if (fireSprite != null) fireIconImg.sprite = fireSprite;
 
@@ -315,15 +366,15 @@ public static class KitchenCanvasBuilder
         stageSubRT.anchorMin = new Vector2(0, 0);
         stageSubRT.anchorMax = new Vector2(1, 0);
         stageSubRT.pivot = new Vector2(0.5f, 0);
-        stageSubRT.anchoredPosition = new Vector2(0, 10);
-        stageSubRT.sizeDelta = new Vector2(0, 30);
+        stageSubRT.anchoredPosition = new Vector2(0, 6);
+        stageSubRT.sizeDelta = new Vector2(0, 26);
         TextMeshProUGUI stageSubTMP = stageSubGO.AddComponent<TextMeshProUGUI>();
         if (font != null) stageSubTMP.font = font;
         stageSubTMP.text = "Bếp Lửa Sôi Sùng Sục • Sẵn Sàng Chế Biến";
-        stageSubTMP.fontSize = 15;
+        stageSubTMP.fontSize = 13;
         stageSubTMP.fontStyle = FontStyles.Bold;
         stageSubTMP.alignment = TextAlignmentOptions.Center;
-        stageSubTMP.color = new Color(1f, 0.90f, 0.55f); // Golden yellow
+        stageSubTMP.color = new Color(1f, 0.85f, 0.45f); // Amber gold
 
         // Pot Slots Section
         GameObject potSecGO = CreateUIObject("PotSlotsSection", midPanelGO.transform);
@@ -331,36 +382,36 @@ public static class KitchenCanvasBuilder
         potSecRT.anchorMin = new Vector2(0.5f, 1);
         potSecRT.anchorMax = new Vector2(0.5f, 1);
         potSecRT.pivot = new Vector2(0.5f, 1);
-        potSecRT.anchoredPosition = new Vector2(0, -204);
-        potSecRT.sizeDelta = new Vector2(430, 115);
+        potSecRT.anchoredPosition = new Vector2(0, -154);
+        potSecRT.sizeDelta = new Vector2(436, 96);
 
-        // Section Title: "BỎ NGUYÊN LIỆU VÀO 4 Ô DƯỚI ĐÂY:"
+        // Section Title
         GameObject secTitleGO = CreateUIObject("SectionTitle", potSecGO.transform);
         RectTransform secTitleRT = secTitleGO.GetComponent<RectTransform>();
         secTitleRT.anchorMin = new Vector2(0, 1);
         secTitleRT.anchorMax = new Vector2(1, 1);
         secTitleRT.pivot = new Vector2(0.5f, 1);
         secTitleRT.anchoredPosition = new Vector2(0, 0);
-        secTitleRT.sizeDelta = new Vector2(0, 26);
+        secTitleRT.sizeDelta = new Vector2(0, 22);
         TextMeshProUGUI secTitleTMP = secTitleGO.AddComponent<TextMeshProUGUI>();
         if (font != null) secTitleTMP.font = font;
-        secTitleTMP.text = "BỎ NGUYÊN LIỆU VÀO 4 Ô DƯỚI ĐÂY:";
-        secTitleTMP.fontSize = 15;
+        secTitleTMP.text = "BỎ NGUYÊN LIỆU VÀO 4 Ô NỒI NẤU:";
+        secTitleTMP.fontSize = 13;
         secTitleTMP.fontStyle = FontStyles.Bold;
         secTitleTMP.alignment = TextAlignmentOptions.MidlineLeft;
-        secTitleTMP.color = new Color(0.32f, 0.20f, 0.14f);
+        secTitleTMP.color = new Color(1f, 0.85f, 0.45f);
 
-        // Slots Row (4 slots)
+        // Slots Row (4 slots 64x64)
         GameObject slotsRowGO = CreateUIObject("SlotsRow", potSecGO.transform);
         RectTransform slotsRowRT = slotsRowGO.GetComponent<RectTransform>();
         slotsRowRT.anchorMin = new Vector2(0, 0);
         slotsRowRT.anchorMax = new Vector2(1, 0);
         slotsRowRT.pivot = new Vector2(0.5f, 0);
         slotsRowRT.anchoredPosition = new Vector2(0, 0);
-        slotsRowRT.sizeDelta = new Vector2(0, 84);
+        slotsRowRT.sizeDelta = new Vector2(0, 70);
 
         HorizontalLayoutGroup slotsLayout = slotsRowGO.AddComponent<HorizontalLayoutGroup>();
-        slotsLayout.spacing = 14;
+        slotsLayout.spacing = 16;
         slotsLayout.childAlignment = TextAnchor.MiddleCenter;
         slotsLayout.childForceExpandWidth = false;
         slotsLayout.childForceExpandHeight = false;
@@ -369,7 +420,7 @@ public static class KitchenCanvasBuilder
 
         for (int i = 0; i < 4; i++)
         {
-            CreatePotSlot($"PotSlot_{i}", slotsRowGO.transform, previewIconFrameSprite, font);
+            CreatePotSlot($"PotSlot_{i}", slotsRowGO.transform, slotSprite, frameSprite, font);
         }
 
         // Cooking Progress Bar Section
@@ -378,24 +429,24 @@ public static class KitchenCanvasBuilder
         progSecRT.anchorMin = new Vector2(0.5f, 1);
         progSecRT.anchorMax = new Vector2(0.5f, 1);
         progSecRT.pivot = new Vector2(0.5f, 1);
-        progSecRT.anchoredPosition = new Vector2(0, -328);
-        progSecRT.sizeDelta = new Vector2(430, 60);
+        progSecRT.anchoredPosition = new Vector2(0, -260);
+        progSecRT.sizeDelta = new Vector2(436, 50);
 
-        // Progress Title: "⏱️ TIẾN TRÌNH NẤU (5 GIÂY) ⏱️"
+        // Progress Title
         GameObject progTitleGO = CreateUIObject("ProgressTitle", progSecGO.transform);
         RectTransform progTitleRT = progTitleGO.GetComponent<RectTransform>();
         progTitleRT.anchorMin = new Vector2(0, 1);
         progTitleRT.anchorMax = new Vector2(1, 1);
         progTitleRT.pivot = new Vector2(0.5f, 1);
         progTitleRT.anchoredPosition = new Vector2(0, 0);
-        progTitleRT.sizeDelta = new Vector2(0, 22);
+        progTitleRT.sizeDelta = new Vector2(0, 20);
         TextMeshProUGUI progTitleTMP = progTitleGO.AddComponent<TextMeshProUGUI>();
         if (font != null) progTitleTMP.font = font;
-        progTitleTMP.text = "⏱️ TIẾN TRÌNH NẤU (5 GIÂY) ⏱️";
-        progTitleTMP.fontSize = 14;
+        progTitleTMP.text = "⏱️ TIẾN TRÌNH NẤU (4 GIÂY) ⏱️";
+        progTitleTMP.fontSize = 12;
         progTitleTMP.fontStyle = FontStyles.Bold;
         progTitleTMP.alignment = TextAlignmentOptions.Center;
-        progTitleTMP.color = new Color(0.24f, 0.44f, 0.64f); // Crisp cyan-blue label
+        progTitleTMP.color = new Color(0.55f, 0.78f, 1f);
 
         // Slider Bar
         GameObject sliderGO = CreateUIObject("CookingSlider", progSecGO.transform);
@@ -404,7 +455,7 @@ public static class KitchenCanvasBuilder
         sliderRT.anchorMax = new Vector2(1, 0);
         sliderRT.pivot = new Vector2(0.5f, 0);
         sliderRT.anchoredPosition = new Vector2(0, 0);
-        sliderRT.sizeDelta = new Vector2(0, 32);
+        sliderRT.sizeDelta = new Vector2(0, 26);
 
         Slider slider = sliderGO.AddComponent<Slider>();
         slider.interactable = false;
@@ -414,15 +465,20 @@ public static class KitchenCanvasBuilder
 
         // Slider Background
         Image sliderBg = sliderGO.AddComponent<Image>();
-        sliderBg.color = new Color(0.25f, 0.16f, 0.10f, 1f); // Dark cocoa track
+        sliderBg.color = new Color(0.12f, 0.14f, 0.18f, 1f);
+        if (frameSprite != null)
+        {
+            sliderBg.sprite = frameSprite;
+            sliderBg.type = Image.Type.Sliced;
+        }
 
         // Slider Fill Area
         GameObject fillAreaGO = CreateUIObject("Fill Area", sliderGO.transform);
         RectTransform fillAreaRT = fillAreaGO.GetComponent<RectTransform>();
         fillAreaRT.anchorMin = new Vector2(0, 0);
         fillAreaRT.anchorMax = new Vector2(1, 1);
-        fillAreaRT.offsetMin = new Vector2(3, 3);
-        fillAreaRT.offsetMax = new Vector2(-3, -3);
+        fillAreaRT.offsetMin = new Vector2(2, 2);
+        fillAreaRT.offsetMax = new Vector2(-2, -2);
 
         GameObject fillGO = CreateUIObject("Fill", fillAreaGO.transform);
         RectTransform fillRT = fillGO.GetComponent<RectTransform>();
@@ -431,7 +487,7 @@ public static class KitchenCanvasBuilder
         fillRT.offsetMin = Vector2.zero;
         fillRT.offsetMax = Vector2.zero;
         Image fillImg = fillGO.AddComponent<Image>();
-        fillImg.color = new Color(1f, 0.58f, 0.06f, 1f); // Fire flame orange #FF9410
+        fillImg.color = new Color(1f, 0.55f, 0.05f, 1f); // Flame orange
         slider.fillRect = fillRT;
 
         // Slider Status Text
@@ -441,7 +497,7 @@ public static class KitchenCanvasBuilder
         TextMeshProUGUI statusTMP = statusTextGO.AddComponent<TextMeshProUGUI>();
         if (font != null) statusTMP.font = font;
         statusTMP.text = "SẴN SÀNG";
-        statusTMP.fontSize = 14;
+        statusTMP.fontSize = 13;
         statusTMP.fontStyle = FontStyles.Bold;
         statusTMP.alignment = TextAlignmentOptions.Center;
         statusTMP.color = Color.white;
@@ -452,14 +508,14 @@ public static class KitchenCanvasBuilder
         prevCardRT.anchorMin = new Vector2(0.5f, 1);
         prevCardRT.anchorMax = new Vector2(0.5f, 1);
         prevCardRT.pivot = new Vector2(0.5f, 1);
-        prevCardRT.anchoredPosition = new Vector2(0, -400);
-        prevCardRT.sizeDelta = new Vector2(430, 115);
+        prevCardRT.anchoredPosition = new Vector2(0, -320);
+        prevCardRT.sizeDelta = new Vector2(436, 96);
 
         Image prevCardBg = prevCardGO.AddComponent<Image>();
-        prevCardBg.color = new Color(1f, 0.98f, 0.92f, 1f);
-        if (previewBoxSprite != null)
+        prevCardBg.color = new Color(0.14f, 0.16f, 0.22f, 0.95f);
+        if (frameSprite != null)
         {
-            prevCardBg.sprite = previewBoxSprite;
+            prevCardBg.sprite = frameSprite;
             prevCardBg.type = Image.Type.Sliced;
         }
 
@@ -469,20 +525,20 @@ public static class KitchenCanvasBuilder
         prevIconFrameRT.anchorMin = new Vector2(0, 0.5f);
         prevIconFrameRT.anchorMax = new Vector2(0, 0.5f);
         prevIconFrameRT.pivot = new Vector2(0, 0.5f);
-        prevIconFrameRT.anchoredPosition = new Vector2(16, 0);
-        prevIconFrameRT.sizeDelta = new Vector2(80, 80);
+        prevIconFrameRT.anchoredPosition = new Vector2(12, 0);
+        prevIconFrameRT.sizeDelta = new Vector2(64, 64);
 
         Image prevIconFrameImg = prevIconFrameGO.AddComponent<Image>();
-        prevIconFrameImg.color = new Color(0.95f, 0.91f, 0.83f, 1f);
-        if (previewIconFrameSprite != null)
+        prevIconFrameImg.color = new Color(0.18f, 0.20f, 0.26f, 1f);
+        if (slotSprite != null)
         {
-            prevIconFrameImg.sprite = previewIconFrameSprite;
+            prevIconFrameImg.sprite = slotSprite;
             prevIconFrameImg.type = Image.Type.Sliced;
         }
 
         GameObject prevDishIconGO = CreateUIObject("DishIcon", prevIconFrameGO.transform);
         RectTransform prevDishIconRT = prevDishIconGO.GetComponent<RectTransform>();
-        SetStretch(prevDishIconRT, 8);
+        SetStretch(prevDishIconRT, 6);
         Image prevDishIconImg = prevDishIconGO.AddComponent<Image>();
         if (soupIconSprite != null) prevDishIconImg.sprite = soupIconSprite;
 
@@ -491,8 +547,8 @@ public static class KitchenCanvasBuilder
         RectTransform prevInfoRT = prevInfoGO.GetComponent<RectTransform>();
         prevInfoRT.anchorMin = new Vector2(0, 0);
         prevInfoRT.anchorMax = new Vector2(1, 1);
-        prevInfoRT.offsetMin = new Vector2(110, 10);
-        prevInfoRT.offsetMax = new Vector2(-12, -10);
+        prevInfoRT.offsetMin = new Vector2(86, 6);
+        prevInfoRT.offsetMax = new Vector2(-10, -6);
 
         GameObject prevLblGO = CreateUIObject("PreviewHeaderLabel", prevInfoGO.transform);
         RectTransform prevLblRT = prevLblGO.GetComponent<RectTransform>();
@@ -500,41 +556,41 @@ public static class KitchenCanvasBuilder
         prevLblRT.anchorMax = new Vector2(1, 1);
         prevLblRT.pivot = new Vector2(0, 1);
         prevLblRT.anchoredPosition = new Vector2(0, 0);
-        prevLblRT.sizeDelta = new Vector2(0, 20);
+        prevLblRT.sizeDelta = new Vector2(0, 18);
         TextMeshProUGUI prevLblTMP = prevLblGO.AddComponent<TextMeshProUGUI>();
         if (font != null) prevLblTMP.font = font;
         prevLblTMP.text = "MÓN THÀNH PHẨM DỰ KIẾN:";
-        prevLblTMP.fontSize = 13;
+        prevLblTMP.fontSize = 11;
         prevLblTMP.fontStyle = FontStyles.Bold;
-        prevLblTMP.color = new Color(0.48f, 0.32f, 0.22f);
+        prevLblTMP.color = new Color(0.68f, 0.74f, 0.82f);
 
         GameObject prevNameGO = CreateUIObject("PreviewDishName", prevInfoGO.transform);
         RectTransform prevNameRT = prevNameGO.GetComponent<RectTransform>();
         prevNameRT.anchorMin = new Vector2(0, 1);
         prevNameRT.anchorMax = new Vector2(1, 1);
         prevNameRT.pivot = new Vector2(0, 1);
-        prevNameRT.anchoredPosition = new Vector2(0, -22);
-        prevNameRT.sizeDelta = new Vector2(0, 28);
+        prevNameRT.anchoredPosition = new Vector2(0, -20);
+        prevNameRT.sizeDelta = new Vector2(0, 24);
         TextMeshProUGUI prevNameTMP = prevNameGO.AddComponent<TextMeshProUGUI>();
         if (font != null) prevNameTMP.font = font;
         prevNameTMP.text = "Súp Cà Chua Hương Thảo";
-        prevNameTMP.fontSize = 19;
+        prevNameTMP.fontSize = 16;
         prevNameTMP.fontStyle = FontStyles.Bold;
-        prevNameTMP.color = new Color(0.24f, 0.14f, 0.08f);
+        prevNameTMP.color = new Color(1f, 0.88f, 0.52f);
 
         GameObject prevStatsGO = CreateUIObject("PreviewDishStats", prevInfoGO.transform);
         RectTransform prevStatsRT = prevStatsGO.GetComponent<RectTransform>();
         prevStatsRT.anchorMin = new Vector2(0, 0);
         prevStatsRT.anchorMax = new Vector2(1, 0);
         prevStatsRT.pivot = new Vector2(0, 0);
-        prevStatsRT.anchoredPosition = new Vector2(0, 4);
-        prevStatsRT.sizeDelta = new Vector2(0, 24);
+        prevStatsRT.anchoredPosition = new Vector2(0, 2);
+        prevStatsRT.sizeDelta = new Vector2(0, 22);
         TextMeshProUGUI prevStatsTMP = prevStatsGO.AddComponent<TextMeshProUGUI>();
         if (font != null) prevStatsTMP.font = font;
         prevStatsTMP.text = "❤️ +45 HP | 🍗 +60 Độ No | ⚡ +10% Tốc Độ";
-        prevStatsTMP.fontSize = 13;
+        prevStatsTMP.fontSize = 12;
         prevStatsTMP.fontStyle = FontStyles.Bold;
-        prevStatsTMP.color = new Color(0.35f, 0.25f, 0.20f);
+        prevStatsTMP.color = new Color(0.85f, 0.90f, 0.95f);
 
         // Action Buttons Row (Cook & Cancel)
         GameObject actionRowGO = CreateUIObject("ActionButtonsRow", midPanelGO.transform);
@@ -542,8 +598,8 @@ public static class KitchenCanvasBuilder
         actionRowRT.anchorMin = new Vector2(0.5f, 0);
         actionRowRT.anchorMax = new Vector2(0.5f, 0);
         actionRowRT.pivot = new Vector2(0.5f, 0);
-        actionRowRT.anchoredPosition = new Vector2(0, 18);
-        actionRowRT.sizeDelta = new Vector2(430, 52);
+        actionRowRT.anchoredPosition = new Vector2(0, 14);
+        actionRowRT.sizeDelta = new Vector2(436, 46);
 
         HorizontalLayoutGroup actLayout = actionRowGO.AddComponent<HorizontalLayoutGroup>();
         actLayout.spacing = 14;
@@ -552,21 +608,27 @@ public static class KitchenCanvasBuilder
         actLayout.childControlWidth = true;
         actLayout.childControlHeight = true;
 
-        CreateActionButton("CookButton", actionRowGO.transform, "🔥 BẮT ĐẦU NẤU", new Color(0.32f, 0.65f, 0.16f), Color.white, font);
-        CreateActionButton("CancelButton", actionRowGO.transform, "✕ HỦY NGUYÊN LIỆU", new Color(0.82f, 0.22f, 0.22f), Color.white, font);
+        CreateActionButton("CookButton", actionRowGO.transform, "🔥 BẮT ĐẦU NẤU", new Color(0.18f, 0.52f, 0.20f, 1f), Color.white, frameSprite, font);
+        CreateActionButton("CancelButton", actionRowGO.transform, "✕ HỦY NGUYÊN LIỆU", new Color(0.65f, 0.20f, 0.20f, 1f), Color.white, frameSprite, font);
 
         // ==========================================
         // 7. RIGHT COLUMN: BALO NGUYÊN LIỆU (BACKPACK)
+        // Width: 370px, Height: 616px (anchored right)
         // ==========================================
         GameObject rightPanelGO = CreateUIObject("RightPanel_Backpack", windowGO.transform);
         RectTransform rightPanelRT = rightPanelGO.GetComponent<RectTransform>();
-        rightPanelRT.anchorMin = new Vector2(0.686f, 0.024f);
-        rightPanelRT.anchorMax = new Vector2(0.984f, 0.900f);
-        rightPanelRT.offsetMin = Vector2.zero;
-        rightPanelRT.offsetMax = Vector2.zero;
+        rightPanelRT.anchorMin = new Vector2(1, 0);
+        rightPanelRT.anchorMax = new Vector2(1, 1);
+        rightPanelRT.offsetMin = new Vector2(-386, 14);
+        rightPanelRT.offsetMax = new Vector2(-16, -70);
 
         Image rightBg = rightPanelGO.AddComponent<Image>();
-        rightBg.color = new Color(0.98f, 0.96f, 0.93f, 1f); // Warm ivory
+        rightBg.color = new Color(0.11f, 0.13f, 0.18f, 0.96f); // Dark slate frame
+        if (frameSprite != null)
+        {
+            rightBg.sprite = frameSprite;
+            rightBg.type = Image.Type.Sliced;
+        }
 
         // Header Tag: "BALO NGUYÊN LIỆU"
         GameObject rightTagGO = CreateUIObject("HeaderTag", rightPanelGO.transform);
@@ -575,13 +637,13 @@ public static class KitchenCanvasBuilder
         rightTagRT.anchorMax = new Vector2(0.5f, 1f);
         rightTagRT.pivot = new Vector2(0.5f, 0.5f);
         rightTagRT.anchoredPosition = new Vector2(0, 0);
-        rightTagRT.sizeDelta = new Vector2(230, 36);
+        rightTagRT.sizeDelta = new Vector2(220, 32);
 
         Image rightTagBg = rightTagGO.AddComponent<Image>();
-        rightTagBg.color = new Color(0.36f, 0.22f, 0.14f, 1f);
-        if (headerPlaqueSprite != null)
+        rightTagBg.color = new Color(0.24f, 0.16f, 0.10f, 1f);
+        if (toolbarSprite != null)
         {
-            rightTagBg.sprite = headerPlaqueSprite;
+            rightTagBg.sprite = toolbarSprite;
             rightTagBg.type = Image.Type.Sliced;
         }
 
@@ -591,34 +653,34 @@ public static class KitchenCanvasBuilder
         TextMeshProUGUI rightTagTMP = rightTagTextGO.AddComponent<TextMeshProUGUI>();
         if (font != null) rightTagTMP.font = font;
         rightTagTMP.text = "BALO NGUYÊN LIỆU";
-        rightTagTMP.fontSize = 15;
+        rightTagTMP.fontSize = 14;
         rightTagTMP.fontStyle = FontStyles.Bold;
         rightTagTMP.alignment = TextAlignmentOptions.Center;
-        rightTagTMP.color = new Color(1f, 0.96f, 0.88f);
+        rightTagTMP.color = new Color(1f, 0.88f, 0.51f);
 
-        // Subtitle: "Kéo thả nguyên liệu từ Balo vào 4 ô nấu ăn:"
+        // Subtitle
         GameObject subGO = CreateUIObject("BackpackSubtitle", rightPanelGO.transform);
         RectTransform subRT = subGO.GetComponent<RectTransform>();
         subRT.anchorMin = new Vector2(0, 1);
         subRT.anchorMax = new Vector2(1, 1);
         subRT.pivot = new Vector2(0.5f, 1);
-        subRT.anchoredPosition = new Vector2(0, -26);
-        subRT.sizeDelta = new Vector2(-24, 26);
+        subRT.anchoredPosition = new Vector2(0, -28);
+        subRT.sizeDelta = new Vector2(-20, 22);
         TextMeshProUGUI subTMP = subGO.AddComponent<TextMeshProUGUI>();
         if (font != null) subTMP.font = font;
-        subTMP.text = "Kéo thả nguyên liệu từ Balo vào 4 ô nấu ăn:";
-        subTMP.fontSize = 14;
+        subTMP.text = "Nhấp nguyên liệu để thêm vào nồi:";
+        subTMP.fontSize = 12;
         subTMP.fontStyle = FontStyles.Bold;
         subTMP.alignment = TextAlignmentOptions.MidlineLeft;
-        subTMP.color = new Color(0.35f, 0.22f, 0.16f);
+        subTMP.color = new Color(0.70f, 0.75f, 0.84f);
 
         // Backpack Scroll View
         GameObject bpScrollGO = CreateUIObject("BackpackScrollView", rightPanelGO.transform);
         RectTransform bpScrollRT = bpScrollGO.GetComponent<RectTransform>();
         bpScrollRT.anchorMin = new Vector2(0, 0);
         bpScrollRT.anchorMax = new Vector2(1, 1);
-        bpScrollRT.offsetMin = new Vector2(12, 70);
-        bpScrollRT.offsetMax = new Vector2(-12, -56);
+        bpScrollRT.offsetMin = new Vector2(10, 64);
+        bpScrollRT.offsetMax = new Vector2(-10, -52);
 
         ScrollRect bpScroll = bpScrollGO.AddComponent<ScrollRect>();
         bpScroll.horizontal = false;
@@ -639,11 +701,12 @@ public static class KitchenCanvasBuilder
         bpContentRT.sizeDelta = new Vector2(0, 0);
 
         GridLayoutGroup bpGrid = bpContentGO.AddComponent<GridLayoutGroup>();
-        bpGrid.cellSize = new Vector2(66, 66);
+        bpGrid.cellSize = new Vector2(52, 52);
         bpGrid.spacing = new Vector2(8, 8);
         bpGrid.padding = new RectOffset(6, 6, 6, 6);
         bpGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         bpGrid.constraintCount = 5;
+        bpGrid.childAlignment = TextAnchor.UpperCenter;
 
         ContentSizeFitter bpFitter = bpContentGO.AddComponent<ContentSizeFitter>();
         bpFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -656,7 +719,7 @@ public static class KitchenCanvasBuilder
         bpActRowRT.anchorMax = new Vector2(0.5f, 0);
         bpActRowRT.pivot = new Vector2(0.5f, 0);
         bpActRowRT.anchoredPosition = new Vector2(0, 14);
-        bpActRowRT.sizeDelta = new Vector2(390, 46);
+        bpActRowRT.sizeDelta = new Vector2(346, 40);
 
         HorizontalLayoutGroup bpActLayout = bpActRowGO.AddComponent<HorizontalLayoutGroup>();
         bpActLayout.spacing = 10;
@@ -665,36 +728,36 @@ public static class KitchenCanvasBuilder
         bpActLayout.childControlWidth = true;
         bpActLayout.childControlHeight = true;
 
-        CreateActionButton("SortButton", bpActRowGO.transform, "⚡ SẮP XẾP TÚI", new Color(0.68f, 0.45f, 0.16f), Color.white, font);
-        CreateActionButton("ClearButton", bpActRowGO.transform, "🧹 LÀM TRỐNG Ô", new Color(0.94f, 0.90f, 0.84f), new Color(0.36f, 0.22f, 0.14f), font);
+        CreateActionButton("SortButton", bpActRowGO.transform, "⚡ SẮP XẾP TÚI", new Color(0.70f, 0.46f, 0.12f, 1f), Color.white, frameSprite, font);
+        CreateActionButton("ClearButton", bpActRowGO.transform, "🧹 LÀM TRỐNG Ô", new Color(0.24f, 0.27f, 0.35f, 1f), Color.white, frameSprite, font);
 
-        // 8. Feedback Toast (Floating notification banner)
+        // 8. Feedback Toast
         GameObject toastGO = CreateUIObject("FeedbackToast", overlayGO.transform);
         RectTransform toastRT = toastGO.GetComponent<RectTransform>();
         toastRT.anchorMin = new Vector2(0.5f, 1);
         toastRT.anchorMax = new Vector2(0.5f, 1);
         toastRT.pivot = new Vector2(0.5f, 1);
-        toastRT.anchoredPosition = new Vector2(0, -25);
-        toastRT.sizeDelta = new Vector2(560, 46);
+        toastRT.anchoredPosition = new Vector2(0, -22);
+        toastRT.sizeDelta = new Vector2(520, 42);
 
         Image toastBg = toastGO.AddComponent<Image>();
-        toastBg.color = new Color(0.16f, 0.10f, 0.06f, 0.94f);
-        if (headerPlaqueSprite != null)
+        toastBg.color = new Color(0.14f, 0.10f, 0.08f, 0.96f);
+        if (frameSprite != null)
         {
-            toastBg.sprite = headerPlaqueSprite;
+            toastBg.sprite = frameSprite;
             toastBg.type = Image.Type.Sliced;
         }
 
         GameObject toastTextGO = CreateUIObject("ToastText", toastGO.transform);
         RectTransform toastTextRT = toastTextGO.GetComponent<RectTransform>();
-        SetStretch(toastTextRT, 10);
+        SetStretch(toastTextRT, 8);
         TextMeshProUGUI toastTMP = toastTextGO.AddComponent<TextMeshProUGUI>();
         if (font != null) toastTMP.font = font;
         toastTMP.text = "Đã nấu thành công món ăn!";
-        toastTMP.fontSize = 16;
+        toastTMP.fontSize = 15;
         toastTMP.fontStyle = FontStyles.Bold;
         toastTMP.alignment = TextAlignmentOptions.Center;
-        toastTMP.color = new Color(1f, 0.95f, 0.85f);
+        toastTMP.color = new Color(1f, 0.88f, 0.51f);
         toastGO.SetActive(false);
         overlayGO.SetActive(false);
 
@@ -721,9 +784,7 @@ public static class KitchenCanvasBuilder
         }
         else
         {
-            // Open Base scene to ensure KitchenCanvas is present in it
             var openedScene = EditorSceneManager.OpenScene(SCENE_PATH, OpenSceneMode.Single);
-            // Check if already in scene
             var existing = GameObject.Find("KitchenCanvas");
             if (existing != null && existing != canvasGO)
             {
@@ -753,11 +814,16 @@ public static class KitchenCanvasBuilder
         rt.offsetMax = new Vector2(-margin, -margin);
     }
 
-    private static Button CreateTabButton(string name, Transform parent, string label, Color bgColor, Color textColor, TMP_FontAsset font)
+    private static Button CreateTabButton(string name, Transform parent, string label, Color bgColor, Color textColor, Sprite frameSprite, TMP_FontAsset font)
     {
         GameObject go = CreateUIObject(name, parent);
         Image img = go.AddComponent<Image>();
         img.color = bgColor;
+        if (frameSprite != null)
+        {
+            img.sprite = frameSprite;
+            img.type = Image.Type.Sliced;
+        }
         Button btn = go.AddComponent<Button>();
 
         GameObject textGO = CreateUIObject("Label", go.transform);
@@ -766,7 +832,7 @@ public static class KitchenCanvasBuilder
         TextMeshProUGUI tmp = textGO.AddComponent<TextMeshProUGUI>();
         if (font != null) tmp.font = font;
         tmp.text = label;
-        tmp.fontSize = 14;
+        tmp.fontSize = 13;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = textColor;
@@ -774,11 +840,16 @@ public static class KitchenCanvasBuilder
         return btn;
     }
 
-    private static Button CreateActionButton(string name, Transform parent, string label, Color bgColor, Color textColor, TMP_FontAsset font)
+    private static Button CreateActionButton(string name, Transform parent, string label, Color bgColor, Color textColor, Sprite frameSprite, TMP_FontAsset font)
     {
         GameObject go = CreateUIObject(name, parent);
         Image img = go.AddComponent<Image>();
         img.color = bgColor;
+        if (frameSprite != null)
+        {
+            img.sprite = frameSprite;
+            img.type = Image.Type.Sliced;
+        }
         Button btn = go.AddComponent<Button>();
 
         GameObject textGO = CreateUIObject("ActionText", go.transform);
@@ -787,7 +858,7 @@ public static class KitchenCanvasBuilder
         TextMeshProUGUI tmp = textGO.AddComponent<TextMeshProUGUI>();
         if (font != null) tmp.font = font;
         tmp.text = label;
-        tmp.fontSize = 17;
+        tmp.fontSize = 15;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = textColor;
@@ -795,17 +866,17 @@ public static class KitchenCanvasBuilder
         return btn;
     }
 
-    private static void CreatePotSlot(string name, Transform parent, Sprite slotFrameSprite, TMP_FontAsset font)
+    private static void CreatePotSlot(string name, Transform parent, Sprite slotSprite, Sprite frameSprite, TMP_FontAsset font)
     {
         GameObject slotGO = CreateUIObject(name, parent);
         RectTransform slotRT = slotGO.GetComponent<RectTransform>();
-        slotRT.sizeDelta = new Vector2(84, 84);
+        slotRT.sizeDelta = new Vector2(64, 64);
 
         Image slotBg = slotGO.AddComponent<Image>();
-        slotBg.color = new Color(0.96f, 0.93f, 0.87f, 1f);
-        if (slotFrameSprite != null)
+        slotBg.color = new Color(0.15f, 0.17f, 0.22f, 1f);
+        if (slotSprite != null)
         {
-            slotBg.sprite = slotFrameSprite;
+            slotBg.sprite = slotSprite;
             slotBg.type = Image.Type.Sliced;
         }
 
@@ -814,15 +885,20 @@ public static class KitchenCanvasBuilder
         // Highlight Border
         GameObject hlGO = CreateUIObject("HighlightBorder", slotGO.transform);
         RectTransform hlRT = hlGO.GetComponent<RectTransform>();
-        SetStretch(hlRT, -3);
+        SetStretch(hlRT, -2);
         Image hlImg = hlGO.AddComponent<Image>();
-        hlImg.color = new Color(0.24f, 0.60f, 0.96f, 0.85f); // Vibrant blue highlight border
+        hlImg.color = new Color(0.16f, 0.71f, 0.96f, 0.9f); // Cyan highlight
+        if (frameSprite != null)
+        {
+            hlImg.sprite = frameSprite;
+            hlImg.type = Image.Type.Sliced;
+        }
         hlGO.SetActive(false);
 
         // Item Icon
         GameObject iconGO = CreateUIObject("ItemIcon", slotGO.transform);
         RectTransform iconRT = iconGO.GetComponent<RectTransform>();
-        SetStretch(iconRT, 12);
+        SetStretch(iconRT, 8);
         Image iconImg = iconGO.AddComponent<Image>();
         iconImg.color = Color.white;
         iconGO.SetActive(false);
@@ -837,24 +913,24 @@ public static class KitchenCanvasBuilder
         TextMeshProUGUI countTMP = countGO.AddComponent<TextMeshProUGUI>();
         if (font != null) countTMP.font = font;
         countTMP.text = "x1";
-        countTMP.fontSize = 15;
+        countTMP.fontSize = 14;
         countTMP.fontStyle = FontStyles.Bold;
         countTMP.alignment = TextAlignmentOptions.BottomRight;
-        countTMP.color = Color.black;
+        countTMP.color = Color.white;
         countGO.SetActive(false);
     }
 
-    private static GameObject CreateRecipeCardTemplate(Transform parent, Sprite cardBg, Sprite iconFrame, Sprite defaultDish, TMP_FontAsset font)
+    private static GameObject CreateRecipeCardTemplate(Transform parent, Sprite frameSprite, Sprite slotSprite, Sprite defaultDish, TMP_FontAsset font)
     {
         GameObject cardGO = CreateUIObject("RecipeCardTemplate", parent);
         RectTransform cardRT = cardGO.GetComponent<RectTransform>();
-        cardRT.sizeDelta = new Vector2(415, 94);
+        cardRT.sizeDelta = new Vector2(346, 82);
 
         Image bg = cardGO.AddComponent<Image>();
-        bg.color = Color.white;
-        if (cardBg != null)
+        bg.color = new Color(0.15f, 0.18f, 0.25f, 0.95f);
+        if (frameSprite != null)
         {
-            bg.sprite = cardBg;
+            bg.sprite = frameSprite;
             bg.type = Image.Type.Sliced;
         }
 
@@ -867,21 +943,21 @@ public static class KitchenCanvasBuilder
         ifRT.anchorMin = new Vector2(0, 0.5f);
         ifRT.anchorMax = new Vector2(0, 0.5f);
         ifRT.pivot = new Vector2(0, 0.5f);
-        ifRT.anchoredPosition = new Vector2(12, 0);
-        ifRT.sizeDelta = new Vector2(68, 68);
+        ifRT.anchoredPosition = new Vector2(10, 0);
+        ifRT.sizeDelta = new Vector2(54, 54);
 
         Image ifImg = iconFrameGO.AddComponent<Image>();
-        ifImg.color = Color.white;
-        if (iconFrame != null)
+        ifImg.color = new Color(0.18f, 0.21f, 0.28f, 1f);
+        if (slotSprite != null)
         {
-            ifImg.sprite = iconFrame;
+            ifImg.sprite = slotSprite;
             ifImg.type = Image.Type.Sliced;
         }
         cardUI.iconFrame = ifImg;
 
         GameObject dishIconGO = CreateUIObject("DishIcon", iconFrameGO.transform);
         RectTransform diRT = dishIconGO.GetComponent<RectTransform>();
-        SetStretch(diRT, 6);
+        SetStretch(diRT, 4);
         Image diImg = dishIconGO.AddComponent<Image>();
         if (defaultDish != null) diImg.sprite = defaultDish;
         cardUI.dishIcon = diImg;
@@ -891,8 +967,8 @@ public static class KitchenCanvasBuilder
         RectTransform infoRT = infoGO.GetComponent<RectTransform>();
         infoRT.anchorMin = new Vector2(0, 0);
         infoRT.anchorMax = new Vector2(1, 1);
-        infoRT.offsetMin = new Vector2(90, 8);
-        infoRT.offsetMax = new Vector2(-115, -8);
+        infoRT.offsetMin = new Vector2(70, 6);
+        infoRT.offsetMax = new Vector2(-96, -6);
 
         // Title Row (Name + Stars)
         GameObject titleRowGO = CreateUIObject("TitleRow", infoGO.transform);
@@ -901,7 +977,7 @@ public static class KitchenCanvasBuilder
         trRT.anchorMax = new Vector2(1, 1);
         trRT.pivot = new Vector2(0, 1);
         trRT.anchoredPosition = new Vector2(0, 0);
-        trRT.sizeDelta = new Vector2(0, 26);
+        trRT.sizeDelta = new Vector2(0, 22);
 
         GameObject titleTextGO = CreateUIObject("TitleText", titleRowGO.transform);
         RectTransform ttRT = titleTextGO.GetComponent<RectTransform>();
@@ -911,10 +987,10 @@ public static class KitchenCanvasBuilder
         ttRT.offsetMax = Vector2.zero;
         TextMeshProUGUI ttTMP = titleTextGO.AddComponent<TextMeshProUGUI>();
         if (font != null) ttTMP.font = font;
-        ttTMP.text = "Súp Cà Chua Đậm Đà";
-        ttTMP.fontSize = 16;
+        ttTMP.text = "Súp Cà Chua";
+        ttTMP.fontSize = 14;
         ttTMP.fontStyle = FontStyles.Bold;
-        ttTMP.color = new Color(0.24f, 0.14f, 0.08f);
+        ttTMP.color = new Color(1f, 0.92f, 0.75f);
         cardUI.titleText = ttTMP;
 
         GameObject starsTextGO = CreateUIObject("StarsText", titleRowGO.transform);
@@ -926,7 +1002,7 @@ public static class KitchenCanvasBuilder
         TextMeshProUGUI stTMP = starsTextGO.AddComponent<TextMeshProUGUI>();
         if (font != null) stTMP.font = font;
         stTMP.text = "⭐⭐⭐";
-        stTMP.fontSize = 14;
+        stTMP.fontSize = 12;
         stTMP.alignment = TextAlignmentOptions.MidlineRight;
         stTMP.color = new Color(1f, 0.78f, 0.18f); // Gold stars
         cardUI.starsText = stTMP;
@@ -940,9 +1016,9 @@ public static class KitchenCanvasBuilder
         dtRT.offsetMax = Vector2.zero;
         TextMeshProUGUI dtTMP = detailGO.AddComponent<TextMeshProUGUI>();
         if (font != null) dtTMP.font = font;
-        dtTMP.text = "Hồi 45 HP & 60 Độ No | Cần: Cà Chua x2 + Nước x1";
-        dtTMP.fontSize = 13;
-        dtTMP.color = new Color(0.42f, 0.30f, 0.22f);
+        dtTMP.text = "Hồi 45 HP & 60 No | Cần: Cà Chua x2";
+        dtTMP.fontSize = 11;
+        dtTMP.color = new Color(0.72f, 0.78f, 0.85f);
         cardUI.detailText = dtTMP;
 
         // Action Button
@@ -951,11 +1027,16 @@ public static class KitchenCanvasBuilder
         abRT.anchorMin = new Vector2(1, 0.5f);
         abRT.anchorMax = new Vector2(1, 0.5f);
         abRT.pivot = new Vector2(1, 0.5f);
-        abRT.anchoredPosition = new Vector2(-12, 0);
-        abRT.sizeDelta = new Vector2(100, 38);
+        abRT.anchoredPosition = new Vector2(-10, 0);
+        abRT.sizeDelta = new Vector2(86, 32);
 
         Image abImg = actBtnGO.AddComponent<Image>();
-        abImg.color = new Color(0.48f, 0.32f, 0.22f, 1f); // Cocoa brown
+        abImg.color = new Color(0.18f, 0.52f, 0.20f, 1f); // Emerald green
+        if (frameSprite != null)
+        {
+            abImg.sprite = frameSprite;
+            abImg.type = Image.Type.Sliced;
+        }
         Button abBtn = actBtnGO.AddComponent<Button>();
         cardUI.actionButton = abBtn;
         cardUI.actionButtonBackground = abImg;
@@ -966,7 +1047,7 @@ public static class KitchenCanvasBuilder
         TextMeshProUGUI atTMP = actTextGO.AddComponent<TextMeshProUGUI>();
         if (font != null) atTMP.font = font;
         atTMP.text = "TỰ ĐIỀN";
-        atTMP.fontSize = 14;
+        atTMP.fontSize = 13;
         atTMP.fontStyle = FontStyles.Bold;
         atTMP.alignment = TextAlignmentOptions.Center;
         atTMP.color = Color.white;

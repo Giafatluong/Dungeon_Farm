@@ -195,7 +195,7 @@ public static class SceneCanvasSetup
             if (invPanelT != null) invPanelT.gameObject.SetActive(false);
 
             Transform chestPanelT = hudCanvasGO.transform.Find("ChestPanel");
-            if (chestPanelT != null) chestPanelT.gameObject.SetActive(false);
+            if (chestPanelT != null) Object.DestroyImmediate(chestPanelT.gameObject);
 
             Transform enterDungeonT = hudCanvasGO.transform.Find("EnterDungeonPanel");
             if (enterDungeonT != null) enterDungeonT.gameObject.SetActive(false);
@@ -335,7 +335,139 @@ public static class SceneCanvasSetup
             Debug.Log("[SceneCanvasSetup] KitchenCanvas configured cleanly (Overlay deactivated by default).");
         }
 
-        // 8. Mark dirty & save scene
+        // 7.5. Setup Canvas: ChestCanvas (Home Chest & Storage)
+        var allChestUIs = Object.FindObjectsByType<ChestUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        GameObject primaryChestCanvas = null;
+
+        if (allChestUIs.Length > 0)
+        {
+            primaryChestCanvas = allChestUIs[0].gameObject;
+            for (int i = 1; i < allChestUIs.Length; i++)
+            {
+                if (allChestUIs[i] != null && allChestUIs[i].gameObject != primaryChestCanvas)
+                {
+                    Object.DestroyImmediate(allChestUIs[i].gameObject);
+                }
+            }
+        }
+        else
+        {
+            primaryChestCanvas = ChestCanvasBuilder.BuildChestCanvas();
+        }
+
+        if (primaryChestCanvas != null)
+        {
+            primaryChestCanvas.name = "ChestCanvas";
+            primaryChestCanvas.transform.SetParent(null);
+
+            Canvas cCanvas = primaryChestCanvas.GetComponent<Canvas>();
+            if (cCanvas != null)
+            {
+                cCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                cCanvas.sortingOrder = 21;
+            }
+
+            CanvasScaler cScaler = primaryChestCanvas.GetComponent<CanvasScaler>();
+            if (cScaler != null)
+            {
+                cScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                cScaler.referenceResolution = new Vector2(1920, 1080);
+                cScaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+                cScaler.matchWidthOrHeight = 0.5f;
+            }
+
+            ChestUI cui = primaryChestCanvas.GetComponent<ChestUI>();
+            if (cui != null)
+            {
+                cui.AutoBindReferences();
+            }
+
+            Transform chestOverlayT = primaryChestCanvas.transform.Find("ChestOverlay");
+            if (chestOverlayT != null)
+            {
+                chestOverlayT.gameObject.SetActive(false);
+            }
+
+            Debug.Log("[SceneCanvasSetup] ChestCanvas validated (Overlay deactivated by default).");
+        }
+
+        // 8. Setup Canvas 4: DungeonEntranceCanvas
+        var allDungeonUIs = Object.FindObjectsByType<DungeonEntranceUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        if (allDungeonUIs.Length > 0)
+        {
+            GameObject primaryDungeonCanvas = allDungeonUIs[0].gameObject;
+            for (int i = 1; i < allDungeonUIs.Length; i++)
+            {
+                if (allDungeonUIs[i] != null && allDungeonUIs[i].gameObject != primaryDungeonCanvas)
+                {
+                    Object.DestroyImmediate(allDungeonUIs[i].gameObject);
+                }
+            }
+
+            Canvas dCanvas = primaryDungeonCanvas.GetComponent<Canvas>();
+            if (dCanvas != null)
+            {
+                dCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                dCanvas.sortingOrder = 25;
+            }
+
+            CanvasScaler dScaler = primaryDungeonCanvas.GetComponent<CanvasScaler>();
+            if (dScaler != null)
+            {
+                dScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                dScaler.referenceResolution = new Vector2(1920, 1080);
+                dScaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+                dScaler.matchWidthOrHeight = 0.5f;
+            }
+
+            Transform enterPanelT = primaryDungeonCanvas.transform.Find("EnterDungeonPanel");
+            if (enterPanelT != null)
+            {
+                enterPanelT.gameObject.SetActive(false);
+            }
+
+            Debug.Log("[SceneCanvasSetup] DungeonEntranceCanvas validated (Overlay deactivated by default).");
+        }
+
+        // 9. Setup Canvas 5: StatueCanvas
+        var allStatueUIs = Object.FindObjectsByType<StatueUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        if (allStatueUIs.Length > 0)
+        {
+            GameObject primaryStatueCanvas = allStatueUIs[0].gameObject;
+            for (int i = 1; i < allStatueUIs.Length; i++)
+            {
+                if (allStatueUIs[i] != null && allStatueUIs[i].gameObject != primaryStatueCanvas)
+                {
+                    Object.DestroyImmediate(allStatueUIs[i].gameObject);
+                }
+            }
+
+            Canvas sCanvas = primaryStatueCanvas.GetComponent<Canvas>();
+            if (sCanvas != null)
+            {
+                sCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                sCanvas.sortingOrder = 22;
+            }
+
+            CanvasScaler sScaler = primaryStatueCanvas.GetComponent<CanvasScaler>();
+            if (sScaler != null)
+            {
+                sScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                sScaler.referenceResolution = new Vector2(1920, 1080);
+                sScaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+                sScaler.matchWidthOrHeight = 0.5f;
+            }
+
+            Transform statuePanelT = primaryStatueCanvas.transform.Find("StatuePanel");
+            if (statuePanelT != null)
+            {
+                statuePanelT.gameObject.SetActive(false);
+            }
+
+            Debug.Log("[SceneCanvasSetup] StatueCanvas validated (Panel deactivated by default).");
+        }
+
+        // 10. Mark dirty & save scene
         EditorSceneManager.MarkSceneDirty(activeScene);
         EditorSceneManager.SaveScene(activeScene);
         Debug.Log("[SceneCanvasSetup] SUCCESS: Base.unity scene and all canvases saved successfully!");

@@ -1,7 +1,7 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.EventSystems;
 using System.Collections;
-
+using TMPro;
 
 namespace TMPro.Examples
 {

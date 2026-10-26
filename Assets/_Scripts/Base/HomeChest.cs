@@ -142,6 +142,7 @@ public class HomeChest : MonoBehaviour, IInteractable
 
         if (isOpen && Input.GetKeyDown(KeyCode.Escape))
         {
+            UIEscapeManager.ConsumeEscape();
             CloseChest();
         }
     }

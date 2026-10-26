@@ -40,18 +40,18 @@ public class DungeonEventUI : MonoBehaviour
     }
 
     [Header("Panels")]
-    [SerializeField] private GameObject eventPanel;
-    [SerializeField] private RectTransform choicesContainer;
-    [SerializeField] private Canvas canvas;
+    [SerializeField] public GameObject eventPanel;
+    [SerializeField] public RectTransform choicesContainer;
+    [SerializeField] public Canvas canvas;
 
     [Header("Text Labels")]
-    [SerializeField] private TextMeshProUGUI categoryText;
-    [SerializeField] private TextMeshProUGUI titleText;
-    [SerializeField] private TextMeshProUGUI narrativeText;
-    [SerializeField] private TextMeshProUGUI statusFeedbackText;
+    [SerializeField] public TextMeshProUGUI categoryText;
+    [SerializeField] public TextMeshProUGUI titleText;
+    [SerializeField] public TextMeshProUGUI narrativeText;
+    [SerializeField] public TextMeshProUGUI statusFeedbackText;
 
     [Header("Proceed Controls")]
-    [SerializeField] private Button continueButton;
+    [SerializeField] public Button continueButton;
 
     private DungeonEvent currentEvent;
     private PlayerStats currentPlayer;
@@ -91,6 +91,15 @@ public class DungeonEventUI : MonoBehaviour
         if (_instance == this)
         {
             _instance = null;
+        }
+    }
+
+    private void Update()
+    {
+        if (IsOpen && Input.GetKeyDown(KeyCode.Escape))
+        {
+            UIEscapeManager.ConsumeEscape();
+            OnContinueClicked();
         }
     }
     #endregion
@@ -204,20 +213,13 @@ public class DungeonEventUI : MonoBehaviour
         narrativeText.alignment = TextAlignmentOptions.TopLeft;
 
         // 5. Choices Container
-        GameObject choicesGO = new("ChoicesContainer", typeof(RectTransform), typeof(VerticalLayoutGroup));
+        GameObject choicesGO = new("ChoicesContainer", typeof(RectTransform));
         choicesGO.transform.SetParent(modalGO.transform, false);
         choicesContainer = choicesGO.GetComponent<RectTransform>();
         choicesContainer.anchorMin = new Vector2(0, 0);
         choicesContainer.anchorMax = new Vector2(1, 0.50f);
-        choicesContainer.offsetMin = new Vector2(24, 56);
+        choicesContainer.offsetMin = new Vector2(24, 52);
         choicesContainer.offsetMax = new Vector2(-24, 0);
-
-        VerticalLayoutGroup vlg = choicesGO.GetComponent<VerticalLayoutGroup>();
-        vlg.spacing = 8f;
-        vlg.childControlWidth = true;
-        vlg.childControlHeight = true;
-        vlg.childForceExpandWidth = true;
-        vlg.childForceExpandHeight = false;
 
         // 6. Footer: StatusFeedbackText & ContinueButton
         GameObject feedbackGO = new("StatusFeedbackText", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -346,20 +348,38 @@ public class DungeonEventUI : MonoBehaviour
 
     private void BuildChoiceButtons()
     {
-        // Remove old buttons
-        for (int i = 0; i < activeChoiceButtons.Count; i++)
+        // Clean up any existing choice buttons in container
+        if (choicesContainer != null)
         {
-            if (activeChoiceButtons[i] != null)
+            List<Transform> toRemove = new();
+            foreach (Transform child in choicesContainer)
             {
-                Destroy(activeChoiceButtons[i]);
+                if (child != null) toRemove.Add(child);
+            }
+            for (int i = 0; i < toRemove.Count; i++)
+            {
+                toRemove[i].SetParent(null);
+                Destroy(toRemove[i].gameObject);
             }
         }
         activeChoiceButtons.Clear();
 
-        // Create button for each choice in event
         if (currentEvent == null || currentEvent.choices == null || choicesContainer == null)
             return;
 
+        // Disable any VerticalLayoutGroup on container to prevent delayed layout override / overlap conflicts
+        VerticalLayoutGroup vlg = choicesContainer.GetComponent<VerticalLayoutGroup>();
+        if (vlg != null)
+        {
+            vlg.enabled = false;
+        }
+
+        int uiLayer = choicesContainer.gameObject.layer;
+        float paddingTop = 8f;
+        float buttonHeight = 44f;
+        float spacing = 10f;
+
+        // Create button for each choice in event with rock-solid pixel-perfect positioning
         for (int i = 0; i < currentEvent.choices.Count; i++)
         {
             DungeonEventChoice choice = currentEvent.choices[i];
@@ -368,19 +388,25 @@ public class DungeonEventUI : MonoBehaviour
             string reason = string.Empty;
             bool canSelect = choice.isLeaveChoice || choice.CanPlayerSelect(currentPlayer, currentBackpack, out reason);
 
-            // Create choice button
             GameObject btnGO = new GameObject($"ChoiceButton_{i}", typeof(RectTransform), typeof(UnityEngine.UI.Image), typeof(UnityEngine.UI.Button));
+            btnGO.layer = uiLayer;
             btnGO.transform.SetParent(choicesContainer, false);
 
             RectTransform btnRT = btnGO.GetComponent<RectTransform>();
-            btnRT.sizeDelta = new Vector2(400, 44);
+            btnRT.anchorMin = new Vector2(0, 1);
+            btnRT.anchorMax = new Vector2(1, 1);
+            btnRT.pivot = new Vector2(0.5f, 1f);
+
+            float startY = -paddingTop - (i * (buttonHeight + spacing));
+            btnRT.anchoredPosition = new Vector2(0, startY);
+            btnRT.sizeDelta = new Vector2(-32f, buttonHeight);
 
             UnityEngine.UI.Image btnImg = btnGO.GetComponent<UnityEngine.UI.Image>();
             UnityEngine.UI.Button btn = btnGO.GetComponent<UnityEngine.UI.Button>();
 
             if (canSelect)
             {
-                DungeonUIAssetHelper.StyleButton(btn, btnImg, new Color(0.16f, 0.19f, 0.28f, 0.95f), new Color(0.24f, 0.29f, 0.40f, 1f));
+                DungeonUIAssetHelper.StyleButton(btn, btnImg, new Color(0.16f, 0.20f, 0.30f, 0.95f), new Color(0.26f, 0.32f, 0.45f, 1f));
                 btn.interactable = true;
             }
             else
@@ -389,30 +415,39 @@ public class DungeonEventUI : MonoBehaviour
                 btn.interactable = false;
             }
 
+            Outline outline = btnGO.AddComponent<Outline>();
+            outline.effectColor = canSelect ? new Color(0.40f, 0.52f, 0.72f, 0.75f) : new Color(0.2f, 0.2f, 0.25f, 0.4f);
+            outline.effectDistance = new Vector2(1, -1);
+
             // Label text
             GameObject textGO = new GameObject("Label", typeof(RectTransform), typeof(TMPro.TextMeshProUGUI));
+            textGO.layer = uiLayer;
             textGO.transform.SetParent(btnGO.transform, false);
             RectTransform textRT = textGO.GetComponent<RectTransform>();
             textRT.anchorMin = Vector2.zero;
             textRT.anchorMax = Vector2.one;
             textRT.sizeDelta = Vector2.zero;
-            textRT.offsetMin = new Vector2(14, 4);
-            textRT.offsetMax = new Vector2(-14, -4);
+            textRT.offsetMin = new Vector2(18, 0);
+            textRT.offsetMax = new Vector2(-18, 0);
 
             TMPro.TextMeshProUGUI label = textGO.GetComponent<TMPro.TextMeshProUGUI>();
             DungeonUIAssetHelper.ApplyFont(label);
             label.fontSize = 12.5f;
             label.alignment = TMPro.TextAlignmentOptions.MidlineLeft;
+            label.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+            label.overflowMode = TMPro.TextOverflowModes.Ellipsis;
+            label.raycastTarget = false;
+            label.color = Color.white;
 
             if (canSelect)
             {
                 label.text = string.IsNullOrEmpty(choice.choiceDetails)
                     ? $"<b><color=#FFD070>{choice.choiceLabel}</color></b>"
-                    : $"<b><color=#FFD070>{choice.choiceLabel}</color></b>   <size=11><color=#C8D0DC>{choice.choiceDetails}</color></size>";
+                    : $"<b><color=#FFD070>{choice.choiceLabel}</color></b>   <size=11.5><color=#D0D8E6>{choice.choiceDetails}</color></size>";
             }
             else
             {
-                label.text = $"<b><color=#666666>{choice.choiceLabel}</color></b>   <size=11><color=#FF6666><b>[Missing: {reason}]</b></color></size>";
+                label.text = $"<b><color=#777777>{choice.choiceLabel}</color></b>   <size=11.5><color=#FF6666><b>[Missing: {reason}]</b></color></size>";
             }
 
             // Bind listener (capture local index)
@@ -528,7 +563,7 @@ public class DungeonEventUI : MonoBehaviour
         }
     }
 
-    private void OnContinueClicked()
+    public void OnContinueClicked()
     {
         Close();
     }

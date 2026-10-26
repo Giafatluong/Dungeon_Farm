@@ -50,10 +50,28 @@ public class DayTransitionUI : MonoBehaviour
 
         Instance = this;
         EnsureUIConstructed();
+        ResetToHiddenState();
+    }
+
+    private void OnEnable()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += HandleSceneLoaded;
+        ResetToHiddenState();
+    }
+
+    private void OnDisable()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= HandleSceneLoaded;
+    }
+
+    private void HandleSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        ResetToHiddenState();
     }
 
     private void OnDestroy()
     {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= HandleSceneLoaded;
         if (Instance == this) Instance = null;
     }
 
@@ -65,7 +83,7 @@ public class DayTransitionUI : MonoBehaviour
 
     private void Update()
     {
-        // Support pressing Space, Enter, E, or ESC to confirm morning report and start day
+        // Support pressing Space, Enter, E, ESC, or clicking the button to confirm morning report and start day
         if (isWaitingForPlayerConfirm)
         {
             if (Input.GetKeyDown(KeyCode.Space) || 
@@ -74,13 +92,35 @@ public class DayTransitionUI : MonoBehaviour
                 Input.GetKeyDown(KeyCode.E) || 
                 Input.GetKeyDown(KeyCode.Escape))
             {
+                UIEscapeManager.ConsumeEscape();
                 OnStartNewDayClicked();
+                return;
+            }
+
+            // Fallback direct mouse click detection on the Start New Day Button
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (startNewDayButton != null)
+                {
+                    RectTransform btnRT = startNewDayButton.GetComponent<RectTransform>();
+                    if (btnRT != null && RectTransformUtility.RectangleContainsScreenPoint(btnRT, Input.mousePosition, null))
+                    {
+                        OnStartNewDayClicked();
+                        return;
+                    }
+                }
             }
         }
     }
 
     public void ResetToHiddenState()
     {
+        if (activeTransitionRoutine != null)
+        {
+            StopCoroutine(activeTransitionRoutine);
+            activeTransitionRoutine = null;
+        }
+
         if (fadeCanvasGroup != null)
         {
             fadeCanvasGroup.alpha = 0f;
@@ -153,6 +193,7 @@ public class DayTransitionUI : MonoBehaviour
         {
             morningReportModal.SetActive(true);
             morningReportModal.transform.localScale = Vector3.one * 0.95f;
+            morningReportModal.transform.SetAsLastSibling();
         }
 
         elapsed = 0f;
@@ -175,9 +216,19 @@ public class DayTransitionUI : MonoBehaviour
         if (modalCanvasGroup != null)
         {
             modalCanvasGroup.alpha = 1f;
+            modalCanvasGroup.interactable = true;
             modalCanvasGroup.blocksRaycasts = true;
         }
-        if (morningReportModal != null) morningReportModal.transform.localScale = Vector3.one;
+        if (morningReportModal != null)
+        {
+            morningReportModal.transform.localScale = Vector3.one;
+            morningReportModal.transform.SetAsLastSibling();
+        }
+        if (startNewDayButton != null)
+        {
+            startNewDayButton.interactable = true;
+            startNewDayButton.transform.SetAsLastSibling();
+        }
 
         isWaitingForPlayerConfirm = true;
     }
@@ -411,21 +462,40 @@ public class DayTransitionUI : MonoBehaviour
     {
         if (morningReportModal != null && fadeCanvasGroup != null) return;
 
-        // Find or create Canvas
+        // Find or create dedicated high-priority Canvas
         if (targetCanvas == null)
         {
-            targetCanvas = DungeonUIAssetHelper.GetMainScreenCanvas();
-            if (targetCanvas == null)
+            Canvas existing = null;
+            Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < canvases.Length; i++)
+            {
+                if (canvases[i] != null && canvases[i].name == "DayTransitionCanvas")
+                {
+                    existing = canvases[i];
+                    break;
+                }
+            }
+
+            if (existing != null)
+            {
+                targetCanvas = existing;
+            }
+            else
             {
                 GameObject canvasGO = new GameObject("DayTransitionCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
                 targetCanvas = canvasGO.GetComponent<Canvas>();
                 targetCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                targetCanvas.sortingOrder = 999; // Always on top
+                targetCanvas.sortingOrder = 9999; // Topmost priority so nothing in scene can block it
 
                 CanvasScaler scaler = canvasGO.GetComponent<CanvasScaler>();
                 scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 scaler.referenceResolution = new Vector2(1920, 1080);
                 scaler.matchWidthOrHeight = 0.5f;
+
+                GraphicRaycaster gr = canvasGO.GetComponent<GraphicRaycaster>();
+                gr.blockingObjects = GraphicRaycaster.BlockingObjects.None;
+
+                DontDestroyOnLoad(canvasGO);
             }
         }
 
@@ -444,6 +514,7 @@ public class DayTransitionUI : MonoBehaviour
 
             fadeOverlayImage = overlayGO.GetComponent<Image>();
             fadeOverlayImage.color = new Color(0.02f, 0.03f, 0.05f, 1f);
+            fadeOverlayImage.raycastTarget = true;
 
             fadeCanvasGroup = overlayGO.GetComponent<CanvasGroup>();
             fadeCanvasGroup.alpha = 0f;
@@ -466,9 +537,11 @@ public class DayTransitionUI : MonoBehaviour
 
             Image modalBg = morningReportModal.GetComponent<Image>();
             DungeonUIAssetHelper.StyleSlicedFrame(modalBg, new Color(0.11f, 0.13f, 0.18f, 0.98f));
+            modalBg.raycastTarget = true;
 
             modalCanvasGroup = morningReportModal.GetComponent<CanvasGroup>();
             modalCanvasGroup.alpha = 0f;
+            modalCanvasGroup.interactable = true;
             modalCanvasGroup.blocksRaycasts = false;
 
             // Header Container
@@ -497,6 +570,7 @@ public class DayTransitionUI : MonoBehaviour
             headerTitleText.alignment = TextAlignmentOptions.Center;
             headerTitleText.color = new Color(1f, 0.84f, 0.31f); // Warm Morning Gold
             headerTitleText.text = "[*] DAWN - DAY 01";
+            headerTitleText.raycastTarget = false;
 
             // Subtitle
             GameObject subGO = new GameObject("SubtitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -513,6 +587,7 @@ public class DayTransitionUI : MonoBehaviour
             headerSubtitleText.alignment = TextAlignmentOptions.Center;
             headerSubtitleText.color = new Color(0.7f, 0.76f, 0.84f);
             headerSubtitleText.text = "A peaceful night has passed. New changes have arrived across the farm and the world outside.";
+            headerSubtitleText.raycastTarget = false;
 
             // Divider Line
             GameObject divGO = new GameObject("Divider", typeof(RectTransform), typeof(Image));
@@ -524,6 +599,7 @@ public class DayTransitionUI : MonoBehaviour
             divRT.anchoredPosition = new Vector2(0, -106);
             Image divImg = divGO.GetComponent<Image>();
             divImg.color = new Color(0.7f, 0.55f, 0.22f, 0.6f);
+            divImg.raycastTarget = false;
 
             // 3. Content Sections Container
             GameObject contentGO = new GameObject("ContentContainer", typeof(RectTransform), typeof(VerticalLayoutGroup));
@@ -558,8 +634,11 @@ public class DayTransitionUI : MonoBehaviour
             btnRT.anchoredPosition = new Vector2(0, 24);
 
             Image btnImg = btnGO.GetComponent<Image>();
+            btnImg.raycastTarget = true;
             startNewDayButton = btnGO.GetComponent<Button>();
+            startNewDayButton.interactable = true;
             DungeonUIAssetHelper.StyleButton(startNewDayButton, btnImg, new Color(0.85f, 0.45f, 0.12f, 1f), new Color(1f, 0.60f, 0.25f, 1f));
+            startNewDayButton.onClick.RemoveAllListeners();
             startNewDayButton.onClick.AddListener(OnStartNewDayClicked);
 
             GameObject btnTextGO = new GameObject("BtnText", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -575,6 +654,7 @@ public class DayTransitionUI : MonoBehaviour
             startNewDayButtonText.fontStyle = FontStyles.Bold;
             startNewDayButtonText.alignment = TextAlignmentOptions.Center;
             startNewDayButtonText.color = Color.white;
+            startNewDayButtonText.raycastTarget = false; // Must not block button click!
             startNewDayButtonText.text = "START NEW DAY  (Space)";
 
             morningReportModal.SetActive(false);
@@ -588,6 +668,7 @@ public class DayTransitionUI : MonoBehaviour
 
         Image cardBg = cardGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(cardBg, new Color(0.07f, 0.08f, 0.12f, 0.90f));
+        cardBg.raycastTarget = false;
 
         VerticalLayoutGroup vlg = cardGO.GetComponent<VerticalLayoutGroup>();
         vlg.padding = new RectOffset(16, 16, 12, 12);
@@ -604,6 +685,7 @@ public class DayTransitionUI : MonoBehaviour
         titleText.fontSize = 16;
         titleText.fontStyle = FontStyles.Bold;
         titleText.color = new Color(0.96f, 0.77f, 0.35f);
+        titleText.raycastTarget = false;
 
         // Body
         GameObject bGO = new GameObject("SectionBody", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -613,6 +695,7 @@ public class DayTransitionUI : MonoBehaviour
         bodyText.fontSize = 14;
         bodyText.lineSpacing = 6f;
         bodyText.color = new Color(0.9f, 0.92f, 0.96f);
+        bodyText.raycastTarget = false;
 
         return cardGO;
     }

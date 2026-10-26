@@ -978,6 +978,16 @@ public class WaveManager : MonoBehaviour
     #endregion
 
     #region Enemy Visual Animations
+    private static bool HasAnimatorParam(Animator animator, string paramName)
+    {
+        if (animator == null || animator.runtimeAnimatorController == null) return false;
+        for (int i = 0; i < animator.parameters.Length; i++)
+        {
+            if (animator.parameters[i].name == paramName) return true;
+        }
+        return false;
+    }
+
     private IEnumerator AnimateEnemySlideIn(GameObject enemyObj, Vector3 fromPos, Vector3 toPos, float duration)
     {
         if (enemyObj == null) yield break;
@@ -985,8 +995,8 @@ public class WaveManager : MonoBehaviour
         Animator enemyAnim = enemyObj.GetComponent<Animator>();
         if (enemyAnim != null && enemyAnim.isActiveAndEnabled)
         {
-            enemyAnim.SetFloat("Horizontal", -1f);
-            enemyAnim.SetFloat("Speed", 1f);
+            if (HasAnimatorParam(enemyAnim, "Horizontal")) enemyAnim.SetFloat("Horizontal", -1f);
+            if (HasAnimatorParam(enemyAnim, "Speed")) enemyAnim.SetFloat("Speed", 1f);
         }
 
         float elapsed = 0f;
@@ -1009,8 +1019,8 @@ public class WaveManager : MonoBehaviour
 
             if (enemyAnim != null && enemyAnim.isActiveAndEnabled)
             {
-                enemyAnim.SetFloat("Horizontal", 0f);
-                enemyAnim.SetFloat("Speed", 0f);
+                if (HasAnimatorParam(enemyAnim, "Horizontal")) enemyAnim.SetFloat("Horizontal", 0f);
+                if (HasAnimatorParam(enemyAnim, "Speed")) enemyAnim.SetFloat("Speed", 0f);
             }
         }
     }

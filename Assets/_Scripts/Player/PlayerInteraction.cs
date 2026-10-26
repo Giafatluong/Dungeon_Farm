@@ -53,6 +53,22 @@ public class PlayerInteraction : MonoBehaviour
         {
             inventoryController = FindFirstObjectByType<InventoryController>();
         }
+
+        // Floating "[E] ..." prompt above the player
+        if (GetComponent<InteractionPromptUI>() == null)
+        {
+            gameObject.AddComponent<InteractionPromptUI>();
+        }
+    }
+
+    /// <summary>
+    /// True when the player is free to interact with world objects (no modal UI / inventory open).
+    /// </summary>
+    public bool CanInteractNow()
+    {
+        if (IsAnyUIOpen()) return false;
+        if (inventoryController != null && (!inventoryController.isInteractable || inventoryController.IsInventoryOpen)) return false;
+        return true;
     }
 
     private void Update()
@@ -92,7 +108,7 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
-    private bool IsAnyUIOpen()
+    public bool IsAnyUIOpen()
     {
         if (MainMenuUI.Instance != null && MainMenuUI.Instance.IsOpen) return true;
         if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen) return true;

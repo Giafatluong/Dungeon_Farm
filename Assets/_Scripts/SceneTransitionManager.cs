@@ -11,6 +11,12 @@ public class SceneTransitionManager : MonoBehaviour
             if (_instance == null)
             {
                 _instance = FindFirstObjectByType<SceneTransitionManager>();
+                if (_instance == null)
+                {
+                    GameObject go = new GameObject("SceneTransitionManager");
+                    _instance = go.AddComponent<SceneTransitionManager>();
+                    DontDestroyOnLoad(go);
+                }
             }
             return _instance;
         }
@@ -35,8 +41,28 @@ public class SceneTransitionManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += HandleSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= HandleSceneLoaded;
+    }
+
+    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        Time.timeScale = 1f;
+        if (DayTransitionUI.Instance != null)
+        {
+            DayTransitionUI.Instance.ResetToHiddenState();
+        }
+    }
+
     private void OnDestroy()
     {
+        SceneManager.sceneLoaded -= HandleSceneLoaded;
         if (_instance == this)
         {
             _instance = null;
@@ -45,6 +71,9 @@ public class SceneTransitionManager : MonoBehaviour
 
     public void LoadDungeon(int floor = -1)
     {
+        Time.timeScale = 1f;
+        DayTransitionUI.Instance?.ResetToHiddenState();
+
         if (ProgressionManager.Instance != null)
         {
             int targetFloor = floor > 0 ? floor : ProgressionManager.Instance.currentFloor;
@@ -56,6 +85,9 @@ public class SceneTransitionManager : MonoBehaviour
 
     public void LoadBase()
     {
+        Time.timeScale = 1f;
+        DayTransitionUI.Instance?.ResetToHiddenState();
+
         // When player leaves Dungeon for Base, all buffs (turn, combat, floor) are cleared:
         PlayerStats.Instance?.ClearTemporaryBuffs();
 
@@ -75,6 +107,8 @@ public class SceneTransitionManager : MonoBehaviour
         if (string.IsNullOrEmpty(sceneName))
             return;
 
+        Time.timeScale = 1f;
+        DayTransitionUI.Instance?.ResetToHiddenState();
         SceneManager.LoadScene(sceneName);
     }
 }

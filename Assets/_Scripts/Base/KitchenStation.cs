@@ -12,6 +12,8 @@ public class KitchenStation : MonoBehaviour, IInteractable
     [Header("Interaction Settings")]
     public float interactDistance = 1.6f;
     public bool playerInRange = false;
+    [Tooltip("Show the legacy prompt above the station (the player-side InteractionPromptUI replaces it)")]
+    public bool showWorldPrompt = false;
     public bool isOpen
     {
         get => KitchenUI.Instance != null && KitchenUI.Instance.IsOpen;
@@ -185,7 +187,7 @@ public class KitchenStation : MonoBehaviour, IInteractable
 
             if (promptObject != null)
             {
-                promptObject.SetActive(playerInRange && !isOpen);
+                promptObject.SetActive(showWorldPrompt && playerInRange && !isOpen);
                 if (playerInRange)
                 {
                     float bob = Mathf.Sin(Time.time * 4f) * 0.06f;
@@ -216,6 +218,7 @@ public class KitchenStation : MonoBehaviour, IInteractable
 
         if (isOpen && Input.GetKeyDown(KeyCode.Escape))
         {
+            UIEscapeManager.ConsumeEscape();
             CloseKitchen();
         }
     }

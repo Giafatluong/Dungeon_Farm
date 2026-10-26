@@ -16,29 +16,29 @@ public class LootUI : MonoBehaviour
     public static LootUI Instance { get; private set; }
 
     [Header("Panel Roots")]
-    [SerializeField] private GameObject lootPanel;
-    [SerializeField] private Transform lootSlotsParent;
-    [SerializeField] private Transform backpackSlotsParent;
-    [SerializeField] private ScrollRect lootScrollRect;
-    [SerializeField] private ScrollRect bpScrollRect;
-    [SerializeField] private Canvas canvas;
-    [SerializeField] private GameObject slotPrefab;
+    [SerializeField] public GameObject lootPanel;
+    [SerializeField] public Transform lootSlotsParent;
+    [SerializeField] public Transform backpackSlotsParent;
+    [SerializeField] public ScrollRect lootScrollRect;
+    [SerializeField] public ScrollRect bpScrollRect;
+    [SerializeField] public Canvas canvas;
+    [SerializeField] public GameObject slotPrefab;
 
     [Header("Controls")]
-    [SerializeField] private Button lootAllButton;
-    [SerializeField] private Button continueButton;
-    [SerializeField] private Image lootAllBtnImg;
-    [SerializeField] private Image contBtnImg;
-    [SerializeField] private TextMeshProUGUI lootAllTxt;
-    [SerializeField] private TextMeshProUGUI contTxt;
+    [SerializeField] public Button lootAllButton;
+    [SerializeField] public Button continueButton;
+    [SerializeField] public Image lootAllBtnImg;
+    [SerializeField] public Image contBtnImg;
+    [SerializeField] public TextMeshProUGUI lootAllTxt;
+    [SerializeField] public TextMeshProUGUI contTxt;
 
     [Header("Labels & Notices")]
-    [SerializeField] private TextMeshProUGUI titleText;
-    [SerializeField] private TextMeshProUGUI subtitleText;
-    [SerializeField] private TextMeshProUGUI hintText;
-    [SerializeField] private TextMeshProUGUI lootHeaderTitle;
-    [SerializeField] private TextMeshProUGUI backpackHeaderTitle;
-    [SerializeField] private GameObject emptyLootNoticeGO;
+    [SerializeField] public TextMeshProUGUI titleText;
+    [SerializeField] public TextMeshProUGUI subtitleText;
+    [SerializeField] public TextMeshProUGUI hintText;
+    [SerializeField] public TextMeshProUGUI lootHeaderTitle;
+    [SerializeField] public TextMeshProUGUI backpackHeaderTitle;
+    [SerializeField] public GameObject emptyLootNoticeGO;
 
     private ItemContainer lootContainer;
     private ItemContainer backpackContainer;
@@ -96,6 +96,17 @@ public class LootUI : MonoBehaviour
         {
             lootPanel.SetActive(false);
         }
+
+        if (lootAllButton != null)
+        {
+            lootAllButton.onClick.RemoveListener(OnLootAllClicked);
+            lootAllButton.onClick.AddListener(OnLootAllClicked);
+        }
+        if (continueButton != null)
+        {
+            continueButton.onClick.RemoveListener(OnContinueClicked);
+            continueButton.onClick.AddListener(OnContinueClicked);
+        }
     }
 
     private void OnDestroy()
@@ -111,6 +122,15 @@ public class LootUI : MonoBehaviour
             backpackContainer.OnInventoryChange -= RefreshAll;
         }
         if (Instance == this) Instance = null;
+    }
+
+    private void Update()
+    {
+        if (IsOpen && Input.GetKeyDown(KeyCode.Escape))
+        {
+            UIEscapeManager.ConsumeEscape();
+            Close();
+        }
     }
 
     private Canvas GetCanvas()
@@ -615,12 +635,12 @@ public class LootUI : MonoBehaviour
         callback?.Invoke();
     }
 
-    private void OnContinueClicked()
+    public void OnContinueClicked()
     {
         Close();
     }
 
-    private void OnLootAllClicked()
+    public void OnLootAllClicked()
     {
         if (lootContainer == null || backpackContainer == null)
             return;

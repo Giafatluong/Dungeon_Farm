@@ -439,7 +439,7 @@ public class CampUI : MonoBehaviour
 
     #region Action Buttons Logic
 
-    private void OnEatButtonClicked()
+    public void OnEatButtonClicked()
     {
         if (foodModal == null) return;
         bool isOpen = foodModal.activeSelf;
@@ -453,7 +453,12 @@ public class CampUI : MonoBehaviour
         }
     }
 
-    private void OnCookButtonClicked()
+    public void CloseFoodModal()
+    {
+        if (foodModal != null) foodModal.SetActive(false);
+    }
+
+    public void OnCookButtonClicked()
     {
         if (cookModal == null) return;
         bool isOpen = cookModal.activeSelf;
@@ -467,7 +472,12 @@ public class CampUI : MonoBehaviour
         }
     }
 
-    private void OnExerciseButtonClicked()
+    public void CloseCookModal()
+    {
+        if (cookModal != null) cookModal.SetActive(false);
+    }
+
+    public void OnExerciseButtonClicked()
     {
         if (camp == null) return;
 
@@ -487,7 +497,7 @@ public class CampUI : MonoBehaviour
         }
     }
 
-    private void OnRestButtonClicked()
+    public void OnRestButtonClicked()
     {
         if (camp == null) return;
 
@@ -507,13 +517,13 @@ public class CampUI : MonoBehaviour
         }
     }
 
-    private void OnContinueButtonClicked()
+    public void OnContinueButtonClicked()
     {
         if (camp == null) return;
         camp.PerformAction(Camp.ActionType.Continue);
     }
 
-    private void OnReturnHomeButtonClicked()
+    public void OnReturnHomeButtonClicked()
     {
         if (camp == null) return;
         camp.PerformAction(Camp.ActionType.ReturnHome);

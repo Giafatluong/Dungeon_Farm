@@ -30,14 +30,15 @@ public class DungeonEntranceUI : MonoBehaviour
     private readonly List<FloorDisplayData> floorList = new List<FloorDisplayData>();
     private int selectedFloor = 1;
 
-    // Runtime UI references
-    private GameObject dialogPanel;
-    private TextMeshProUGUI titleText;
-    private TextMeshProUGUI subtitleText;
-    private TextMeshProUGUI detailsText;
-    private Button enterButton;
-    private TextMeshProUGUI enterButtonText;
-    private Button closeButton;
+    // Scene & Runtime UI references
+    [Header("Scene UI References")]
+    [SerializeField] private GameObject dialogPanel;
+    [SerializeField] private TextMeshProUGUI titleText;
+    [SerializeField] private TextMeshProUGUI subtitleText;
+    [SerializeField] private TextMeshProUGUI detailsText;
+    [SerializeField] private Button enterButton;
+    [SerializeField] private TextMeshProUGUI enterButtonText;
+    [SerializeField] private Button closeButton;
     private readonly Dictionary<int, FloorCardUI> floorCards = new Dictionary<int, FloorCardUI>();
     private Coroutine feedbackFlashCoroutine;
 
@@ -91,6 +92,7 @@ public class DungeonEntranceUI : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Escape))
             {
+                UIEscapeManager.ConsumeEscape();
                 Close();
             }
             else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
@@ -431,10 +433,22 @@ public class DungeonEntranceUI : MonoBehaviour
         RefreshUI();
     }
 
-    #region Procedural UI Builder
+    #region Scene Binding & Procedural UI Builder
     private void EnsureUIConstructed()
     {
-        if (dialogPanel != null) return;
+        if (dialogPanel != null && floorCards.Count > 0) return;
+
+        // If authored directly in the scene (dialogPanel assigned or exists under enterDungeonPanel)
+        if (dialogPanel != null || (enterDungeonPanel != null && enterDungeonPanel.transform.Find("FloorSelectionModal") != null))
+        {
+            if (dialogPanel == null && enterDungeonPanel != null)
+            {
+                dialogPanel = enterDungeonPanel.transform.Find("FloorSelectionModal").gameObject;
+            }
+            BindSceneReferences();
+            BindFloorCards();
+            return;
+        }
 
         if (enterDungeonPanel == null)
         {
@@ -460,10 +474,6 @@ public class DungeonEntranceUI : MonoBehaviour
         Transform existingModal = enterDungeonPanel.transform.Find("FloorSelectionModal");
         if (existingModal != null)
         {
-            if (floorCards.Count > 0 && dialogPanel != null)
-            {
-                return;
-            }
             Destroy(existingModal.gameObject);
             dialogPanel = null;
         }
@@ -479,6 +489,78 @@ public class DungeonEntranceUI : MonoBehaviour
         }
 
         BuildModalUI();
+    }
+
+    public void BindSceneReferences()
+    {
+        if (dialogPanel == null) return;
+
+        if (titleText == null) titleText = dialogPanel.transform.Find("TitleText")?.GetComponent<TextMeshProUGUI>();
+        if (subtitleText == null) subtitleText = dialogPanel.transform.Find("SubtitleText")?.GetComponent<TextMeshProUGUI>();
+        if (detailsText == null) detailsText = dialogPanel.transform.Find("HintText")?.GetComponent<TextMeshProUGUI>();
+        if (enterButton == null) enterButton = dialogPanel.transform.Find("FooterButtons/BtnEnterDungeon")?.GetComponent<Button>();
+        if (enterButtonText == null) enterButtonText = dialogPanel.transform.Find("FooterButtons/BtnEnterDungeon/Text")?.GetComponent<TextMeshProUGUI>();
+        if (closeButton == null) closeButton = dialogPanel.transform.Find("FooterButtons/BtnCancel")?.GetComponent<Button>();
+
+        Button xBtn = dialogPanel.transform.Find("BtnCloseX")?.GetComponent<Button>();
+        if (xBtn != null && xBtn.onClick.GetPersistentEventCount() == 0)
+        {
+            xBtn.onClick.RemoveListener(Close);
+            xBtn.onClick.AddListener(Close);
+        }
+
+        if (enterButton != null && enterButton.onClick.GetPersistentEventCount() == 0)
+        {
+            enterButton.onClick.RemoveListener(EnterSelectedFloor);
+            enterButton.onClick.AddListener(EnterSelectedFloor);
+        }
+
+        if (closeButton != null && closeButton.onClick.GetPersistentEventCount() == 0)
+        {
+            closeButton.onClick.RemoveListener(Close);
+            closeButton.onClick.AddListener(Close);
+        }
+    }
+
+    public void BindFloorCards()
+    {
+        if (floorCards.Count > 0) return;
+        if (dialogPanel == null) return;
+
+        if (floorList.Count == 0)
+        {
+            InitializeFloorData();
+        }
+
+        int numFloors = Mathf.Max(totalFloors, floorList.Count);
+        for (int f = 1; f <= numFloors; f++)
+        {
+            Transform cardT = dialogPanel.transform.Find($"FloorScrollView/Viewport/TowerFloorsContainer/FloorCard_{f}");
+            if (cardT == null) continue;
+
+            Button btn = cardT.GetComponent<Button>();
+            int capturedFloor = f;
+            if (btn != null && btn.onClick.GetPersistentEventCount() == 0)
+            {
+                btn.onClick.RemoveAllListeners();
+                btn.onClick.AddListener(() => SelectFloor(capturedFloor));
+            }
+
+            FloorCardUI cardUI = new FloorCardUI
+            {
+                rootGO = cardT.gameObject,
+                button = btn,
+                backgroundImage = cardT.GetComponent<Image>(),
+                floorBadgeText = cardT.Find("BadgeBox/BadgeText")?.GetComponent<TextMeshProUGUI>(),
+                floorNameText = cardT.Find("ContentBox/FloorName")?.GetComponent<TextMeshProUGUI>(),
+                bossInfoText = cardT.Find("ContentBox/BossInfo")?.GetComponent<TextMeshProUGUI>(),
+                statusBadgeText = cardT.Find("StatusBadge/StatusText")?.GetComponent<TextMeshProUGUI>(),
+                statusBadgeBg = cardT.Find("StatusBadge")?.GetComponent<Image>(),
+                floorNumber = f
+            };
+
+            floorCards[f] = cardUI;
+        }
     }
 
     private void BuildModalUI()

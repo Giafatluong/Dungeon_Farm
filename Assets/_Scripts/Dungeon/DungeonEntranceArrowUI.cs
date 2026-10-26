@@ -13,12 +13,12 @@ public class DungeonEntranceArrowUI : MonoBehaviour
     public static DungeonEntranceArrowUI Instance { get; private set; }
 
     [Header("UI References")]
-    [SerializeField] private GameObject container;
-    [SerializeField] private Button arrowButton;
-    [SerializeField] private RectTransform arrowIconRT;
-    [SerializeField] private TextMeshProUGUI titleText;
-    [SerializeField] private TextMeshProUGUI hintText;
-    [SerializeField] private TextMeshProUGUI arrowTMP;
+    [SerializeField] public GameObject container;
+    [SerializeField] public Button arrowButton;
+    [SerializeField] public RectTransform arrowIconRT;
+    [SerializeField] public TextMeshProUGUI titleText;
+    [SerializeField] public TextMeshProUGUI hintText;
+    [SerializeField] public TextMeshProUGUI arrowTMP;
 
     private System.Action onProceedCallback;
     private bool isProceeding = false;

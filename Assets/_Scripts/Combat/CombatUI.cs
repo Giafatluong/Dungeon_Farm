@@ -362,6 +362,7 @@ public class CombatUI : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Escape))
             {
+                UIEscapeManager.ConsumeEscape();
                 foodPanel.SetActive(false);
                 return;
             }

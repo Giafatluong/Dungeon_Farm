@@ -66,32 +66,32 @@ public class DungeonSummaryUI : MonoBehaviour
 
     #region UI Elements
     [Header("Panels")]
-    [SerializeField] private GameObject summaryPanel;
-    [SerializeField] private Canvas canvas;
-    [SerializeField] private Transform itemsGridContainer;
-    [SerializeField] private ScrollRect itemsScrollRect;
+    [SerializeField] public GameObject summaryPanel;
+    [SerializeField] public Canvas canvas;
+    [SerializeField] public Transform itemsGridContainer;
+    [SerializeField] public ScrollRect itemsScrollRect;
 
     [Header("Header Elements")]
-    [SerializeField] private Image headerBannerImg;
-    [SerializeField] private Image headerIcon;
-    [SerializeField] private TextMeshProUGUI titleText;
-    [SerializeField] private TextMeshProUGUI subtitleText;
+    [SerializeField] public Image headerBannerImg;
+    [SerializeField] public Image headerIcon;
+    [SerializeField] public TextMeshProUGUI titleText;
+    [SerializeField] public TextMeshProUGUI subtitleText;
 
     [Header("Left Stats Elements")]
-    [SerializeField] private TextMeshProUGUI statFloorText;
-    [SerializeField] private TextMeshProUGUI statStagesText;
-    [SerializeField] private TextMeshProUGUI statBossText;
-    [SerializeField] private TextMeshProUGUI statHealthText;
-    [SerializeField] private TextMeshProUGUI statBlessingText;
-    [SerializeField] private TextMeshProUGUI statDayTransitionText;
-    [SerializeField] private TextMeshProUGUI specialNoticeText;
+    [SerializeField] public TextMeshProUGUI statFloorText;
+    [SerializeField] public TextMeshProUGUI statStagesText;
+    [SerializeField] public TextMeshProUGUI statBossText;
+    [SerializeField] public TextMeshProUGUI statHealthText;
+    [SerializeField] public TextMeshProUGUI statBlessingText;
+    [SerializeField] public TextMeshProUGUI statDayTransitionText;
+    [SerializeField] public TextMeshProUGUI specialNoticeText;
 
     [Header("Right Loot Header")]
-    [SerializeField] private TextMeshProUGUI lootHeaderTitle;
+    [SerializeField] public TextMeshProUGUI lootHeaderTitle;
 
     [Header("Controls")]
-    [SerializeField] private Button returnToBaseButton;
-    [SerializeField] private TextMeshProUGUI returnButtonText;
+    [SerializeField] public Button returnToBaseButton;
+    [SerializeField] public TextMeshProUGUI returnButtonText;
 
     private readonly List<GameObject> activeItemCards = new();
     private GameObject emptyLootNoticeGO;
@@ -117,6 +117,12 @@ public class DungeonSummaryUI : MonoBehaviour
         {
             summaryPanel.SetActive(false);
         }
+
+        if (returnToBaseButton != null)
+        {
+            returnToBaseButton.onClick.RemoveListener(OnReturnClicked);
+            returnToBaseButton.onClick.AddListener(OnReturnClicked);
+        }
     }
 
     private void OnDestroy()
@@ -131,7 +137,12 @@ public class DungeonSummaryUI : MonoBehaviour
     {
         if (IsOpen)
         {
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                UIEscapeManager.ConsumeEscape();
+                OnReturnClicked();
+            }
+            else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Space))
             {
                 OnReturnClicked();
             }
@@ -154,6 +165,15 @@ public class DungeonSummaryUI : MonoBehaviour
 
         summaryPanel.SetActive(true);
         summaryPanel.transform.SetAsLastSibling();
+
+        if (CombatUI.Instance != null && CombatUI.Instance.gameObject != null)
+        {
+            CombatUI.Instance.gameObject.SetActive(false);
+        }
+        if (FloorVictoryUI.Instance != null)
+        {
+            FloorVictoryUI.Instance.Close();
+        }
 
         PopulateExpeditionData(result);
 
@@ -307,52 +327,52 @@ public class DungeonSummaryUI : MonoBehaviour
         string t;
         string sub;
         Sprite iconSp = null;
+        Color titleColor;
 
         switch (result)
         {
             case ExpeditionResult.Victory:
-                bannerColor = new Color(0.28f, 0.22f, 0.08f, 1f);
+                bannerColor = new Color(0.24f, 0.18f, 0.10f, 1f); // Dark rich mahogany/gold
                 t = $"SUMMARY: FLOOR {floor} VICTORY!";
                 sub = "You vanquished all monsters and conquered the Dungeon Boss!";
                 iconSp = DungeonUIAssetHelper.GetChestSprite();
+                titleColor = new Color(1f, 0.88f, 0.35f, 1f); // Radiant Gold
                 break;
 
             case ExpeditionResult.Retreat:
-                bannerColor = new Color(0.08f, 0.24f, 0.28f, 1f);
+                bannerColor = new Color(0.10f, 0.20f, 0.26f, 1f); // Deep Twilight Slate
                 t = $"SUMMARY: SAFE RETREAT - FLOOR {floor}";
                 sub = "You retreated safely from the Camp, preserving all gathered resources.";
                 iconSp = DungeonUIAssetHelper.GetTentSprite();
+                titleColor = new Color(0.55f, 0.90f, 1f, 1f); // Radiant Cyan
                 break;
 
             case ExpeditionResult.Defeat:
             default:
-                bannerColor = new Color(0.30f, 0.10f, 0.10f, 1f);
+                bannerColor = new Color(0.26f, 0.10f, 0.10f, 1f); // Deep Crimson Wine
                 t = $"SUMMARY: DEFEATED ON FLOOR {floor}";
                 sub = "The expedition was cut short by underground perils. Train, prepare, and return stronger!";
                 iconSp = DungeonUIAssetHelper.GetBossSprite();
+                titleColor = new Color(1f, 0.65f, 0.65f, 1f); // Radiant Coral
                 break;
         }
 
         if (headerBannerImg != null)
         {
-            DungeonUIAssetHelper.PlaqueStyle pStyle = result switch
-            {
-                ExpeditionResult.Victory => DungeonUIAssetHelper.PlaqueStyle.Victory,
-                ExpeditionResult.Retreat => DungeonUIAssetHelper.PlaqueStyle.Gold,
-                _ => DungeonUIAssetHelper.PlaqueStyle.Defeat
-            };
-            DungeonUIAssetHelper.StylePlaque(headerBannerImg, pStyle);
+            DungeonUIAssetHelper.StylePlaque(headerBannerImg, DungeonUIAssetHelper.PlaqueStyle.Wood);
+            headerBannerImg.color = bannerColor;
         }
 
         if (titleText != null)
         {
             titleText.text = t;
-            titleText.color = result == ExpeditionResult.Victory ? new Color(1f, 0.88f, 0.35f) : (result == ExpeditionResult.Retreat ? new Color(0.6f, 0.95f, 1f) : new Color(1f, 0.65f, 0.65f));
+            titleText.color = titleColor;
         }
 
         if (subtitleText != null)
         {
             subtitleText.text = sub;
+            subtitleText.color = new Color(0.85f, 0.88f, 0.95f, 1f);
         }
 
         if (headerIcon != null && iconSp != null)
@@ -494,7 +514,7 @@ public class DungeonSummaryUI : MonoBehaviour
     #endregion
 
     #region Action Handlers
-    private void OnReturnClicked()
+    public void OnReturnClicked()
     {
         HasConfirmedReturn = true;
         Close();
@@ -742,6 +762,8 @@ public class DungeonSummaryUI : MonoBehaviour
         GameObject noticeBoxGO = new("NoticeBox", typeof(RectTransform), typeof(Image));
         noticeBoxGO.transform.SetParent(statsContentGO.transform, false);
         RectTransform nbRT = noticeBoxGO.GetComponent<RectTransform>();
+        nbRT.anchorMin = new Vector2(0, 0.5f);
+        nbRT.anchorMax = new Vector2(1, 0.5f);
         nbRT.sizeDelta = new Vector2(0, 110);
         Image nbImg = noticeBoxGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedPanel(nbImg, DungeonUIAssetHelper.PanelStyle.Wood);
@@ -891,6 +913,8 @@ public class DungeonSummaryUI : MonoBehaviour
         GameObject go = new(name, typeof(RectTransform), typeof(Image));
         go.transform.SetParent(parent, false);
         RectTransform rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0, 0.5f);
+        rt.anchorMax = new Vector2(1, 0.5f);
         rt.sizeDelta = new Vector2(0, 32);
 
         Image bg = go.GetComponent<Image>();

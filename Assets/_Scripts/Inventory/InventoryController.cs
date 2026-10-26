@@ -43,6 +43,7 @@ public class InventoryController : MonoBehaviour
         // Close inventory on Escape if it is open
         if (IsInventoryOpen && Input.GetKeyDown(KeyCode.Escape))
         {
+            UIEscapeManager.ConsumeEscape();
             CloseInventoryPanel();
             return;
         }

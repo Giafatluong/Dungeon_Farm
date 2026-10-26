@@ -296,7 +296,7 @@ public class MerchantEvent : MonoBehaviour
     {
         ItemData wheatSeed = null, carrotSeed = null, tomatoSeed = null, cornSeed = null, cucumberSeed = null, cabbageSeed = null, chilliSeed = null;
         ItemData wheat = null, carrot = null, cabbage = null, cucumber = null, tomato = null, corn = null, chilli = null;
-        FoodData tomatoSoup = null, freshSalad = null;
+        FoodData tomatoSoup = null, carrotSoup = null, cabbageSalad = null, cucumberSalad = null, cornButter = null;
 
         ItemData[] allItems = GameAssetHelper.LoadAll<ItemData>();
         for (int i = 0; i < allItems.Length; i++)
@@ -304,29 +304,60 @@ public class MerchantEvent : MonoBehaviour
             ItemData it = allItems[i];
             if (it == null) continue;
             string n = it.name.ToLower();
-            if (n.Contains("wheatseed")) wheatSeed = it;
-            else if (n.Contains("carrotseed")) carrotSeed = it;
-            else if (n.Contains("tomatoseed")) tomatoSeed = it;
-            else if (n.Contains("cornseed")) cornSeed = it;
-            else if (n.Contains("cucumberseed")) cucumberSeed = it;
-            else if (n.Contains("cabbageseed")) cabbageSeed = it;
-            else if (n.Contains("chilli") && n.Contains("seed")) chilliSeed = it;
-            else if (n == "wheat") wheat = it;
-            else if (n == "carrot") carrot = it;
-            else if (n == "cabbage") cabbage = it;
-            else if (n == "cucumber") cucumber = it;
-            else if (n == "tomato") tomato = it;
-            else if (n == "corn") corn = it;
-            else if (n == "chilli" || n == "chili") chilli = it;
+            string iname = it.itemName != null ? it.itemName.ToLower() : "";
+
+            if (it.itemType == ItemData.ItemType.Seed || n.Contains("seed") || iname.Contains("seed"))
+            {
+                if (n.Contains("wheat") || iname.Contains("wheat")) wheatSeed = it;
+                else if (n.Contains("carrot") || iname.Contains("carrot")) carrotSeed = it;
+                else if (n.Contains("tomato") || iname.Contains("tomato")) tomatoSeed = it;
+                else if (n.Contains("corn") || iname.Contains("corn")) cornSeed = it;
+                else if (n.Contains("cucumber") || iname.Contains("cucumber")) cucumberSeed = it;
+                else if (n.Contains("cabbage") || iname.Contains("cabbage")) cabbageSeed = it;
+                else if (n.Contains("chilli") || iname.Contains("chilli") || n.Contains("chili")) chilliSeed = it;
+            }
             else if (it is FoodData fd)
             {
-                if (n.Contains("soup")) tomatoSoup = fd;
-                else if (n.Contains("salad")) freshSalad = fd;
+                if (n.Contains("tomato") && n.Contains("soup")) tomatoSoup = fd;
+                else if (n.Contains("carrot")) carrotSoup = fd;
+                else if (n.Contains("cabbage") && n.Contains("salad")) cabbageSalad = fd;
+                else if (n.Contains("cucumber") && n.Contains("salad")) cucumberSalad = fd;
+                else if (n.Contains("corn")) cornButter = fd;
+                else if (tomatoSoup == null && n.Contains("soup")) tomatoSoup = fd;
+            }
+            else
+            {
+                if (n.Contains("wheat") || iname.Contains("wheat")) wheat = it;
+                else if (n.Contains("carrot") || iname.Contains("carrot")) carrot = it;
+                else if (n.Contains("cabbage") || iname.Contains("cabbage")) cabbage = it;
+                else if (n.Contains("cucumber") || iname.Contains("cucumber")) cucumber = it;
+                else if (n.Contains("tomato") || iname.Contains("tomato")) tomato = it;
+                else if (n.Contains("corn") || iname.Contains("corn")) corn = it;
+                else if (n.Contains("chilli") || iname.Contains("chilli") || n.Contains("chili")) chilli = it;
             }
         }
 
-        // 1. Default seed trades if empty
-        if (seedTrades == null || seedTrades.Length == 0)
+        // Fallbacks for food items
+        if (carrotSoup == null) carrotSoup = tomatoSoup;
+        if (cabbageSalad == null) cabbageSalad = tomatoSoup;
+        if (cucumberSalad == null) cucumberSalad = cabbageSalad ?? tomatoSoup;
+        if (cornButter == null) cornButter = tomatoSoup;
+
+        // 1. Default seed trades if empty or broken
+        bool needsSeedTrades = seedTrades == null || seedTrades.Length == 0;
+        if (!needsSeedTrades)
+        {
+            for (int i = 0; i < seedTrades.Length; i++)
+            {
+                if (seedTrades[i] == null || seedTrades[i].inputSeed == null || seedTrades[i].outputSeed == null)
+                {
+                    needsSeedTrades = true;
+                    break;
+                }
+            }
+        }
+
+        if (needsSeedTrades)
         {
             List<SeedTrade> trades = new();
             if (wheatSeed != null && tomatoSeed != null)
@@ -373,21 +404,89 @@ public class MerchantEvent : MonoBehaviour
                     outputAmount = 1
                 });
             }
+            if (cucumberSeed != null && cabbageSeed != null)
+            {
+                trades.Add(new SeedTrade
+                {
+                    tradeName = "Cucumber Seed -> Cabbage Seed",
+                    inputSeed = cucumberSeed,
+                    inputAmount = 3,
+                    outputSeed = cabbageSeed,
+                    outputAmount = 1
+                });
+            }
             seedTrades = trades.ToArray();
         }
 
-        // 2. Default ration trades if empty or missing inputProduce
-        if (rationTrades == null || rationTrades.Length == 0)
+        // 2. Default ration trades if empty or broken
+        bool needsRationTrades = rationTrades == null || rationTrades.Length == 0;
+        if (!needsRationTrades)
+        {
+            for (int i = 0; i < rationTrades.Length; i++)
+            {
+                if (rationTrades[i] == null || rationTrades[i].inputProduce == null || rationTrades[i].outputFood == null)
+                {
+                    needsRationTrades = true;
+                    break;
+                }
+            }
+        }
+
+        if (needsRationTrades)
         {
             List<RationTrade> rTrades = new();
-            if (freshSalad != null && carrot != null)
+            if (tomatoSoup != null && tomato != null)
             {
                 rTrades.Add(new RationTrade
                 {
-                    tradeName = "Carrot -> Fresh Salad",
+                    tradeName = "Tomato -> Tomato Soup",
+                    inputProduce = tomato,
+                    inputAmount = 2,
+                    outputFood = tomatoSoup,
+                    outputAmount = 1
+                });
+            }
+            if (carrotSoup != null && carrot != null)
+            {
+                rTrades.Add(new RationTrade
+                {
+                    tradeName = "Carrot -> Carrot Soup",
                     inputProduce = carrot,
                     inputAmount = 2,
-                    outputFood = freshSalad,
+                    outputFood = carrotSoup,
+                    outputAmount = 1
+                });
+            }
+            if (cabbageSalad != null && cabbage != null)
+            {
+                rTrades.Add(new RationTrade
+                {
+                    tradeName = "Cabbage -> Cabbage Salad",
+                    inputProduce = cabbage,
+                    inputAmount = 2,
+                    outputFood = cabbageSalad,
+                    outputAmount = 1
+                });
+            }
+            if (cucumberSalad != null && cucumber != null)
+            {
+                rTrades.Add(new RationTrade
+                {
+                    tradeName = "Cucumber -> Cucumber Salad",
+                    inputProduce = cucumber,
+                    inputAmount = 2,
+                    outputFood = cucumberSalad,
+                    outputAmount = 1
+                });
+            }
+            if (cornButter != null && corn != null)
+            {
+                rTrades.Add(new RationTrade
+                {
+                    tradeName = "Corn -> Corn Butter",
+                    inputProduce = corn,
+                    inputAmount = 2,
+                    outputFood = cornButter,
                     outputAmount = 1
                 });
             }
@@ -402,37 +501,7 @@ public class MerchantEvent : MonoBehaviour
                     outputAmount = 1
                 });
             }
-            if (freshSalad != null && cabbage != null)
-            {
-                rTrades.Add(new RationTrade
-                {
-                    tradeName = "Cabbage -> Fresh Salad",
-                    inputProduce = cabbage,
-                    inputAmount = 2,
-                    outputFood = freshSalad,
-                    outputAmount = 1
-                });
-            }
             rationTrades = rTrades.ToArray();
-        }
-        else
-        {
-            // Auto-heal missing references in scene-configured ration trades
-            for (int i = 0; i < rationTrades.Length; i++)
-            {
-                if (rationTrades[i] == null) continue;
-                if (rationTrades[i].inputProduce == null)
-                {
-                    string tn = (rationTrades[i].tradeName ?? "").ToLower();
-                    if (tn.Contains("wheat") && wheat != null) rationTrades[i].inputProduce = wheat;
-                    else if (tn.Contains("tomato") && tomato != null) rationTrades[i].inputProduce = tomato;
-                    else if (tn.Contains("carrot") && carrot != null) rationTrades[i].inputProduce = carrot;
-                    else if (tn.Contains("cabbage") && cabbage != null) rationTrades[i].inputProduce = cabbage;
-                    else if (tn.Contains("cucumber") && cucumber != null) rationTrades[i].inputProduce = cucumber;
-                    else if (tn.Contains("corn") && corn != null) rationTrades[i].inputProduce = corn;
-                    else if (wheat != null) rationTrades[i].inputProduce = wheat;
-                }
-            }
         }
     }
 
