@@ -27,6 +27,14 @@ public class RecipeCardUI : MonoBehaviour
         if (recipe == null) return;
 
         // Visuals
+        TextMeshProUGUI rowTMP = transform.Find("InfoColumn/TitleRow")?.GetComponent<TextMeshProUGUI>();
+        if (rowTMP != null)
+        {
+            rowTMP.text = "";
+            rowTMP.enabled = false;
+            Destroy(rowTMP);
+        }
+
         if (titleText != null) titleText.text = recipe.DisplayName;
         if (starsText != null) starsText.gameObject.SetActive(false);
 

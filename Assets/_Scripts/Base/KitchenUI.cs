@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 /// <summary>
 /// Redesigned Kitchen UI (Bếp Nấu Gia Đình & Sổ Tay Công Thức Ẩm Thực).
@@ -733,7 +733,11 @@ public class KitchenUI : MonoBehaviour
         // Clear existing
         for (int i = 0; i < activeRecipeCards.Count; i++)
         {
-            if (activeRecipeCards[i] != null) Destroy(activeRecipeCards[i]);
+            if (activeRecipeCards[i] != null)
+            {
+                activeRecipeCards[i].transform.SetParent(null);
+                Destroy(activeRecipeCards[i]);
+            }
         }
         activeRecipeCards.Clear();
 
@@ -772,6 +776,15 @@ public class KitchenUI : MonoBehaviour
             cardGO.SetActive(true);
             activeRecipeCards.Add(cardGO);
 
+            // Ensure TitleRow TMP is cleared and disabled so it does not overlap recipe title
+            TextMeshProUGUI rowTMP = cardGO.transform.Find("InfoColumn/TitleRow")?.GetComponent<TextMeshProUGUI>();
+            if (rowTMP != null)
+            {
+                rowTMP.text = "";
+                rowTMP.enabled = false;
+                Destroy(rowTMP);
+            }
+
             // Populate card
             RecipeCardUI cardUI = cardGO.GetComponent<RecipeCardUI>();
             if (cardUI != null)
@@ -788,6 +801,14 @@ public class KitchenUI : MonoBehaviour
 
     private void SetupRecipeCardManual(GameObject cardGO, RecipeData recipe, bool isCurrentlySelected)
     {
+        TextMeshProUGUI rowText = cardGO.transform.Find("InfoColumn/TitleRow")?.GetComponent<TextMeshProUGUI>();
+        if (rowText != null)
+        {
+            rowText.text = "";
+            rowText.enabled = false;
+            Destroy(rowText);
+        }
+
         Image dishIcon = cardGO.transform.Find("IconFrame/DishIcon")?.GetComponent<Image>();
         TextMeshProUGUI title = cardGO.transform.Find("InfoColumn/TitleRow/TitleText")?.GetComponent<TextMeshProUGUI>();
         TextMeshProUGUI stars = cardGO.transform.Find("InfoColumn/TitleRow/StarsText")?.GetComponent<TextMeshProUGUI>();
@@ -803,7 +824,11 @@ public class KitchenUI : MonoBehaviour
         }
 
         if (title != null) title.text = recipe.DisplayName;
-        if (stars != null) stars.text = "⭐⭐⭐";
+        if (stars != null)
+        {
+            stars.text = "";
+            stars.gameObject.SetActive(false);
+        }
 
         if (detail != null)
         {
@@ -866,21 +891,25 @@ public class KitchenUI : MonoBehaviour
 
         for (int i = 0; i < activeBackpackSlots.Count; i++)
         {
-            if (activeBackpackSlots[i] != null) Destroy(activeBackpackSlots[i]);
+            if (activeBackpackSlots[i] != null)
+            {
+                activeBackpackSlots[i].transform.SetParent(null);
+                Destroy(activeBackpackSlots[i]);
+            }
         }
         activeBackpackSlots.Clear();
 
         if (backpackContainer == null || backpackContainer.itemSlots == null) return;
 
-        for (int i = 0; i < backpackContainer.itemSlots.Length; i++)
+        int totalSlots = backpackContainer.itemSlots.Length;
+        for (int i = 0; i < totalSlots; i++)
         {
             ItemSlot slot = backpackContainer.itemSlots[i];
-            if (slot == null || slot.itemData == null || slot.amount <= 0) continue;
 
             GameObject slotGO = null;
             if (backpackSlotPrefab != null)
             {
-                slotGO = Instantiate(backpackSlotPrefab, backpackGridContent);
+                slotGO = Instantiate(backpackSlotPrefab, backpackGridContent, false);
             }
             else
             {
@@ -891,30 +920,87 @@ public class KitchenUI : MonoBehaviour
             slotGO.SetActive(true);
             activeBackpackSlots.Add(slotGO);
 
-            // Bind slot visuals
-            Image icon = slotGO.transform.Find("ItemIcon")?.GetComponent<Image>();
-            if (icon == null) icon = slotGO.GetComponentInChildren<Image>();
-            TextMeshProUGUI amountText = slotGO.transform.Find("Text (TMP)")?.GetComponent<TextMeshProUGUI>();
-            if (amountText == null) amountText = slotGO.GetComponentInChildren<TextMeshProUGUI>();
+            bool hasItem = slot != null && slot.itemData != null && slot.amount > 0;
 
-            if (icon != null)
+            InventoryButton invBtn = slotGO.GetComponent<InventoryButton>();
+            if (invBtn != null)
             {
-                icon.sprite = slot.itemData.itemIcon;
-                icon.color = Color.white;
+                if (hasItem)
+                {
+                    invBtn.SetItem(slot.itemData, slot.amount);
+                    ItemData itemToAdd = slot.itemData;
+                    Button btn = slotGO.GetComponent<Button>();
+                    if (btn != null)
+                    {
+                        btn.onClick.RemoveAllListeners();
+                        btn.onClick.AddListener(() => AddToPot(itemToAdd));
+                    }
+                }
+                else
+                {
+                    invBtn.ClearItem();
+                    Button btn = slotGO.GetComponent<Button>();
+                    if (btn != null)
+                    {
+                        btn.onClick.RemoveAllListeners();
+                    }
+                }
+                // Disable InventoryButton event handlers so drag/chest quick-transfer don't conflict,
+                // while keeping slot styling and Button click active.
+                invBtn.enabled = false;
             }
-
-            if (amountText != null)
+            else
             {
-                amountText.text = slot.amount > 1 ? $"x{slot.amount}" : "";
-            }
+                // Fallback slot binding without InventoryButton
+                Transform iconT = slotGO.transform.Find("ItemIcon")
 
-            // Click listener
-            Button btn = slotGO.GetComponent<Button>();
-            if (btn != null)
-            {
-                btn.onClick.RemoveAllListeners();
-                ItemData itemToAdd = slot.itemData;
-                btn.onClick.AddListener(() => AddToPot(itemToAdd));
+                               ?? slotGO.transform.Find("Image")
+
+                               ?? slotGO.transform.Find("Icon");
+                Image icon = iconT != null ? iconT.GetComponent<Image>() : null;
+                TextMeshProUGUI amountText = slotGO.transform.Find("Text (TMP)")?.GetComponent<TextMeshProUGUI>()
+                                          ?? slotGO.GetComponentInChildren<TextMeshProUGUI>();
+
+                if (hasItem)
+                {
+                    if (icon != null)
+                    {
+                        icon.gameObject.SetActive(true);
+                        icon.sprite = slot.itemData.itemIcon;
+                        icon.color = Color.white;
+                    }
+
+                    if (amountText != null)
+                    {
+                        amountText.gameObject.SetActive(slot.amount > 1);
+                        amountText.text = slot.amount > 1 ? $"x{slot.amount}" : "";
+                    }
+
+                    Button btn = slotGO.GetComponent<Button>();
+                    if (btn != null)
+                    {
+                        btn.onClick.RemoveAllListeners();
+                        ItemData itemToAdd = slot.itemData;
+                        btn.onClick.AddListener(() => AddToPot(itemToAdd));
+                    }
+                }
+                else
+                {
+                    if (icon != null)
+                    {
+                        icon.sprite = null;
+                        icon.gameObject.SetActive(false);
+                    }
+                    if (amountText != null)
+                    {
+                        amountText.gameObject.SetActive(false);
+                    }
+                    Button btn = slotGO.GetComponent<Button>();
+                    if (btn != null)
+                    {
+                        btn.onClick.RemoveAllListeners();
+                    }
+                }
             }
         }
     }
@@ -1011,12 +1097,15 @@ public class KitchenUI : MonoBehaviour
         if (img != null)
         {
             img.color = isActive
-                ? new Color(0.36f, 0.70f, 0.16f, 1f) // Green active (#5CAE28)
-                : new Color(0.92f, 0.86f, 0.78f, 1f); // Cream inactive
+                ? new Color(0.28f, 0.65f, 0.18f, 1f) // Vibrant Forest Green (#47A62E)
+                : new Color(0.22f, 0.16f, 0.12f, 0.95f); // Deep cozy dark wood
         }
         if (txt != null)
         {
-            txt.color = isActive ? Color.white : new Color(0.36f, 0.25f, 0.20f, 1f);
+            txt.color = isActive ? Color.white : new Color(0.92f, 0.88f, 0.80f, 1f); // Warm cream high-contrast text
+            txt.textWrappingMode = TextWrappingModes.NoWrap;
+            txt.fontSize = 11.5f;
+            txt.fontStyle = isActive ? FontStyles.Bold : FontStyles.Normal;
         }
     }
 

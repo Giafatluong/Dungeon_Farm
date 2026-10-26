@@ -684,10 +684,9 @@ public class StatueUI : MonoBehaviour
 
         activeOfferingSlots.Clear();
 
-        foreach (Transform child in offeringsContainer)
-        {
-            Destroy(child.gameObject);
-        }
+        List<GameObject> toDestroy = new List<GameObject>();
+        foreach (Transform child in offeringsContainer) toDestroy.Add(child.gameObject);
+        for (int i = 0; i < toDestroy.Count; i++) { toDestroy[i].transform.SetParent(null); Destroy(toDestroy[i]); }
 
         for (int i = 0; i < currentOfferings.Count; i++)
         {
@@ -993,10 +992,7 @@ public class StatueUI : MonoBehaviour
             return;
         }
 
-        foreach (InventoryButton slot in backpackSlots)
-        {
-            if (slot != null) Destroy(slot.gameObject);
-        }
+        for (int i = 0; i < backpackSlots.Count; i++) { if (backpackSlots[i] != null) { backpackSlots[i].transform.SetParent(null); Destroy(backpackSlots[i].gameObject); } }
         backpackSlots.Clear();
 
         for (int i = 0; i < container.maxSlots; i++)
@@ -1004,7 +1000,7 @@ public class StatueUI : MonoBehaviour
             GameObject slotObj;
             if (slotPrefab != null)
             {
-                slotObj = Instantiate(slotPrefab, backpackSlotsParent);
+                slotObj = Instantiate(slotPrefab, backpackSlotsParent, false);
             }
             else
             {

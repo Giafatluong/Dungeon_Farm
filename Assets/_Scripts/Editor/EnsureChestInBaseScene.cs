@@ -2,13 +2,8 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 
-[InitializeOnLoad]
 public static class EnsureChestInBaseScene
 {
-    static EnsureChestInBaseScene()
-    {
-        EditorApplication.delayCall += EnsureChest;
-    }
 
     [MenuItem("Tools/Place ChestCanvas in Scene (Unpacked)")]
     public static void PlaceChestCanvas()

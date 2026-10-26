@@ -57,6 +57,19 @@ public class InventoryButton : MonoBehaviour,
         }
 
         FixTextLayout();
+
+        if (currentItem == null)
+        {
+            if (itemIcon != null)
+            {
+                itemIcon.sprite = null;
+                itemIcon.gameObject.SetActive(false);
+            }
+            if (itemAmount != null)
+            {
+                itemAmount.gameObject.SetActive(false);
+            }
+        }
     }
 
     private void OnEnable()
@@ -183,6 +196,12 @@ public class InventoryButton : MonoBehaviour,
     public void ClearItem()
     {
         currentItem = null;
+
+        EnsureIcon();
+        if (itemAmount == null)
+        {
+            itemAmount = GetComponentInChildren<TextMeshProUGUI>(true);
+        }
 
         if (itemIcon != null)
         {

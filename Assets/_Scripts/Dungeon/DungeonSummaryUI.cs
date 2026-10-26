@@ -157,7 +157,11 @@ public class DungeonSummaryUI : MonoBehaviour
     public void Show(ExpeditionResult result, Action onConfirmReturn = null)
     {
         EnsureUIBuilt();
-        if (summaryPanel == null) return;
+        if (summaryPanel == null)
+        {
+            onConfirmReturn?.Invoke();
+            return;
+        }
 
         HasConfirmedReturn = false;
         currentResult = result;
@@ -168,7 +172,23 @@ public class DungeonSummaryUI : MonoBehaviour
 
         if (CombatUI.Instance != null && CombatUI.Instance.gameObject != null)
         {
-            CombatUI.Instance.gameObject.SetActive(false);
+            if (CombatUI.Instance.GetComponent<Canvas>() == null && (canvas == null || CombatUI.Instance.gameObject != canvas.gameObject))
+            {
+                CombatUI.Instance.gameObject.SetActive(false);
+            }
+            else
+            {
+                if (CombatUI.Instance.targetInfoPanel != null) CombatUI.Instance.targetInfoPanel.SetActive(false);
+                if (CombatUI.Instance.foodPanel != null) CombatUI.Instance.foodPanel.SetActive(false);
+                if (CombatUI.Instance.victoryPanel != null) CombatUI.Instance.victoryPanel.SetActive(false);
+                if (CombatUI.Instance.defeatPanel != null) CombatUI.Instance.defeatPanel.SetActive(false);
+                if (CombatUI.Instance.rewardPanel != null) CombatUI.Instance.rewardPanel.SetActive(false);
+                CombatUI.Instance.enabled = false;
+            }
+        }
+        if (CampUI.Instance != null)
+        {
+            CampUI.Instance.HideCampScreen();
         }
         if (FloorVictoryUI.Instance != null)
         {
@@ -610,9 +630,13 @@ public class DungeonSummaryUI : MonoBehaviour
         if (canvas == null) return;
 
         // 1. Dark Fullscreen Overlay
-        GameObject overlayGO = new("DungeonSummaryPanel", typeof(RectTransform), typeof(Image));
+        GameObject overlayGO = new("DungeonSummaryPanel", typeof(RectTransform), typeof(Image), typeof(Canvas), typeof(GraphicRaycaster));
         overlayGO.transform.SetParent(canvas.transform, false);
         summaryPanel = overlayGO;
+
+        Canvas summaryCanvas = overlayGO.GetComponent<Canvas>();
+        summaryCanvas.overrideSorting = true;
+        summaryCanvas.sortingOrder = 500;
 
         RectTransform overlayRT = overlayGO.GetComponent<RectTransform>();
         overlayRT.anchorMin = Vector2.zero;
@@ -900,6 +924,7 @@ public class DungeonSummaryUI : MonoBehaviour
         btnTxtRT.anchorMax = Vector2.one;
         btnTxtRT.sizeDelta = Vector2.zero;
         returnButtonText = btnTxtGO.GetComponent<TextMeshProUGUI>();
+        returnButtonText.raycastTarget = false;
         DungeonUIAssetHelper.ApplyFont(returnButtonText);
         returnButtonText.fontSize = 14;
         returnButtonText.fontStyle = FontStyles.Bold;

@@ -40,30 +40,12 @@ public class ChestUI : MonoBehaviour
     {
         if (_instance != null) return _instance;
 
+        // ChestCanvas is authored directly in the scene hierarchy
         _instance = FindFirstObjectByType<ChestUI>(FindObjectsInactive.Include);
-        if (_instance != null) return _instance;
-
-        // Try load ChestCanvas prefab from Resources
-        GameObject prefab = Resources.Load<GameObject>("ChestCanvas");
-
-#if UNITY_EDITOR
-        if (prefab == null)
+        if (_instance != null)
         {
-            prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/ChestCanvas.prefab")
-                  ?? UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Assets/_Prefabs/ChestCanvas.prefab");
-        }
-#endif
-
-        if (prefab != null)
-        {
-            GameObject go = Instantiate(prefab);
-            go.name = "ChestCanvas";
-            _instance = go.GetComponentInChildren<ChestUI>(true);
-            if (_instance != null)
-            {
-                _instance.AutoBindReferences();
-                return _instance;
-            }
+            _instance.AutoBindReferences();
+            return _instance;
         }
 
         return _instance;

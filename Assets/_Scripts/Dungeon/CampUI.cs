@@ -107,6 +107,25 @@ public class CampUI : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (foodModal != null && foodModal.activeSelf)
+            {
+                UIEscapeManager.ConsumeEscape();
+                foodModal.SetActive(false);
+                return;
+            }
+            if (cookModal != null && cookModal.activeSelf)
+            {
+                UIEscapeManager.ConsumeEscape();
+                cookModal.SetActive(false);
+                return;
+            }
+        }
+    }
+
     private void OnDestroy()
     {
         UnsubscribeEvents();
