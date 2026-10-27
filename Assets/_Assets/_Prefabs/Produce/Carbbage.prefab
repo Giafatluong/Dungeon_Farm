@@ -114,6 +114,7 @@ MonoBehaviour:
   jumpForce: 3
   horizontalForce: 2
   dropTime: 0.2
+  canCollect: 0
 --- !u!50 &-879652103591965572
 Rigidbody2D:
   serializedVersion: 5
