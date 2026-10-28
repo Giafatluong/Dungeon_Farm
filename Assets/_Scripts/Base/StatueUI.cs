@@ -66,6 +66,31 @@ public class StatueUI : MonoBehaviour
             return;
         }
         _instance = this;
+        AutoBindReferences();
+    }
+
+    private void AutoBindReferences()
+    {
+        if (statuePanel == null)
+        {
+            Transform t = transform.Find("StatuePanel");
+            if (t != null) statuePanel = t.gameObject;
+        }
+        if (offeringsContainer == null && statuePanel != null)
+        {
+            Transform t = statuePanel.transform.Find("Window/OfferingsColumn/ScrollView/Viewport/OfferingsContent");
+            if (t != null) offeringsContainer = t;
+        }
+        if (backpackSlotsParent == null && statuePanel != null)
+        {
+            Transform t = statuePanel.transform.Find("Window/BackpackColumn/ScrollView/Viewport/BackpackSlots");
+            if (t != null) backpackSlotsParent = t;
+        }
+        if (canvas == null)
+        {
+            canvas = GetComponentInParent<Canvas>();
+            if (canvas == null) canvas = GetComponent<Canvas>();
+        }
     }
 
     private void Start()
@@ -693,7 +718,12 @@ public class StatueUI : MonoBehaviour
         cardGO.transform.SetParent(parent, false);
 
         RectTransform cardRT = cardGO.GetComponent<RectTransform>();
-        cardRT.sizeDelta = new Vector2(0, 116);
+        cardRT.sizeDelta = new Vector2(0, 92);
+
+        LayoutElement cardLE = cardGO.AddComponent<LayoutElement>();
+        cardLE.minHeight = 92f;
+        cardLE.preferredHeight = 92f;
+        cardLE.flexibleHeight = 0;
 
         Image cardBg = cardGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedPanel(cardBg, isDone ? DungeonUIAssetHelper.PanelStyle.Wood : DungeonUIAssetHelper.PanelStyle.Slate);
@@ -703,18 +733,22 @@ public class StatueUI : MonoBehaviour
         outline.effectDistance = new Vector2(1, -1);
 
         VerticalLayoutGroup vlg = cardGO.GetComponent<VerticalLayoutGroup>();
-        vlg.padding = new RectOffset(12, 12, 8, 8);
-        vlg.spacing = 8;
+        vlg.padding = new RectOffset(10, 10, 6, 6);
+        vlg.spacing = 6;
         vlg.childControlWidth = true;
         vlg.childControlHeight = false;
         vlg.childForceExpandWidth = true;
         vlg.childForceExpandHeight = false;
 
         // Header Row (Name + Reward Badge + Completed Badge + Quick Offer Button)
-        GameObject headerGO = new GameObject("Header", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        GameObject headerGO = new GameObject("Header", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
         headerGO.transform.SetParent(cardGO.transform, false);
         RectTransform headerRT = headerGO.GetComponent<RectTransform>();
-        headerRT.sizeDelta = new Vector2(0, 26);
+        headerRT.sizeDelta = new Vector2(0, 22);
+
+        LayoutElement headerLE = headerGO.GetComponent<LayoutElement>();
+        headerLE.minHeight = 22f;
+        headerLE.preferredHeight = 22f;
 
         HorizontalLayoutGroup hlg = headerGO.GetComponent<HorizontalLayoutGroup>();
         hlg.spacing = 8;
@@ -728,29 +762,29 @@ public class StatueUI : MonoBehaviour
         nameGO.transform.SetParent(headerGO.transform, false);
         TextMeshProUGUI titleTMP = nameGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(titleTMP);
-        titleTMP.fontSize = 13;
+        titleTMP.fontSize = 12;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.text = GetOfferingDisplayName(off);
         titleTMP.color = isDone ? new Color(0.4f, 1f, 0.6f) : new Color(1f, 0.88f, 0.4f);
-        nameGO.GetComponent<RectTransform>().sizeDelta = new Vector2(240, 26);
+        nameGO.GetComponent<RectTransform>().sizeDelta = new Vector2(230, 22);
 
         // Reward Badge
         GameObject badgeGO = new GameObject("RewardBadge", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
         badgeGO.transform.SetParent(headerGO.transform, false);
         Image badgeImg = badgeGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(badgeImg, GetStatBadgeColor(off.rewardStat));
-        badgeGO.GetComponent<RectTransform>().sizeDelta = new Vector2(110, 22);
+        badgeGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
 
         GameObject badgeTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         badgeTextGO.transform.SetParent(badgeGO.transform, false);
         TextMeshProUGUI badgeTMP = badgeTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(badgeTMP);
-        badgeTMP.fontSize = 11;
+        badgeTMP.fontSize = 10;
         badgeTMP.alignment = TextAlignmentOptions.Center;
         badgeTMP.fontStyle = FontStyles.Bold;
         badgeTMP.text = $"+{off.rewardAmount} {off.rewardStat}";
         badgeTMP.color = Color.white;
-        badgeTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(110, 22);
+        badgeTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
 
         // Status or Quick Offer Button
         if (isDone)
@@ -763,14 +797,14 @@ public class StatueUI : MonoBehaviour
             doneTMP.fontStyle = FontStyles.Bold;
             doneTMP.text = "[COMPLETED]";
             doneTMP.color = new Color(0.35f, 1f, 0.5f);
-            doneGO.GetComponent<RectTransform>().sizeDelta = new Vector2(130, 26);
+            doneGO.GetComponent<RectTransform>().sizeDelta = new Vector2(100, 22);
         }
         else
         {
             GameObject btnGO = new GameObject("BtnQuickOffer", typeof(RectTransform), typeof(Image), typeof(Button));
             btnGO.transform.SetParent(headerGO.transform, false);
             Image btnBg = btnGO.GetComponent<Image>();
-            btnGO.GetComponent<RectTransform>().sizeDelta = new Vector2(110, 24);
+            btnGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 22);
 
             Button btn = btnGO.GetComponent<Button>();
             DungeonUIAssetHelper.StyleTactileButton(btn, btnBg, DungeonUIAssetHelper.ButtonStyle.Victory);
@@ -781,22 +815,26 @@ public class StatueUI : MonoBehaviour
             btnTextGO.transform.SetParent(btnGO.transform, false);
             TextMeshProUGUI btnTMP = btnTextGO.GetComponent<TextMeshProUGUI>();
             DungeonUIAssetHelper.ApplyFont(btnTMP);
-            btnTMP.fontSize = 11;
+            btnTMP.fontSize = 10;
             btnTMP.fontStyle = FontStyles.Bold;
             btnTMP.alignment = TextAlignmentOptions.Center;
             btnTMP.text = "Quick Offer";
             btnTMP.color = Color.white;
-            btnTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(110, 24);
+            btnTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 22);
         }
 
         // Requirements Row
-        GameObject reqsRowGO = new GameObject("RequirementsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        GameObject reqsRowGO = new GameObject("RequirementsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
         reqsRowGO.transform.SetParent(cardGO.transform, false);
         RectTransform reqsRowRT = reqsRowGO.GetComponent<RectTransform>();
-        reqsRowRT.sizeDelta = new Vector2(0, 68);
+        reqsRowRT.sizeDelta = new Vector2(0, 52);
+
+        LayoutElement reqsLE = reqsRowGO.GetComponent<LayoutElement>();
+        reqsLE.minHeight = 52f;
+        reqsLE.preferredHeight = 52f;
 
         HorizontalLayoutGroup reqsHLG = reqsRowGO.GetComponent<HorizontalLayoutGroup>();
-        reqsHLG.spacing = 14;
+        reqsHLG.spacing = 8;
         reqsHLG.childControlWidth = false;
         reqsHLG.childControlHeight = false;
         reqsHLG.childForceExpandWidth = false;
@@ -817,11 +855,17 @@ public class StatueUI : MonoBehaviour
     private void CreateOfferingSlot(Offering off, int reqIndex, ItemRequirement req, Transform parent)
     {
         // Slot Box Root
-        GameObject slotGO = new GameObject($"ReqSlot_{reqIndex}", typeof(RectTransform), typeof(Image), typeof(OfferingSlot));
+        GameObject slotGO = new GameObject($"ReqSlot_{reqIndex}", typeof(RectTransform), typeof(Image), typeof(OfferingSlot), typeof(LayoutElement));
         slotGO.transform.SetParent(parent, false);
 
         RectTransform slotRT = slotGO.GetComponent<RectTransform>();
-        slotRT.sizeDelta = new Vector2(62, 62);
+        slotRT.sizeDelta = new Vector2(48, 48);
+
+        LayoutElement slotLE = slotGO.GetComponent<LayoutElement>();
+        slotLE.minWidth = 48f;
+        slotLE.preferredWidth = 48f;
+        slotLE.minHeight = 48f;
+        slotLE.preferredHeight = 48f;
 
         Image slotBg = slotGO.GetComponent<Image>();
         Sprite slotSp = DungeonUIAssetHelper.GetSlotSprite();
@@ -847,7 +891,7 @@ public class StatueUI : MonoBehaviour
         iconRT.anchorMin = new Vector2(0.5f, 0.5f);
         iconRT.anchorMax = new Vector2(0.5f, 0.5f);
         iconRT.anchoredPosition = new Vector2(0, 5);
-        iconRT.sizeDelta = new Vector2(38, 38);
+        iconRT.sizeDelta = new Vector2(28, 28);
 
         Image iconImg = iconGO.GetComponent<Image>();
         iconImg.preserveAspect = true;
@@ -860,12 +904,12 @@ public class StatueUI : MonoBehaviour
         countRT.anchorMin = new Vector2(0, 0);
         countRT.anchorMax = new Vector2(1, 0);
         countRT.pivot = new Vector2(0.5f, 0);
-        countRT.anchoredPosition = new Vector2(0, 2);
-        countRT.sizeDelta = new Vector2(0, 16);
+        countRT.anchoredPosition = new Vector2(0, 1);
+        countRT.sizeDelta = new Vector2(0, 14);
 
         TextMeshProUGUI countTMP = countGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(countTMP);
-        countTMP.fontSize = 11;
+        countTMP.fontSize = 10;
         countTMP.fontStyle = FontStyles.Bold;
         countTMP.alignment = TextAlignmentOptions.Center;
         countTMP.raycastTarget = false;
@@ -878,11 +922,11 @@ public class StatueUI : MonoBehaviour
         checkRT.anchorMax = new Vector2(1, 1);
         checkRT.pivot = new Vector2(1, 1);
         checkRT.anchoredPosition = new Vector2(-2, -2);
-        checkRT.sizeDelta = new Vector2(18, 18);
+        checkRT.sizeDelta = new Vector2(16, 16);
 
         TextMeshProUGUI checkTMP = checkGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(checkTMP);
-        checkTMP.fontSize = 12;
+        checkTMP.fontSize = 10;
         checkTMP.fontStyle = FontStyles.Bold;
         checkTMP.alignment = TextAlignmentOptions.Center;
         checkTMP.text = "<color=#55FF88>[V]</color>";
