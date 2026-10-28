@@ -70,6 +70,11 @@ public class DayManager : MonoBehaviour
         currentDay = PlayerPrefs.GetInt("Farm_CurrentDay", currentDay);
     }
 
+    private void Start()
+    {
+        DayTransitionUI.EnsureInstance();
+    }
+
     /// <summary>
     /// Called when the player interacts with the bed to sleep and advance the day.
     /// Triggers the Morning Report & Day Transition UI sequence.
@@ -79,12 +84,7 @@ public class DayManager : MonoBehaviour
         Debug.Log($"[DayManager] Player is sleeping... Advancing from Day {currentDay}.");
         OnDaySleep?.Invoke();
 
-        DayTransitionUI transitionUI = DayTransitionUI.Instance != null ? DayTransitionUI.Instance : FindFirstObjectByType<DayTransitionUI>();
-        if (transitionUI == null && Application.isPlaying)
-        {
-            GameObject go = new GameObject("DayTransitionUI");
-            transitionUI = go.AddComponent<DayTransitionUI>();
-        }
+        DayTransitionUI transitionUI = DayTransitionUI.EnsureInstance();
 
         if (transitionUI != null && !transitionUI.IsOpen)
         {

@@ -11,6 +11,27 @@ using UnityEngine.UI;
 /// </summary>
 public class DayTransitionUI : MonoBehaviour
 {
+    public static DayTransitionUI EnsureInstance()
+    {
+        if (Instance != null) return Instance;
+
+        DayTransitionUI found = FindFirstObjectByType<DayTransitionUI>(FindObjectsInactive.Include);
+        if (found != null)
+        {
+            Instance = found;
+            return Instance;
+        }
+
+        if (Application.isPlaying)
+        {
+            GameObject go = new GameObject("DayTransitionUI");
+            Instance = go.AddComponent<DayTransitionUI>();
+            DontDestroyOnLoad(go);
+            return Instance;
+        }
+
+        return null;
+    }
     public static DayTransitionUI Instance { get; private set; }
 
     [Header("UI References (Optional - Auto constructed if null)")]
@@ -56,7 +77,10 @@ public class DayTransitionUI : MonoBehaviour
     private void OnEnable()
     {
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += HandleSceneLoaded;
-        ResetToHiddenState();
+        if (!isTransitionActive)
+        {
+            ResetToHiddenState();
+        }
     }
 
     private void OnDisable()
@@ -78,7 +102,10 @@ public class DayTransitionUI : MonoBehaviour
     private void Start()
     {
         EnsureUIConstructed();
-        ResetToHiddenState();
+        if (!isTransitionActive)
+        {
+            ResetToHiddenState();
+        }
     }
 
     private void Update()

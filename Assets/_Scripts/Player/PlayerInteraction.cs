@@ -181,8 +181,21 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
-    private void InteractBed()
+        private void InteractBed()
     {
+        if (currentBeds.Count == 0)
+        {
+            BedInteraction[] allBeds = FindObjectsByType<BedInteraction>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            for (int i = 0; i < allBeds.Length; i++)
+            {
+                if (allBeds[i] != null && allBeds[i].IsPlayerInRange(transform.position))
+                {
+                    currentBeds.Add(allBeds[i]);
+                    break;
+                }
+            }
+        }
+
         if (currentBeds.Count == 0)
             return;
 
@@ -191,7 +204,6 @@ public class PlayerInteraction : MonoBehaviour
         if (nearestBed == null)
             return;
 
-        // Strictly verify that the player is physically within range of this bed!
         if (!nearestBed.IsPlayerInRange(transform.position))
         {
             currentBeds.Remove(nearestBed);

@@ -33134,6 +33134,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a42829e4a825b8a43a1a598eed63df80, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuUI
+  targetCanvas: {fileID: 1042130625}
+  menuRootGO: {fileID: 1408442773}
+  menuCanvasGroup: {fileID: 1408442775}
+  mainButtonsPanel: {fileID: 1526698604}
+  howToPlayPanel: {fileID: 694444149}
+  settingsPanel: {fileID: 872990406}
+  confirmNewGamePanel: {fileID: 1185539483}
+  saveInfoText: {fileID: 1746253467}
+  fullscreenBtnText: {fileID: 124983812}
+  soundBtnText: {fileID: 997119751}
+  hudMenuButtonGO: {fileID: 377377697}
 --- !u!114 &1042130623
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -44719,7 +44730,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1408442774
 RectTransform:
   m_ObjectHideFlags: 0
@@ -44748,9 +44759,9 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1408442773}
   m_Enabled: 1
-  m_Alpha: 0
-  m_Interactable: 0
-  m_BlocksRaycasts: 0
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
 --- !u!114 &1408442776
 MonoBehaviour:

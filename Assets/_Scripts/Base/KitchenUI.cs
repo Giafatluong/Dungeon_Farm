@@ -333,48 +333,22 @@ public class KitchenUI : MonoBehaviour
             return;
         }
 
-        // Check if item already exists in one of the pot slots (stack into same slot)
-        ItemSlot existingSlot = null;
-        for (int i = 0; i < potSlots.Count; i++)
+        // Mỗi ô chỉ chứa đúng 1 nguyên liệu, không stack vào ô cũ
+        if (potSlots.Count >= MAX_POT_SLOTS)
         {
-            if (potSlots[i] != null && ItemContainer.IsItemMatch(potSlots[i].itemData, item))
-            {
-                existingSlot = potSlots[i];
-                break;
-            }
+            ShowToast($"Nồi nấu đã đầy ({MAX_POT_SLOTS}/{MAX_POT_SLOTS} ô)! Nhấp vào ô nấu để lấy bớt ra.");
+            return;
         }
 
-        if (existingSlot != null)
+        isInternalUpdating = true;
+        try
         {
-            isInternalUpdating = true;
-            try
-            {
-                backpackContainer.RemoveItem(item, 1);
-                existingSlot.amount += 1;
-            }
-            finally
-            {
-                isInternalUpdating = false;
-            }
+            backpackContainer.RemoveItem(item, 1);
+            potSlots.Add(new ItemSlot { itemData = item, amount = 1 });
         }
-        else
+        finally
         {
-            if (potSlots.Count >= MAX_POT_SLOTS)
-            {
-                ShowToast($"Nồi nấu đã đầy ({MAX_POT_SLOTS}/{MAX_POT_SLOTS} ô)! Nhấp vào ô nấu để lấy bớt ra.");
-                return;
-            }
-
-            isInternalUpdating = true;
-            try
-            {
-                backpackContainer.RemoveItem(item, 1);
-                potSlots.Add(new ItemSlot { itemData = item, amount = 1 });
-            }
-            finally
-            {
-                isInternalUpdating = false;
-            }
+            isInternalUpdating = false;
         }
 
         RefreshUI();
@@ -488,10 +462,27 @@ public class KitchenUI : MonoBehaviour
             return;
         }
 
+        // Calculate total items required across all ingredients
+        int totalRequired = 0;
+        for (int i = 0; i < recipe.ingredients.Length; i++)
+        {
+            var req = recipe.ingredients[i];
+            if (req != null && req.item != null && req.amount > 0)
+            {
+                totalRequired += req.amount;
+            }
+        }
+
+        if (totalRequired > MAX_POT_SLOTS)
+        {
+            ShowToast($"Công thức cần {totalRequired} nguyên liệu, vượt quá {MAX_POT_SLOTS} ô nồi nấu!");
+            return;
+        }
+
         // 1. Return current pot items to backpack
         ReturnAllPotItemsToBackpack();
 
-        // 2. Transfer required ingredients from backpack to pot
+        // 2. Transfer required ingredients from backpack to pot (each slot holds exactly 1 ingredient, no stacking)
         isInternalUpdating = true;
         try
         {
@@ -500,8 +491,14 @@ public class KitchenUI : MonoBehaviour
                 ItemRequirement req = recipe.ingredients[i];
                 if (req == null || req.item == null || req.amount <= 0) continue;
 
-                backpackContainer.RemoveItem(req.item, req.amount);
-                potSlots.Add(new ItemSlot { itemData = req.item, amount = req.amount });
+                for (int count = 0; count < req.amount; count++)
+                {
+                    if (potSlots.Count < MAX_POT_SLOTS)
+                    {
+                        backpackContainer.RemoveItem(req.item, 1);
+                        potSlots.Add(new ItemSlot { itemData = req.item, amount = 1 });
+                    }
+                }
             }
         }
         finally
@@ -659,8 +656,9 @@ public class KitchenUI : MonoBehaviour
                 }
                 if (slotUI.countText != null)
                 {
-                    slotUI.countText.gameObject.SetActive(true);
-                    slotUI.countText.text = itemSlot.amount > 1 ? $"x{itemSlot.amount}" : "x1";
+                    // Mỗi ô chứa đúng 1 nguyên liệu (không stack) nên ẩn số lượng
+                    slotUI.countText.gameObject.SetActive(itemSlot.amount > 1);
+                    slotUI.countText.text = itemSlot.amount > 1 ? $"x{itemSlot.amount}" : "";
                 }
                 if (slotUI.highlightBorder != null)
                 {
@@ -906,15 +904,8 @@ public class KitchenUI : MonoBehaviour
         {
             ItemSlot slot = backpackContainer.itemSlots[i];
 
-            GameObject slotGO = null;
-            if (backpackSlotPrefab != null)
-            {
-                slotGO = Instantiate(backpackSlotPrefab, backpackGridContent, false);
-            }
-            else
-            {
-                slotGO = CreateBackpackSlotFallback(backpackGridContent);
-            }
+            if (backpackSlotPrefab == null) backpackSlotPrefab = DungeonUIAssetHelper.GetSlotPrefab();
+            GameObject slotGO = backpackSlotPrefab != null ? Instantiate(backpackSlotPrefab, backpackGridContent, false) : null;
 
             if (slotGO == null) continue;
             slotGO.SetActive(true);
@@ -1003,37 +994,6 @@ public class KitchenUI : MonoBehaviour
                 }
             }
         }
-    }
-
-    private GameObject CreateBackpackSlotFallback(Transform parent)
-    {
-        GameObject go = new GameObject("BackpackSlot", typeof(RectTransform), typeof(Image), typeof(Button));
-        go.transform.SetParent(parent, false);
-        RectTransform rt = go.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(64, 64);
-
-        Image bg = go.GetComponent<Image>();
-        bg.color = new Color(0.92f, 0.88f, 0.80f, 1f);
-
-        GameObject iconGO = new GameObject("ItemIcon", typeof(RectTransform), typeof(Image));
-        iconGO.transform.SetParent(go.transform, false);
-        RectTransform iconRT = iconGO.GetComponent<RectTransform>();
-        iconRT.anchorMin = new Vector2(0.1f, 0.1f);
-        iconRT.anchorMax = new Vector2(0.9f, 0.9f);
-        iconRT.offsetMin = Vector2.zero;
-        iconRT.offsetMax = Vector2.zero;
-
-        GameObject textGO = new GameObject("Text (TMP)", typeof(RectTransform), typeof(TextMeshProUGUI));
-        textGO.transform.SetParent(go.transform, false);
-        RectTransform textRT = textGO.GetComponent<RectTransform>();
-        textRT.anchorMin = new Vector2(0.5f, 0f);
-        textRT.anchorMax = new Vector2(1f, 0.4f);
-        TextMeshProUGUI tmp = textGO.GetComponent<TextMeshProUGUI>();
-        tmp.fontSize = 13f;
-        tmp.alignment = TextAlignmentOptions.BottomRight;
-        tmp.color = Color.black;
-
-        return go;
     }
 
     private void SortBackpack()

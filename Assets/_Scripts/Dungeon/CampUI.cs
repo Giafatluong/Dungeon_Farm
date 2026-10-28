@@ -75,10 +75,7 @@ public class CampUI : MonoBehaviour
             return Instance;
         }
 
-        GameObject go = new GameObject("CampUI_Runtime");
-        Instance = go.AddComponent<CampUI>();
-        Instance.InitializeCampUI();
-        return Instance;
+        return null;
     }
 
     public bool IsOpen => (mainCampPanel != null && mainCampPanel.activeInHierarchy) || (camp != null && camp.isCampOpen);
@@ -136,7 +133,6 @@ public class CampUI : MonoBehaviour
     {
         if (isInitialized) return;
         FindReferences();
-        EnsureUIConstructed();
         BindButtons();
         SubscribeEvents();
         isInitialized = true;
@@ -180,15 +176,6 @@ public class CampUI : MonoBehaviour
             camp.OnAmbushTriggered -= HandleAmbushTriggered;
             isSubscribed = false;
         }
-    }
-
-    /// <summary>
-    /// If UI elements are not assigned in Inspector, delegates to CampUIBuilder to build the UI at runtime.
-    /// </summary>
-    private void EnsureUIConstructed()
-    {
-        if (mainCampPanel != null) return;
-        CampUIBuilder.Build(this);
     }
 
     private void BindButtons()
