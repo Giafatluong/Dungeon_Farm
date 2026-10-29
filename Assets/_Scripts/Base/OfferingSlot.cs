@@ -31,6 +31,15 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
     public int CurrentContributed => currentContributed;
     public int RequiredAmount => requiredAmount;
 
+    public void BindReferences(Image bg, Image icon, TextMeshProUGUI count, GameObject checkmark, Outline slotOutline)
+    {
+        slotBackground = bg;
+        itemIcon = icon;
+        countText = count;
+        checkmarkObj = checkmark;
+        outline = slotOutline;
+    }
+
     public void Setup(Offering offering, int requirementIndex, ItemRequirement requirement)
     {
         parentOffering = offering;

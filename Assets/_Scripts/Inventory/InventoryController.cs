@@ -61,17 +61,7 @@ public class InventoryController : MonoBehaviour
 
     public static bool IsAnyModalOpen()
     {
-        if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return true;
-        if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return true;
-        if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return true;
-        if (MerchantUI.Instance != null && MerchantUI.Instance.IsOpen) return true;
-        if (DungeonEntranceUI.Instance != null && DungeonEntranceUI.Instance.IsOpen) return true;
-        if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen) return true;
-        if (RewardUI.Instance != null && RewardUI.Instance.IsOpen) return true;
-        if (LootUI.Instance != null && LootUI.Instance.IsOpen) return true;
-        if (CampUI.Instance != null && CampUI.Instance.IsOpen) return true;
-        if (DungeonEventUI.Instance != null && DungeonEventUI.Instance.IsOpen) return true;
-        if (FloorVictoryUI.Instance != null && FloorVictoryUI.Instance.IsOpen) return true;
+        if (UIEscapeManager.IsAnyModalUIOpen(includeInventory: false, includeMainMenu: true)) return true;
         if (CombatManager.Instance != null && (CombatManager.Instance.isCombatActive || CombatManager.Instance.isPreparingCombat)) return true;
         return false;
     }

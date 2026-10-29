@@ -933,13 +933,9 @@ public class StatueUI : MonoBehaviour
         checkTMP.raycastTarget = false;
         checkGO.SetActive(false);
 
-        // Bind references to OfferingSlot component via reflection/fields
+        // Bind references directly to OfferingSlot component (zero reflection overhead)
         OfferingSlot slotComp = slotGO.GetComponent<OfferingSlot>();
-        SetPrivateField(slotComp, "slotBackground", slotBg);
-        SetPrivateField(slotComp, "itemIcon", iconImg);
-        SetPrivateField(slotComp, "countText", countTMP);
-        SetPrivateField(slotComp, "checkmarkObj", checkGO);
-        SetPrivateField(slotComp, "outline", outline);
+        slotComp.BindReferences(slotBg, iconImg, countTMP, checkGO, outline);
 
         slotComp.Setup(off, reqIndex, req);
         activeOfferingSlots.Add(slotComp);

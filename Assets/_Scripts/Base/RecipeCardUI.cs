@@ -1,7 +1,7 @@
 using System.Text;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 /// <summary>
 /// Individual Recipe Card in the Recipe Notebook (Sổ Tay Công Thức) of KitchenUI.
@@ -22,7 +22,7 @@ public class RecipeCardUI : MonoBehaviour
     public TextMeshProUGUI actionButtonText;
     public GameObject lockIcon;
 
-    public void Setup(RecipeData recipe, ItemContainer backpack, bool isCurrentlySelected, System.Action onAutoFill)
+    public void Setup(RecipeData recipe, ItemContainer backpack, bool isCurrentlySelected, System.Action onAutoFill, ItemContainer chest = null)
     {
         if (recipe == null) return;
 
@@ -74,7 +74,7 @@ public class RecipeCardUI : MonoBehaviour
         }
 
         // Button state
-        bool canCook = CookingManager.Instance != null && CookingManager.Instance.CanCook(recipe, backpack);
+        bool canCook = CookingManager.Instance != null && CookingManager.Instance.CanCook(recipe, backpack, chest);
 
         if (actionButton != null)
         {

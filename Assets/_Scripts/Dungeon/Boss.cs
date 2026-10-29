@@ -28,12 +28,17 @@ public class Boss : EnemyStats
 
     public override int TakeDamage(int damage)
     {
-        return TakeDamage(damage, true);
+        return TakeDamage(damage, true, false);
     }
 
     public override int TakeDamage(int damage, bool showFeedback)
     {
-        int actualDamage = base.TakeDamage(damage, showFeedback);
+        return TakeDamage(damage, showFeedback, false);
+    }
+
+    public override int TakeDamage(int damage, bool showFeedback, bool ignoreDefense)
+    {
+        int actualDamage = base.TakeDamage(damage, showFeedback, ignoreDefense);
         CheckPhaseTransition();
         return actualDamage;
     }

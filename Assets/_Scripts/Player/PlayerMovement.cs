@@ -4,9 +4,12 @@ using UnityEngine.SceneManagement;
 public class PlayerMovement : MonoBehaviour
 {
     public float speed = 5f;
+    public float sprintMultiplier = 1.5f;
 
     private Rigidbody2D rb;
     private Vector2 movement;
+    private bool isSprinting;
+    private bool isIdleAnimLocked;
     private Animator anim;
     private SpriteRenderer spriteRenderer;
     [SerializeField] private CombatManager combatManager;
@@ -81,25 +84,18 @@ public class PlayerMovement : MonoBehaviour
 
     private bool IsAnyUIOpen()
     {
-        if (inventoryPanel == null && Time.time >= nextInvSearchTime)
-        {
-            nextInvSearchTime = Time.time + 1.0f;
-            inventoryPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
-        }
-        if (inventoryPanel != null && inventoryPanel.gameObject.activeSelf) return true;
+        if (UIEscapeManager.IsAnyModalUIOpen(includeInventory: true, includeMainMenu: true)) return true;
 
-        if (MainMenuUI.Instance != null && MainMenuUI.Instance.IsOpen) return true;
-        if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return true;
-        if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return true;
-        if (MerchantUI.Instance != null && MerchantUI.Instance.IsOpen) return true;
-        if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return true;
-        if (RewardUI.Instance != null && RewardUI.Instance.IsOpen) return true;
-        if (LootUI.Instance != null && LootUI.Instance.IsOpen) return true;
-        if (CampUI.Instance != null && CampUI.Instance.IsOpen) return true;
-        if (DungeonEventUI.Instance != null && DungeonEventUI.Instance.IsOpen) return true;
-        if (FloorVictoryUI.Instance != null && FloorVictoryUI.Instance.IsOpen) return true;
-        if (DungeonEntranceUI.Instance != null && DungeonEntranceUI.Instance.IsOpen) return true;
-        if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen) return true;
+        if (InventoryController.Instance == null)
+        {
+            if (inventoryPanel == null && Time.time >= nextInvSearchTime)
+            {
+                nextInvSearchTime = Time.time + 1.0f;
+                inventoryPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+            }
+            if (inventoryPanel != null && inventoryPanel.gameObject.activeSelf) return true;
+        }
+
         return false;
     }
 
@@ -108,21 +104,25 @@ public class PlayerMovement : MonoBehaviour
         if (IsInCombat() || IsAnyUIOpen())
         {
             movement = Vector2.zero;
-            if (anim != null)
+            isSprinting = false;
+            if (!isIdleAnimLocked && anim != null)
             {
                 anim.SetFloat(HorizontalHash, 0f);
                 anim.SetFloat(VerticalHash, 0f);
                 anim.SetFloat(SpeedHash, 0f);
                 anim.SetFloat(LastHorizontalHash, 1f);
                 anim.SetFloat(LastVerticalHash, 0f);
+                isIdleAnimLocked = true;
             }
             return;
         }
 
+        isIdleAnimLocked = false;
         movement.x = Input.GetAxisRaw("Horizontal");
         movement.y = Input.GetAxisRaw("Vertical");
 
         movement = movement.normalized;
+        isSprinting = movement != Vector2.zero && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
 
         if (anim != null)
         {
@@ -157,7 +157,8 @@ public class PlayerMovement : MonoBehaviour
         {
             bonus += ProgressionManager.Instance.permanentSpeed * 0.4f;
         }
-        return speed + bonus;
+        float baseAndBonus = speed + bonus;
+        return isSprinting ? baseAndBonus * sprintMultiplier : baseAndBonus;
     }
 
     private void FixedUpdate()

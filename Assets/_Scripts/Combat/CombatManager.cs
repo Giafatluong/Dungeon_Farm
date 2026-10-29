@@ -424,7 +424,7 @@ public class CombatManager : MonoBehaviour
         if (ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.BitterDecay) && target.currentHealth > 0)
         {
             target.ReduceDEF(2);
-            int poisonDmg = target.TakeDamage(4); // Extra 4 direct poison damage
+            int poisonDmg = target.TakeDamage(4, showFeedback: true, ignoreDefense: true); // Extra 4 direct poison damage
             DamagePopupManager.ShowText(target.transform.position + Vector3.up * 1.2f, $"Decay Poison! -{poisonDmg} HP", new Color(0.6f, 0.3f, 0.9f), 4.5f);
             LogMessage($"[Blessing: BitterDecay] Corroded 2 DEF and dealt {poisonDmg} poison damage to {target.enemyData?.enemyName ?? "monster"}!");
             if (VFXManager.Instance != null)

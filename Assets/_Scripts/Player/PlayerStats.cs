@@ -151,7 +151,7 @@ public class PlayerStats : MonoBehaviour
         // If raw produce or unprocessed food
         if (food == null)
         {
-            if (item.itemType == ItemData.ItemType.Produce || item.itemType == ItemData.ItemType.Food || item.itemType == ItemData.ItemType.Seed)
+            if (item.itemType == ItemData.ItemType.Produce || item.itemType == ItemData.ItemType.Food)
             {
                 if (itemContainer != null && !itemContainer.HasItem(item))
                 {

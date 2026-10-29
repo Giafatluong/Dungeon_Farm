@@ -10,6 +10,7 @@ public class BedInteraction : MonoBehaviour, IInteractable
     public float maxInteractDistance = 2.0f;
 
     private Collider2D cachedCol;
+    public Collider2D CachedCollider => cachedCol != null ? cachedCol : (cachedCol = GetComponent<Collider2D>());
 
     private void Awake()
     {
@@ -29,8 +30,8 @@ public class BedInteraction : MonoBehaviour, IInteractable
     /// </summary>
     public bool IsPlayerInRange(Vector3 playerPosition)
     {
-        if (cachedCol == null) cachedCol = GetComponent<Collider2D>();
-        Vector2 bedPoint = (cachedCol != null) ? cachedCol.ClosestPoint(playerPosition) : (Vector2)transform.position;
+        Collider2D col = CachedCollider;
+        Vector2 bedPoint = (col != null) ? col.ClosestPoint(playerPosition) : (Vector2)transform.position;
         return Vector2.Distance(bedPoint, playerPosition) <= maxInteractDistance;
     }
 
@@ -43,22 +44,7 @@ public class BedInteraction : MonoBehaviour, IInteractable
             return;
         }
 
-        if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen)
-            return;
-
-        if (ChestUI.Instance != null && ChestUI.Instance.IsOpen)
-            return;
-
-        if (HomeChest.Instance != null && HomeChest.Instance.isOpen)
-            return;
-
-        if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen)
-            return;
-
-        if (KitchenStation.Instance != null && KitchenStation.Instance.isOpen)
-            return;
-
-        if (StatueUI.Instance != null && StatueUI.Instance.IsOpen)
+        if (UIEscapeManager.IsAnyModalUIOpen())
             return;
 
         DayManager targetDayManager = (DayManager.Instance != null) ? DayManager.Instance : dayManager;

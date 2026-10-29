@@ -149,8 +149,6 @@ public class KitchenUI : MonoBehaviour
     private float toastTimer = 0f;
     private bool isExplicitlyOpened = false;
     private bool isInternalUpdating = false;
-    private bool isCooking = false;
-    private Coroutine cookCoroutine;
 
     public bool IsOpen => isExplicitlyOpened && kitchenPanel != null && kitchenPanel.activeSelf;
     #endregion
@@ -194,6 +192,31 @@ public class KitchenUI : MonoBehaviour
             }
         }
 
+        if (currentStation == null) currentStation = KitchenStation.Instance;
+
+        if (currentStation != null && currentStation.isCooking)
+        {
+            float elapsed = Time.time - currentStation.cookStartTime;
+            float pct = Mathf.Clamp01(elapsed / currentStation.cookDuration);
+
+            if (progressSlider != null) progressSlider.value = pct;
+            if (progressStatusText != null)
+            {
+                progressStatusText.text = $"🔥 ĐANG NẤU... {Mathf.RoundToInt(pct * 100)}% ({elapsed:0.0}s/{currentStation.cookDuration:0.0}s)";
+            }
+            if (stoveSubtitleText != null)
+            {
+                stoveSubtitleText.text = "🔥 Bếp Đang Nấu Sôi Sùng Sục • Bạn Có Thể Đóng Cửa Sổ Đi Làm Việc Khác...";
+            }
+            if (cookButtonText != null) cookButtonText.text = "🔥 ĐANG NẤU...";
+            if (cookButton != null) cookButton.interactable = false;
+            if (cancelPotButton != null)
+            {
+                cancelPotButton.gameObject.SetActive(true);
+                cancelPotButton.interactable = true;
+            }
+        }
+
         if (IsOpen && Input.GetKeyDown(KeyCode.Escape))
         {
             UIEscapeManager.ConsumeEscape();
@@ -203,10 +226,6 @@ public class KitchenUI : MonoBehaviour
 
     private void OnDisable()
     {
-        if (isCooking)
-        {
-            StopCookingCoroutine();
-        }
         ReturnAllPotItemsToBackpack();
         UnsubscribeContainerEvents();
     }
@@ -248,13 +267,6 @@ public class KitchenUI : MonoBehaviour
 
         SubscribeContainerEvents();
 
-        isCooking = false;
-        if (cookCoroutine != null) StopCoroutine(cookCoroutine);
-
-        if (progressSlider != null) progressSlider.value = 0f;
-        if (progressStatusText != null) progressStatusText.text = "SẴN SÀNG";
-        if (stoveSubtitleText != null) stoveSubtitleText.text = "Bếp Lửa Sôi Sùng Sục • Sẵn Sàng Chế Biến";
-
         currentFilter = RecipeFilter.All;
         RefreshUI();
 
@@ -264,11 +276,6 @@ public class KitchenUI : MonoBehaviour
 
     public void Close()
     {
-        if (isCooking)
-        {
-            StopCookingCoroutine();
-        }
-
         isExplicitlyOpened = false;
         ReturnAllPotItemsToBackpack();
         UnsubscribeContainerEvents();
@@ -325,7 +332,20 @@ public class KitchenUI : MonoBehaviour
     #region Pot Management
     public void AddToPot(ItemData item)
     {
-        if (item == null || backpackContainer == null || isCooking) return;
+        if (item == null || backpackContainer == null) return;
+
+        if (currentStation == null) currentStation = KitchenStation.Instance;
+        if (currentStation != null && currentStation.hasCompletedFood)
+        {
+            ShowToast("<color=#FFAA00>Hãy nhận món ăn đã nấu xong trước khi cho thêm nguyên liệu mới!</color>");
+            return;
+        }
+
+        if (currentStation != null && currentStation.isCooking)
+        {
+            ShowToast("<color=#FFAA00>Bếp đang nấu! Vui lòng chờ nấu xong trước khi cho thêm nguyên liệu.</color>");
+            return;
+        }
 
         if (backpackContainer.GetItemCount(item) <= 0)
         {
@@ -356,7 +376,7 @@ public class KitchenUI : MonoBehaviour
 
     public void RemoveFromPot(int slotIndex)
     {
-        if (isCooking || slotIndex < 0 || slotIndex >= potSlots.Count || backpackContainer == null) return;
+        if ((currentStation != null && currentStation.isCooking) || slotIndex < 0 || slotIndex >= potSlots.Count || backpackContainer == null) return;
 
         isInternalUpdating = true;
         try
@@ -419,6 +439,7 @@ public class KitchenUI : MonoBehaviour
         if (chestContainer != null && chestContainer.CanAddItem(item))
         {
             chestContainer.AddItem(item, amount);
+            HomeChest.SaveContainer(chestContainer);
             ShowToast($"Balo đầy! Đã chuyển <color=#FFD700>{item.itemName} x{amount}</color> vào Rương.");
             return;
         }
@@ -454,9 +475,22 @@ public class KitchenUI : MonoBehaviour
     #region Auto-Fill Recipe
     public void AutoFillRecipe(RecipeData recipe)
     {
-        if (recipe == null || backpackContainer == null || isCooking) return;
+        if (recipe == null || backpackContainer == null) return;
 
-        if (!CookingManager.Instance.CanCook(recipe, backpackContainer))
+        if (currentStation == null) currentStation = KitchenStation.Instance;
+        if (currentStation != null && currentStation.hasCompletedFood)
+        {
+            ShowToast("<color=#FFAA00>Hãy nhận món ăn đã nấu xong trước khi nấu món mới!</color>");
+            return;
+        }
+
+        if (currentStation != null && currentStation.isCooking)
+        {
+            ShowToast("<color=#FFAA00>Bếp đang nấu! Vui lòng chờ nấu xong trước khi cho thêm nguyên liệu.</color>");
+            return;
+        }
+
+        if (!CookingManager.Instance.CanCook(recipe, backpackContainer, chestContainer))
         {
             ShowToast($"Không đủ nguyên liệu để nấu <color=#FFAA00>{recipe.DisplayName}</color>!");
             return;
@@ -482,7 +516,8 @@ public class KitchenUI : MonoBehaviour
         // 1. Return current pot items to backpack
         ReturnAllPotItemsToBackpack();
 
-        // 2. Transfer required ingredients from backpack to pot (each slot holds exactly 1 ingredient, no stacking)
+        // 2. Transfer required ingredients from backpack (and chest if needed) to pot (each slot holds 1 ingredient)
+        bool usedChest = false;
         isInternalUpdating = true;
         try
         {
@@ -495,7 +530,15 @@ public class KitchenUI : MonoBehaviour
                 {
                     if (potSlots.Count < MAX_POT_SLOTS)
                     {
-                        backpackContainer.RemoveItem(req.item, 1);
+                        if (backpackContainer.HasItem(req.item, 1))
+                        {
+                            backpackContainer.RemoveItem(req.item, 1);
+                        }
+                        else if (chestContainer != null && chestContainer.HasItem(req.item, 1))
+                        {
+                            chestContainer.RemoveItem(req.item, 1);
+                            usedChest = true;
+                        }
                         potSlots.Add(new ItemSlot { itemData = req.item, amount = 1 });
                     }
                 }
@@ -506,6 +549,11 @@ public class KitchenUI : MonoBehaviour
             isInternalUpdating = false;
         }
 
+        if (usedChest && chestContainer != null)
+        {
+            HomeChest.SaveContainer(chestContainer);
+        }
+
         ShowToast($"Đã tự điền nguyên liệu cho: <color=#88FF88>{recipe.DisplayName}</color>!");
         RefreshUI();
     }
@@ -514,8 +562,23 @@ public class KitchenUI : MonoBehaviour
     #region Cooking Execution & Progress
     private void OnCookButtonClicked()
     {
-        if (isCooking) return;
+        if (currentStation == null) currentStation = KitchenStation.Instance;
 
+        // 1. If cooked food is ready to claim, claim it!
+        if (currentStation != null && currentStation.hasCompletedFood)
+        {
+            ClaimCookedFood();
+            return;
+        }
+
+        // 2. If already cooking on station, wait for completion
+        if (currentStation != null && currentStation.isCooking)
+        {
+            ShowToast("🔥 Bếp đang nấu sôi sùng sục, vui lòng chờ một chút!");
+            return;
+        }
+
+        // 3. Pot empty check
         if (potSlots.Count == 0)
         {
             ShowToast("<color=#FFCC00>Nồi nấu đang trống! Vui lòng chọn nguyên liệu từ Balo hoặc Sổ Công Thức.</color>");
@@ -524,16 +587,56 @@ public class KitchenUI : MonoBehaviour
 
         if (CookingManager.Instance == null || backpackContainer == null) return;
 
-        cookCoroutine = StartCoroutine(CookProcessRoutine());
+        RecipeData matchedRecipe = CookingManager.Instance.MatchRecipe(potSlots);
+        potSlots.Clear();
+
+        if (currentStation != null)
+        {
+            currentStation.StartCooking(matchedRecipe, 4.0f);
+        }
+
+        ShowToast("🔥 Bắt đầu nấu ăn! Bạn có thể đóng cửa sổ đi làm việc khác, món ăn sẽ tự sôi trên bếp.");
+        RefreshUI();
+    }
+
+    public void ClaimCookedFood()
+    {
+        if (currentStation == null || !currentStation.hasCompletedFood) return;
+
+        RecipeData dish = currentStation.completedRecipe;
+        int amount = currentStation.completedAmount;
+
+        bool success = currentStation.ClaimFood(backpackContainer, out string failReason);
+        if (success)
+        {
+            ShowToast($"🎉 Đã nhận món: <color=#88FF88>{dish.DisplayName}</color> x{amount} vào Balo!");
+            RefreshUI();
+        }
+        else
+        {
+            ShowToast($"<color=#FFAA00>{failReason}</color>");
+        }
+    }
+
+    public void OnStationFinishedCooking()
+    {
+        RefreshUI();
+        if (currentStation != null && currentStation.completedRecipe != null)
+        {
+            ShowToast($"🎉 Đã nấu xong: <color=#88FF88>{currentStation.completedRecipe.DisplayName}</color>! Nhấp [NHẬN MÓN ĂN] để nhận vào Balo.");
+        }
+        else
+        {
+            ShowToast("<color=#FF6666>Nấu thất bại! Các nguyên liệu bị cháy khét thành tro.</color>");
+        }
     }
 
     private void OnCancelButtonClicked()
     {
-        if (isCooking)
+        if (currentStation != null && currentStation.isCooking)
         {
-            StopCookingCoroutine();
-            ReturnAllPotItemsToBackpack();
-            ShowToast("<color=#FF8888>Đã hủy tiến trình nấu ăn và thu hồi nguyên liệu.</color>");
+            currentStation.CancelCooking();
+            ShowToast("<color=#FF8888>Đã tắt bếp và hủy mẻ nấu ăn hiện tại.</color>");
             RefreshUI();
         }
         else
@@ -543,80 +646,66 @@ public class KitchenUI : MonoBehaviour
         }
     }
 
-    private void StopCookingCoroutine()
+    private void UpdateStoveControlsVisual()
     {
-        if (cookCoroutine != null)
+        if (currentStation == null) currentStation = KitchenStation.Instance;
+
+        if (currentStation != null && currentStation.hasCompletedFood)
         {
-            StopCoroutine(cookCoroutine);
-            cookCoroutine = null;
-        }
-        isCooking = false;
-        if (progressSlider != null) progressSlider.value = 0f;
-        if (progressStatusText != null) progressStatusText.text = "ĐÃ HỦY";
-        if (stoveSubtitleText != null) stoveSubtitleText.text = "Bếp Lửa Sôi Sùng Sục • Sẵn Sàng Chế Biến";
-        if (cookButtonText != null) cookButtonText.text = "🔥 BẮT ĐẦU NẤU";
-    }
-
-    private IEnumerator CookProcessRoutine()
-    {
-        isCooking = true;
-        float cookDuration = 4.0f; // 4 seconds cook time
-        float elapsed = 0f;
-
-        if (cookButtonText != null) cookButtonText.text = "🔥 ĐANG NẤU...";
-        if (stoveSubtitleText != null) stoveSubtitleText.text = "🔥 Bếp Đang Nấu Sôi Sùng Sục • Chờ Một Chút...";
-
-        while (elapsed < cookDuration)
-        {
-            elapsed += Time.deltaTime;
-            float pct = Mathf.Clamp01(elapsed / cookDuration);
-
-            if (progressSlider != null)
+            if (progressSlider != null) progressSlider.value = 1f;
+            if (progressStatusText != null) progressStatusText.text = "🎉 ĐÃ NẤU XONG!";
+            if (stoveSubtitleText != null)
             {
-                progressSlider.value = pct;
+                stoveSubtitleText.text = "✨ Món Ăn Thơm Lừng Đã Hoàn Thành • Nhấp Nhận Để Bỏ Vào Balo!";
             }
-
+            if (cookButtonText != null) cookButtonText.text = "🎁 NHẬN MÓN ĂN";
+            if (cookButton != null)
+            {
+                cookButton.interactable = true;
+                Image img = cookButton.GetComponent<Image>();
+                if (img != null) img.color = new Color(0.18f, 0.58f, 0.22f, 1f);
+            }
+            if (cancelPotButton != null) cancelPotButton.gameObject.SetActive(false);
+        }
+        else if (currentStation != null && currentStation.isCooking)
+        {
+            float elapsed = Time.time - currentStation.cookStartTime;
+            float pct = Mathf.Clamp01(elapsed / currentStation.cookDuration);
+            if (progressSlider != null) progressSlider.value = pct;
             if (progressStatusText != null)
             {
-                progressStatusText.text = $"🔥 ĐANG NẤU... {Mathf.RoundToInt(pct * 100)}% ({elapsed:0.0}s/{cookDuration:0.0}s)";
+                progressStatusText.text = $"🔥 ĐANG NẤU... {Mathf.RoundToInt(pct * 100)}%";
             }
-
-            yield return null;
-        }
-
-        // Cook finish
-        bool success = CookingManager.Instance.TryCookPot(potSlots, backpackContainer, out RecipeData matchedRecipe, out bool isNewDiscovery, out string failReason);
-
-        if (success && matchedRecipe != null)
-        {
-            potSlots.Clear();
-            ShowToast($"Nấu thành công món: <color=#88FF88>{matchedRecipe.DisplayName}</color>!");
-
-            Vector3 kitchenPos = currentStation != null ? currentStation.transform.position : (PlayerStats.Instance != null ? PlayerStats.Instance.transform.position : Vector3.zero);
-            VFXManager.Instance?.PlayCookingSparkles(kitchenPos);
+            if (stoveSubtitleText != null)
+            {
+                stoveSubtitleText.text = "🔥 Bếp Đang Nấu Sôi Sùng Sục • Bạn Có Thể Đóng Cửa Sổ Đi Làm Việc Khác...";
+            }
+            if (cookButtonText != null) cookButtonText.text = "🔥 ĐANG NẤU...";
+            if (cookButton != null) cookButton.interactable = false;
+            if (cancelPotButton != null)
+            {
+                cancelPotButton.gameObject.SetActive(true);
+                cancelPotButton.interactable = true;
+            }
         }
         else
         {
-            if (failReason != null && failReason.ToLower().Contains("full"))
+            if (progressSlider != null) progressSlider.value = 0f;
+            if (progressStatusText != null) progressStatusText.text = "SẴN SÀNG";
+            if (stoveSubtitleText != null) stoveSubtitleText.text = "Bếp Lửa Sôi Sùng Sục • Sẵn Sàng Chế Biến";
+            if (cookButtonText != null) cookButtonText.text = "🔥 BẮT ĐẦU NẤU";
+            if (cookButton != null)
             {
-                ShowToast($"<color=#FFAA00>{failReason}</color>");
-                StopCookingCoroutine();
-                yield break;
+                cookButton.interactable = true;
+                Image img = cookButton.GetComponent<Image>();
+                if (img != null) img.color = Color.white;
             }
-
-            potSlots.Clear();
-            ShowToast("<color=#FF6666>Nấu thất bại! Các nguyên liệu bị cháy khét thành tro.</color>");
+            if (cancelPotButton != null)
+            {
+                cancelPotButton.gameObject.SetActive(true);
+                cancelPotButton.interactable = true;
+            }
         }
-
-        isCooking = false;
-        cookCoroutine = null;
-
-        if (progressSlider != null) progressSlider.value = 0f;
-        if (progressStatusText != null) progressStatusText.text = success ? "HOÀN THÀNH!" : "THẤT BẠI!";
-        if (stoveSubtitleText != null) stoveSubtitleText.text = "Bếp Lửa Sôi Sùng Sục • Sẵn Sàng Chế Biến";
-        if (cookButtonText != null) cookButtonText.text = "🔥 BẮT ĐẦU NẤU";
-
-        RefreshUI();
     }
     #endregion
 
@@ -628,6 +717,7 @@ public class KitchenUI : MonoBehaviour
         RefreshRecipeNotebook();
         RefreshBackpackGrid();
         UpdateTabButtonsState();
+        UpdateStoveControlsVisual();
     }
 
     private void RefreshPotSlots()
@@ -688,6 +778,47 @@ public class KitchenUI : MonoBehaviour
     private void RefreshOutputPreview()
     {
         if (previewCardGO == null) return;
+        if (currentStation == null) currentStation = KitchenStation.Instance;
+
+        // 1. If dish is finished and ready to be claimed
+        if (currentStation != null && currentStation.hasCompletedFood && currentStation.completedRecipe != null)
+        {
+            previewCardGO.SetActive(true);
+            if (previewFoodIcon != null)
+            {
+                previewFoodIcon.gameObject.SetActive(true);
+                previewFoodIcon.sprite = currentStation.completedRecipe.resultFood.itemIcon;
+            }
+            if (previewHeaderLabel != null) previewHeaderLabel.text = "MÓN ĐÃ NẤU XONG (CHỜ NHẬN):";
+            if (previewFoodTitle != null) previewFoodTitle.text = currentStation.completedRecipe.DisplayName;
+            if (previewFoodStats != null) previewFoodStats.text = GetFoodStatsDisplay(currentStation.completedRecipe.resultFood);
+            return;
+        }
+
+        // 2. If currently cooking on station
+        if (currentStation != null && currentStation.isCooking)
+        {
+            previewCardGO.SetActive(true);
+            if (currentStation.cookingRecipe != null && currentStation.cookingRecipe.resultFood != null)
+            {
+                if (previewFoodIcon != null)
+                {
+                    previewFoodIcon.gameObject.SetActive(true);
+                    previewFoodIcon.sprite = currentStation.cookingRecipe.resultFood.itemIcon;
+                }
+                if (previewHeaderLabel != null) previewHeaderLabel.text = "MÓN ĐANG NẤU TRÊN BẾP:";
+                if (previewFoodTitle != null) previewFoodTitle.text = currentStation.cookingRecipe.DisplayName;
+                if (previewFoodStats != null) previewFoodStats.text = GetFoodStatsDisplay(currentStation.cookingRecipe.resultFood);
+            }
+            else
+            {
+                if (previewFoodIcon != null) previewFoodIcon.gameObject.SetActive(false);
+                if (previewHeaderLabel != null) previewHeaderLabel.text = "MÓN ĐANG NẤU TRÊN BẾP:";
+                if (previewFoodTitle != null) previewFoodTitle.text = "Món Thử Nghiệm (Đang sôi...)";
+                if (previewFoodStats != null) previewFoodStats.text = "<color=#FFAA00>Chờ nấu xong để kiểm tra kết quả...</color>";
+            }
+            return;
+        }
 
         RecipeData matchedRecipe = CookingManager.Instance != null ? CookingManager.Instance.MatchRecipe(potSlots) : null;
 
@@ -728,17 +859,6 @@ public class KitchenUI : MonoBehaviour
     {
         if (recipeContent == null || recipeCardTemplate == null) return;
 
-        // Clear existing
-        for (int i = 0; i < activeRecipeCards.Count; i++)
-        {
-            if (activeRecipeCards[i] != null)
-            {
-                activeRecipeCards[i].transform.SetParent(null);
-                Destroy(activeRecipeCards[i]);
-            }
-        }
-        activeRecipeCards.Clear();
-
         List<RecipeData> allRecipes = CookingManager.Instance != null
             ? CookingManager.Instance.GetAllAvailableRecipes()
             : new List<RecipeData>();
@@ -765,14 +885,25 @@ public class KitchenUI : MonoBehaviour
         // Check if currently selected recipe matches pot slots
         RecipeData currentPotRecipe = CookingManager.Instance != null ? CookingManager.Instance.MatchRecipe(potSlots) : null;
 
+        // Clean up any destroyed pooled instances
+        activeRecipeCards.RemoveAll(go => go == null);
+
         for (int i = 0; i < filtered.Count; i++)
         {
             RecipeData recipe = filtered[i];
             if (recipe == null) continue;
 
-            GameObject cardGO = Instantiate(recipeCardTemplate, recipeContent);
+            GameObject cardGO;
+            if (i < activeRecipeCards.Count)
+            {
+                cardGO = activeRecipeCards[i];
+            }
+            else
+            {
+                cardGO = Instantiate(recipeCardTemplate, recipeContent);
+                activeRecipeCards.Add(cardGO);
+            }
             cardGO.SetActive(true);
-            activeRecipeCards.Add(cardGO);
 
             // Ensure TitleRow TMP is cleared and disabled so it does not overlap recipe title
             TextMeshProUGUI rowTMP = cardGO.transform.Find("InfoColumn/TitleRow")?.GetComponent<TextMeshProUGUI>();
@@ -787,12 +918,20 @@ public class KitchenUI : MonoBehaviour
             RecipeCardUI cardUI = cardGO.GetComponent<RecipeCardUI>();
             if (cardUI != null)
             {
-                cardUI.Setup(recipe, backpackContainer, currentPotRecipe == recipe, () => AutoFillRecipe(recipe));
+                cardUI.Setup(recipe, backpackContainer, currentPotRecipe == recipe, () => AutoFillRecipe(recipe), chestContainer);
             }
             else
             {
                 // Fallback manual binding
                 SetupRecipeCardManual(cardGO, recipe, currentPotRecipe == recipe);
+            }
+        }
+
+        for (int i = filtered.Count; i < activeRecipeCards.Count; i++)
+        {
+            if (activeRecipeCards[i] != null)
+            {
+                activeRecipeCards[i].SetActive(false);
             }
         }
     }
@@ -856,7 +995,7 @@ public class KitchenUI : MonoBehaviour
             detail.text = sb.ToString();
         }
 
-        bool canCook = CookingManager.Instance != null && CookingManager.Instance.CanCook(recipe, backpackContainer);
+        bool canCook = CookingManager.Instance != null && CookingManager.Instance.CanCook(recipe, backpackContainer, chestContainer);
 
         if (actionBtn != null)
         {
@@ -887,29 +1026,36 @@ public class KitchenUI : MonoBehaviour
     {
         if (backpackGridContent == null) return;
 
-        for (int i = 0; i < activeBackpackSlots.Count; i++)
+        if (backpackContainer == null || backpackContainer.itemSlots == null)
         {
-            if (activeBackpackSlots[i] != null)
+            for (int i = 0; i < activeBackpackSlots.Count; i++)
             {
-                activeBackpackSlots[i].transform.SetParent(null);
-                Destroy(activeBackpackSlots[i]);
+                if (activeBackpackSlots[i] != null) activeBackpackSlots[i].SetActive(false);
             }
+            return;
         }
-        activeBackpackSlots.Clear();
 
-        if (backpackContainer == null || backpackContainer.itemSlots == null) return;
+        activeBackpackSlots.RemoveAll(go => go == null);
 
         int totalSlots = backpackContainer.itemSlots.Length;
         for (int i = 0; i < totalSlots; i++)
         {
             ItemSlot slot = backpackContainer.itemSlots[i];
 
-            if (backpackSlotPrefab == null) backpackSlotPrefab = DungeonUIAssetHelper.GetSlotPrefab();
-            GameObject slotGO = backpackSlotPrefab != null ? Instantiate(backpackSlotPrefab, backpackGridContent, false) : null;
+            GameObject slotGO;
+            if (i < activeBackpackSlots.Count)
+            {
+                slotGO = activeBackpackSlots[i];
+            }
+            else
+            {
+                if (backpackSlotPrefab == null) backpackSlotPrefab = DungeonUIAssetHelper.GetSlotPrefab();
+                slotGO = backpackSlotPrefab != null ? Instantiate(backpackSlotPrefab, backpackGridContent, false) : null;
+                if (slotGO != null) activeBackpackSlots.Add(slotGO);
+            }
 
             if (slotGO == null) continue;
             slotGO.SetActive(true);
-            activeBackpackSlots.Add(slotGO);
 
             bool hasItem = slot != null && slot.itemData != null && slot.amount > 0;
 
@@ -944,9 +1090,7 @@ public class KitchenUI : MonoBehaviour
             {
                 // Fallback slot binding without InventoryButton
                 Transform iconT = slotGO.transform.Find("ItemIcon")
-
                                ?? slotGO.transform.Find("Image")
-
                                ?? slotGO.transform.Find("Icon");
                 Image icon = iconT != null ? iconT.GetComponent<Image>() : null;
                 TextMeshProUGUI amountText = slotGO.transform.Find("Text (TMP)")?.GetComponent<TextMeshProUGUI>()
@@ -994,49 +1138,31 @@ public class KitchenUI : MonoBehaviour
                 }
             }
         }
+
+        for (int i = totalSlots; i < activeBackpackSlots.Count; i++)
+        {
+            if (activeBackpackSlots[i] != null)
+            {
+                activeBackpackSlots[i].SetActive(false);
+            }
+        }
     }
 
     private void SortBackpack()
     {
         if (backpackContainer == null || backpackContainer.itemSlots == null) return;
 
-        // Collect non-empty slots
-        List<ItemSlot> validSlots = new List<ItemSlot>();
-        for (int i = 0; i < backpackContainer.itemSlots.Length; i++)
-        {
-            var s = backpackContainer.itemSlots[i];
-            if (s != null && s.itemData != null && s.amount > 0)
-            {
-                validSlots.Add(s);
-            }
-        }
-
-        // Sort: Food/Crops first, then by name
-        validSlots.Sort((a, b) =>
-        {
-            bool aIsFood = a.itemData is FoodData;
-            bool bIsFood = b.itemData is FoodData;
-            if (aIsFood && !bIsFood) return -1;
-            if (!aIsFood && bIsFood) return 1;
-            return string.Compare(a.itemData.itemName, b.itemData.itemName, System.StringComparison.OrdinalIgnoreCase);
-        });
-
-        // Reassign
         isInternalUpdating = true;
         try
         {
-            for (int i = 0; i < backpackContainer.itemSlots.Length; i++)
-            {
-                if (i < validSlots.Count) backpackContainer.itemSlots[i] = validSlots[i];
-                else backpackContainer.itemSlots[i] = new ItemSlot();
-            }
+            ChestUI.SortContainer(backpackContainer);
         }
         finally
         {
             isInternalUpdating = false;
         }
 
-        ShowToast("⚡ Đã sắp xếp lại Balo nguyên liệu gọn gàng!");
+        ShowToast("⚡ Đã sắp xếp và gộp gọn Balo nguyên liệu!");
         RefreshBackpackGrid();
     }
     #endregion

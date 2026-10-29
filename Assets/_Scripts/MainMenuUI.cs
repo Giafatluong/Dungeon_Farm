@@ -56,6 +56,7 @@ public class MainMenuUI : MonoBehaviour
     #region Inspector & State
     [Header("Menu State")]
     private bool isMenuOpen = false;
+    private bool isBaseScene = false;
     public bool IsOpen => isMenuOpen;
 
     [Header("UI Hierarchy References")]
@@ -91,6 +92,7 @@ public class MainMenuUI : MonoBehaviour
         }
 
         Instance = this;
+        isBaseScene = SceneManager.GetActiveScene().name.Equals("Base", System.StringComparison.OrdinalIgnoreCase);
         AutoBindReferences();
 
         if (!isMenuOpen && menuRootGO != null)
@@ -101,6 +103,7 @@ public class MainMenuUI : MonoBehaviour
 
     private void OnEnable()
     {
+        isBaseScene = SceneManager.GetActiveScene().name.Equals("Base", System.StringComparison.OrdinalIgnoreCase);
         SceneManager.sceneLoaded += HandleSceneLoaded;
     }
 
@@ -111,7 +114,8 @@ public class MainMenuUI : MonoBehaviour
 
     private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        if (scene.name.Equals("Base", System.StringComparison.OrdinalIgnoreCase))
+        isBaseScene = scene.name.Equals("Base", System.StringComparison.OrdinalIgnoreCase);
+        if (isBaseScene)
         {
             AutoBindReferences();
             RefreshSaveSummary();
@@ -129,16 +133,17 @@ public class MainMenuUI : MonoBehaviour
 
     private void Update()
     {
-        string currentScene = SceneManager.GetActiveScene().name;
-        bool isBase = currentScene.Equals("Base", System.StringComparison.OrdinalIgnoreCase);
-
         // HUD corner button only displayed when in Base and menu is closed
         if (hudMenuButtonGO != null)
         {
-            hudMenuButtonGO.SetActive(isBase && !isMenuOpen);
+            bool shouldShowHudBtn = isBaseScene && !isMenuOpen;
+            if (hudMenuButtonGO.activeSelf != shouldShowHudBtn)
+            {
+                hudMenuButtonGO.SetActive(shouldShowHudBtn);
+            }
         }
 
-        if (!isBase) return;
+        if (!isBaseScene) return;
 
         // Press ESC to open / close Main Menu
         if (Input.GetKeyDown(KeyCode.Escape))

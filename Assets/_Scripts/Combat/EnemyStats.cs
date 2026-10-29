@@ -30,12 +30,16 @@ public class EnemyStats : MonoBehaviour
     }
 
     public EnemyTargetSelector targetSelector;
+    public Collider2D CachedCollider { get; private set; }
+    public EnemyCombatVisual CombatVisual { get; private set; }
 
     public event System.Action<EnemyStats> OnEnemyDeath;
     public event System.Action<EnemyStats, EnemyData.EnemyIntent> OnIntentChanged;
 
     protected virtual void Awake()
     {
+        CachedCollider = GetComponent<Collider2D>();
+        CombatVisual = GetComponent<EnemyCombatVisual>();
         defenseReduction = 0;
         if (enemyData != null)
         {
@@ -151,14 +155,19 @@ public class EnemyStats : MonoBehaviour
 
     public virtual int TakeDamage(int damage)
     {
-        return TakeDamage(damage, true);
+        return TakeDamage(damage, true, false);
     }
 
     public virtual int TakeDamage(int damage, bool showFeedback)
     {
+        return TakeDamage(damage, showFeedback, false);
+    }
+
+    public virtual int TakeDamage(int damage, bool showFeedback, bool ignoreDefense)
+    {
         if (currentHealth <= 0) return 0;
 
-        int def = GetCurrentDEF();
+        int def = ignoreDefense ? 0 : GetCurrentDEF();
         int reducedDamage = Mathf.Max(1, damage - def);
         currentHealth -= reducedDamage;
 
@@ -191,7 +200,7 @@ public class EnemyStats : MonoBehaviour
         float damagePercent = (float)dealtDamage / maxHp;
         bool isLethal = currentHealth <= 0;
 
-        Collider2D col = GetComponent<Collider2D>();
+        Collider2D col = CachedCollider != null ? CachedCollider : (CachedCollider = GetComponent<Collider2D>());
         float popupY = col != null ? (col.bounds.max.y - transform.position.y + 0.35f) : 1.2f;
         Vector3 popupPos = transform.position + new Vector3(0, popupY, 0);
 
@@ -202,7 +211,7 @@ public class EnemyStats : MonoBehaviour
             CombatJuice.Instance.OnEnemyDamaged(transform.position, dealtDamage, damagePercent, isLethal);
         }
 
-        EnemyCombatVisual visual = GetComponent<EnemyCombatVisual>();
+        EnemyCombatVisual visual = CombatVisual != null ? CombatVisual : (CombatVisual = GetComponent<EnemyCombatVisual>());
         if (visual != null) visual.PlayHitAnimation();
     }
 
@@ -278,7 +287,7 @@ public class EnemyStats : MonoBehaviour
     {
         if (playerStats == null || currentHealth <= 0) return;
 
-        EnemyCombatVisual visual = GetComponent<EnemyCombatVisual>();
+        EnemyCombatVisual visual = CombatVisual != null ? CombatVisual : (CombatVisual = GetComponent<EnemyCombatVisual>());
 
         switch (currentIntent)
         {
@@ -350,7 +359,7 @@ public class EnemyStats : MonoBehaviour
                     break;
 
                 case EnemyData.EffectTarget.Ally:
-                    CombatManager cm = FindFirstObjectByType<CombatManager>();
+                    CombatManager cm = CombatManager.Instance != null ? CombatManager.Instance : FindFirstObjectByType<CombatManager>();
                     if (cm != null && cm.enemies != null)
                     {
                         foreach (var ally in cm.enemies)
@@ -392,7 +401,7 @@ public class EnemyStats : MonoBehaviour
             targetSelector.ClearTarget();
         }
 
-        EnemyCombatVisual visual = GetComponent<EnemyCombatVisual>();
+        EnemyCombatVisual visual = CombatVisual != null ? CombatVisual : (CombatVisual = GetComponent<EnemyCombatVisual>());
         if (visual != null)
         {
             visual.PlayDeathAnimation();

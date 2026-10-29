@@ -24,16 +24,27 @@ public class KitchenStation : MonoBehaviour, IInteractable
     public ItemContainer backpackContainer;
     public ItemContainer chestContainer;
 
+    [Header("Cooking State")]
+    public bool isCooking = false;
+    public float cookStartTime = 0f;
+    public float cookDuration = 4.0f;
+    public RecipeData cookingRecipe;
+    public RecipeData completedRecipe;
+    public int completedAmount = 0;
+    public bool hasCompletedFood => completedRecipe != null;
+
     private Transform playerTransform;
     private Collider2D col;
     private SpriteRenderer spriteRenderer;
     private GameObject promptObject;
     private TextMeshPro promptText;
+    private static Sprite cachedCampfireSprite;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics()
     {
         Instance = null;
+        cachedCampfireSprite = null;
     }
 
     private void Awake()
@@ -80,11 +91,14 @@ public class KitchenStation : MonoBehaviour, IInteractable
 
         if (spriteRenderer.sprite == null)
         {
-            Sprite campfireSprite = FindFirstSprite("Campfire_Anim_1", "Campfire_Anim_0", "Furnace_Anim_0");
-
-            if (campfireSprite != null)
+            if (cachedCampfireSprite == null)
             {
-                spriteRenderer.sprite = campfireSprite;
+                cachedCampfireSprite = FindFirstSprite("Campfire_Anim_1", "Campfire_Anim_0", "Furnace_Anim_0");
+            }
+
+            if (cachedCampfireSprite != null)
+            {
+                spriteRenderer.sprite = cachedCampfireSprite;
             }
         }
     }
@@ -104,7 +118,7 @@ public class KitchenStation : MonoBehaviour, IInteractable
 
     private void SetupPrompt()
     {
-        if (promptObject != null) return;
+        if (!showWorldPrompt || promptObject != null) return;
 
         promptObject = new GameObject("KitchenPrompt");
         promptObject.transform.SetParent(transform, false);
@@ -170,6 +184,30 @@ public class KitchenStation : MonoBehaviour, IInteractable
 
     private void Update()
     {
+        if (isCooking)
+        {
+            if (Time.time >= cookStartTime + cookDuration)
+            {
+                isCooking = false;
+                if (cookingRecipe != null)
+                {
+                    completedRecipe = cookingRecipe;
+                    completedAmount = cookingRecipe.resultAmount > 0 ? cookingRecipe.resultAmount : 1;
+                }
+                cookingRecipe = null;
+
+                if (VFXManager.Instance != null)
+                {
+                    VFXManager.Instance.PlayCookingSparkles(transform.position);
+                }
+
+                if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen)
+                {
+                    KitchenUI.Instance.OnStationFinishedCooking();
+                }
+            }
+        }
+
         if (playerTransform == null)
         {
             if (Time.time >= nextPlayerSearchTime)
@@ -203,8 +241,7 @@ public class KitchenStation : MonoBehaviour, IInteractable
 
         if (playerInRange && Input.GetKeyDown(KeyCode.E))
         {
-            if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return;
-            if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return;
+            if (!isOpen && UIEscapeManager.IsAnyModalUIOpen()) return;
 
             if (HomeChest.Instance != null && HomeChest.Instance.playerInRange)
             {
@@ -289,6 +326,62 @@ public class KitchenStation : MonoBehaviour, IInteractable
     public void OnUIClosed()
     {
         // UI closed callback
+    }
+
+    public void StartCooking(RecipeData recipe, float duration = 4.0f)
+    {
+        isCooking = true;
+        cookStartTime = Time.time;
+        cookDuration = duration;
+        cookingRecipe = recipe;
+        completedRecipe = null;
+        completedAmount = 0;
+    }
+
+    public void CancelCooking()
+    {
+        isCooking = false;
+        cookingRecipe = null;
+        completedRecipe = null;
+        completedAmount = 0;
+    }
+
+    public bool ClaimFood(ItemContainer destinationContainer, out string failReason)
+    {
+        failReason = "";
+        if (completedRecipe == null || completedRecipe.resultFood == null)
+        {
+            failReason = "Không có món ăn nào đang chờ nhận!";
+            return false;
+        }
+
+        if (destinationContainer == null)
+        {
+            failReason = "Không tìm thấy Balo!";
+            return false;
+        }
+
+        if (!destinationContainer.CanAddItem(completedRecipe.resultFood))
+        {
+            failReason = "Balo đầy! Hãy dọn chỗ trống trước khi nhận món ăn.";
+            return false;
+        }
+
+        destinationContainer.AddItem(completedRecipe.resultFood, completedAmount);
+
+        if (ProgressionManager.Instance != null)
+        {
+            ProgressionManager.Instance.DiscoverRecipe(completedRecipe);
+        }
+
+        if (VFXManager.Instance != null)
+        {
+            VFXManager.Instance.PlayCookingSparkles(transform.position);
+        }
+
+        completedRecipe = null;
+        completedAmount = 0;
+        return true;
     }
 
     private Sprite FindSprite(string spriteName)

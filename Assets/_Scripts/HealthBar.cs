@@ -17,6 +17,7 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
 
     [SerializeField] private Image ghostHealthBar;
     private Coroutine ghostDrainRoutine;
+    private static readonly WaitForSeconds WaitGhostDelay = new WaitForSeconds(0.2f);
 
     private void Awake()
     {
@@ -155,7 +156,7 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
 
     private System.Collections.IEnumerator GhostDrainRoutine(float targetFill)
     {
-        yield return new WaitForSeconds(0.2f);
+        yield return WaitGhostDelay;
         if (ghostHealthBar == null) yield break;
 
         float startFill = ghostHealthBar.fillAmount;
@@ -194,7 +195,9 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
         lastMaxHealth = -1;
         lastIntent = null;
         lastAtk = -1;
-        cachedEnemyCollider = enemy != null ? enemy.GetComponent<Collider2D>() : null;
+        cachedEnemyCollider = enemy != null
+            ? (enemy.CachedCollider != null ? enemy.CachedCollider : enemy.GetComponent<Collider2D>())
+            : null;
 
         if (enemyTarget != null)
         {

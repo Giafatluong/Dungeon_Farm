@@ -13,6 +13,24 @@ public class DungeonEventManager : MonoBehaviour
 
     private readonly List<DungeonEvent> runtimeEvents = new();
     private string lastEventID = string.Empty;
+    private StatEffectData cachedAtkEffect;
+    private StatEffectData cachedDefEffect;
+    private StatEffectData cachedSpdEffect;
+
+    private void EnsureCachedStatEffects()
+    {
+        if (cachedAtkEffect != null && cachedDefEffect != null && cachedSpdEffect != null) return;
+
+        StatEffectData[] allEffects = GameAssetHelper.LoadAll<StatEffectData>();
+        for (int i = 0; i < allEffects.Length; i++)
+        {
+            if (allEffects[i] == null) continue;
+            string n = allEffects[i].name;
+            if (n.IndexOf("increaseatk", System.StringComparison.OrdinalIgnoreCase) >= 0) cachedAtkEffect = allEffects[i];
+            else if (n.IndexOf("increasedef", System.StringComparison.OrdinalIgnoreCase) >= 0) cachedDefEffect = allEffects[i];
+            else if (n.IndexOf("increasespeed", System.StringComparison.OrdinalIgnoreCase) >= 0) cachedSpdEffect = allEffects[i];
+        }
+    }
 
     private void Awake()
     {
@@ -500,30 +518,21 @@ public class DungeonEventManager : MonoBehaviour
         }
 
         // Grant Buffs
-        if (player != null)
+        if (player != null && (choice.atkBuff > 0 || choice.defBuff > 0 || choice.speedBuff > 0))
         {
-            StatEffectData atkEffect = null, defEffect = null, spdEffect = null;
-            StatEffectData[] allEffects = GameAssetHelper.LoadAll<StatEffectData>();
-            for (int i = 0; i < allEffects.Length; i++)
-            {
-                if (allEffects[i] == null) continue;
-                string n = allEffects[i].name.ToLower();
-                if (n.Contains("increaseatk")) atkEffect = allEffects[i];
-                else if (n.Contains("increasedef")) defEffect = allEffects[i];
-                else if (n.Contains("increasespeed")) spdEffect = allEffects[i];
-            }
+            EnsureCachedStatEffects();
 
-            if (choice.atkBuff > 0 && atkEffect != null)
+            if (choice.atkBuff > 0 && cachedAtkEffect != null)
             {
-                player.AddBuff(atkEffect, choice.atkBuff, choice.buffDuration, FoodData.BuffDurationType.Turn);
+                player.AddBuff(cachedAtkEffect, choice.atkBuff, choice.buffDuration, FoodData.BuffDurationType.Turn);
             }
-            if (choice.defBuff > 0 && defEffect != null)
+            if (choice.defBuff > 0 && cachedDefEffect != null)
             {
-                player.AddBuff(defEffect, choice.defBuff, choice.buffDuration, FoodData.BuffDurationType.Turn);
+                player.AddBuff(cachedDefEffect, choice.defBuff, choice.buffDuration, FoodData.BuffDurationType.Turn);
             }
-            if (choice.speedBuff > 0 && spdEffect != null)
+            if (choice.speedBuff > 0 && cachedSpdEffect != null)
             {
-                player.AddBuff(spdEffect, choice.speedBuff, choice.buffDuration, FoodData.BuffDurationType.Turn);
+                player.AddBuff(cachedSpdEffect, choice.speedBuff, choice.buffDuration, FoodData.BuffDurationType.Turn);
             }
         }
 

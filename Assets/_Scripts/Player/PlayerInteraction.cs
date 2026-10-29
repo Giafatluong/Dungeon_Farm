@@ -10,18 +10,16 @@ public class PlayerInteraction : MonoBehaviour
 
     public LayerMask farmPlotLayer;
 
+    private static readonly Collider2D[] overlapBuffer = new Collider2D[16];
+
     private void OnTriggerEnter2D(Collider2D other)
     {
-        FarmPlot farmPlot = other.GetComponent<FarmPlot>();
-
-        if (farmPlot != null && !currentFarmPlots.Contains(farmPlot))
+        if (other.TryGetComponent(out FarmPlot farmPlot) && !currentFarmPlots.Contains(farmPlot))
         {
             currentFarmPlots.Add(farmPlot);
         }
 
-        BedInteraction bed = other.GetComponent<BedInteraction>();
-
-        if (bed != null && !currentBeds.Contains(bed))
+        if (other.TryGetComponent(out BedInteraction bed) && !currentBeds.Contains(bed))
         {
             currentBeds.Add(bed);
         }
@@ -29,16 +27,12 @@ public class PlayerInteraction : MonoBehaviour
 
     private void OnTriggerExit2D(Collider2D other)
     {
-        FarmPlot farmPlot = other.GetComponent<FarmPlot>();
-
-        if (farmPlot != null && currentFarmPlots.Contains(farmPlot))
+        if (other.TryGetComponent(out FarmPlot farmPlot))
         {
             currentFarmPlots.Remove(farmPlot);
         }
 
-        BedInteraction bed = other.GetComponent<BedInteraction>();
-
-        if (bed != null && currentBeds.Contains(bed))
+        if (other.TryGetComponent(out BedInteraction bed))
         {
             currentBeds.Remove(bed);
         }
@@ -110,20 +104,7 @@ public class PlayerInteraction : MonoBehaviour
 
     public bool IsAnyUIOpen()
     {
-        if (MainMenuUI.Instance != null && MainMenuUI.Instance.IsOpen) return true;
-        if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen) return true;
-        if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return true;
-        if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return true;
-        if (HomeChest.Instance != null && HomeChest.Instance.isOpen) return true;
-        if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return true;
-        if (DungeonEntranceUI.Instance != null && DungeonEntranceUI.Instance.IsOpen) return true;
-        if (RewardUI.Instance != null && RewardUI.Instance.IsOpen) return true;
-        if (LootUI.Instance != null && LootUI.Instance.IsOpen) return true;
-        if (CampUI.Instance != null && CampUI.Instance.IsOpen) return true;
-        if (DungeonEventUI.Instance != null && DungeonEventUI.Instance.IsOpen) return true;
-        if (FloorVictoryUI.Instance != null && FloorVictoryUI.Instance.IsOpen) return true;
-        if (MerchantUI.Instance != null && MerchantUI.Instance.IsOpen) return true;
-        return false;
+        return UIEscapeManager.IsAnyModalUIOpen(includeInventory: false, includeMainMenu: true);
     }
 
     private void InteractFarmPlot()
@@ -132,20 +113,23 @@ public class PlayerInteraction : MonoBehaviour
         if (mainCam == null) return;
         Vector2 mousePosition = mainCam.ScreenToWorldPoint(Input.mousePosition);
 
-        Collider2D[] hits = (farmPlotLayer.value != 0)
-            ? Physics2D.OverlapPointAll(mousePosition, farmPlotLayer)
-            : Physics2D.OverlapPointAll(mousePosition);
+        ContactFilter2D filter = ContactFilter2D.noFilter;
+        filter.useTriggers = true;
+        if (farmPlotLayer.value != 0)
+        {
+            filter.SetLayerMask(farmPlotLayer);
+        }
 
-        if (hits == null || hits.Length == 0)
+        int hitCount = Physics2D.OverlapPoint(mousePosition, filter, overlapBuffer);
+        if (hitCount <= 0)
             return;
 
         FarmPlot farmPlot = null;
-        for (int i = 0; i < hits.Length; i++)
+        for (int i = 0; i < hitCount; i++)
         {
-            if (hits[i] != null)
+            if (overlapBuffer[i] != null && overlapBuffer[i].TryGetComponent(out farmPlot))
             {
-                farmPlot = hits[i].GetComponent<FarmPlot>();
-                if (farmPlot != null) break;
+                break;
             }
         }
 
@@ -226,7 +210,7 @@ public class PlayerInteraction : MonoBehaviour
                 continue;
             }
 
-            Collider2D bedCol = currentBeds[i].GetComponent<Collider2D>();
+            Collider2D bedCol = currentBeds[i].CachedCollider;
             Vector2 bedPoint = (bedCol != null) ? bedCol.ClosestPoint(transform.position) : (Vector2)currentBeds[i].transform.position;
 
             float distance = Vector2.Distance(transform.position, bedPoint);

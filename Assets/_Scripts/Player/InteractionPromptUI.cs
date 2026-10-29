@@ -238,7 +238,12 @@ public class InteractionPromptUI : MonoBehaviour
 
         KitchenStation kitchen = KitchenStation.Instance;
         if (kitchen != null && kitchen.playerInRange && !kitchen.isOpen)
-            Consider(kitchen.transform, kitchenLabel, playerPos, ref bestSqr, ref best);
+        {
+            string kLabel = kitchen.hasCompletedFood
+                ? $"Nhận: {kitchen.completedRecipe.DisplayName}"
+                : (kitchen.isCooking ? "Đang nấu..." : kitchenLabel);
+            Consider(kitchen.transform, kLabel, playerPos, ref bestSqr, ref best);
+        }
 
         Statue statue = Statue.Instance;
         if (statue != null && statue.playerInRange)

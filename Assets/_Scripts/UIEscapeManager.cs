@@ -31,6 +31,15 @@ public static class UIEscapeManager
     public static bool IsAnyOtherUIOpen()
     {
         if (IsEscapeConsumedThisFrame()) return true;
+        return IsAnyModalUIOpen(includeInventory: true, includeMainMenu: false);
+    }
+
+    /// <summary>
+    /// Unified zero-allocation check for whether any blocking modal/menu UI is currently open.
+    /// </summary>
+    public static bool IsAnyModalUIOpen(bool includeInventory = true, bool includeMainMenu = true)
+    {
+        if (includeMainMenu && MainMenuUI.Instance != null && MainMenuUI.Instance.IsOpen) return true;
 
         // Base & Farm Modals
         if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return true;
@@ -39,7 +48,7 @@ public static class UIEscapeManager
         if (KitchenStation.Instance != null && KitchenStation.Instance.isOpen) return true;
         if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return true;
         if (DungeonEntranceUI.Instance != null && DungeonEntranceUI.Instance.IsOpen) return true;
-        if (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen) return true;
+        if (includeInventory && InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen) return true;
         if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen) return true;
 
         // Dungeon & Combat Modals

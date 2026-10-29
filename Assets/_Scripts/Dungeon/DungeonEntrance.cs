@@ -8,6 +8,7 @@ public class DungeonEntrance : MonoBehaviour
     public bool playerInRange { get; private set; }
     private Collider2D col;
     private Transform playerTransform;
+    private float nextPlayerSearchTime;
 
     private void Awake()
     {
@@ -31,6 +32,16 @@ public class DungeonEntrance : MonoBehaviour
 
     private void FindPlayer()
     {
+        if (PlayerMovement.Instance != null)
+        {
+            playerTransform = PlayerMovement.Instance.transform;
+            return;
+        }
+        if (PlayerStats.Instance != null)
+        {
+            playerTransform = PlayerStats.Instance.transform;
+            return;
+        }
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
@@ -40,8 +51,9 @@ public class DungeonEntrance : MonoBehaviour
 
     private void Update()
     {
-        if (playerTransform == null)
+        if (playerTransform == null && Time.time >= nextPlayerSearchTime)
         {
+            nextPlayerSearchTime = Time.time + 0.5f;
             FindPlayer();
         }
 
@@ -74,9 +86,7 @@ public class DungeonEntrance : MonoBehaviour
 
     private void OpenDungeonUI()
     {
-        if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return;
-        if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return;
-        if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return;
+        if (UIEscapeManager.IsAnyModalUIOpen()) return;
 
         if (dungeonEntranceUI == null)
         {
