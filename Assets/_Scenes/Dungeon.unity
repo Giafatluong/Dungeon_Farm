@@ -5620,7 +5620,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &930000024
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5762,7 +5762,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &930000030
 RectTransform:
   m_ObjectHideFlags: 0
@@ -13457,6 +13457,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaveManager
   floorData: {fileID: 11400000, guid: f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3, type: 2}
+  tutorialFloorData: {fileID: 11400000, guid: 853ca6de90d84663ac15e759da5c60a1, type: 2}
   allFloors:
   - {fileID: 11400000, guid: f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3, type: 2}
   - {fileID: 11400000, guid: 266394e973e1c7e7d9cd380bce1f5068, type: 2}
@@ -14014,11 +14015,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e5b181a54582e94293eb76413ee3c6a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStats
-  maxHealth: 50
-  currentHealth: 50
-  ATK: 10
-  DEF: 2
-  speed: 16
+  maxHealth: 35
+  currentHealth: 35
+  ATK: 7
+  DEF: 1
+  speed: 14
   defendCount: 0
   defendValue: 5
   maxAP: 3

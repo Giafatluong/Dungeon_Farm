@@ -1,0 +1,189 @@
+<svg width="980" height="340" viewBox="0 0 980 340" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- DEFS: Gradients and Filters -->
+  <defs>
+    <!-- Common Gradient -->
+    <linearGradient id="bg_common" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1C1917" />
+      <stop offset="100%" stop-color="#0C0A09" />
+    </linearGradient>
+
+    <!-- Rare Gradient -->
+    <linearGradient id="bg_rare" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#030712" />
+    </linearGradient>
+
+    <!-- Epic Gradient -->
+    <linearGradient id="bg_epic" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#261605" />
+      <stop offset="100%" stop-color="#0D0701" />
+    </linearGradient>
+
+    <!-- Glow Filter for Rare -->
+    <filter id="glow_rare" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#3B82F6" flood-opacity="0.4" />
+    </filter>
+
+    <!-- Glow Filter for Epic -->
+    <filter id="glow_epic" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#F59E0B" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <!-- ========================================================== -->
+  <!-- 1. COMMON TOOLTIP (BÌNH THƯỜNG)                            -->
+  <!-- ========================================================== -->
+  <g id="Tooltip_Common" transform="translate(20, 20)">
+    <!-- Base Rectangular Card -->
+    <rect x="0" y="0" width="290" height="290" rx="3" fill="url(#bg_common)" stroke="#78716C" stroke-width="2" />
+    <rect x="4" y="4" width="282" height="282" rx="2" fill="none" stroke="#292524" stroke-width="1" />
+
+    <!-- Corner Pixel Accents (Rectangular Brackets) -->
+    <path d="M0 0 H12 V3 H3 V12 H0 Z" fill="#A8A29E" />
+    <path d="M290 0 H278 V3 H287 V12 H290 Z" fill="#A8A29E" />
+    <path d="M0 290 H12 V287 H3 V278 H0 Z" fill="#A8A29E" />
+    <path d="M290 290 H278 V287 H287 V278 H290 Z" fill="#A8A29E" />
+
+    <!-- Header Box: Icon + Title -->
+    <rect x="14" y="16" width="46" height="46" rx="3" fill="#141210" stroke="#57534E" stroke-width="1.5" />
+    <!-- Wheat Pixel Icon -->
+    <text x="37" y="46" font-family="'Segoe UI Emoji', sans-serif" font-size="24" text-anchor="middle" fill="#E7E5E4">🌾</text>
+
+    <!-- Title & Badge -->
+    <text x="68" y="32" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="bold" fill="#F5F5F4">Lúa Mì (Wheat)</text>
+    <rect x="68" y="38" width="92" height="18" rx="2" fill="#292524" stroke="#44403C" stroke-width="1" />
+    <text x="114" y="51" font-family="'Segoe UI', sans-serif" font-size="9" font-weight="bold" fill="#A8A29E" text-anchor="middle">BÌNH THƯỜNG</text>
+
+    <!-- Divider Line -->
+    <line x1="14" y1="74" x2="276" y2="74" stroke="#44403C" stroke-width="1" />
+
+    <!-- Stats Section -->
+    <text x="16" y="96" font-family="'Segoe UI', sans-serif" font-size="11" fill="#A8A29E">Loại vật phẩm:</text>
+    <text x="274" y="96" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#E7E5E4" text-anchor="end">Nông Sản Sơ Cấp</text>
+
+    <text x="16" y="122" font-family="'Segoe UI', sans-serif" font-size="11" fill="#A8A29E">Hồi phục Máu:</text>
+    <text x="274" y="122" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#4ADE80" text-anchor="end">+3 HP</text>
+
+    <text x="16" y="148" font-family="'Segoe UI', sans-serif" font-size="11" fill="#A8A29E">Hồi phục Độ No:</text>
+    <text x="274" y="148" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#FBBF24" text-anchor="end">+6 Độ No</text>
+
+    <text x="16" y="174" font-family="'Segoe UI', sans-serif" font-size="11" fill="#A8A29E">Thời gian lớn:</text>
+    <text x="274" y="174" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#38BDF8" text-anchor="end">4 Ngày (~3 Hạt/vụ)</text>
+
+    <!-- Lower Divider -->
+    <line x1="14" y1="194" x2="276" y2="194" stroke="#292524" stroke-width="1" />
+
+    <!-- Description / Lore Box -->
+    <rect x="14" y="204" width="262" height="70" rx="2" fill="#110F0E" stroke="#24211E" stroke-width="1" />
+    <text x="22" y="224" font-family="'Segoe UI', sans-serif" font-size="10" fill="#78716C" font-style="italic">Lương thực khởi đầu thiết yếu.</text>
+    <text x="22" y="240" font-family="'Segoe UI', sans-serif" font-size="10" fill="#78716C" font-style="italic">Dùng để cúng Trụ Sinh Mệnh &amp;</text>
+    <text x="22" y="256" font-family="'Segoe UI', sans-serif" font-size="10" fill="#78716C" font-style="italic">Hộ Vệ từ Bậc 1 đến Bậc 5.</text>
+  </g>
+
+  <!-- ========================================================== -->
+  <!-- 2. RARE TOOLTIP (HIẾM)                                      -->
+  <!-- ========================================================== -->
+  <g id="Tooltip_Rare" transform="translate(340, 20)">
+    <!-- Base Rectangular Card with Blue Glow -->
+    <rect x="0" y="0" width="290" height="290" rx="3" fill="url(#bg_rare)" stroke="#3B82F6" stroke-width="2" filter="url(#glow_rare)" />
+    <rect x="4" y="4" width="282" height="282" rx="2" fill="none" stroke="#1E3A8A" stroke-width="1" />
+
+    <!-- Corner Pixel Accents (Cyan/Blue Brackets) -->
+    <path d="M0 0 H14 V3 H3 V14 H0 Z" fill="#60A5FA" />
+    <path d="M290 0 H276 V3 H287 V14 H290 Z" fill="#60A5FA" />
+    <path d="M0 290 H14 V287 H3 V276 H0 Z" fill="#60A5FA" />
+    <path d="M290 290 H276 V287 H287 V276 H290 Z" fill="#60A5FA" />
+
+    <!-- Header Box: Icon + Title -->
+    <rect x="14" y="16" width="46" height="46" rx="3" fill="#0C1938" stroke="#2563EB" stroke-width="1.5" />
+    <!-- Salad Pixel Icon -->
+    <text x="37" y="46" font-family="'Segoe UI Emoji', sans-serif" font-size="24" text-anchor="middle" fill="#93C5FD">🥗</text>
+
+    <!-- Title & Badge -->
+    <text x="68" y="32" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="bold" fill="#93C5FD">Salad Bắp Cải</text>
+    <rect x="68" y="38" width="70" height="18" rx="2" fill="#1E3A8A" stroke="#3B82F6" stroke-width="1" />
+    <text x="103" y="51" font-family="'Segoe UI', sans-serif" font-size="9" font-weight="bold" fill="#BFDBFE" text-anchor="middle">HIẾM</text>
+
+    <!-- Divider Line -->
+    <line x1="14" y1="74" x2="276" y2="74" stroke="#1E40AF" stroke-width="1" />
+
+    <!-- Stats Section -->
+    <text x="16" y="96" font-family="'Segoe UI', sans-serif" font-size="11" fill="#93C5FD">Loại món ăn:</text>
+    <text x="274" y="96" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#DBEAFE" text-anchor="end">Món Ăn Nấu (Tầng 2)</text>
+
+    <text x="16" y="122" font-family="'Segoe UI', sans-serif" font-size="11" fill="#93C5FD">Hồi phục Máu:</text>
+    <text x="274" y="122" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#4ADE80" text-anchor="end">+25 HP</text>
+
+    <text x="16" y="148" font-family="'Segoe UI', sans-serif" font-size="11" fill="#93C5FD">Hồi phục Độ No:</text>
+    <text x="274" y="148" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#FBBF24" text-anchor="end">+30 Độ No</text>
+
+    <text x="16" y="174" font-family="'Segoe UI', sans-serif" font-size="11" fill="#93C5FD">Buff Chiến Đấu:</text>
+    <text x="274" y="174" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#60A5FA" text-anchor="end">+2 DEF (2 Lượt)</text>
+
+    <!-- Lower Divider -->
+    <line x1="14" y1="194" x2="276" y2="194" stroke="#1E293B" stroke-width="1" />
+
+    <!-- Description / Lore Box -->
+    <rect x="14" y="204" width="262" height="70" rx="2" fill="#080F21" stroke="#172554" stroke-width="1" />
+    <text x="22" y="224" font-family="'Segoe UI', sans-serif" font-size="10" fill="#64748B" font-style="italic">Chế biến từ Bắp Cải, Cà Rốt &amp; Cà Chua.</text>
+    <text x="22" y="240" font-family="'Segoe UI', sans-serif" font-size="10" fill="#64748B" font-style="italic">Nguyên liệu bắt buộc cho Trụ Hộ Vệ</text>
+    <text x="22" y="256" font-family="'Segoe UI', sans-serif" font-size="10" fill="#64748B" font-style="italic">Bậc 6 đến Bậc 8.</text>
+  </g>
+
+  <!-- ========================================================== -->
+  <!-- 3. EPIC / BOSS TROPHY (CỰC HIẾM / BẢO VẬT BOSS)            -->
+  <!-- ========================================================== -->
+  <g id="Tooltip_Epic" transform="translate(660, 20)">
+    <!-- Base Rectangular Card with Gold Glow -->
+    <rect x="0" y="0" width="290" height="290" rx="3" fill="url(#bg_epic)" stroke="#F59E0B" stroke-width="2" filter="url(#glow_epic)" />
+    <rect x="4" y="4" width="282" height="282" rx="2" fill="none" stroke="#78350F" stroke-width="1.2" />
+
+    <!-- Corner Pixel Accents (Double Gold Studs) -->
+    <path d="M0 0 H16 V4 H4 V16 H0 Z" fill="#FCD34D" />
+    <path d="M290 0 H274 V4 H286 V16 H290 Z" fill="#FCD34D" />
+    <path d="M0 290 H16 V286 H4 V274 H0 Z" fill="#FCD34D" />
+    <path d="M290 290 H274 V286 H286 V274 H290 Z" fill="#FCD34D" />
+
+    <!-- Inner Corner Studs -->
+    <rect x="6" y="6" width="3" height="3" fill="#FDE68A" />
+    <rect x="281" y="6" width="3" height="3" fill="#FDE68A" />
+    <rect x="6" y="281" width="3" height="3" fill="#FDE68A" />
+    <rect x="281" y="281" width="3" height="3" fill="#FDE68A" />
+
+    <!-- Header Box: Icon + Title -->
+    <rect x="14" y="16" width="46" height="46" rx="3" fill="#3B1E05" stroke="#F59E0B" stroke-width="1.5" />
+    <!-- Crown Pixel Icon -->
+    <text x="37" y="46" font-family="'Segoe UI Emoji', sans-serif" font-size="24" text-anchor="middle" fill="#FCD34D">👑</text>
+
+    <!-- Title & Badge -->
+    <text x="68" y="32" font-family="'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="bold" fill="#FDE68A">Vương Miện Cổ Đại ★</text>
+    <rect x="68" y="38" width="118" height="18" rx="2" fill="#78350F" stroke="#F59E0B" stroke-width="1" />
+    <text x="127" y="51" font-family="'Segoe UI', sans-serif" font-size="9" font-weight="bold" fill="#FEF08A" text-anchor="middle">BẢO VẬT BOSS TẦNG 1</text>
+
+    <!-- Divider Line -->
+    <line x1="14" y1="74" x2="276" y2="74" stroke="#92400E" stroke-width="1" />
+
+    <!-- Stats Section -->
+    <text x="16" y="96" font-family="'Segoe UI', sans-serif" font-size="11" fill="#FDE047">Nguồn gốc:</text>
+    <text x="274" y="96" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#F87171" text-anchor="end">Vua Xương Cổ Đại</text>
+
+    <text x="16" y="122" font-family="'Segoe UI', sans-serif" font-size="11" fill="#FDE047">Tỉ lệ rơi:</text>
+    <text x="274" y="122" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#4ADE80" text-anchor="end">100% Chắc Chắn</text>
+
+    <text x="16" y="148" font-family="'Segoe UI', sans-serif" font-size="11" fill="#FDE047">Công dụng cốt lõi:</text>
+    <text x="274" y="148" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#FCD34D" text-anchor="end">Chặn Cổng Bậc 5 (Tượng)</text>
+
+    <text x="16" y="174" font-family="'Segoe UI', sans-serif" font-size="11" fill="#FDE047">Phạm vi tác dụng:</text>
+    <text x="274" y="174" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#FDE047" text-anchor="end">Cả 4 Trụ Cột Nữ Thần</text>
+
+    <!-- Lower Divider -->
+    <line x1="14" y1="194" x2="276" y2="194" stroke="#451A03" stroke-width="1" />
+
+    <!-- Description / Lore Box -->
+    <rect x="14" y="204" width="262" height="70" rx="2" fill="#1C0D02" stroke="#451A03" stroke-width="1" />
+    <text x="22" y="224" font-family="'Segoe UI', sans-serif" font-size="10" fill="#92400E" font-style="italic">Bảo vật đúc bằng vàng ròng cổ đại.</text>
+    <text x="22" y="240" font-family="'Segoe UI', sans-serif" font-size="10" fill="#92400E" font-style="italic">Minh chứng đã hạ gục Boss Tầng 1,</text>
+    <text x="22" y="256" font-family="'Segoe UI', sans-serif" font-size="10" fill="#92400E" font-style="italic">mở khóa quyền cúng Bậc 6 trở lên.</text>
+  </g>
+</svg>
+

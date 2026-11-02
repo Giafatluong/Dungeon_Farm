@@ -1,0 +1,62 @@
+<svg width="290" height="290" viewBox="0 0 290 290" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg_epic" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#261605" />
+      <stop offset="100%" stop-color="#0D0701" />
+    </linearGradient>
+    <filter id="glow_epic" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#F59E0B" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <!-- Base Rectangular Card with Gold Glow -->
+  <rect x="0" y="0" width="290" height="290" rx="3" fill="url(#bg_epic)" stroke="#F59E0B" stroke-width="2" filter="url(#glow_epic)" />
+  <rect x="4" y="4" width="282" height="282" rx="2" fill="none" stroke="#78350F" stroke-width="1.2" />
+
+  <!-- Corner Pixel Accents (Double Gold Studs) -->
+  <path d="M0 0 H16 V4 H4 V16 H0 Z" fill="#FCD34D" />
+  <path d="M290 0 H274 V4 H286 V16 H290 Z" fill="#FCD34D" />
+  <path d="M0 290 H16 V286 H4 V274 H0 Z" fill="#FCD34D" />
+  <path d="M290 290 H274 V286 H286 V274 H290 Z" fill="#FCD34D" />
+
+  <!-- Inner Corner Studs -->
+  <rect x="6" y="6" width="3" height="3" fill="#FDE68A" />
+  <rect x="281" y="6" width="3" height="3" fill="#FDE68A" />
+  <rect x="6" y="281" width="3" height="3" fill="#FDE68A" />
+  <rect x="281" y="281" width="3" height="3" fill="#FDE68A" />
+
+  <!-- Header Box: Icon + Title -->
+  <rect x="14" y="16" width="46" height="46" rx="3" fill="#3B1E05" stroke="#F59E0B" stroke-width="1.5" />
+  <text x="37" y="46" font-family="'Segoe UI Emoji', sans-serif" font-size="24" text-anchor="middle" fill="#FCD34D">👑</text>
+
+  <!-- Title & Badge -->
+  <text x="68" y="32" font-family="'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="bold" fill="#FDE68A">Vương Miện Cổ Đại ★</text>
+  <rect x="68" y="38" width="118" height="18" rx="2" fill="#78350F" stroke="#F59E0B" stroke-width="1" />
+  <text x="127" y="51" font-family="'Segoe UI', sans-serif" font-size="9" font-weight="bold" fill="#FEF08A" text-anchor="middle">BẢO VẬT BOSS TẦNG 1</text>
+
+  <!-- Divider Line -->
+  <line x1="14" y1="74" x2="276" y2="74" stroke="#92400E" stroke-width="1" />
+
+  <!-- Stats Section -->
+  <text x="16" y="96" font-family="'Segoe UI', sans-serif" font-size="11" fill="#FDE047">Nguồn gốc:</text>
+  <text x="274" y="96" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#F87171" text-anchor="end">Vua Xương Cổ Đại</text>
+
+  <text x="16" y="122" font-family="'Segoe UI', sans-serif" font-size="11" fill="#FDE047">Tỉ lệ rơi:</text>
+  <text x="274" y="122" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#4ADE80" text-anchor="end">100% Chắc Chắn</text>
+
+  <text x="16" y="148" font-family="'Segoe UI', sans-serif" font-size="11" fill="#FDE047">Công dụng cốt lõi:</text>
+  <text x="274" y="148" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#FCD34D" text-anchor="end">Chặn Cổng Bậc 5 (Tượng)</text>
+
+  <text x="16" y="174" font-family="'Segoe UI', sans-serif" font-size="11" fill="#FDE047">Phạm vi tác dụng:</text>
+  <text x="274" y="174" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#FDE047" text-anchor="end">Cả 4 Trụ Cột Nữ Thần</text>
+
+  <!-- Lower Divider -->
+  <line x1="14" y1="194" x2="276" y2="194" stroke="#451A03" stroke-width="1" />
+
+  <!-- Description / Lore Box -->
+  <rect x="14" y="204" width="262" height="70" rx="2" fill="#1C0D02" stroke="#451A03" stroke-width="1" />
+  <text x="22" y="224" font-family="'Segoe UI', sans-serif" font-size="10" fill="#92400E" font-style="italic">Bảo vật đúc bằng vàng ròng cổ đại.</text>
+  <text x="22" y="240" font-family="'Segoe UI', sans-serif" font-size="10" fill="#92400E" font-style="italic">Minh chứng đã hạ gục Boss Tầng 1,</text>
+  <text x="22" y="256" font-family="'Segoe UI', sans-serif" font-size="10" fill="#92400E" font-style="italic">mở khóa quyền cúng Bậc 6 trở lên.</text>
+</svg>
+

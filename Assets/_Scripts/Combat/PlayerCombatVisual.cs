@@ -304,61 +304,60 @@ public class PlayerCombatVisual : MonoBehaviour
             }
         }
 #endif
-        if (attackSprites == null || attackSprites.Length == 0)
+        bool needAttack = attackSprites == null || attackSprites.Length == 0;
+        bool needWeapon = weaponSprites == null || weaponSprites.Length == 0;
+        bool needIdle = idleRightSprite == null;
+
+        if (needAttack || needWeapon || needIdle)
         {
             Sprite[] allSprites = Resources.FindObjectsOfTypeAll<Sprite>();
             if (allSprites != null)
             {
-                List<Sprite> list = new();
-                for (int i = 16; i <= 19; i++)
+                if (needAttack)
                 {
-                    string targetName = $"Player_Attack_NoWeapon_{i}";
-                    for (int j = 0; j < allSprites.Length; j++)
+                    List<Sprite> list = new();
+                    for (int i = 16; i <= 19; i++)
                     {
-                        if (allSprites[j] != null && allSprites[j].name == targetName)
+                        string targetName = $"Player_Attack_NoWeapon_{i}";
+                        for (int j = 0; j < allSprites.Length; j++)
                         {
-                            list.Add(allSprites[j]);
-                            break;
+                            if (allSprites[j] != null && allSprites[j].name == targetName)
+                            {
+                                list.Add(allSprites[j]);
+                                break;
+                            }
                         }
                     }
+                    if (list.Count > 0) attackSprites = list.ToArray();
                 }
-                if (list.Count > 0) attackSprites = list.ToArray();
-            }
-        }
 
-        if (weaponSprites == null || weaponSprites.Length == 0)
-        {
-            Sprite[] allSprites = Resources.FindObjectsOfTypeAll<Sprite>();
-            if (allSprites != null)
-            {
-                List<Sprite> list = new();
-                for (int i = 12; i <= 14; i++)
+                if (needWeapon)
                 {
-                    string targetName = $"Player_Attack_OnlyWeapon_{i}";
-                    for (int j = 0; j < allSprites.Length; j++)
+                    List<Sprite> list = new();
+                    for (int i = 12; i <= 14; i++)
                     {
-                        if (allSprites[j] != null && allSprites[j].name == targetName)
+                        string targetName = $"Player_Attack_OnlyWeapon_{i}";
+                        for (int j = 0; j < allSprites.Length; j++)
                         {
-                            list.Add(allSprites[j]);
-                            break;
+                            if (allSprites[j] != null && allSprites[j].name == targetName)
+                            {
+                                list.Add(allSprites[j]);
+                                break;
+                            }
                         }
                     }
+                    if (list.Count > 0) weaponSprites = list.ToArray();
                 }
-                if (list.Count > 0) weaponSprites = list.ToArray();
-            }
-        }
 
-        if (idleRightSprite == null)
-        {
-            Sprite[] allSprites = Resources.FindObjectsOfTypeAll<Sprite>();
-            if (allSprites != null)
-            {
-                for (int j = 0; j < allSprites.Length; j++)
+                if (needIdle)
                 {
-                    if (allSprites[j] != null && allSprites[j].name == "Player_6")
+                    for (int j = 0; j < allSprites.Length; j++)
                     {
-                        idleRightSprite = allSprites[j];
-                        break;
+                        if (allSprites[j] != null && allSprites[j].name == "Player_6")
+                        {
+                            idleRightSprite = allSprites[j];
+                            break;
+                        }
                     }
                 }
             }
@@ -446,7 +445,7 @@ public class PlayerCombatVisual : MonoBehaviour
         float t = 0f;
         while (t < windupDuration)
         {
-            t += Time.deltaTime;
+            t += Mathf.Max(Time.deltaTime, Time.unscaledDeltaTime * 0.85f);
             float factor = Mathf.Clamp01(t / windupDuration);
             transform.position = Vector3.Lerp(startPos, windupPos, factor);
             transform.localScale = Vector3.Lerp(originalScale, windupScale, factor);
@@ -462,7 +461,7 @@ public class PlayerCombatVisual : MonoBehaviour
         t = 0f;
         while (t < dashDuration)
         {
-            t += Time.deltaTime;
+            t += Mathf.Max(Time.deltaTime, Time.unscaledDeltaTime * 0.85f);
             float factor = Mathf.Clamp01(t / dashDuration);
             // Quadratic ease-in: fast acceleration
             float ease = factor * factor;
@@ -516,7 +515,7 @@ public class PlayerCombatVisual : MonoBehaviour
         t = 0f;
         while (t < halfSlash)
         {
-            t += Time.deltaTime;
+            t += Mathf.Max(Time.deltaTime, Time.unscaledDeltaTime * 0.75f);
             float factor = Mathf.Clamp01(t / halfSlash);
             transform.localScale = Vector3.Lerp(impactScale, originalScale, factor * 0.5f);
             yield return null;
@@ -535,7 +534,7 @@ public class PlayerCombatVisual : MonoBehaviour
         t = 0f;
         while (t < halfSlash)
         {
-            t += Time.deltaTime;
+            t += Mathf.Max(Time.deltaTime, Time.unscaledDeltaTime * 0.75f);
             yield return null;
         }
 
@@ -557,7 +556,7 @@ public class PlayerCombatVisual : MonoBehaviour
         t = 0f;
         while (t < returnDuration)
         {
-            t += Time.deltaTime;
+            t += Mathf.Max(Time.deltaTime, Time.unscaledDeltaTime * 0.85f);
             float factor = Mathf.Clamp01(t / returnDuration);
             float ease = Mathf.SmoothStep(0f, 1f, factor);
             transform.position = Vector3.Lerp(targetPos, startPos, ease);

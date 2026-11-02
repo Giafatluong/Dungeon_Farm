@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Slime
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Slime
-  maxHealth: 22
-  ATK: 4
+  maxHealth: 28
+  ATK: 6
   DEF: 0
   speed: 8
   possibleIntents: 000000000200000003000000
@@ -31,19 +31,19 @@ MonoBehaviour:
     durationType: 0
   lootDrops:
   - item: {fileID: 11400000, guid: 42b4889df87d85948a0ccdcad13f6420, type: 2}
-    dropChance: 0.7
+    dropChance: 0.6
     minAmount: 1
     maxAmount: 2
     requireUnlock: 0
-  - item: {fileID: 11400000, guid: 70b5395e965c15b4aa0dcbfd8c604273, type: 2}
+  - item: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
     dropChance: 0.5
+    minAmount: 1
+    maxAmount: 2
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: 7718d5e23f0c1a04fa69901ef774b762, type: 2}
+    dropChance: 0.35
     minAmount: 1
     maxAmount: 1
     requireUnlock: 0
-  - item: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
-    dropChance: 0.45
-    minAmount: 1
-    maxAmount: 2
-    requireUnlock: 1
   dropUnlockedSeeds: 1
-  seedDropChance: 0.35
+  seedDropChance: 0.5

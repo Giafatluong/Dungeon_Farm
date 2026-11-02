@@ -30,7 +30,7 @@ public class CombatManager : MonoBehaviour
     public float enemyTurnDelay = 0.35f;
     public float playerActionDelay = 0.35f;
     [Tooltip("Delay time after final enemy dies before showing victory UI")]
-    public float victoryDelay = 1.0f;
+    public float victoryDelay = 0.35f;
 
     #region Events
     public event System.Action<string> OnCombatLog;
@@ -39,6 +39,9 @@ public class CombatManager : MonoBehaviour
     public event System.Action OnCombatStarted;
     public event System.Action OnCombatEnded;
     public event System.Action<EnemyStats, int> OnPlayerAttackAction;
+    public event System.Action OnPlayerDefendAction;
+    public event System.Action<ItemData> OnPlayerEatAction;
+    public event System.Action OnPlayerEndTurnAction;
     public event System.Action<bool> OnPlayerActingChanged;
     #endregion
 
@@ -245,6 +248,14 @@ public class CombatManager : MonoBehaviour
         {
             playerStats.currentAP = playerStats.maxAP;
             playerStats.defendCount = 0;
+
+            // Fullness Tier 3 (Overstuffed) passive effect: digestion heals +2 HP per turn
+            if (playerStats.GetCurrentFullnessTier() == PlayerStats.FullnessTier.Overstuffed && playerStats.currentHealth < playerStats.maxHealth)
+            {
+                playerStats.Heal(2);
+                DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.3f, "+2 HP (Digestion)", new Color(0.35f, 1f, 0.45f), 4.2f);
+                LogMessage("[Độ No: Bội Thực] Quá trình tiêu hóa hồi phục +2 HP!");
+            }
         }
 
         OnTurnChanged?.Invoke(currentTurn);
@@ -289,7 +300,7 @@ public class CombatManager : MonoBehaviour
         }
 
         // Allow enemy action animation to complete before advancing turn
-        EnemyCombatVisual visual = enemy != null ? enemy.GetComponent<EnemyCombatVisual>() : null;
+        EnemyCombatVisual visual = enemy != null ? (enemy.CombatVisual ?? enemy.GetComponent<EnemyCombatVisual>()) : null;
         if (visual != null)
         {
             float maxWait = 1.8f;
@@ -332,6 +343,7 @@ public class CombatManager : MonoBehaviour
         }
 
         LogMessage("Turn ended.");
+        OnPlayerEndTurnAction?.Invoke();
 
         if (turnManager != null)
         {
@@ -465,6 +477,7 @@ public class CombatManager : MonoBehaviour
 
         DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.1f, $"+{playerStats.defendValue} DEF", new Color(0.4f, 0.75f, 1f), 4.6f);
         LogMessage($"You take a defensive stance! (+{playerStats.defendValue} shield per stack, {playerStats.defendCount} stack(s))");
+        OnPlayerDefendAction?.Invoke();
     }
 
     public void PlayerEat(ItemData food)
@@ -532,11 +545,13 @@ public class CombatManager : MonoBehaviour
             if (bLogs.Count > 0)
             {
                 LogMessage($"You ate {food.itemName}! (Buffs: {string.Join(", ", bLogs)})");
+                OnPlayerEatAction?.Invoke(food);
                 return;
             }
         }
 
         LogMessage($"You ate {food.itemName}!");
+        OnPlayerEatAction?.Invoke(food);
     }
 
     /// <summary>
@@ -639,7 +654,7 @@ public class CombatManager : MonoBehaviour
         {
             if (CombatJuice.Instance != null)
             {
-                CombatJuice.Instance.PlayFinisherSlowMo(0.25f, 0.45f);
+                CombatJuice.Instance.PlayFinisherSlowMo(0.5f, 0.18f);
             }
             victoryCoroutine = StartCoroutine(DelayedVictoryRoutine());
         }
@@ -658,7 +673,7 @@ public class CombatManager : MonoBehaviour
 
         if (victoryDelay > 0f)
         {
-            yield return GetCachedWait(victoryDelay);
+            yield return new WaitForSecondsRealtime(victoryDelay);
         }
 
         victoryCoroutine = null;
@@ -669,6 +684,7 @@ public class CombatManager : MonoBehaviour
     {
         if (!isCombatActive && !isPreparingCombat) return;
 
+        Time.timeScale = 1.0f;
         isCombatActive = false;
         isPreparingCombat = false;
 
@@ -696,12 +712,18 @@ public class CombatManager : MonoBehaviour
         if (victory)
         {
             LogMessage("Victory! All enemies defeated.");
+            TutorialManager.Instance?.NotifyCombatFinished();
 
             WaveManager waveManager = WaveManager.Instance != null ? WaveManager.Instance : FindFirstObjectByType<WaveManager>();
             int waveIdx = waveManager != null ? waveManager.GetCurrentWaveIndex() : 0;
 
             // Player manually collects items into inventory rather than automatic collection
             ItemContainer backpack = playerStats != null ? playerStats.itemContainer : null;
+            if (backpack == null && playerStats != null)
+            {
+                playerStats.ResolveItemContainer();
+                backpack = playerStats.itemContainer;
+            }
             if (backpack == null)
             {
                 InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
@@ -715,19 +737,6 @@ public class CombatManager : MonoBehaviour
                     if (containers[i] != null && !containers[i].name.ToLower().Contains("chest") && !containers[i].name.ToLower().Contains("loot"))
                     {
                         backpack = containers[i];
-                        break;
-                    }
-                }
-            }
-
-            bool hasLoot = false;
-            if (currentWaveLoot != null)
-            {
-                for (int i = 0; i < currentWaveLoot.Count; i++)
-                {
-                    if (currentWaveLoot[i] != null && currentWaveLoot[i].itemData != null && currentWaveLoot[i].amount > 0)
-                    {
-                        hasLoot = true;
                         break;
                     }
                 }
@@ -748,15 +757,15 @@ public class CombatManager : MonoBehaviour
             };
 
             LootUI lootUI = LootUI.EnsureInstance();
-            if (hasLoot && lootUI != null && backpack != null)
+            if (lootUI != null && backpack != null)
             {
                 if (CombatUI.Instance != null && CombatUI.Instance.rewardPanel != null)
                 {
                     CombatUI.Instance.rewardPanel.SetActive(false);
                 }
 
-                List<ItemSlot> lootToPass = new(currentWaveLoot);
-                currentWaveLoot.Clear();
+                List<ItemSlot> lootToPass = currentWaveLoot != null ? new(currentWaveLoot) : new();
+                if (currentWaveLoot != null) currentWaveLoot.Clear();
 
                 lootUI.Open(lootToPass, backpack, onLootFinished);
             }

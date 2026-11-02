@@ -50,6 +50,7 @@ public class DayTransitionUI : MonoBehaviour
     public TextMeshProUGUI worldContentText;
     public Button startNewDayButton;
     public TextMeshProUGUI startNewDayButtonText;
+    private RectTransform _cachedStartNewDayBtnRT;
 
     [Header("Transition Settings")]
     public float fadeOutDuration = 0.45f;
@@ -129,8 +130,8 @@ public class DayTransitionUI : MonoBehaviour
             {
                 if (startNewDayButton != null)
                 {
-                    RectTransform btnRT = startNewDayButton.GetComponent<RectTransform>();
-                    if (btnRT != null && RectTransformUtility.RectangleContainsScreenPoint(btnRT, Input.mousePosition, null))
+                    if (_cachedStartNewDayBtnRT == null) _cachedStartNewDayBtnRT = startNewDayButton.GetComponent<RectTransform>();
+                    if (_cachedStartNewDayBtnRT != null && RectTransformUtility.RectangleContainsScreenPoint(_cachedStartNewDayBtnRT, Input.mousePosition, null))
                     {
                         OnStartNewDayClicked();
                         return;
@@ -174,6 +175,9 @@ public class DayTransitionUI : MonoBehaviour
     public void PlayTransition(int oldDay, System.Action onDayAdvancedCallback = null)
     {
         if (isTransitionActive) return;
+
+        UIEscapeManager.CloseAllModals(includeInventory: true);
+        UIEscapeManager.NotifyModalOpened("DayTransition");
 
         EnsureUIConstructed();
 
@@ -481,6 +485,7 @@ public class DayTransitionUI : MonoBehaviour
         }
 
         isTransitionActive = false;
+        UIEscapeManager.NotifyModalClosed("DayTransition");
         Debug.Log("[DayTransitionUI] New day started successfully!");
     }
 

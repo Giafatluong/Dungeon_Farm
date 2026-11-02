@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
 
 /// <summary>
 /// Central helper providing original project pixel-art visual assets (UI_Frame, UI_Slot, UI_Toolbar)
@@ -43,6 +44,7 @@ public static class DungeonUIAssetHelper
     private static Sprite _tentSprite;
     private static GameObject _slotPrefab;
     private static TMP_FontAsset _fontAsset;
+    private static readonly Dictionary<string, Sprite> _spriteCache = new(System.StringComparer.OrdinalIgnoreCase);
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     public static void ResetStatics()
@@ -55,6 +57,7 @@ public static class DungeonUIAssetHelper
         _tentSprite = null;
         _slotPrefab = null;
         _fontAsset = null;
+        _spriteCache.Clear();
     }
     #endregion
 
@@ -155,7 +158,12 @@ public static class DungeonUIAssetHelper
     {
         if (_slotPrefab != null) return _slotPrefab;
 
-        // 1. Try finding from active or inactive scene components
+        // 1. Try Resources.Load from Resources folder
+        _slotPrefab = Resources.Load<GameObject>("inventorySlot");
+        if (_slotPrefab == null) _slotPrefab = Resources.Load<GameObject>("Prefabs/inventorySlot");
+        if (_slotPrefab != null) return _slotPrefab;
+
+        // 2. Try finding from active or inactive scene components
         InventoryPanel invPanel = Object.FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
         if (invPanel != null)
         {
@@ -176,7 +184,35 @@ public static class DungeonUIAssetHelper
             }
         }
 
-        // 2. Search loaded assets
+        LootUI lootUI = Object.FindFirstObjectByType<LootUI>(FindObjectsInactive.Include);
+        if (lootUI != null)
+        {
+            InventoryButton btn = lootUI.GetComponentInChildren<InventoryButton>(true);
+            if (btn != null)
+            {
+                return btn.gameObject;
+            }
+        }
+
+        // 3. In Unity Editor, search via AssetDatabase
+#if UNITY_EDITOR
+        _slotPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Assets/_Prefabs/inventorySlot.prefab");
+        if (_slotPrefab != null) return _slotPrefab;
+
+        string[] guids = UnityEditor.AssetDatabase.FindAssets("inventorySlot t:Prefab");
+        for (int i = 0; i < guids.Length; i++)
+        {
+            string p = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[i]);
+            GameObject go = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(p);
+            if (go != null && go.GetComponent<InventoryButton>() != null)
+            {
+                _slotPrefab = go;
+                return _slotPrefab;
+            }
+        }
+#endif
+
+        // 4. Search loaded assets in memory
         GameObject[] allPrefabs = Resources.FindObjectsOfTypeAll<GameObject>();
         for (int i = 0; i < allPrefabs.Length; i++)
         {
@@ -190,6 +226,75 @@ public static class DungeonUIAssetHelper
             }
         }
 
+        // 5. Procedural template fallback (guarantees slot is NEVER null)
+        _slotPrefab = CreateProceduralSlotPrefab();
+        return _slotPrefab;
+    }
+
+    public static GameObject CreateProceduralSlotPrefab()
+    {
+        GameObject slotObj = new("inventorySlot", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button), typeof(InventoryButton));
+        Object.DontDestroyOnLoad(slotObj);
+        slotObj.SetActive(false);
+
+        RectTransform rt = slotObj.GetComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(50, 50);
+
+        Image bg = slotObj.GetComponent<Image>();
+        Sprite slotSprite = GetSlotSprite();
+        if (slotSprite != null)
+        {
+            bg.sprite = slotSprite;
+            bg.type = Image.Type.Sliced;
+            bg.color = Color.white;
+        }
+        else
+        {
+            bg.color = new Color(0.18f, 0.22f, 0.30f, 1f);
+        }
+
+        Button btn = slotObj.GetComponent<Button>();
+        btn.targetGraphic = bg;
+
+        // Child 1: Icon image
+        GameObject iconObj = new("Image", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        iconObj.transform.SetParent(slotObj.transform, false);
+        RectTransform iconRT = iconObj.GetComponent<RectTransform>();
+        iconRT.anchorMin = Vector2.zero;
+        iconRT.anchorMax = Vector2.one;
+        iconRT.offsetMin = new Vector2(4, 4);
+        iconRT.offsetMax = new Vector2(-4, -4);
+        Image iconImg = iconObj.GetComponent<Image>();
+        iconImg.preserveAspect = true;
+        iconImg.raycastTarget = false;
+        iconObj.SetActive(false);
+
+        // Child 2: Amount text
+        GameObject textObj = new("Text (TMP)", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        textObj.transform.SetParent(slotObj.transform, false);
+        RectTransform textRT = textObj.GetComponent<RectTransform>();
+        textRT.anchorMin = new Vector2(1, 0);
+        textRT.anchorMax = new Vector2(1, 0);
+        textRT.pivot = new Vector2(1, 0);
+        textRT.anchoredPosition = new Vector2(-3, 3);
+        textRT.sizeDelta = new Vector2(35, 18);
+        TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>();
+        ApplyFont(tmp);
+        tmp.fontSize = 14;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = TextAlignmentOptions.BottomRight;
+        tmp.color = Color.white;
+        tmp.raycastTarget = false;
+        textObj.SetActive(false);
+
+        InventoryButton invBtn = slotObj.GetComponent<InventoryButton>();
+        invBtn.BindComponents(iconImg, tmp);
+
+        return slotObj;
+    }
+
+    public static Material GetOutlineMaterial()
+    {
         return null;
     }
 
@@ -209,11 +314,11 @@ public static class DungeonUIAssetHelper
         return _fontAsset;
     }
 
-    public static void ApplyFont(TextMeshProUGUI tmp)
+    public static void ApplyFont(TextMeshProUGUI tmp, bool withOutline = false)
     {
         if (tmp == null) return;
         TMP_FontAsset font = GetFontAsset();
-        if (font != null)
+        if (font != null && tmp.font == null)
         {
             tmp.font = font;
         }
@@ -315,6 +420,17 @@ public static class DungeonUIAssetHelper
         };
 
         StyleButton(btn, img, btnColor);
+
+        if (btn != null)
+        {
+            TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (tmp != null)
+            {
+                ApplyFont(tmp, withOutline: true);
+                tmp.fontStyle = FontStyles.Bold;
+                tmp.color = Color.white;
+            }
+        }
     }
 
     public static void StyleButton(Button btn, Image img, Color normalColor, Color? hoverColor = null, Color? pressedColor = null)
@@ -339,40 +455,58 @@ public static class DungeonUIAssetHelper
     #region Utilities
     private static Sprite FindSprite(string spriteName)
     {
+        if (string.IsNullOrEmpty(spriteName)) return null;
+        if (_spriteCache.TryGetValue(spriteName, out Sprite cached))
+        {
+            return cached;
+        }
+
+        Sprite found = null;
+
         // 1. Direct memory scan pass for loaded sprites
         Sprite[] sprites = Resources.FindObjectsOfTypeAll<Sprite>();
         for (int i = 0; i < sprites.Length; i++)
         {
             if (sprites[i] != null && sprites[i].name.Equals(spriteName, System.StringComparison.OrdinalIgnoreCase))
             {
-                return sprites[i];
+                found = sprites[i];
+                break;
             }
         }
 
 #if UNITY_EDITOR
         // 2. Editor AssetDatabase pass (finds sprites on disk if not preloaded)
-        string[] guids = UnityEditor.AssetDatabase.FindAssets($"{spriteName} t:Sprite");
-        for (int i = 0; i < guids.Length; i++)
+        if (found == null)
         {
-            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[i]);
-            Sprite edSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
-            if (edSprite != null && edSprite.name.Equals(spriteName, System.StringComparison.OrdinalIgnoreCase))
+            string[] guids = UnityEditor.AssetDatabase.FindAssets($"{spriteName} t:Sprite");
+            for (int i = 0; i < guids.Length; i++)
             {
-                return edSprite;
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[i]);
+                Sprite edSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                if (edSprite != null && edSprite.name.Equals(spriteName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    found = edSprite;
+                    break;
+                }
             }
         }
 #endif
 
         // 3. Fallback contains match
-        for (int i = 0; i < sprites.Length; i++)
+        if (found == null)
         {
-            if (sprites[i] != null && sprites[i].name.IndexOf(spriteName, System.StringComparison.OrdinalIgnoreCase) >= 0)
+            for (int i = 0; i < sprites.Length; i++)
             {
-                return sprites[i];
+                if (sprites[i] != null && sprites[i].name.IndexOf(spriteName, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    found = sprites[i];
+                    break;
+                }
             }
         }
 
-        return null;
+        _spriteCache[spriteName] = found;
+        return found;
     }
 
     /// <summary>

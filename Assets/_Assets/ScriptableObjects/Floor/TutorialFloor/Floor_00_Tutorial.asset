@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b361ef3d9b53cdd41b30d69a54936c4a, type: 3}
+  m_Name: Floor_00_Tutorial
+  m_EditorClassIdentifier: Assembly-CSharp::FloorData
+  floorName: T\u1EA7ng H\u01B0\u1EDBng D\u1EABn (Tutorial Floor)
+  floorNumber: 0
+  waves:
+  - {fileID: 11400000, guid: 8d6d4c2d3c8f4f868fd50b93a71bb8e0, type: 2}
+  - {fileID: 11400000, guid: 906fd53d0dde4322bf08a9c3c2cdc72e, type: 2}
+  - {fileID: 11400000, guid: b700fe211a3d4084ba5cfc8702313308, type: 2}
+  - {fileID: 11400000, guid: 83d20bd1ebe8482ba016159ef3ab6b15, type: 2}
+  - {fileID: 11400000, guid: ffe6ff5dec46405195ed8299186b18ba, type: 2}
+  bossName: "\u1EA2i H\u01B0\u1EDBng D\u1EABn"
+  clearRewardItems:
+  - itemData: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
+    count: 5
+  - itemData: {fileID: 11400000, guid: 96b10b9a95c45c84484c4737865e12cb, type: 2}
+    count: 5
+  bonusPermanentATK: 0
+  bonusPermanentDEF: 0
+  bonusPermanentMaxHP: 0
+  bonusPermanentSpeed: 0
+  victoryTitle: "HO\xC0N TH\xC0NH H\u01AF\u1EDA NG D\u1EAA N H\u1EA6M NG\u1EE4C!"
+  victoryDescription: "Ch\xFAc m\u1EEBng! B\u1EA1n \u0111\xE3 n\u1EAFm v\u1EEFng to\xE0n b\u1ED9 c\u01A1 ch\u1EBF H\u1EA7m Ng\u1EE5c: Chi\u1EBFn \u0111\u1EA5u 3 AP, R\u01B0\u01A1ng kho b\xE1u, S\u1EF1 ki\u1EC7n b\u1EA5t ng\u1EDD, Th\u01B0\u01A1ng nh\xE2n v\xE0 Tr\u1EA1i ngh\u1EC9 ch\xE2n!"

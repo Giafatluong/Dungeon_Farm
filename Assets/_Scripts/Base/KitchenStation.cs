@@ -205,6 +205,8 @@ public class KitchenStation : MonoBehaviour, IInteractable
                 {
                     KitchenUI.Instance.OnStationFinishedCooking();
                 }
+
+                TutorialManager.Instance?.NotifyDishCooked();
             }
         }
 
@@ -265,7 +267,7 @@ public class KitchenStation : MonoBehaviour, IInteractable
         if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
             return;
 
-        if (playerInRange)
+        if (playerInRange && (isOpen || !UIEscapeManager.IsAnyModalUIOpen()))
         {
             Interact();
         }
@@ -279,6 +281,9 @@ public class KitchenStation : MonoBehaviour, IInteractable
         }
         else
         {
+            if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.Cooking))
+                return;
+
             OpenKitchen();
         }
     }

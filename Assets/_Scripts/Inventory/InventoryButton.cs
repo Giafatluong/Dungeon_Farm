@@ -9,7 +9,9 @@ public class InventoryButton : MonoBehaviour,
     IDragHandler,
     IEndDragHandler,
     IDropHandler,
-    IPointerClickHandler
+    IPointerClickHandler,
+    IPointerEnterHandler,
+    IPointerExitHandler
 {
     [SerializeField] private Image itemIcon;
     [SerializeField] private TextMeshProUGUI itemAmount;
@@ -117,6 +119,7 @@ public class InventoryButton : MonoBehaviour,
     private void OnDisable()
     {
         OnItemSelected -= HandleItemSelected;
+        ItemTooltipUI.Instance?.Hide();
         if (dragIcon != null)
         {
             Destroy(dragIcon);
@@ -174,6 +177,7 @@ public class InventoryButton : MonoBehaviour,
         {
             itemIcon.gameObject.SetActive(true);
             itemIcon.sprite = itemData.itemIcon;
+            itemIcon.color = Color.white;
         }
 
         if (itemAmount != null)
@@ -196,6 +200,7 @@ public class InventoryButton : MonoBehaviour,
     public void ClearItem()
     {
         currentItem = null;
+        ItemTooltipUI.Instance?.Hide();
 
         EnsureIcon();
         if (itemAmount == null)
@@ -247,13 +252,32 @@ public class InventoryButton : MonoBehaviour,
             {
                 ChestUI.QuickTransfer(itemContainer, slotIndex);
             }
+            else if (LootUI.Instance != null && LootUI.Instance.IsOpen && itemContainer != null)
+            {
+                LootUI.QuickTransfer(itemContainer, slotIndex);
+            }
         }
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (currentItem != null && dragIcon == null)
+        {
+            ItemTooltipUI.EnsureInstance()?.Show(currentItem, transform.position);
+        }
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        ItemTooltipUI.Instance?.Hide();
     }
 
     private ScrollRect parentScrollRect;
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        ItemTooltipUI.Instance?.Hide();
+
         if (currentItem == null || itemIcon == null || itemIcon.sprite == null)
         {
             if (parentScrollRect == null) parentScrollRect = GetComponentInParent<ScrollRect>();

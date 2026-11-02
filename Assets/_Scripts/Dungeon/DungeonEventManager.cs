@@ -481,7 +481,7 @@ public class DungeonEventManager : MonoBehaviour
 
         if (choice.hungerCost > 0 && player != null)
         {
-            player.currentHunger = Mathf.Max(0, player.currentHunger - choice.hungerCost);
+            player.ReduceHunger(choice.hungerCost);
         }
 
         if (choice.requiredItem != null && choice.requiredItemAmount > 0 && backpack != null)

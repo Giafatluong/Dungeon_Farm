@@ -106,8 +106,14 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
 
         if (itemNameText != null && requiredItem != null)
         {
-            itemNameText.text = requiredItem.itemName;
-            itemNameText.color = isCompleted ? new Color(0.35f, 1f, 0.55f) : new Color(0.85f, 0.88f, 0.95f);
+            string prefix = requiredItem.isRare ? "★ " : "";
+            itemNameText.text = $"{prefix}{requiredItem.itemName}";
+            if (isCompleted)
+                itemNameText.color = new Color(0.35f, 1f, 0.55f);
+            else if (requiredItem.isRare)
+                itemNameText.color = new Color(1f, 0.82f, 0.35f);
+            else
+                itemNameText.color = new Color(0.85f, 0.88f, 0.95f);
         }
 
         if (checkmarkObj != null)
@@ -125,6 +131,10 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
             {
                 slotBackground.color = new Color(0.24f, 0.22f, 0.14f, 0.95f);
             }
+            else if (requiredItem != null && requiredItem.isRare)
+            {
+                slotBackground.color = new Color(0.26f, 0.18f, 0.12f, 0.95f);
+            }
             else
             {
                 slotBackground.color = new Color(0.14f, 0.16f, 0.22f, 0.95f);
@@ -133,7 +143,12 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
 
         if (outline != null)
         {
-            outline.effectColor = isCompleted ? new Color(0.3f, 0.9f, 0.4f, 0.8f) : new Color(0.5f, 0.45f, 0.3f, 0.6f);
+            if (isCompleted)
+                outline.effectColor = new Color(0.3f, 0.9f, 0.4f, 0.8f);
+            else if (requiredItem != null && requiredItem.isRare)
+                outline.effectColor = new Color(1f, 0.8f, 0.25f, 0.95f);
+            else
+                outline.effectColor = new Color(0.5f, 0.45f, 0.3f, 0.6f);
         }
     }
 
@@ -153,6 +168,12 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
     private void TryContributeFromDrag(InventoryButton dragged)
     {
         if (parentOffering == null || requiredItem == null) return;
+
+        if (parentOffering != null && !parentOffering.IsUnlocked())
+        {
+            StatueUI.Instance?.SetFeedback("<color=#FF6666>Cột mốc này đang bị khóa! Cần hoàn thành cột mốc trước đó.</color>");
+            return;
+        }
 
         if (isCompleted)
         {
@@ -200,6 +221,12 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
     public void OnPointerClick(PointerEventData eventData)
     {
         if (isCompleted || parentOffering == null || requiredItem == null) return;
+
+        if (parentOffering != null && !parentOffering.IsUnlocked())
+        {
+            StatueUI.Instance?.SetFeedback("<color=#FF6666>Cột mốc này đang bị khóa! Cần hoàn thành cột mốc trước đó.</color>");
+            return;
+        }
 
         ItemContainer backpack = StatueUI.Instance?.PlayerBackpack;
         if (backpack == null) return;
@@ -260,6 +287,11 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
             outline.effectColor = new Color(1f, 0.85f, 0.35f, 1f);
         }
         transform.localScale = Vector3.one * 1.05f;
+
+        if (requiredItem != null)
+        {
+            ItemTooltipUI.EnsureInstance()?.Show(requiredItem, transform.position);
+        }
     }
 
     public void OnPointerExit(PointerEventData eventData)
@@ -269,5 +301,12 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
             outline.effectColor = isCompleted ? new Color(0.3f, 0.9f, 0.4f, 0.8f) : new Color(0.5f, 0.45f, 0.3f, 0.6f);
         }
         transform.localScale = Vector3.one;
+
+        ItemTooltipUI.Instance?.Hide();
+    }
+
+    private void OnDisable()
+    {
+        ItemTooltipUI.Instance?.Hide();
     }
 }

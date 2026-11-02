@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Boss_Skeleton_King
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Vua Xuong Co Dai (Boss)
-  maxHealth: 95
+  maxHealth: 85
   ATK: 12
-  DEF: 3
-  speed: 15
+  DEF: 2
+  speed: 14
   isRanged: 1
   possibleIntents: 00000000010000000200000003000000
   intentEffects:
@@ -31,20 +31,35 @@ MonoBehaviour:
     duration: 2
     durationType: 0
   lootDrops:
+  - item: {fileID: 11400000, guid: b0550001417244a47895e7b4112e4f01, type: 2}
+    dropChance: 1
+    minAmount: 1
+    maxAmount: 1
+    requireUnlock: 0
   - item: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
-    dropChance: 1.0
+    dropChance: 1
     minAmount: 3
     maxAmount: 5
     requireUnlock: 0
-  - item: {fileID: 11400000, guid: 96b10b9a95c45c84484c4737865e12cb, type: 2}
+  - item: {fileID: 11400000, guid: 42b4889df87d85948a0ccdcad13f6420, type: 2}
+    dropChance: 1
+    minAmount: 3
+    maxAmount: 5
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
     dropChance: 0.8
     minAmount: 2
     maxAmount: 3
     requireUnlock: 0
   - item: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
-    dropChance: 1.0
+    dropChance: 0.75
     minAmount: 2
     maxAmount: 3
     requireUnlock: 0
+  - item: {fileID: 11400000, guid: dc74547fa89c38848bb7b0475edefbcf, type: 2}
+    dropChance: 0.6
+    minAmount: 1
+    maxAmount: 2
+    requireUnlock: 0
   dropUnlockedSeeds: 1
-  seedDropChance: 0.8
+  seedDropChance: 0.85

@@ -4,13 +4,13 @@ using UnityEngine;
 public class PlayerStats : MonoBehaviour
 {
     [Header("Health")]
-    public int maxHealth = 50;
-    public int currentHealth = 50;
+    public int maxHealth = 35;
+    public int currentHealth = 35;
 
     [Header("Combat Stats")]
-    public int ATK = 10;
-    public int DEF = 2;
-    public int speed = 16;
+    public int ATK = 7;
+    public int DEF = 1;
+    public int speed = 14;
     public int defendCount;
     public int defendValue = 5;
 
@@ -24,6 +24,16 @@ public class PlayerStats : MonoBehaviour
 
     [Header("Buffs")]
     public List<ActiveBuff> activeBuffs = new List<ActiveBuff>();
+
+    public enum FullnessTier
+    {
+        Hungry,      // Mốc 1 (< 30%): Debuff thuần (-2 ATK, -3 Speed)
+        Satiated,    // Mốc 2 (30% - 79%): Buff thuần (+2 ATK, +1 DEF, +2 Speed)
+        Overstuffed  // Mốc 3 (>= 80%): Vừa Buff (+3 DEF, +2 HP hồi phục) vừa Debuff (-4 Speed, -1 ATK)
+    }
+
+    public event System.Action<FullnessTier> OnFullnessTierChanged;
+    private FullnessTier lastAnnouncedTier = FullnessTier.Satiated;
 
     public ItemContainer itemContainer;
     public HealthBar healthBar;
@@ -117,6 +127,7 @@ public class PlayerStats : MonoBehaviour
         currentHealth = maxHealth;
         currentHunger = maxHunger;
         currentAP = maxAP;
+        lastAnnouncedTier = GetCurrentFullnessTier();
 
         // When at Base or outside Dungeon, clear all temporary buffs
         UnityEngine.SceneManagement.Scene activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
@@ -145,6 +156,7 @@ public class PlayerStats : MonoBehaviour
 
         bool hasRawVitality = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.RawVitality);
         bool hasEndlessFeast = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast);
+        bool isTutorialActive = CombatTutorialGuide.Instance != null && CombatTutorialGuide.Instance.IsTutorialActive;
 
         FoodData food = item as FoodData;
 
@@ -159,7 +171,7 @@ public class PlayerStats : MonoBehaviour
                     return false;
                 }
 
-                if (currentHunger >= maxHunger && currentHealth >= maxHealth)
+                if (!isTutorialActive && currentHunger >= maxHunger && currentHealth >= maxHealth)
                 {
                     Debug.Log("Both hunger and health are full, cannot eat more");
                     return false;
@@ -191,7 +203,7 @@ public class PlayerStats : MonoBehaviour
         }
 
         bool hasBuffs = (food.foodBuff != null && food.foodBuff.Length > 0);
-        if (currentHunger >= maxHunger && currentHealth >= maxHealth && !hasBuffs)
+        if (!isTutorialActive && currentHunger >= maxHunger && currentHealth >= maxHealth && !hasBuffs)
         {
             Debug.Log("Both hunger and health are full, and food has no buffs");
             return false;
@@ -238,11 +250,89 @@ public class PlayerStats : MonoBehaviour
 
     #endregion
 
+    #region Fullness Tiers & Mechanics
+
+    public FullnessTier GetCurrentFullnessTier()
+    {
+        if (maxHunger <= 0) return FullnessTier.Satiated;
+        float ratio = (float)currentHunger / maxHunger;
+        if (ratio < 0.30f) return FullnessTier.Hungry;
+        if (ratio >= 0.80f) return FullnessTier.Overstuffed;
+        return FullnessTier.Satiated;
+    }
+
+    public string GetFullnessTierDisplayName()
+    {
+        return GetCurrentFullnessTier() switch
+        {
+            FullnessTier.Hungry => "Đói Bụng",
+            FullnessTier.Satiated => "No Vừa Phải",
+            FullnessTier.Overstuffed => "Bội Thực",
+            _ => "Bình Thường"
+        };
+    }
+
+    public void CheckFullnessTierTransition(bool notify = true)
+    {
+        FullnessTier currentTier = GetCurrentFullnessTier();
+        if (currentTier != lastAnnouncedTier)
+        {
+            lastAnnouncedTier = currentTier;
+            OnFullnessTierChanged?.Invoke(currentTier);
+
+            if (notify)
+            {
+                string msg = currentTier switch
+                {
+                    FullnessTier.Hungry => "Đói Bụng! (-2 ATK, -3 SPD)",
+                    FullnessTier.Satiated => "No Nê! (+2 ATK, +1 DEF, +2 SPD)",
+                    FullnessTier.Overstuffed => "Bội Thực! (+3 DEF, -4 SPD, -1 ATK)",
+                    _ => ""
+                };
+
+                Color col = currentTier switch
+                {
+                    FullnessTier.Hungry => new Color(1f, 0.45f, 0.25f),
+                    FullnessTier.Satiated => new Color(0.35f, 1f, 0.45f),
+                    FullnessTier.Overstuffed => new Color(1f, 0.82f, 0.2f),
+                    _ => Color.white
+                };
+
+                DamagePopupManager.ShowText(transform.position + Vector3.up * 1.35f, msg, col, 4.2f);
+
+                if (CombatUI.Instance != null)
+                {
+                    CombatUI.Instance.LogMessage($"[Độ No] Trạng thái: {GetFullnessTierDisplayName()} — {msg}");
+                }
+            }
+        }
+    }
+
+    #endregion
+
     #region GetCurrentStats
 
     public int GetCurrentATK()
     {
         int value = ATK;
+
+        // Ảnh hưởng mốc Độ No:
+        // Mốc 1 (< 30%): Debuff -2 ATK (suy nhược vì đói)
+        // Mốc 2 (30% - 79%): Buff +2 ATK (tràn đầy năng lượng)
+        // Mốc 3 (>= 80%): Debuff -1 ATK (khó dồn toàn lực vung đòn khi bụng quá no)
+        FullnessTier tier = GetCurrentFullnessTier();
+        if (tier == FullnessTier.Hungry)
+        {
+            value -= 2;
+        }
+        else if (tier == FullnessTier.Satiated)
+        {
+            value += 2;
+        }
+        else if (tier == FullnessTier.Overstuffed)
+        {
+            value -= 1;
+        }
 
         if (ProgressionManager.Instance != null)
         {
@@ -274,6 +364,20 @@ public class PlayerStats : MonoBehaviour
     {
         int value = DEF;
 
+        // Ảnh hưởng mốc Độ No:
+        // Mốc 1 (< 30%): Không cộng DEF
+        // Mốc 2 (30% - 79%): Buff +1 DEF (thể lực dẻo dai)
+        // Mốc 3 (>= 80%): Buff mạnh +3 DEF (pháo đài chống chịu)
+        FullnessTier tier = GetCurrentFullnessTier();
+        if (tier == FullnessTier.Satiated)
+        {
+            value += 1;
+        }
+        else if (tier == FullnessTier.Overstuffed)
+        {
+            value += 3;
+        }
+
         if (ProgressionManager.Instance != null)
         {
             if (ProgressionManager.Instance.HasBlessing(BlessingType.GluttonousAegis) && maxHunger > 0 && currentHunger >= maxHunger * 0.70f)
@@ -297,6 +401,24 @@ public class PlayerStats : MonoBehaviour
     public int GetCurrentSpeed()
     {
         int value = speed;
+
+        // Ảnh hưởng mốc Độ No:
+        // Mốc 1 (< 30%): Debuff -3 Speed (bủn rủn, kiệt sức)
+        // Mốc 2 (30% - 79%): Buff +2 Speed (nhanh nhẹn, linh hoạt)
+        // Mốc 3 (>= 80%): Debuff -4 Speed (nặng nề, di chuyển ì ạch)
+        FullnessTier tier = GetCurrentFullnessTier();
+        if (tier == FullnessTier.Hungry)
+        {
+            value -= 3;
+        }
+        else if (tier == FullnessTier.Satiated)
+        {
+            value += 2;
+        }
+        else if (tier == FullnessTier.Overstuffed)
+        {
+            value -= 4;
+        }
 
         if (ProgressionManager.Instance != null)
         {
@@ -449,14 +571,32 @@ public class PlayerStats : MonoBehaviour
 
     public void OnStageTransition()
     {
-        ReduceHunger(5);
+        ReduceHunger(12);
+
+        // Starvation penalty: when out of hunger, player loses 8 HP per room (leaves at least 1 HP)
+        if (currentHunger <= 0 && currentHealth > 1)
+        {
+            int starveDamage = Mathf.Min(8, currentHealth - 1);
+            currentHealth -= starveDamage;
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 1.2f, $"-{starveDamage} Starving!", new Color(1f, 0.25f, 0.2f), 4.5f);
+            if (healthBar != null)
+            {
+                healthBar.SetHealthBar(currentHealth, maxHealth);
+            }
+            OnPlayerDamaged?.Invoke(starveDamage);
+        }
+        else if (GetCurrentFullnessTier() == FullnessTier.Overstuffed && currentHealth < maxHealth)
+        {
+            Heal(2);
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 1.2f, "+2 HP (Digestion)", new Color(0.35f, 1f, 0.45f), 4.2f);
+        }
+
         ReduceTurnBuffDuration(); // Decrement turn-based buffs when player advances through stages
     }
 
     public void OnCombatComplete()
     {
         defendCount = 0;
-        ReduceHunger(10);
         ReduceCombatBuffDuration();
         ClearTurnBuffs();
     }
@@ -486,6 +626,8 @@ public class PlayerStats : MonoBehaviour
         {
             currentHunger = maxHunger;
         }
+
+        CheckFullnessTierTransition(notify: true);
     }
 
     public void ReduceHunger(int amount)
@@ -496,6 +638,8 @@ public class PlayerStats : MonoBehaviour
         {
             currentHunger = 0;
         }
+
+        CheckFullnessTierTransition(notify: true);
     }
 
     public void Heal(int amount)

@@ -343,7 +343,7 @@ public class ChestUI : MonoBehaviour
         chestContainer = chest;
         backpackContainer = backpack;
 
-        InventoryController.Instance?.CloseInventoryPanel();
+        UIEscapeManager.NotifyModalOpened("Chest");
         AutoBindReferences();
         RegisterButtonEvents();
 
@@ -381,6 +381,8 @@ public class ChestUI : MonoBehaviour
 
         if (chestPanel != null)
             chestPanel.SetActive(false);
+
+        UIEscapeManager.NotifyModalClosed("Chest");
 
         if (HomeChest.Instance != null && HomeChest.Instance.isOpen)
         {

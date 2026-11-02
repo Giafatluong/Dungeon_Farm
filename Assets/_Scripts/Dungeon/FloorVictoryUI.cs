@@ -151,7 +151,7 @@ public class FloorVictoryUI : MonoBehaviour
         EnforceBalancedLayout();
 
         currentFloor = floorData;
-        currentFloorNum = floorNumber > 0 ? floorNumber : (floorData != null ? floorData.floorNumber : 1);
+        currentFloorNum = floorNumber >= 0 ? floorNumber : (floorData != null ? floorData.floorNumber : 1);
         backpackContainer = backpack;
         isFirstClearOfThisFloor = isFirstClear;
         onReturnCallback = onReturnToBase;
@@ -167,16 +167,20 @@ public class FloorVictoryUI : MonoBehaviour
 
         EnforceBalancedLayout();
 
-        string floorName = !string.IsNullOrEmpty(currentFloor?.floorName) ? currentFloor.floorName : $"Floor {currentFloorNum}";
+        string floorName = !string.IsNullOrEmpty(currentFloor?.floorName) ? currentFloor.floorName : (currentFloorNum == 0 ? "TẦNG HƯỚNG DẪN" : $"Floor {currentFloorNum}");
         string bossName = !string.IsNullOrEmpty(currentFloor?.bossName) ? currentFloor.bossName : "Dungeon Boss";
 
         if (titleText != null)
         {
-            titleText.text = $"CHIẾN THẮNG TẦNG {currentFloorNum}: {floorName.ToUpper()}!";
+            titleText.text = currentFloorNum == 0 
+                ? "HOÀN THÀNH HƯỚNG DẪN HẦM NGỤC!" 
+                : $"CHIẾN THẮNG TẦNG {currentFloorNum}: {floorName.ToUpper()}!";
         }
         if (subtitleText != null)
         {
-            subtitleText.text = $"THỦ LĨNH HẦM NGỤC [{bossName.ToUpper()}] ĐÃ BỊ TIÊU DIỆT!";
+            subtitleText.text = currentFloorNum == 0
+                ? "BẠN ĐÃ LÀM QUEN THÀNH CÔNG VỚI CHIẾN ĐẤU, RƯƠNG VÀ TRẠI NGHỈ CHÂN!"
+                : $"THỦ LĨNH HẦM NGỤC [{bossName.ToUpper()}] ĐÃ BỊ TIÊU DIỆT!";
         }
 
         // Setup stats & blessings
@@ -879,13 +883,14 @@ public class FloorVictoryUI : MonoBehaviour
         if (nextFloorButton != null)
         {
             int totalFloors = 3;
+            // Floor 0 (Tutorial) can advance to Floor 1
             bool hasNextFloor = currentFloorNum < totalFloors;
             nextFloorButton.gameObject.SetActive(hasNextFloor);
 
             TextMeshProUGUI nextBtnText = nextFloorButton.GetComponentInChildren<TextMeshProUGUI>();
             if (nextBtnText != null)
             {
-                nextBtnText.text = $"TIẾP TỤC TẦNG {currentFloorNum + 1} >>";
+                nextBtnText.text = currentFloorNum == 0 ? "VÀO TẦNG 1 CHÍNH THỨC >>" : $"TIẾP TỤC TẦNG {currentFloorNum + 1} >>";
             }
         }
 

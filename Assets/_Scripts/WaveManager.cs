@@ -10,6 +10,8 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private FloorData floorData;
     [Tooltip("List of all custom designed floors (Floor 1, Floor 2, Floor 3...)")]
     [SerializeField] private FloorData[] allFloors;
+    [Tooltip("Dedicated Floor 0 Tutorial Floor")]
+    [SerializeField] private FloorData tutorialFloorData;
 
     [Header("Positions & Core Dependencies")]
     [SerializeField] private Transform enemySpawnPoint;
@@ -43,6 +45,38 @@ public class WaveManager : MonoBehaviour
         if (cachedActiveFloor != null) return cachedActiveFloor;
 
         int currentFloorNum = ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1;
+
+        // Priority 1: Floor 0 is always the hand-crafted Tutorial Floor
+        if (currentFloorNum == 0)
+        {
+            if (tutorialFloorData != null)
+            {
+                cachedActiveFloor = tutorialFloorData;
+                return cachedActiveFloor;
+            }
+
+            if (allFloors != null)
+            {
+                for (int i = 0; i < allFloors.Length; i++)
+                {
+                    if (allFloors[i] != null && allFloors[i].floorNumber == 0)
+                    {
+                        cachedActiveFloor = allFloors[i];
+                        return cachedActiveFloor;
+                    }
+                }
+            }
+
+            FloorData[] allLoaded = GameAssetHelper.LoadAll<FloorData>();
+            for (int i = 0; i < allLoaded.Length; i++)
+            {
+                if (allLoaded[i] != null && (allLoaded[i].floorNumber == 0 || allLoaded[i].name.Contains("Tutorial") || allLoaded[i].name.Contains("Floor_00")))
+                {
+                    cachedActiveFloor = allLoaded[i];
+                    return cachedActiveFloor;
+                }
+            }
+        }
 
         if (allFloors != null && allFloors.Length > 0)
         {
@@ -113,6 +147,7 @@ public class WaveManager : MonoBehaviour
     {
         Instance = this;
         cachedActiveFloor = null;
+        DungeonTutorialController.EnsureInstance();
         if (combatManager == null) combatManager = GetComponent<CombatManager>();
         if (healthBarManager == null) healthBarManager = GetComponent<HealthBarManager>();
         if (targetSelector == null) targetSelector = GetComponent<EnemyTargetSelector>();
@@ -140,9 +175,11 @@ public class WaveManager : MonoBehaviour
 
     private void Start()
     {
+        DungeonTutorialController.EnsureInstance();
+
         if (ProgressionManager.Instance != null && !ProgressionManager.Instance.runActive)
         {
-            int floorToRun = ProgressionManager.Instance.currentFloor > 0 ? ProgressionManager.Instance.currentFloor : 1;
+            int floorToRun = ProgressionManager.Instance.currentFloor >= 0 ? ProgressionManager.Instance.currentFloor : 1;
             ProgressionManager.Instance.StartRun(floorToRun);
         }
 
@@ -153,6 +190,7 @@ public class WaveManager : MonoBehaviour
     #region Floor & Stage Navigation
     public void SetupFloorAndEnterEntrance()
     {
+        cachedActiveFloor = null;
         FloorData activeFloor = GetActiveFloor();
 
         if (floorGenerator == null)
@@ -285,9 +323,13 @@ public class WaveManager : MonoBehaviour
         if (runtimeWaves == null || runtimeWaves.Length < 3)
             return;
 
-        int currentFloorNum = ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor > 0
+        int currentFloorNum = ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor >= 0
             ? ProgressionManager.Instance.currentFloor
             : (GetActiveFloor() != null ? GetActiveFloor().floorNumber : 1);
+
+        // Never modify hand-crafted tutorial floor stages
+        if (currentFloorNum == 0)
+            return;
 
         // Synchronize merchant calendar state with current Farm Day (never hardcode reset to 5)
         if (merchantEvent == null) merchantEvent = FindFirstObjectByType<MerchantEvent>(FindObjectsInactive.Include);
@@ -384,6 +426,11 @@ public class WaveManager : MonoBehaviour
     {
         FloorData activeFloor = GetActiveFloor();
         int floorNum = activeFloor != null ? activeFloor.floorNumber : (ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1);
+
+        if (floorNum == 0)
+        {
+            DungeonTutorialController.Instance?.OnTutorialFloorCompleted();
+        }
 
         bool isFirstTime = false;
         if (ProgressionManager.Instance != null)
@@ -492,12 +539,12 @@ public class WaveManager : MonoBehaviour
 
         WaveData.WaveType effectiveType = wave.waveType;
 
-        int currentFloorNum = ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor > 0
+        int currentFloorNum = ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor >= 0
             ? ProgressionManager.Instance.currentFloor
             : (GetActiveFloor() != null ? GetActiveFloor().floorNumber : 1);
 
-        // When merchant event has expired or is on cooldown, revert stage to a random encounter
-        if (effectiveType == WaveData.WaveType.Merchant && (!MerchantEvent.IsMerchantActiveForFloor(currentFloorNum) || GetMerchantCooldown() > 0))
+        // When merchant event has expired or is on cooldown, revert stage to a random encounter (Floor 0 tutorial stages are immune)
+        if (currentFloorNum != 0 && effectiveType == WaveData.WaveType.Merchant && (!MerchantEvent.IsMerchantActiveForFloor(currentFloorNum) || GetMerchantCooldown() > 0))
         {
             Debug.Log($"[WaveManager] Merchant event time expired / on cooldown on Floor {currentFloorNum} (CD: {GetMerchantCooldown()}). Stage {currentWaveIndex + 1} reverts to Random tile.");
             wave.waveType = WaveData.WaveType.Random;

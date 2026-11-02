@@ -116,28 +116,28 @@ public class DungeonEntranceUI : MonoBehaviour
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 1,
-            floorName = "FLOOR 1: CATACOMBS OF THE UNDEAD",
-            bossName = "Skeleton King",
-            subTitle = "8 Challenge Stages - Ancient Catacombs",
-            description = "Floor 1 crawls with restless skeletons and lurking dungeon vermin. Defeat the Skeleton King to open the path deeper."
+            floorName = "TẦNG 1: HẦM NGỤC CỔ XƯA",
+            bossName = "Vua Xương (Skeleton King)",
+            subTitle = "8 Phòng Thử Thách — Nông Sản Khởi Đầu (Cà Rốt & Lúa Mì)",
+            description = "Mục đích: Khởi đầu làm quen chiến đấu theo lượt và thu thập giống cây cơ bản (Cà Rốt, Lúa Mì). Quái vật đánh nhanh, ít giáp. Hãy nấu Súp Cà Rốt để tăng Tốc độ và hồi phục sinh lực!"
         });
 
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 2,
-            floorName = "FLOOR 2: MONSTER SWAMPLANDS",
-            bossName = "King Slime",
-            subTitle = "16 Challenge Stages - Murky Swampland",
-            description = "A hazardous swamp spanning 16 grueling stages filled with demon bats, dire rats, goblins, and the towering King Slime."
+            floorName = "TẦNG 2: ĐẦM LẦY QUÁI VẬT",
+            bossName = "Slime Chúa Khổng Lồ (King Slime)",
+            subTitle = "16 Phòng Bền Bỉ — Nông Sản Phòng Thủ (Ngô, Bắp Cải, Cà Chua, Dưa Chuột)",
+            description = "Mục đích: Thử thách sức bền với 16 phòng. Quái vật bọc giáp (2 DEF) và tấn công mạnh (10-14 ATK). Bắt buộc phải chuẩn bị món ăn tăng Giáp (Ngô Nướng Bơ, Salad Bắp Cải) hoặc món tăng Công (Súp Cà Chua) mới có thể sống sót!"
         });
 
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 3,
-            floorName = "FLOOR 3: CITADEL OF DEMONS",
-            bossName = "Dark Flying Rider",
-            subTitle = "18 Challenge Stages - Ancient Demon Citadel",
-            description = "A shadowy bastion with 18 fierce stages featuring flying imps, armored orcs, dark archers, and the legendary Dark Flying Rider."
+            floorName = "TẦNG 3: THÀNH CỔ QUỶ DỮ",
+            bossName = "Kỵ Sĩ Bầu Trời Hắc Ám (Dark Flying Rider)",
+            subTitle = "18 Phòng Tối Thượng — Sát Thương Bùng Nổ & Ớt Hiểm (Chilli)",
+            description = "Mục đích: Tử địa khắc nghiệt nhất. Quái vật thiết giáp hạng nặng cực trâu (4 DEF, 14-17 ATK). Chỉ có thể vượt qua khi chuẩn bị các món ăn đại tiệc cao cấp (Ngô Cay, Đại Tiệc Hoàng Gia) và kết hợp phước lành thần thánh!"
         });
 
         floorList.Add(new FloorDisplayData
@@ -161,7 +161,7 @@ public class DungeonEntranceUI : MonoBehaviour
 
     public void Open()
     {
-        InventoryController.Instance?.CloseInventoryPanel();
+        UIEscapeManager.NotifyModalOpened("DungeonEntrance");
         EnsureUIConstructed();
 
         if (enterDungeonPanel != null)
@@ -196,6 +196,8 @@ public class DungeonEntranceUI : MonoBehaviour
         {
             enterDungeonPanel.SetActive(false);
         }
+
+        UIEscapeManager.NotifyModalClosed("DungeonEntrance");
     }
 
     /// <summary>
@@ -234,28 +236,38 @@ public class DungeonEntranceUI : MonoBehaviour
 
     public void EnterSelectedFloor()
     {
-        if (!IsFloorUnlocked(selectedFloor))
+        // First-time dungeon check: If player has not completed Dungeon Tutorial, force Tutorial Floor (Floor 0)
+        bool isDungeonTutorialCompleted = PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 1;
+        int floorToEnter = selectedFloor;
+
+        if (!isDungeonTutorialCompleted)
+        {
+            floorToEnter = 0; // Route directly into Tutorial Floor
+            Debug.Log("[DungeonEntranceUI] First time entering Dungeon: routing to Tutorial Floor (Floor 0).");
+        }
+        else if (!IsFloorUnlocked(selectedFloor))
         {
             ShowWarning($"Floor {selectedFloor} is locked! Defeat Floor {selectedFloor - 1} Boss first.");
             return;
         }
 
         Close();
+        TutorialManager.Instance?.NotifyDungeonEntered();
 
         if (ProgressionManager.Instance != null)
         {
-            ProgressionManager.Instance.currentFloor = selectedFloor;
+            ProgressionManager.Instance.currentFloor = floorToEnter;
         }
 
         if (SceneTransitionManager.Instance == null)
         {
             Debug.Log("Scene Transition Manager is NULL, fallback loading Dungeon directly");
-            ProgressionManager.Instance?.StartRun(selectedFloor);
+            ProgressionManager.Instance?.StartRun(floorToEnter);
             UnityEngine.SceneManagement.SceneManager.LoadScene("Dungeon");
             return;
         }
 
-        SceneTransitionManager.Instance.LoadDungeon(selectedFloor);
+        SceneTransitionManager.Instance.LoadDungeon(floorToEnter);
     }
 
     public void SelectFloor(int floor)

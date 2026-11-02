@@ -26,6 +26,13 @@ public class InventoryController : MonoBehaviour
             inventoryPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
         if (currentItemPanel == null)
             currentItemPanel = FindFirstObjectByType<CurrentItemPanel>(FindObjectsInactive.Include);
+
+        // Ensure Inventory Canvas sorting order is properly elevated above base world and tutorial HUD
+        Canvas c = GetComponent<Canvas>();
+        if (c != null && c.sortingOrder < 25)
+        {
+            c.sortingOrder = 25;
+        }
     }
 
     private void OnDestroy()
@@ -51,6 +58,10 @@ public class InventoryController : MonoBehaviour
         // Toggle inventory with I or B
         if (Input.GetKeyDown(KeyCode.I) || Input.GetKeyDown(KeyCode.B))
         {
+            // Gate during tutorial (e.g. movement phase must finish before opening inventory)
+            if (!IsInventoryOpen && TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.Inventory))
+                return;
+
             // Do not open inventory if a modal popup (Chest, Kitchen, Statue, Dungeon, etc.) is active
             if (!IsInventoryOpen && IsAnyModalOpen())
                 return;
@@ -90,16 +101,26 @@ public class InventoryController : MonoBehaviour
             currentItemPanel.gameObject.SetActive(true);
 
         isInteractable = true;
+        UIEscapeManager.NotifyModalClosed("Inventory");
     }
 
     public void OpenInventoryPanel()
     {
+        if (IsAnyModalOpen()) return;
+
         if (inventoryPanel != null)
             inventoryPanel.gameObject.SetActive(true);
 
         if (currentItemPanel != null)
             currentItemPanel.gameObject.SetActive(false);
 
+        Canvas c = GetComponent<Canvas>();
+        if (c != null && c.sortingOrder < 25)
+        {
+            c.sortingOrder = 25;
+        }
+
         isInteractable = false;
+        UIEscapeManager.NotifyModalOpened("Inventory");
     }
 }

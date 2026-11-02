@@ -64,20 +64,29 @@ Khi bắt đầu trò chơi mới, nhân vật sở hữu bộ chỉ số gốc 
 
 | Chỉ Số (Stat) | Giá Trị Khởi Đầu | Ý Nghĩa & Cơ Chế Hoạt Động |
 | :--- | :---: | :--- |
-| **Máu Tối Đa (Max HP)** | **50** | Lượng sinh lực tối đa của nhân vật. Khi HP giảm xuống `0`, chuyến thám hiểm lập tức thất bại. |
-| **Sức Tấn Công (Base ATK)** | **10** | Sát thương vật lý cơ bản gây ra trong mỗi đòn đánh thường trước khi tính giáp đối phương. |
-| **Phòng Thủ (Base DEF)** | **2** | Giảm trực tiếp sát thương nhận vào từ mỗi đòn tấn công của kẻ địch. |
-| **Tốc Độ (Base Speed)** | **16** | Quyết định thứ tự ưu tiên hành động khi bắt đầu trận đấu và tương tác với phước lành *Xung Lực Thần Tốc*. |
-| **Giá Trị Phòng Thủ (Defend Value)** | **5** | Lượng Giáp Ảo (Shield) cộng thêm mỗi lần người chơi sử dụng hành động `Defend` trong trận đấu. |
-| **Điểm Hành Động Tối Đa (Max AP)** | **3** | Số điểm năng lượng cấp mới vào đầu mỗi lượt của người chơi để thực hiện kỹ năng. |
-| **Độ No Tối Đa (Max Fullness)** | **100** | Thanh năng lượng sinh tồn. Khởi đầu ở mức `100/100` và giảm dần khi đi qua từng phòng hầm ngục. |
+| **Máu Tối Đa (Max HP)** | **35** | Lượng sinh lực tối đa của nhân vật. Khi HP giảm xuống `0`, chuyến thám hiểm lập tức thất bại. |
+| **Sức Tấn Công (Base ATK)** | **7** | Sát thương vật lý cơ bản gây ra trong mỗi đòn đánh thường (tiêu tốn 1 AP). Không thể 1-shot quái vật nếu không chuẩn bị món ăn buff ATK. |
+| **Phòng Thủ (Base DEF)** | **1** | Giảm trực tiếp sát thương nhận vào từ mỗi đòn tấn công của kẻ địch. |
+| **Tốc Độ (Base Speed)** | **14** | Quyết định thứ tự ưu tiên hành động khi bắt đầu trận đấu và tương tác với phước lành *Xung Lực Thần Tốc*. Thấp hơn các quái vật nhanh (Chuột, Dơi), cần ăn Súp Cà Rốt để chiếm tiên cơ. |
+| **Giá Trị Phòng Thủ (Defend Value)** | **5** | Lượng Giáp Ảo (Shield) cộng thêm mỗi lần người chơi sử dụng hành động `Defend` (1 AP) trong trận đấu. Cực kỳ quan trọng để sống sót trước các đòn đánh 10-17 sát thương của quái vật. |
+| **Điểm Hành Động Tối Đa (Max AP)** | **3** | Số điểm năng lượng cấp mới vào đầu mỗi lượt của người chơi để thực hiện kỹ năng (Tấn công, Phòng thủ, Ăn uống). |
+| **Độ No Tối Đa (Max Fullness)** | **100** | Thanh năng lượng sinh tồn. Tiêu hao 12 điểm mỗi khi tiến sang phòng mới, bắt buộc người chơi phải mang theo lương thực. |
 
-### 3.3. Cơ Chế Độ No & Suy Kiệt (Fullness & Starvation Mechanics)
+### 3.3. Cơ Chế Độ No & Phân Chia 3 Mốc Trạng Thái (Fullness Tiers System)
 * **Tiêu hao tự nhiên theo bước tiến:** Mỗi khi chuyển sang một phòng (Wave) mới trong hầm ngục, nhân vật tự động tiêu hao **12 điểm Độ No** (`hungerCostPerRoom = 12`).
-* **Trạng thái Đói Bụng (Starving Penalty):** Khi Độ No tụt xuống bằng **0**, nhân vật rơi vào trạng thái suy kiệt (`IsStarving = true`). Ở trạng thái này, mỗi bước tiến sang phòng tiếp theo sẽ trực tiếp rút **8 Máu (HP)** của nhân vật (tuyệt đối không làm nhân vật chết ngay ngoài phòng chờ mà để lại tối thiểu `1 HP` trước khi vào trận).
-* **Tương tác chiến thuật với Độ No:**
-  * **Ngưỡng Đói (<= 35% Độ No):** Kích hoạt nội tại của phước lành *Cuồng Nộ Khi Đói* (35% tỉ lệ bạo kích gây 150% sát thương).
-  * **Ngưỡng No (>= 50% hoặc >= 80% Độ No):** Kích hoạt nội tại của phước lành *Khiên No Nê* (tăng giáp và phản sát thương trực tiếp vào kẻ địch).
+* **Hệ thống 3 Mốc Độ No Ảnh Hưởng Sức Mạnh (Fullness Tiers):**
+  | Mốc Độ No | Tỷ Lệ No | Phân Loại | Hiệu Ứng Chỉ Số & Bị Động | Màu Sắc / Nhãn HUD | Ý Đồ Thiết Kế & Chiến Thuật |
+  | :--- | :---: | :---: | :--- | :---: | :--- |
+  | **Mốc 1: Đói Bụng** | `< 30%` (0 - 29) | **Debuff Thuần** | **-2 ATK**, **-3 Speed**.<br>Khi chạm đáy `0` Độ No: mất **8 HP** mỗi phòng chuyển giao. | Cam Đỏ `#FF6644`<br>`[Đói]` | Suy kiệt vì đói, cơ thể chậm chạp và yếu sức. Buộc người chơi phải chuẩn bị lương thực từ nông trại trước khi đi hầm ngục. *(Tương tác: Kích hoạt Phước lành Cuồng Nộ Khi Đói nếu có).* |
+  | **Mốc 2: No Vừa Phải** | `30% - 79%` (30 - 79) | **Buff Thuần** | **+2 ATK**, **+1 DEF**, **+2 Speed**. | Xanh Lá `#55FF55`<br>`[No Nê]` | Điểm ngọt lý tưởng (Sweet Spot) cho chiến đấu cân bằng, linh hoạt và tối ưu tốc độ hành động trước quái. |
+  | **Mốc 3: Bội Thực** | `>= 80%` (80 - 100) | **Vừa Buff Vừa Debuff** | **Buff:** **+3 DEF**, tự động hồi **+2 HP** mỗi lượt người chơi & mỗi phòng chuyển giao.<br>**Debuff:** **-4 Speed**, **-1 ATK**. | Vàng Ánh `#FFCC00`<br>`[Bội Thực]` | Đổi tốc độ và đòn đánh lấy sức chống chịu trâu bò (Tanker Fortress) và hồi phục. Người chơi có thể dùng hành động Tập Luyện (Exercise) tại Trại Nghỉ (Camp) để đốt bớt độ no về Mốc 2 nếu muốn lấy lại Speed! |
+
+* **Tương tác chiến thuật mở rộng:**
+  * **Hành động Tập Luyện tại Trại Nghỉ (Camp Exercise):** Giảm bớt Độ No để người chơi chủ động hạ từ mốc Bội Thực xuống No Vừa Phải khi sắp đối đầu với Boss cần ưu tiên Speed.
+  * **Phước Lành Thần Thánh:**
+    * *Cuồng Nộ Khi Đói (`StarvingFury`):* Độ no <= 35% nhận thêm +6 ATK bù đắp lại debuff đói bụng.
+    * *Khiên No Nê (`GluttonousAegis`):* Độ no >= 70% nhận thêm khiên và phản sát thương.
+    * *Đại Tiệc Bất Tận (`EndlessFeast`):* Ăn món đầu tiên mỗi hiệp không tốn AP.
 
 ---
 
@@ -136,14 +145,52 @@ Dưới đây là thông số chính xác của toàn bộ 7 loại nông sản 
 
 ## 6. HỆ THỐNG TƯỢNG NỮ THẦN, HIẾN TẾ & PHƯỚC LÀNH (STATUE & BLESSINGS)
 
-### 6.1. Cơ Chế Hiến Tế Nông Sản (Statue Offerings)
-Tại Tượng Nữ Thần ở Căn cứ, người chơi có thể nộp các loại nông sản thu hoạch được vào 3 gói lễ vật để gia tăng vĩnh viễn chỉ số gốc của nhân vật. Hệ thống hỗ trợ **Đóng góp từng phần (Partial Contribution)**: người chơi có thể nộp lẻ từng củ cà rốt hay bắp cải đang có, hệ thống sẽ lưu lại tiến độ cho đến khi đủ số lượng yêu cầu:
+### 6.1. Cơ Chế Hiến Tế Nữ Thần & Hệ Thống 10 Cột Mốc Theo Từng Loại Lễ Vật (10-Tier Statue Offering Milestones)
+Tại Tượng Nữ Thần ở Căn cứ, người chơi dâng hiến nông sản trồng trọt, các món ăn chế biến và **vật phẩm rơi từ Boss Hầm Ngục** để nhận các chỉ số vĩnh viễn và mở khóa các Phước Lành Thần Thánh. Hệ thống được chia thành **4 Trụ Cột (4 Pillars)**, mỗi trụ gồm **10 Bậc Cột Mốc (Tiers 1 -> 10)** kế thừa liên tiếp nhau (Bậc sau chỉ mở khóa khi hoàn thành bậc trước):
 
-| Tên Gói Lễ Vật | Yêu Cầu Nguyên Liệu | Phần Thưởng Vĩnh Viễn | Tác Động Mở Khóa |
-| :--- | :--- | :--- | :--- |
-| **Lễ Vật Chiến Binh (`Offering_ATK`)** | 2 loại nông sản x 3 đơn vị (Tổng 6 nông sản) | **+1 ATK Vĩnh Viễn** | Mở khóa ngay Phước Lành *Cuồng Nộ Khi Đói* (`StarvingFury`). |
-| **Lễ Vật Hộ Vệ (`Offering_DEF`)** | 2 loại nông sản x 3 đơn vị (Tổng 6 nông sản) | **+1 DEF Vĩnh Viễn** | Mở khóa ngay Phước Lành *Tấn Công Pháo Đài* (`BastionStrike`). |
-| **Lễ Vật Nhanh Nhẹn (`Offering_Speed`)** | 2 loại nông sản x 3 đơn vị (Tổng 6 nông sản) | **+1 Speed Vĩnh Viễn** | Mở khóa ngay Phước Lành *Xung Lực Thần Tốc* (`SwiftMomentum`). |
+#### A. Danh Sách Vật Phẩm Rơi Từ Boss Hầm Ngục (Boss Drops - Tỉ lệ 100%)
+* **Vương Miện Cổ Đại (`Item_Boss_AncientCrown`):** Rơi 100% từ Boss Tầng 1 (*Vua Xương Cổ Đại* - `Boss_Skeleton_King`). Dùng làm **Vật Phẩm Chặn Cổng (Gatekeeper) tại Bậc 5** của cả 4 trụ cột.
+* **Lõi Slime Chúa (`Item_Boss_SlimeCore`):** Rơi 100% từ Boss Tầng 2 (*Slime Chúa* - `SlimeBoss`). Dùng làm **Vật Phẩm Chặn Cổng tại Bậc 10** của Trụ Nhanh Nhẹn và Sinh Mệnh.
+* **Hắc Huyết Tinh Thể (`Item_Boss_DarkEssence`):** Rơi 100% từ Boss Tầng 3 (*Kỵ Sĩ Bay Hắc Ám* - `FlyingRider`). Dùng làm **Vật Phẩm Chặn Cổng tại Bậc 10** của Trụ Chiến Binh và Hộ Vệ.
+
+#### B. Cấu Trúc Bậc & Thang Độ Khó Nguyên Liệu Lũy Tiến (10-Tier Progressive Material Ladder)
+Hệ thống được thiết kế theo thang lũy tiến chặt chẽ: **càng lên bậc cao, số lượng đòi hỏi càng nhiều và yêu cầu các nguyên liệu/món ăn khó chế biến hơn**:
+1. **Bậc 1 -> Bậc 4 (Giai đoạn Khởi Đầu / Nông Sản Tầng 1):**
+   * Hoàn toàn sử dụng nông sản có thể trồng ngay ở Căn Cứ (Lúa Mì, Cà Rốt, Cà Chua) và các món súp sơ cấp (Súp Cà Rốt, Súp Cà Chua).
+   * Số lượng tăng tiến từ 4-5 món (Bậc 1) lên 16-19 món (Bậc 4), người chơi mới không bị tắc đường vì thiếu đồ cấp cao.
+2. **Bậc 5 (BOSS 1 MILESTONE GATE ◆):**
+   * Đòi hỏi sản lượng lớn nông sản T1 (14-16x) + 4x Món súp + **1x Vương Miện Cổ Đại (Boss Tầng 1)**.
+   * Buộc người chơi phải đánh bại Boss Tầng 1 (*Vua Xương Cổ Đại*) mới có thể mở tiếp sang Bậc 6!
+3. **Bậc 6 -> Bậc 8 (Giai đoạn Tầng 2 / Ẩm Thực Phức Hợp):**
+   * Mở rộng sang nông sản chu kỳ sinh trưởng dài của Tầng 2 (Bắp Cải 8 ngày, Ngô 8 ngày, Dưa Chuột 12 ngày).
+   * Đòi hỏi các món nấu đa nguyên liệu (Salad Bắp Cải, Ngô Nướng Bơ, Salad Dưa Chuột).
+   * Bậc 8 bắt đầu đòi hỏi nông sản cực hiếm Tầng 3 (Ớt Hiểm) và món Ngô Cay.
+   * Số lượng leo thang mạnh mẽ từ 15 đến gần 40 đơn vị nguyên liệu.
+4. **Bậc 9 (Tiền Tối Thượng / Đại Tiệc 4 Nguyên Liệu):**
+   * Đòi hỏi số lượng lớn nông sản cao cấp (15x - 25x) kết hợp các món xào nấu phức tạp và **2x Đại Tiệc Hoàng Gia** (món ăn tối thượng 4 nguyên liệu).
+5. **Bậc 10 (BOSS 2 / BOSS 3 APEX GATE ★):**
+   * Mốc đỉnh cao năng lực: Đòi hỏi kho nguyên liệu khổng lồ (30x - 35x nông sản cao cấp) + **4x Đại Tiệc Hoàng Gia** + **1x Bảo Vật Boss Tầng 2/3** (*Lõi Slime Chúa* hoặc *Hắc Huyết Tinh Thể*).
+
+| Bậc (Tier) | Trụ Chiến Binh (ATK) | Trụ Hộ Vệ (DEF) | Trụ Nhanh Nhẹn (Speed) | Trụ Sinh Mệnh (Max HP) |
+| :---: | :--- | :--- | :--- | :--- |
+| **Bậc 1** | 4x Cà Rốt | 4x Lúa Mì | 4x Cà Chua | 5x Lúa Mì |
+| **Bậc 2** | 6x Cà Rốt + 4x Cà Chua | 6x Lúa Mì + 4x Cà Rốt | 6x Cà Chua + 4x Lúa Mì | 8x Lúa Mì + 4x Cà Rốt |
+| **Bậc 3** | 8x Cà Rốt + 2x Súp Cà Chua | 8x Lúa Mì + 2x Súp Cà Rốt | 8x Cà Chua + 2x Súp Cà Chua | 10x Lúa Mì + 2x Súp Cà Rốt |
+| **Bậc 4** | 10x Cà Rốt + 6x Cà Chua + 3x Súp Cà Chua | 10x Lúa Mì + 6x Cà Rốt + 3x Súp Cà Rốt | 10x Cà Chua + 6x Cà Rốt + 3x Súp Cà Rốt | 12x Lúa Mì + 6x Cà Rốt + 3x Súp Cà Rốt |
+| **Bậc 5 ◆** | 14x Cà Rốt + 4x Súp Cà Chua + **1x Vương Miện Cổ Đại** | 14x Lúa Mì + 4x Súp Cà Rốt + **1x Vương Miện Cổ Đại** | 14x Cà Chua + 4x Súp Cà Chua + **1x Vương Miện Cổ Đại** | 16x Lúa Mì + 4x Súp Cà Rốt + **1x Vương Miện Cổ Đại** |
+| **Bậc 6** | 12x Ngô + 3x Ngô Nướng Bơ | 12x Bắp Cải + 3x Salad Bắp Cải | 10x Dưa Chuột + 3x Salad Dưa Chuột | 15x Lúa Mì + 10x Bắp Cải + 3x Salad Bắp Cải |
+| **Bậc 7** | 16x Ngô + 4x Ngô Nướng Bơ + 8x Cà Chua | 16x Bắp Cải + 4x Salad Bắp Cải + 8x Ngô | 14x Dưa Chuột + 4x Salad Dưa Chuột + 8x Cà Chua | 18x Lúa Mì + 12x Ngô + 4x Ngô Nướng Bơ |
+| **Bậc 8** | 10x Ớt Hiểm + 4x Ngô Cay | 20x Bắp Cải + 5x Salad Bắp Cải + 4x Ngô Nướng Bơ | 18x Dưa Chuột + 5x Salad Dưa Chuột + 4x Súp Cà Chua | 22x Lúa Mì + 12x Dưa Chuột + 5x Salad Dưa Chuột |
+| **Bậc 9** | 15x Ớt Hiểm + 6x Ngô Cay + 2x Đại Tiệc Hoàng Gia | 25x Bắp Cải + 15x Ngô + 2x Đại Tiệc Hoàng Gia | 22x Dưa Chuột + 15x Cà Chua + 2x Đại Tiệc Hoàng Gia | 25x Lúa Mì + 15x Bắp Cải + 2x Đại Tiệc Hoàng Gia |
+| **Bậc 10 ★** | 25x Ớt Hiểm + 15x Ngô + 4x Đại Tiệc Hoàng Gia + **1x Hắc Huyết Tinh Thể** | 35x Bắp Cải + 20x Ngô + 4x Đại Tiệc Hoàng Gia + **1x Hắc Huyết Tinh Thể** | 30x Dưa Chuột + 20x Cà Chua + 4x Đại Tiệc Hoàng Gia + **1x Lõi Slime Chúa** | 35x Lúa Mì + 20x Bắp Cải + 4x Đại Tiệc Hoàng Gia + **1x Lõi Slime Chúa** |
+
+#### C. Giao Diện Tượng Nữ Thần Tối Ưu (Statue UI Features)
+* **Tab Danh Mục (Category Tabs):** Hỗ trợ xem tổng quan `4 Trụ Cột (All Pillars)` hoặc xem chi tiết toàn bộ 10 bậc của từng hệ (`Chiến Binh - ATK`, `Hộ Vệ - DEF`, `Nhanh Nhẹn - Speed`, `Sinh Mệnh - HP`).
+* **Thanh Tiến Trình Ký Hiệu Trực Quan:** Hiển thị tiến độ từng trụ dạng chuỗi trực quan: `● ● ● ● ◆ ○ ○ ○ ○ ★` (với `●` là bậc đã xong, `◆` là mốc Boss 1 Bậc 5, `★` là mốc Boss cuối Bậc 10).
+* **Thẻ Trụ Cột (Pillar Card):** Chỉ hiển thị bậc đang cần hoàn thành tiếp theo (Active Tier), ẩn các bậc đã xong hoặc chưa mở để màn hình gọn gàng không bị ngợp.
+* **Hỗ Trợ Đóng Góp Linh Hoạt:**
+  * Kéo thả (Drag & Drop) hoặc Click nộp từng món.
+  * Nút **Quick Offer** thông minh: tự động rà soát túi đồ và nạp đầy đủ các nguyên liệu hợp lệ còn thiếu chỉ bằng 1 cú click.
 
 ### 6.2. Bảng Chi Tiết 8 Phước Lành Thần Thánh (Divine Blessings Specification)
 Người chơi được chọn **1 Phước Lành chủ động** trước mỗi chuyến đi hầm ngục. Sự kết hợp giữa Phước Lành, Độ No và Món Ăn tạo nên các trường phái (Builds) đa dạng:
@@ -266,31 +313,29 @@ Khi bước vào phòng Sự Kiện (`Event`) hoặc Thương Nhân (`Merchant`)
 ## 9. HỆ THỐNG QUÁI VẬT & TRÙM TẦNG (BESTIARY & BOSS SPECIFICATION)
 
 ### 9.1. Bảng Thông Số Toàn Bộ 10 Quái Vật Thường (Normal Enemies)
-Tất cả quái vật thường đều có tỉ lệ rơi hạt giống cơ bản là **35% (`seedDropChance = 0.35`)** khi bị tiêu diệt:
+Các quái vật thường có tỉ lệ rơi hạt giống cơ bản từ **50% đến 65% (`seedDropChance = 0.50 – 0.65`)**, đồng thời rơi hạt giống và nông sản đặc thù theo từng tầng:
 
-| STT | Tên Quái Vật (`EnemyData`) | Máu (`maxHP`) | Tấn Công (`ATK`) | Phòng Thủ (`DEF`) | Tốc Độ (`Speed`) | Đặc Điểm Chiến Thuật & Vai Trò Trong Đội Hình |
-| :---: | :--- | :---: | :---: | :---: | :---: | :--- |
-| **1** | **Chuột Hầm Ngục (`Rat`)** | 15 | 5 | 0 | **18** | Máu thấp nhưng tốc độ cao hơn người chơi khởi đầu (18 vs 16), thường đánh phủ đầu ở Tầng 1. |
-| **2** | **Nấm Nổ (`Bombschroom`)** | 16 | **8** | 0 | 14 | Sát thương cao ở Tầng 1 nhưng tốc độ chậm và không có giáp; cần ưu tiên tiêu diệt trước khi nó kịp ra đòn. |
-| **3** | **Dơi Hút Máu (`Bat`)** | 18 | 6 | 0 | **20** | Một trong những quái vật nhanh nhất hầm ngục (`Speed = 20`), khắc chế lối chơi dựa vào *Xung Lực Thần Tốc* nếu người chơi chưa ăn Súp Cà Rốt. |
-| **4** | **Xương Cung Thủ (`Skeleton_Bowman`)** | 20 | 7 | 1 | **19** | Tốc độ rất nhanh, có 1 lớp giáp nhẹ và rỉa máu tầm xa ổn định từ Tầng 2. |
-| **5** | **Slime Xanh (`Slime`)** | 22 | 4 | 0 | 8 | Tốc độ rất chậm (`Speed = 8`), là mục tiêu lý tưởng để người chơi tích lũy sát thương thưởng từ *Xung Lực Thần Tốc* (+8 sát thương cộng thêm). |
-| **6** | **Quái Bay (`Flying`)** | 24 | 8 | 1 | **19** | Biến thể nâng cấp của Dơi ở Tầng 2–3 với lượng máu và sát thương cao hơn. |
-| **7** | **Xạ Thủ Bóng Đêm (`Range`)** | 24 | 8 | 1 | **18** | Đơn vị cấu rỉa chủ lực ở Tầng 2–3, luôn đi trước nếu người chơi không nâng cấp Speed. |
-| **8** | **Xương Chiến Binh (`Skeleton`)** | 26 | 8 | 1 | 15 | Bộ binh tiêu chuẩn ở Tầng 2, cân bằng giữa máu, sát thương và tốc độ. |
-| **9** | **Thiết Giáp Binh I (`ME1`)** | **30** | 9 | **2** | 16 | Tinh anh hạng trung ở Tầng 2–3; sở hữu 2 DEF làm giảm đáng kể sát thương thông thường. |
-| **10** | **Thiết Giáp Khổng Lồ II (`ME2`)** | **42** | **11** | **3** | 10 | Quái vật thường trâu nhất game (`42 HP, 3 DEF`), đòi hỏi người chơi phải có Buff tăng ATK hoặc phước lành *Phân Hủy Cay Đắng* để xuyên giáp. |
+| STT | Tên Quái Vật (`EnemyData`) | Máu (`maxHP`) | Tấn Công (`ATK`) | Phòng Thủ (`DEF`) | Tốc Độ (`Speed`) | Tỉ Lệ Hạt Giống | Đặc Điểm Chiến Thuật & Vai Trò Trong Đội Hình |
+| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **1** | **Chuột Hầm Ngục (`Rat`)** | **18** | **6** | 0 | **17** | 50% | Tầng 1: Đánh phủ đầu trước người chơi (17 vs 14 Speed). Rơi Hạt Cà Rốt, Hạt Lúa Mì và Cà rốt sống. |
+| **2** | **Nấm Nổ (`Bombschroom`)** | **18** | **9** | 0 | 13 | 50% | Tầng 1: Sát thương nổ cao (9 ATK), cần tiêu diệt sớm hoặc Defend để chặn đòn. Rơi Hạt Lúa Mì & Cà Rốt. |
+| **3** | **Dơi Hút Máu (`Bat`)** | **20** | **7** | 0 | **20** | 50% | Tầng 1: Tốc độ cao nhất nhóm cơ bản (`20 Speed`), luôn đi trước người chơi. Rơi Hạt Cà Rốt & Lúa Mì. |
+| **4** | **Slime Xanh (`Slime`)** | **28** | **6** | 0 | 8 | 50% | Tầng 1: Máu dày (`28 HP`), chậm chạp, mục tiêu tích lũy sát thương cho *Xung Lực Thần Tốc*. Rơi Hạt Lúa Mì & Lúa Mì tươi. |
+| **5** | **Xương Chiến Binh (`Skeleton`)** | **28** | **8** | **1** | 14 | 55% | Tầng 1-2: Bộ binh tiêu chuẩn có giáp nhẹ (1 DEF), rơi Hạt Cà Rốt, Lúa Mì và bước đệm Hạt Ngô (35%). |
+| **6** | **Xương Cung Thủ (`Skeleton_Bowman`)** | **24** | **8** | **1** | **18** | 55% | Tầng 1-2: Tốc độ cao (18 Speed), rỉa xa, rơi Hạt Lúa Mì, Cà Rốt và bước đệm Hạt Cà Chua (35%). |
+| **7** | **Quái Bay (`Flying`)** | **34** | **10** | **1** | **19** | 55% | Tầng 2: Nhanh nhẹn và sát thương mạnh (10 ATK). Rơi Hạt Bắp Cải, Hạt Dưa Chuột. |
+| **8** | **Xạ Thủ Bóng Đêm (`Range`)** | **32** | **11** | **2** | **18** | 55% | Tầng 2: Sở hữu 2 DEF và 11 ATK, bắt buộc người chơi phải ăn món tăng ATK hoặc tăng Giáp. Rơi Hạt Cà Chua, Hạt Ngô. |
+| **9** | **Thiết Giáp Binh I (`ME1`)** | **42** | **12** | **2** | 15 | 60% | Tầng 2-3: Tinh anh bọc giáp dày (42 HP, 2 DEF, 12 ATK). Rơi Hạt Bắp Cải, Hạt Ngô và bắp Ngô tươi. |
+| **10** | **Thiết Giáp Khổng Lồ II (`ME2`)** | **58** | **14** | **4** | 11 | 65% | Tầng 3: Xe tăng bọc thép (58 HP, 4 DEF, 14 ATK), đòn đánh thường chỉ gây 3 damage nếu không có buff ATK! Rơi Hạt Ớt Hiểm, Hạt Bắp Cải, Hạt Ngô. |
 
 ### 9.2. Bảng Thông Số Toàn Bộ 3 Trùm Tầng (Floor Bosses)
-Mỗi tầng hầm ngục được cai quản bởi một Trùm Tầng. Khi một Trùm Tầng bị tiêu diệt:
-* Mở khóa vĩnh viễn tầng hầm ngục kế tiếp và các Phước Lành/Hạt giống cấp cao tương ứng.
-* Trùm Tầng đó sẽ bước vào trạng thái **Hồi Sinh (`Boss Cooldown`) kéo dài 3 Ngày** (`defaultBossResetDays = 3`). Trong 3 ngày này, nếu người chơi quay lại tầng đó, phòng cuối sẽ không có Boss cho đến khi đủ 3 ngày trôi qua.
+Mỗi tầng hầm ngục được cai quản bởi một Trùm Tầng với chênh lệch sức mạnh vượt bậc và bảng rơi hạt giống quý giá:
 
-| Tầng | Tên Trùm (`EnemyData`) | Máu (`maxHP`) | Tấn Công (`ATK`) | Phòng Thủ (`DEF`) | Tốc Độ (`Speed`) | Tỉ Lệ & Bảng Rơi Hạt Giống (`seedLootTable`) |
+| Tầng | Tên Trùm (`EnemyData`) | Máu (`maxHP`) | Tấn Công (`ATK`) | Phòng Thủ (`DEF`) | Tốc Độ (`Speed`) | Tỉ Lệ & Bảng Rơi Hạt Giống (`lootDrops`) |
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- |
-| **Tầng 1** | **Slime Chúa (`SlimeBoss`)** | **85 HP** | **11** | **2** | 12 | **75% tỉ lệ rơi:** Rơi lượng lớn Hạt Cà Rốt, Hạt Lúa Mì và mở đầu nguồn cung Hạt Cà Chua / Hạt Ngô (2–3 hạt mỗi ô rơi). |
-| **Tầng 2** | **Vua Xương (`Boss_Skeleton_King`)** | **95 HP** | **12** | **3** | 15 | **80% tỉ lệ rơi:** Rơi dồi dào Hạt Bắp Cải, Hạt Dưa Chuột, Hạt Cà Chua và Hạt Ngô (3–5 hạt mỗi ô rơi). |
-| **Tầng 3** | **Kỵ Sĩ Bầu Trời (`FlyingRider`)** | **110 HP** | **14** | **3** | **19** | **80% tỉ lệ rơi:** Trùm cuối có tốc độ cực cao (`19 Speed`), rơi Hạt Ớt Hiểm quý hiếm cùng lượng lớn hạt giống cao cấp (3–5 hạt mỗi ô rơi). |
+| **Tầng 1** | **Vua Xương (`Boss_Skeleton_King`)** | **85 HP** | **12** | **2** | 14 | **85% tỉ lệ rơi:** 100% rơi 3-5 Hạt Cà Rốt, 3-5 Hạt Lúa Mì; 75-80% rơi Hạt Ngô / Hạt Cà Chua mở khóa Tầng 2; 60% rơi Súp Cà Rốt. |
+| **Tầng 2** | **Slime Chúa Khổng Lồ (`SlimeBoss`)** | **125 HP** | **14** | **3** | 12 | **90% tỉ lệ rơi:** 100% rơi 3-5 Hạt Bắp Cải, 3-5 Hạt Ngô, 2-4 Hạt Cà Chua, 2-3 Hạt Dưa Chuột; 60% rơi Hạt Ớt Hiểm; 70% rơi Ngô Nướng Bơ. |
+| **Tầng 3** | **Kỵ Sĩ Bầu Trời Hắc Ám (`FlyingRider`)** | **165 HP** | **17** | **4** | **20** | **95% tỉ lệ rơi:** 100% rơi 4-6 Hạt Ớt Hiểm, 4-6 Hạt Cà Chua, 4-6 Hạt Ngô, 3-5 Hạt Dưa Chuột; 100% rơi 2 Món Đại Tiệc Hoàng Gia. |
 
 ---
 

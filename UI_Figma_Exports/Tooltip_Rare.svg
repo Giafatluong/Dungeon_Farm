@@ -1,0 +1,56 @@
+<svg width="290" height="290" viewBox="0 0 290 290" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg_rare" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#030712" />
+    </linearGradient>
+    <filter id="glow_rare" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#3B82F6" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <!-- Base Rectangular Card with Blue Glow -->
+  <rect x="0" y="0" width="290" height="290" rx="3" fill="url(#bg_rare)" stroke="#3B82F6" stroke-width="2" filter="url(#glow_rare)" />
+  <rect x="4" y="4" width="282" height="282" rx="2" fill="none" stroke="#1E3A8A" stroke-width="1" />
+
+  <!-- Corner Pixel Accents (Cyan/Blue Brackets) -->
+  <path d="M0 0 H14 V3 H3 V14 H0 Z" fill="#60A5FA" />
+  <path d="M290 0 H276 V3 H287 V14 H290 Z" fill="#60A5FA" />
+  <path d="M0 290 H14 V287 H3 V276 H0 Z" fill="#60A5FA" />
+  <path d="M290 290 H276 V287 H287 V276 H290 Z" fill="#60A5FA" />
+
+  <!-- Header Box: Icon + Title -->
+  <rect x="14" y="16" width="46" height="46" rx="3" fill="#0C1938" stroke="#2563EB" stroke-width="1.5" />
+  <text x="37" y="46" font-family="'Segoe UI Emoji', sans-serif" font-size="24" text-anchor="middle" fill="#93C5FD">🥗</text>
+
+  <!-- Title & Badge -->
+  <text x="68" y="32" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="bold" fill="#93C5FD">Salad Bắp Cải</text>
+  <rect x="68" y="38" width="70" height="18" rx="2" fill="#1E3A8A" stroke="#3B82F6" stroke-width="1" />
+  <text x="103" y="51" font-family="'Segoe UI', sans-serif" font-size="9" font-weight="bold" fill="#BFDBFE" text-anchor="middle">HIẾM</text>
+
+  <!-- Divider Line -->
+  <line x1="14" y1="74" x2="276" y2="74" stroke="#1E40AF" stroke-width="1" />
+
+  <!-- Stats Section -->
+  <text x="16" y="96" font-family="'Segoe UI', sans-serif" font-size="11" fill="#93C5FD">Loại món ăn:</text>
+  <text x="274" y="96" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#DBEAFE" text-anchor="end">Món Ăn Nấu (Tầng 2)</text>
+
+  <text x="16" y="122" font-family="'Segoe UI', sans-serif" font-size="11" fill="#93C5FD">Hồi phục Máu:</text>
+  <text x="274" y="122" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#4ADE80" text-anchor="end">+25 HP</text>
+
+  <text x="16" y="148" font-family="'Segoe UI', sans-serif" font-size="11" fill="#93C5FD">Hồi phục Độ No:</text>
+  <text x="274" y="148" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#FBBF24" text-anchor="end">+30 Độ No</text>
+
+  <text x="16" y="174" font-family="'Segoe UI', sans-serif" font-size="11" fill="#93C5FD">Buff Chiến Đấu:</text>
+  <text x="274" y="174" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#60A5FA" text-anchor="end">+2 DEF (2 Lượt)</text>
+
+  <!-- Lower Divider -->
+  <line x1="14" y1="194" x2="276" y2="194" stroke="#1E293B" stroke-width="1" />
+
+  <!-- Description / Lore Box -->
+  <rect x="14" y="204" width="262" height="70" rx="2" fill="#080F21" stroke="#172554" stroke-width="1" />
+  <text x="22" y="224" font-family="'Segoe UI', sans-serif" font-size="10" fill="#64748B" font-style="italic">Chế biến từ Bắp Cải, Cà Rốt &amp; Cà Chua.</text>
+  <text x="22" y="240" font-family="'Segoe UI', sans-serif" font-size="10" fill="#64748B" font-style="italic">Nguyên liệu bắt buộc cho Trụ Hộ Vệ</text>
+  <text x="22" y="256" font-family="'Segoe UI', sans-serif" font-size="10" fill="#64748B" font-style="italic">Bậc 6 đến Bậc 8.</text>
+</svg>
+

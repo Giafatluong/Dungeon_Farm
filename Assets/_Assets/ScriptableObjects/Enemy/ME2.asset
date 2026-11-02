@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: ME2
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Armored Orc
-  maxHealth: 42
-  ATK: 11
-  DEF: 3
-  speed: 10
+  maxHealth: 58
+  ATK: 14
+  DEF: 4
+  speed: 11
   possibleIntents: 000000000100000002000000
   intentEffects:
   - effect: {fileID: 11400000, guid: 2c54625ab304a2649b5fcfa7060c0828, type: 2}
@@ -25,20 +25,25 @@ MonoBehaviour:
     duration: 2
     durationType: 0
   lootDrops:
-  - item: {fileID: 11400000, guid: 7fbf6b6fc33a6a24aa6ccfb21298e0fd, type: 2}
-    dropChance: 0.6
+  - item: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
+    dropChance: 0.65
     minAmount: 1
     maxAmount: 2
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: 7fbf6b6fc33a6a24aa6ccfb21298e0fd, type: 2}
+    dropChance: 0.65
+    minAmount: 2
+    maxAmount: 3
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
+    dropChance: 0.6
+    minAmount: 2
+    maxAmount: 3
     requireUnlock: 0
   - item: {fileID: 11400000, guid: 4b7a8e6b75a48144b849bf42fe69e38d, type: 2}
     dropChance: 0.45
     minAmount: 1
-    maxAmount: 1
+    maxAmount: 2
     requireUnlock: 0
-  - item: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
-    dropChance: 0.4
-    minAmount: 1
-    maxAmount: 1
-    requireUnlock: 1
   dropUnlockedSeeds: 1
-  seedDropChance: 0.35
+  seedDropChance: 0.65

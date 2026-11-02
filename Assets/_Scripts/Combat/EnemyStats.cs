@@ -10,6 +10,7 @@ public class EnemyStats : MonoBehaviour
     [Header("Runtime State")]
     public int currentHealth;
     public EnemyData.EnemyIntent currentIntent;
+    public bool isIntentLocked = false;
     public bool hasActedThisRound = false;
     public bool isDefending = false;
     public int defendBonus = 5;
@@ -137,6 +138,12 @@ public class EnemyStats : MonoBehaviour
 
     public void SelectNextIntent()
     {
+        if (isIntentLocked)
+        {
+            OnIntentChanged?.Invoke(this, currentIntent);
+            return;
+        }
+
         if (enemyData == null || enemyData.possibleIntents == null || enemyData.possibleIntents.Length == 0)
         {
             currentIntent = EnemyData.EnemyIntent.Attack;
@@ -146,6 +153,13 @@ public class EnemyStats : MonoBehaviour
 
         int index = Random.Range(0, enemyData.possibleIntents.Length);
         currentIntent = enemyData.possibleIntents[index];
+        OnIntentChanged?.Invoke(this, currentIntent);
+    }
+
+    public void ForceIntent(EnemyData.EnemyIntent intent, bool lockIntent = false)
+    {
+        currentIntent = intent;
+        isIntentLocked = lockIntent;
         OnIntentChanged?.Invoke(this, currentIntent);
     }
 
@@ -327,6 +341,7 @@ public class EnemyStats : MonoBehaviour
         }
 
         hasActedThisRound = true;
+        isIntentLocked = false;
         SelectNextIntent();
     }
 

@@ -4,6 +4,7 @@ public class CameraController : MonoBehaviour
 {
     public GameObject player;
     public Vector3 offset = new Vector3(0, 1.5f, -10f);
+    public bool isCinematicOverride = false;
 
     private void Awake()
     {
@@ -33,6 +34,8 @@ public class CameraController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (isCinematicOverride) return;
+
         if (player == null)
         {
             if (Time.time >= nextSearchTime)

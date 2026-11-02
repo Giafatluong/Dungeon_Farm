@@ -1,0 +1,53 @@
+<svg width="290" height="290" viewBox="0 0 290 290" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg_common" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1C1917" />
+      <stop offset="100%" stop-color="#0C0A09" />
+    </linearGradient>
+  </defs>
+
+  <!-- Base Rectangular Card -->
+  <rect x="0" y="0" width="290" height="290" rx="3" fill="url(#bg_common)" stroke="#78716C" stroke-width="2" />
+  <rect x="4" y="4" width="282" height="282" rx="2" fill="none" stroke="#292524" stroke-width="1" />
+
+  <!-- Corner Pixel Accents (Rectangular Brackets) -->
+  <path d="M0 0 H12 V3 H3 V12 H0 Z" fill="#A8A29E" />
+  <path d="M290 0 H278 V3 H287 V12 H290 Z" fill="#A8A29E" />
+  <path d="M0 290 H12 V287 H3 V278 H0 Z" fill="#A8A29E" />
+  <path d="M290 290 H278 V287 H287 V278 H290 Z" fill="#A8A29E" />
+
+  <!-- Header Box: Icon + Title -->
+  <rect x="14" y="16" width="46" height="46" rx="3" fill="#141210" stroke="#57534E" stroke-width="1.5" />
+  <text x="37" y="46" font-family="'Segoe UI Emoji', sans-serif" font-size="24" text-anchor="middle" fill="#E7E5E4">🌾</text>
+
+  <!-- Title & Badge -->
+  <text x="68" y="32" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="bold" fill="#F5F5F4">Lúa Mì (Wheat)</text>
+  <rect x="68" y="38" width="92" height="18" rx="2" fill="#292524" stroke="#44403C" stroke-width="1" />
+  <text x="114" y="51" font-family="'Segoe UI', sans-serif" font-size="9" font-weight="bold" fill="#A8A29E" text-anchor="middle">BÌNH THƯỜNG</text>
+
+  <!-- Divider Line -->
+  <line x1="14" y1="74" x2="276" y2="74" stroke="#44403C" stroke-width="1" />
+
+  <!-- Stats Section -->
+  <text x="16" y="96" font-family="'Segoe UI', sans-serif" font-size="11" fill="#A8A29E">Loại vật phẩm:</text>
+  <text x="274" y="96" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#E7E5E4" text-anchor="end">Nông Sản Sơ Cấp</text>
+
+  <text x="16" y="122" font-family="'Segoe UI', sans-serif" font-size="11" fill="#A8A29E">Hồi phục Máu:</text>
+  <text x="274" y="122" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#4ADE80" text-anchor="end">+3 HP</text>
+
+  <text x="16" y="148" font-family="'Segoe UI', sans-serif" font-size="11" fill="#A8A29E">Hồi phục Độ No:</text>
+  <text x="274" y="148" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#FBBF24" text-anchor="end">+6 Độ No</text>
+
+  <text x="16" y="174" font-family="'Segoe UI', sans-serif" font-size="11" fill="#A8A29E">Thời gian lớn:</text>
+  <text x="274" y="174" font-family="'Segoe UI', sans-serif" font-size="11" font-weight="bold" fill="#38BDF8" text-anchor="end">4 Ngày (~3 Hạt/vụ)</text>
+
+  <!-- Lower Divider -->
+  <line x1="14" y1="194" x2="276" y2="194" stroke="#292524" stroke-width="1" />
+
+  <!-- Description / Lore Box -->
+  <rect x="14" y="204" width="262" height="70" rx="2" fill="#110F0E" stroke="#24211E" stroke-width="1" />
+  <text x="22" y="224" font-family="'Segoe UI', sans-serif" font-size="10" fill="#78716C" font-style="italic">Lương thực khởi đầu thiết yếu.</text>
+  <text x="22" y="240" font-family="'Segoe UI', sans-serif" font-size="10" fill="#78716C" font-style="italic">Dùng để cúng Trụ Sinh Mệnh &amp;</text>
+  <text x="22" y="256" font-family="'Segoe UI', sans-serif" font-size="10" fill="#78716C" font-style="italic">Hộ Vệ từ Bậc 1 đến Bậc 5.</text>
+</svg>
+

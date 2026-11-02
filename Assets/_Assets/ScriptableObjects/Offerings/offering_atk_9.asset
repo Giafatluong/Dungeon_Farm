@@ -1,0 +1,29 @@
+﻿%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36a929b1cfcee5049bbfcc297d7a36d9, type: 3}
+  m_Name: offering_atk_9
+  m_EditorClassIdentifier: Assembly-CSharp::Offering
+  offeringKey: offering_atk_9
+  offeringName: "Lễ Vật Chiến Binh - Bậc 9"
+  categoryName: "Chiến Binh"
+  tier: 9
+  prerequisiteOfferingKey: 'offering_atk_8'
+  requiredItems:
+  - item: {fileID: 11400000, guid: 3df971529d87e11458e9cca160be2dad, type: 2}
+    amount: 15
+  - item: {fileID: 11400000, guid: 201e1a44e5f1a8f4fbd2ca66d074144b, type: 2}
+    amount: 6
+  - item: {fileID: 11400000, guid: 44e0ea967df46ab40801462a3092738b, type: 2}
+    amount: 2
+  rewardStat: 0
+  rewardAmount: 1
+  completed: 0

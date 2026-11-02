@@ -108,6 +108,8 @@ public class CombatUI : MonoBehaviour
 
         ApplyFigmaGOTYStyling();
         RefreshAll();
+
+        CombatTutorialGuide.EnsureInitialized(this);
     }
 
     private void ApplyFigmaGOTYStyling()
@@ -175,10 +177,23 @@ public class CombatUI : MonoBehaviour
             Image panelImg = rewardPanel.GetComponent<Image>();
             if (panelImg != null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
         }
+
+        // 5. High-Contrast Outlined Typography
+        DungeonUIAssetHelper.ApplyFont(hpText, withOutline: true);
+        DungeonUIAssetHelper.ApplyFont(hungerText, withOutline: true);
+        DungeonUIAssetHelper.ApplyFont(apText, withOutline: true);
+        DungeonUIAssetHelper.ApplyFont(statsText, withOutline: true);
+        DungeonUIAssetHelper.ApplyFont(buffsText, withOutline: true);
+        DungeonUIAssetHelper.ApplyFont(turnBannerText, withOutline: true);
+        DungeonUIAssetHelper.ApplyFont(combatLogText, withOutline: true);
+        DungeonUIAssetHelper.ApplyFont(targetHpText, withOutline: true);
+        DungeonUIAssetHelper.ApplyFont(targetNameText, withOutline: true);
+        DungeonUIAssetHelper.ApplyFont(targetIntentText, withOutline: true);
     }
 
     private void OnDestroy()
     {
+        CombatTutorialGuide.Cleanup();
         UnsubscribeEvents();
     }
 
@@ -352,8 +367,11 @@ public class CombatUI : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3))
             {
-                OnEatClicked();
-                return;
+                if (CombatTutorialGuide.Instance == null || !CombatTutorialGuide.Instance.IsTutorialActive || CombatTutorialGuide.Instance.IsActionAllowed(CombatTutorialGuide.CombatAction.Eat))
+                {
+                    OnEatClicked();
+                    return;
+                }
             }
         }
 
@@ -375,15 +393,24 @@ public class CombatUI : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
         {
-            OnAttackClicked();
+            if (CombatTutorialGuide.Instance == null || !CombatTutorialGuide.Instance.IsTutorialActive || CombatTutorialGuide.Instance.IsActionAllowed(CombatTutorialGuide.CombatAction.Attack))
+            {
+                OnAttackClicked();
+            }
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2))
         {
-            OnDefendClicked();
+            if (CombatTutorialGuide.Instance == null || !CombatTutorialGuide.Instance.IsTutorialActive || CombatTutorialGuide.Instance.IsActionAllowed(CombatTutorialGuide.CombatAction.Defend))
+            {
+                OnDefendClicked();
+            }
         }
         else if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return))
         {
-            OnEndTurnClicked();
+            if (CombatTutorialGuide.Instance == null || !CombatTutorialGuide.Instance.IsTutorialActive || CombatTutorialGuide.Instance.IsActionAllowed(CombatTutorialGuide.CombatAction.EndTurn))
+            {
+                OnEndTurnClicked();
+            }
         }
     }
 
@@ -470,6 +497,7 @@ public class CombatUI : MonoBehaviour
     private bool? cachedIsAlive = null;
     private bool? cachedIsActing = null;
     private bool? cachedCanFreeEat = null;
+    private int cachedTutPhase = -999;
 
     public void InvalidateHUDCache()
     {
@@ -483,6 +511,7 @@ public class CombatUI : MonoBehaviour
         cachedIsAlive = null;
         cachedIsActing = null;
         cachedCanFreeEat = null;
+        cachedTutPhase = -999;
     }
 
     public void RefreshAll()
@@ -516,7 +545,7 @@ public class CombatUI : MonoBehaviour
             cachedHp = curHp;
             cachedMaxHp = maxHp;
             if (hpFillImage != null) hpFillImage.fillAmount = maxHp > 0 ? (float)curHp / maxHp : 0f;
-            if (hpText != null) hpText.text = $"HP: {curHp} / {maxHp}";
+            if (hpText != null) hpText.text = $"<color=#FF6B6B>HP: {curHp} / {maxHp}</color>";
         }
 
         int curHunger = playerStats.currentHunger;
@@ -525,8 +554,30 @@ public class CombatUI : MonoBehaviour
         {
             cachedHunger = curHunger;
             cachedMaxHunger = maxHunger;
-            if (hungerFillImage != null) hungerFillImage.fillAmount = maxHunger > 0 ? (float)curHunger / maxHunger : 0f;
-            if (hungerText != null) hungerText.text = $"Fullness: {curHunger} / {maxHunger}";
+            if (hungerFillImage != null)
+            {
+                hungerFillImage.fillAmount = maxHunger > 0 ? (float)curHunger / maxHunger : 0f;
+                PlayerStats.FullnessTier tier = playerStats.GetCurrentFullnessTier();
+                hungerFillImage.color = tier switch
+                {
+                    PlayerStats.FullnessTier.Hungry => new Color(1f, 0.45f, 0.25f),
+                    PlayerStats.FullnessTier.Satiated => new Color(0.35f, 0.95f, 0.45f),
+                    PlayerStats.FullnessTier.Overstuffed => new Color(1f, 0.85f, 0.2f),
+                    _ => Color.white
+                };
+            }
+            if (hungerText != null)
+            {
+                PlayerStats.FullnessTier tier = playerStats.GetCurrentFullnessTier();
+                string tierTag = tier switch
+                {
+                    PlayerStats.FullnessTier.Hungry => " <color=#FF6B6B><b>[Đói]</b></color>",
+                    PlayerStats.FullnessTier.Satiated => " <color=#50FA7B><b>[No Nê]</b></color>",
+                    PlayerStats.FullnessTier.Overstuffed => " <color=#FFD700><b>[Bội Thực]</b></color>",
+                    _ => ""
+                };
+                hungerText.text = $"<color=#FFD043>Độ No: {curHunger} / {maxHunger}</color>{tierTag}";
+            }
         }
 
         int curAP = playerStats.currentAP;
@@ -535,7 +586,7 @@ public class CombatUI : MonoBehaviour
         {
             cachedAP = curAP;
             cachedMaxAP = maxAP;
-            if (apText != null) apText.text = $"AP: {curAP} / {maxAP}";
+            if (apText != null) apText.text = $"<color=#00FFAA>AP: {curAP} / {maxAP}</color>";
         }
 
         int atk = playerStats.GetCurrentATK();
@@ -550,8 +601,8 @@ public class CombatUI : MonoBehaviour
             cachedDefendCount = defCount;
             if (statsText != null)
             {
-                string shieldStr = defCount > 0 ? $" (+{playerStats.defendValue * defCount} Shield)" : "";
-                statsText.text = $"ATK: {atk}    DEF: {def}{shieldStr}    SPD: {spd}";
+                string shieldStr = defCount > 0 ? $" <color=#50D8FF>(+{playerStats.defendValue * defCount} Shield)</color>" : "";
+                statsText.text = $"<color=#FFA726><b>ATK: {atk}</b></color>    <color=#50D8FF><b>DEF: {def}</b></color>{shieldStr}    <color=#FFEE55><b>SPD: {spd}</b></color>";
             }
         }
 
@@ -615,8 +666,11 @@ public class CombatUI : MonoBehaviour
         bool isAlive = playerStats.currentHealth > 0;
         bool isActing = combatManager.isPlayerActing;
         bool canFreeEat = isPlayerTurn && combatManager.CanPlayerEatFree();
+        int tutPhase = CombatTutorialGuide.Instance != null && CombatTutorialGuide.Instance.IsTutorialActive
+            ? (int)CombatTutorialGuide.Instance.CurrentPhase * 10 + (CombatTutorialGuide.Instance.HasPlayerDefended ? 1 : 0)
+            : -1;
 
-        if (isPlayerTurn == cachedIsPlayerTurn && hasAP == cachedHasAP && isAlive == cachedIsAlive && isActing == cachedIsActing && canFreeEat == cachedCanFreeEat)
+        if (isPlayerTurn == cachedIsPlayerTurn && hasAP == cachedHasAP && isAlive == cachedIsAlive && isActing == cachedIsActing && canFreeEat == cachedCanFreeEat && tutPhase == cachedTutPhase)
             return;
 
         cachedIsPlayerTurn = isPlayerTurn;
@@ -624,15 +678,29 @@ public class CombatUI : MonoBehaviour
         cachedIsAlive = isAlive;
         cachedIsActing = isActing;
         cachedCanFreeEat = canFreeEat;
+        cachedTutPhase = tutPhase;
 
         bool isAtEntrance = waveManager != null && waveManager.isAtEntrance;
         bool canAct = isPlayerTurn && hasAP && isAlive && !isActing;
         bool canEat = isAlive && !isActing && (canAct || (isPlayerTurn && canFreeEat) || isAtEntrance);
 
-        if (attackButton != null) attackButton.interactable = canAct;
-        if (defendButton != null) defendButton.interactable = canAct;
-        if (eatButton != null) eatButton.interactable = canEat;
-        if (endTurnButton != null) endTurnButton.interactable = isPlayerTurn && isAlive && !isActing;
+        bool allowAttack = canAct;
+        bool allowDefend = canAct;
+        bool allowEat = canEat;
+        bool allowEndTurn = isPlayerTurn && isAlive && !isActing;
+
+        if (CombatTutorialGuide.Instance != null && CombatTutorialGuide.Instance.IsTutorialActive)
+        {
+            if (!CombatTutorialGuide.Instance.IsActionAllowed(CombatTutorialGuide.CombatAction.Attack)) allowAttack = false;
+            if (!CombatTutorialGuide.Instance.IsActionAllowed(CombatTutorialGuide.CombatAction.Defend)) allowDefend = false;
+            if (!CombatTutorialGuide.Instance.IsActionAllowed(CombatTutorialGuide.CombatAction.Eat)) allowEat = false;
+            if (!CombatTutorialGuide.Instance.IsActionAllowed(CombatTutorialGuide.CombatAction.EndTurn)) allowEndTurn = false;
+        }
+
+        if (attackButton != null) attackButton.interactable = allowAttack;
+        if (defendButton != null) defendButton.interactable = allowDefend;
+        if (eatButton != null) eatButton.interactable = allowEat;
+        if (endTurnButton != null) endTurnButton.interactable = allowEndTurn;
     }
 
     public void UpdateTurnBanner()
@@ -892,6 +960,7 @@ public class CombatUI : MonoBehaviour
     public void OnAttackClicked()
     {
         if (combatManager == null || combatManager.isPlayerActing) return;
+        if (CombatTutorialGuide.Instance != null && CombatTutorialGuide.Instance.IsTutorialActive && !CombatTutorialGuide.Instance.IsActionAllowed(CombatTutorialGuide.CombatAction.Attack)) return;
 
         if (targetSelector != null && (targetSelector.selectedEnemy == null || targetSelector.selectedEnemy.currentHealth <= 0))
         {
@@ -911,6 +980,7 @@ public class CombatUI : MonoBehaviour
     public void OnDefendClicked()
     {
         if (combatManager == null || combatManager.isPlayerActing) return;
+        if (CombatTutorialGuide.Instance != null && CombatTutorialGuide.Instance.IsTutorialActive && !CombatTutorialGuide.Instance.IsActionAllowed(CombatTutorialGuide.CombatAction.Defend)) return;
         combatManager.PlayerDefend();
         RefreshAll();
     }
@@ -918,6 +988,7 @@ public class CombatUI : MonoBehaviour
     public void OnEatClicked()
     {
         if (foodPanel == null || (combatManager != null && combatManager.isPlayerActing)) return;
+        if (CombatTutorialGuide.Instance != null && CombatTutorialGuide.Instance.IsTutorialActive && !CombatTutorialGuide.Instance.IsActionAllowed(CombatTutorialGuide.CombatAction.Eat)) return;
 
         bool isOpen = foodPanel.activeSelf;
         foodPanel.SetActive(!isOpen);
@@ -931,6 +1002,7 @@ public class CombatUI : MonoBehaviour
     public void OnEndTurnClicked()
     {
         if (combatManager == null || combatManager.isPlayerActing) return;
+        if (CombatTutorialGuide.Instance != null && CombatTutorialGuide.Instance.IsTutorialActive && !CombatTutorialGuide.Instance.IsActionAllowed(CombatTutorialGuide.CombatAction.EndTurn)) return;
         if (foodPanel != null) foodPanel.SetActive(false);
         combatManager.EndTurnPlayer();
         RefreshAll();
@@ -1085,6 +1157,15 @@ public class CombatUI : MonoBehaviour
             return;
         }
 
+        // Sort cooked food with buffs to the top so combat potions/soups appear first
+        foodSlots.Sort((a, b) =>
+        {
+            bool aIsFood = a.itemData is FoodData;
+            bool bIsFood = b.itemData is FoodData;
+            if (aIsFood != bIsFood) return bIsFood.CompareTo(aIsFood);
+            return 0;
+        });
+
         if (noFoodText != null) noFoodText.gameObject.SetActive(false);
 
         for (int i = 0; i < foodSlots.Count; i++)
@@ -1142,7 +1223,7 @@ public class CombatUI : MonoBehaviour
 
         if (food is FoodData fd)
         {
-            statInfo = $"<color=#66FF66>+{fd.healthValue} HP</color> | <color=#FFAA33>+{fd.hungerValue} Fullness</color>";
+            statInfo = $"<color=#FF6B6B><b>+{fd.healthValue} HP</b></color> <color=#94A3B8>|</color> <color=#FFD043><b>+{fd.hungerValue} Độ No</b></color>";
 
             if (fd.foodBuff != null && fd.foodBuff.Length > 0)
             {
@@ -1170,8 +1251,8 @@ public class CombatUI : MonoBehaviour
         {
             int hp = hasRawVitality ? 12 : 6;
             int hunger = hasRawVitality ? 20 : 15;
-            string bonus = hasRawVitality ? " <color=#A8E6CF>(Raw Vitality)</color>" : " <color=#88CCFF>(Raw Crop)</color>";
-            statInfo = $"<color=#66FF66>+{hp} HP</color> | <color=#FFAA33>+{hunger} Fullness</color>{bonus}";
+            string bonus = hasRawVitality ? " <color=#86EFAC><b>(Raw Vitality)</b></color>" : " <color=#93C5FD>(Ăn Thô)</color>";
+            statInfo = $"<color=#FF6B6B><b>+{hp} HP</b></color> <color=#94A3B8>|</color> <color=#FFD043><b>+{hunger} Độ No</b></color>{bonus}";
         }
 
         float rowHeight = buffCount >= 3 ? 82f : (buffCount > 0 ? 66f : 52f);
@@ -1215,6 +1296,7 @@ public class CombatUI : MonoBehaviour
         labelRT.offsetMin = new Vector2(54, 4);
         labelRT.offsetMax = new Vector2(-88, -4);
         TextMeshProUGUI label = labelGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(label, withOutline: true);
         label.fontSize = 12;
         label.color = Color.white;
         label.alignment = TextAlignmentOptions.MidlineLeft;
@@ -1228,7 +1310,7 @@ public class CombatUI : MonoBehaviour
         }
         else if (food is not FoodData && hasRawVitality)
         {
-            label.text = $"<b>{food.itemName}</b> <color=#FFD700>x{count}</color>\n<size=10.5>{statInfo}</size>\n<size=9.5><color=#A8E6CF>Passive: +100% HP & +33% Fullness</color></size>";
+            label.text = $"<b>{food.itemName}</b> <color=#FFD700>x{count}</color>\n<size=10.5>{statInfo}</size>\n<size=9.5><color=#A8E6CF>Passive: +100% HP & +33% Độ No</color></size>";
         }
         else
         {
@@ -1288,7 +1370,7 @@ public class CombatUI : MonoBehaviour
         string buffInfo = "";
         if (food is FoodData fd)
         {
-            statInfo = $"<color=#66FF66>+{fd.healthValue} HP</color> | <color=#FFAA33>+{fd.hungerValue} Fullness</color>";
+            statInfo = $"<color=#FF6B6B><b>+{fd.healthValue} HP</b></color> <color=#94A3B8>|</color> <color=#FFD043><b>+{fd.hungerValue} Độ No</b></color>";
             if (fd.foodBuff != null && fd.foodBuff.Length > 0)
             {
                 List<string> bList = new();
@@ -1308,8 +1390,8 @@ public class CombatUI : MonoBehaviour
         {
             int hp = hasRawVitality ? 12 : 6;
             int hunger = hasRawVitality ? 20 : 15;
-            string bonus = hasRawVitality ? " (Raw Vitality)" : " (Raw Crop)";
-            statInfo = $"<color=#66FF66>+{hp} HP</color> | <color=#FFAA33>+{hunger} Fullness</color>{bonus}";
+            string bonus = hasRawVitality ? " <color=#86EFAC><b>(Raw Vitality)</b></color>" : " <color=#93C5FD>(Ăn Thô)</color>";
+            statInfo = $"<color=#FF6B6B><b>+{hp} HP</b></color> <color=#94A3B8>|</color> <color=#FFD043><b>+{hunger} Độ No</b></color>{bonus}";
         }
 
         var tmpTexts = rowGO.GetComponentsInChildren<TextMeshProUGUI>(true);
@@ -1399,8 +1481,8 @@ public class CombatUI : MonoBehaviour
             _ => fb.buffDurationType.ToString()
         };
 
-        string colorHex = val >= 0 ? "#55DDFF" : "#FF7777";
-        return $"<color={colorHex}>{sign}{val} {stat} ({duration} {durUnit})</color>";
+        string colorHex = val >= 0 ? "#50D8FF" : "#FF5252";
+        return $"<color={colorHex}><b>{sign}{val} {stat} ({duration} {durUnit})</b></color>";
     }
     #endregion
 

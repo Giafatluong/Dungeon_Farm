@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: ME1
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Goblin Warrior
-  maxHealth: 30
-  ATK: 9
+  maxHealth: 42
+  ATK: 12
   DEF: 2
-  speed: 16
+  speed: 15
   possibleIntents: 000000000100000002000000
   intentEffects:
   - effect: {fileID: 11400000, guid: 6fbdc716dfd5399429b38f2c719b3694, type: 2}
@@ -26,14 +26,19 @@ MonoBehaviour:
     durationType: 0
   lootDrops:
   - item: {fileID: 11400000, guid: 7fbf6b6fc33a6a24aa6ccfb21298e0fd, type: 2}
-    dropChance: 0.55
+    dropChance: 0.65
     minAmount: 1
     maxAmount: 2
     requireUnlock: 0
   - item: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
-    dropChance: 0.45
+    dropChance: 0.6
     minAmount: 1
-    maxAmount: 1
+    maxAmount: 2
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: 1e020026f91a85541b11bd8e9a9d5221, type: 2}
+    dropChance: 0.4
+    minAmount: 1
+    maxAmount: 2
     requireUnlock: 0
   dropUnlockedSeeds: 1
-  seedDropChance: 0.35
+  seedDropChance: 0.6

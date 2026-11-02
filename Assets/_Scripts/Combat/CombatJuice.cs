@@ -155,7 +155,7 @@ public class CombatJuice : MonoBehaviour
     /// <summary>
     /// Cinematic slow-motion for wave / floor clears.
     /// </summary>
-    public void PlayFinisherSlowMo(float slowScale = 0.25f, float durationRealtime = 0.45f)
+    public void PlayFinisherSlowMo(float slowScale = 0.5f, float durationRealtime = 0.18f)
     {
         if (slowMoRoutine != null)
         {
@@ -170,7 +170,7 @@ public class CombatJuice : MonoBehaviour
         yield return new WaitForSecondsRealtime(durationRealtime);
 
         float elapsed = 0f;
-        float returnDuration = 0.15f;
+        float returnDuration = 0.08f;
         while (elapsed < returnDuration)
         {
             elapsed += Time.unscaledDeltaTime;
@@ -267,9 +267,9 @@ public class CombatJuice : MonoBehaviour
     {
         if (isLethal || damagePercent >= 1.0f)
         {
-            // Tier 3: Lethal Execution / Overkill
-            Shake(0.28f, 0.18f);
-            HitStop(0.065f, 0.02f);
+            // Tier 3: Lethal Execution / Overkill (punchy, crisp, no lag)
+            Shake(0.22f, 0.14f);
+            HitStop(0.04f, 0.04f);
             PlayHitSparks(hitPos, new Color(1f, 0.22f, 0.22f, 1f), 16);
         }
         else if (damagePercent >= 0.5f)

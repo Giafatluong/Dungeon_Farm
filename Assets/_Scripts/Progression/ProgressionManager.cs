@@ -272,7 +272,7 @@ public class ProgressionManager : MonoBehaviour
     public void StartRun(int floor = 1)
     {
         runActive = true;
-        currentFloor = floor > 0 ? floor : 1;
+        currentFloor = floor >= 0 ? floor : 1;
         selectedFloor = currentFloor;
         currentStage = 0;
         Debug.Log("Starting Dungeon Run - Floor " + currentFloor);
@@ -290,6 +290,9 @@ public class ProgressionManager : MonoBehaviour
                 break;
             case Offering.RewardStat.Speed:
                 permanentSpeed += amount;
+                break;
+            case Offering.RewardStat.MaxHP:
+                permanentMaxHP += amount;
                 break;
         }
 

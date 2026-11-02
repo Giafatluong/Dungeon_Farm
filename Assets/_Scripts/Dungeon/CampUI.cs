@@ -607,7 +607,15 @@ public class CampUI : MonoBehaviour
         {
             if (playerStatusText != null)
             {
-                playerStatusText.text = $"HP: <color=#66FF66>{playerStats.currentHealth}/{playerStats.maxHealth}</color>   |   Fullness: <color=#FFAA33>{playerStats.currentHunger}/{playerStats.maxHunger}</color>";
+                PlayerStats.FullnessTier tier = playerStats.GetCurrentFullnessTier();
+                string tierTag = tier switch
+                {
+                    PlayerStats.FullnessTier.Hungry => " <color=#FF6644>[Đói: -2 ATK, -3 SPD]</color>",
+                    PlayerStats.FullnessTier.Satiated => " <color=#55FF55>[No: +2 ATK, +1 DEF, +2 SPD]</color>",
+                    PlayerStats.FullnessTier.Overstuffed => " <color=#FFCC00>[Bội Thực: +3 DEF, -4 SPD, -1 ATK, Hồi HP]</color>",
+                    _ => ""
+                };
+                playerStatusText.text = $"HP: <color=#66FF66>{playerStats.currentHealth}/{playerStats.maxHealth}</color>   |   Fullness: <color=#FFAA33>{playerStats.currentHunger}/{playerStats.maxHunger}</color>{tierTag}";
             }
 
             if (playerBuffsText != null)
@@ -762,6 +770,7 @@ public class CampUI : MonoBehaviour
         labelRT.offsetMin = new Vector2(60, 4);
         labelRT.offsetMax = new Vector2(-110, -4);
         TextMeshProUGUI label = labelGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(label, withOutline: true);
         label.fontSize = 13;
         label.color = Color.white;
         label.alignment = TextAlignmentOptions.MidlineLeft;
@@ -770,11 +779,11 @@ public class CampUI : MonoBehaviour
         {
             string buffSummary = GetFoodBuffSummary(fd);
             string buffLine = !string.IsNullOrEmpty(buffSummary) ? $" | {buffSummary}" : "";
-            label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#66FF66>+{fd.healthValue} HP</color> | <color=#FFAA33>+{fd.hungerValue} Full</color>{buffLine}</size>";
+            label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#FF6B6B><b>+{fd.healthValue} HP</b></color> | <color=#FFD043><b>+{fd.hungerValue} Độ No</b></color>{buffLine}</size>";
         }
         else
         {
-            label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#66FF66>+6 HP</color> | <color=#FFAA33>+15 Full</color> (Raw Crop)</size>";
+            label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#FF6B6B><b>+6 HP</b></color> | <color=#FFD043><b>+15 Độ No</b></color> <color=#94A3B8>(Ăn Thô)</color></size>";
         }
 
         // Eat Button
@@ -897,6 +906,7 @@ public class CampUI : MonoBehaviour
         labelRT.offsetMin = new Vector2(65, 4);
         labelRT.offsetMax = new Vector2(-120, -4);
         TextMeshProUGUI label = labelGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(label, withOutline: true);
         label.fontSize = 12;
         label.color = Color.white;
         label.alignment = TextAlignmentOptions.MidlineLeft;
@@ -911,14 +921,14 @@ public class CampUI : MonoBehaviour
                 ItemRequirement req = recipe.ingredients[j];
                 if (req.item == null) continue;
                 int has = CookingManager.Instance != null ? CookingManager.Instance.GetItemCount(container, req.item) : 0;
-                string colorTag = has >= req.amount ? "<color=#88FF88>" : "<color=#FF6666>";
-                ingSb.Append($"{colorTag}{req.item.itemName} {has}/{req.amount}</color> ");
+                string colorTag = has >= req.amount ? "<color=#4ADE80><b>" : "<color=#FF6B6B><b>";
+                ingSb.Append($"{colorTag}{req.item.itemName} {has}/{req.amount}</b></color> ");
             }
         }
 
         string rBuff = recipe.resultFood != null ? GetFoodBuffSummary(recipe.resultFood) : "";
-        string rBuffLine = !string.IsNullOrEmpty(rBuff) ? $"\n<size=10>Buff: {rBuff}</size>" : "";
-        label.text = $"<b>{recipe.DisplayName}</b>{rBuffLine}\n<size=10>Needs: {ingSb.ToString()}</size>";
+        string rBuffLine = !string.IsNullOrEmpty(rBuff) ? $"\n<size=10.5><color=#CBD5E1>Buff:</color> {rBuff}</size>" : "";
+        label.text = $"<b>{recipe.DisplayName}</b>{rBuffLine}\n<size=10.5><color=#CBD5E1>Cần:</color> {ingSb.ToString()}</size>";
 
         // Cook Button
         GameObject btnGO = new GameObject("CookBtn", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -983,7 +993,7 @@ public class CampUI : MonoBehaviour
                         _ => fb.buffDurationType.ToString()
                     };
                     string sign = fb.buffValue > 0 ? "+" : "";
-                    sb.Append($"<color=#66CCFF>{sign}{fb.buffValue} {statLabel} ({dur} {durType})</color> ");
+                    sb.Append($"<color=#50D8FF><b>{sign}{fb.buffValue} {statLabel} ({dur} {durType})</b></color> ");
                 }
             }
             return sb.ToString().Trim();
@@ -992,10 +1002,10 @@ public class CampUI : MonoBehaviour
         {
             string fname = (food.itemName ?? food.name ?? "").ToLower();
             if (fname.Contains("chilli") || fname.Contains("cay") || fname.Contains("spicy") || fname.Contains("meat"))
-                return "<color=#FF6666>+3 ATK (3 Turns)</color>";
+                return "<color=#FF5252><b>+3 ATK (3 Lượt)</b></color>";
             if (fname.Contains("corn") || fname.Contains("bap") || fname.Contains("speed") || fname.Contains("carrot"))
-                return "<color=#FFFF66>+2 Speed (3 Turns)</color>";
-            return "<color=#66FF66>+2 DEF (3 Turns)</color>";
+                return "<color=#FBBF24><b>+2 SPD (3 Lượt)</b></color>";
+            return "<color=#50D8FF><b>+2 DEF (3 Lượt)</b></color>";
         }
     }
 

@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Skeleton_Bowman
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Skeleton Bowman
-  maxHealth: 20
-  ATK: 7
+  maxHealth: 24
+  ATK: 8
   DEF: 1
-  speed: 19
+  speed: 18
   isRanged: 1
   possibleIntents: 000000000100000003000000
   intentEffects:
@@ -26,15 +26,20 @@ MonoBehaviour:
     duration: 2
     durationType: 0
   lootDrops:
-  - item: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
+  - item: {fileID: 11400000, guid: 42b4889df87d85948a0ccdcad13f6420, type: 2}
     dropChance: 0.6
     minAmount: 1
     maxAmount: 2
     requireUnlock: 0
-  - item: {fileID: 11400000, guid: 96b10b9a95c45c84484c4737865e12cb, type: 2}
+  - item: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
     dropChance: 0.5
+    minAmount: 1
+    maxAmount: 2
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
+    dropChance: 0.35
     minAmount: 1
     maxAmount: 1
     requireUnlock: 0
   dropUnlockedSeeds: 1
-  seedDropChance: 0.35
+  seedDropChance: 0.55

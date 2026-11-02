@@ -64,7 +64,7 @@ public class EnemyCombatVisual : MonoBehaviour
 
     private static readonly WaitForSeconds WaitRelease = new(0.12f);
     private static readonly WaitForSeconds WaitFollowThrough = new(0.14f);
-    private static readonly WaitForSeconds WaitDeadFade = new(0.28f);
+    private static readonly WaitForSecondsRealtime WaitDeadFade = new(0.1f);
 
     private static readonly Queue<GameObject> ProjectilePool = new();
     private static Transform ProjectilePoolRoot;
@@ -690,10 +690,10 @@ public class EnemyCombatVisual : MonoBehaviour
         yield return WaitDeadFade;
 
         float elapsed = 0f;
-        float duration = 0.38f;
+        float duration = 0.22f;
         while (elapsed < duration)
         {
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime;
             if (spriteRenderer != null)
             {
                 float a = Mathf.Lerp(1f, 0f, elapsed / duration);

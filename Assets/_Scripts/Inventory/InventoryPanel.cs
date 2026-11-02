@@ -1,5 +1,7 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections.Generic;
+using TMPro;
 
 public class InventoryPanel : MonoBehaviour
 {
@@ -7,6 +9,9 @@ public class InventoryPanel : MonoBehaviour
     [SerializeField] private List<InventoryButton> inventoryButtons;
     [SerializeField] private Canvas canvas;
     [SerializeField] private CurrentItemPanel currentItemPanel;
+
+    private GameObject statsBarGO;
+    private TextMeshProUGUI statsBarText;
 
     public ItemContainer ItemContainer => itemContainer;
 
@@ -32,6 +37,8 @@ public class InventoryPanel : MonoBehaviour
         {
             itemContainer.OnInventoryChange += RefreshInventory;
         }
+
+        RemoveStatsBar();
     }
 
     private void OnDisable()
@@ -40,6 +47,8 @@ public class InventoryPanel : MonoBehaviour
         {
             itemContainer.OnInventoryChange -= RefreshInventory;
         }
+
+        RemoveStatsBar();
     }
 
     private void RefreshInventory()
@@ -49,6 +58,15 @@ public class InventoryPanel : MonoBehaviour
         if (currentItemPanel != null)
         {
             currentItemPanel.SetCurrentItem();
+        }
+    }
+
+    private void RemoveStatsBar()
+    {
+        if (statsBarGO != null)
+        {
+            Destroy(statsBarGO);
+            statsBarGO = null;
         }
     }
 

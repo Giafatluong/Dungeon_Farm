@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Rat
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Sewer Rat
-  maxHealth: 15
-  ATK: 5
+  maxHealth: 18
+  ATK: 6
   DEF: 0
-  speed: 18
+  speed: 17
   possibleIntents: 0000000003000000
   intentEffects:
   - effect: {fileID: 11400000, guid: 2ae4be7e5f27de942be4d3810cbef226, type: 2}
@@ -30,5 +30,15 @@ MonoBehaviour:
     minAmount: 1
     maxAmount: 2
     requireUnlock: 0
+  - item: {fileID: 11400000, guid: 42b4889df87d85948a0ccdcad13f6420, type: 2}
+    dropChance: 0.5
+    minAmount: 1
+    maxAmount: 2
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: 96b10b9a95c45c84484c4737865e12cb, type: 2}
+    dropChance: 0.35
+    minAmount: 1
+    maxAmount: 1
+    requireUnlock: 0
   dropUnlockedSeeds: 1
-  seedDropChance: 0.35
+  seedDropChance: 0.5

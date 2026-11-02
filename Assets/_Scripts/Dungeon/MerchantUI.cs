@@ -658,10 +658,13 @@ public class MerchantUI : MonoBehaviour
         outDescGO.transform.SetParent(outColGO.transform, false);
         outDescGO.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 40);
         TextMeshProUGUI outDescTMP = outDescGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(outDescTMP);
+        DungeonUIAssetHelper.ApplyFont(outDescTMP, withOutline: true);
         outDescTMP.fontSize = 11.5f;
         string outName = outItem != null ? outItem.itemName : "Vật phẩm";
-        outDescTMP.text = $"<color=#FFD700><b>{outAmount}x {outName}</b></color>\n<size=9.5><color=#8FA0C0>{outCategory}</color></size>";
+        string outSub = outItem is FoodData fdOut
+            ? $"<color=#FF6B6B>+{fdOut.healthValue} HP</color> | <color=#FFD043>+{fdOut.hungerValue} No</color>"
+            : $"<color=#CBD5E1>{outCategory}</color>";
+        outDescTMP.text = $"<color=#FFD700><b>{outAmount}x {outName}</b></color>\n<size=9.5>{outSub}</size>";
 
         // --- MŨI TÊN CHUYỂN ĐỔI ---
         GameObject arrowGO = new GameObject("Arrow", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -709,11 +712,11 @@ public class MerchantUI : MonoBehaviour
         inDescGO.transform.SetParent(inColGO.transform, false);
         inDescGO.GetComponent<RectTransform>().sizeDelta = new Vector2(145, 40);
         TextMeshProUGUI inDescTMP = inDescGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(inDescTMP);
+        DungeonUIAssetHelper.ApplyFont(inDescTMP, withOutline: true);
         inDescTMP.fontSize = 11f;
-        string inColor = haveInput >= inAmount ? "#55FF88" : "#FF6666";
+        string inColor = haveInput >= inAmount ? "#4ADE80" : "#FF6B6B";
         string inName = inItem != null ? inItem.itemName : "Nguyên liệu";
-        inDescTMP.text = $"<b>{inAmount}x {inName}</b>\n<size=10>Cần: {inAmount} (<color={inColor}>Có: {haveInput}</color>)</size>";
+        inDescTMP.text = $"<b>{inAmount}x {inName}</b>\n<size=10><color=#CBD5E1>Cần:</color> {inAmount} (<color={inColor}>Có: {haveInput}</color>)</size>";
 
         // --- NÚT TRADE ---
         GameObject btnGO = new GameObject("BtnTrade", typeof(RectTransform), typeof(Image), typeof(Button));

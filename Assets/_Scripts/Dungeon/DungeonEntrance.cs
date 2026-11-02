@@ -86,6 +86,9 @@ public class DungeonEntrance : MonoBehaviour
 
     private void OpenDungeonUI()
     {
+        if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.DungeonGate))
+            return;
+
         if (UIEscapeManager.IsAnyModalUIOpen()) return;
 
         if (dungeonEntranceUI == null)

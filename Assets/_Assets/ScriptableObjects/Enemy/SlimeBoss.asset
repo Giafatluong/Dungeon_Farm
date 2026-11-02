@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: SlimeBoss
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: King Slime (Boss)
-  maxHealth: 85
-  ATK: 11
-  DEF: 2
+  maxHealth: 125
+  ATK: 14
+  DEF: 3
   speed: 12
   possibleIntents: 00000000010000000200000003000000
   intentEffects:
@@ -30,20 +30,40 @@ MonoBehaviour:
     duration: 2
     durationType: 0
   lootDrops:
-  - item: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
+  - item: {fileID: 11400000, guid: b0550002417244a47895e7b4112e4f02, type: 2}
     dropChance: 1
-    minAmount: 2
-    maxAmount: 3
+    minAmount: 1
+    maxAmount: 1
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: 7fbf6b6fc33a6a24aa6ccfb21298e0fd, type: 2}
+    dropChance: 1
+    minAmount: 3
+    maxAmount: 5
     requireUnlock: 0
   - item: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
-    dropChance: 0.8
+    dropChance: 1
+    minAmount: 3
+    maxAmount: 5
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
+    dropChance: 0.9
+    minAmount: 2
+    maxAmount: 4
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: ea2db54ad97c8e94e968dd42f17c610f, type: 2}
+    dropChance: 0.85
     minAmount: 2
     maxAmount: 3
     requireUnlock: 0
   - item: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
+    dropChance: 0.6
+    minAmount: 1
+    maxAmount: 2
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: 071dfcdc261b2524f8a7a2e8938beda0, type: 2}
     dropChance: 0.7
     minAmount: 1
     maxAmount: 2
     requireUnlock: 0
   dropUnlockedSeeds: 1
-  seedDropChance: 0.75
+  seedDropChance: 0.9

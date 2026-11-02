@@ -174,6 +174,12 @@ public class Camp : MonoBehaviour
         ambushState = false;
         mustContinue = false;
 
+        // If player safely retreats from Tutorial Floor Camp, mark dungeon tutorial as completed & unlock Floor 1
+        if (ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor == 0)
+        {
+            DungeonTutorialController.Instance?.OnTutorialFloorCompleted();
+        }
+
         CloseCamp();
         OnCampAction?.Invoke(ActionType.ReturnHome, 0f);
 

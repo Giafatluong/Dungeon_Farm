@@ -127,9 +127,7 @@ public class HomeChest : MonoBehaviour, IInteractable
 
         if (playerInRange && Input.GetKeyDown(KeyCode.E))
         {
-            if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen) return;
-            if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return;
-            if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) return;
+            if (!isOpen && UIEscapeManager.IsAnyModalUIOpen()) return;
 
             if (KitchenStation.Instance != null && KitchenStation.Instance.playerInRange)
             {
@@ -153,7 +151,7 @@ public class HomeChest : MonoBehaviour, IInteractable
         if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
             return;
 
-        if (playerInRange)
+        if (playerInRange && (isOpen || !UIEscapeManager.IsAnyModalUIOpen()))
         {
             Interact();
         }
@@ -167,6 +165,9 @@ public class HomeChest : MonoBehaviour, IInteractable
         }
         else
         {
+            if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.HomeChest))
+                return;
+
             OpenChest();
         }
     }
@@ -222,6 +223,7 @@ public class HomeChest : MonoBehaviour, IInteractable
 
         Debug.Log("[HomeChest] Closed Home Chest.");
         OnChestToggled?.Invoke(false);
+        TutorialManager.Instance?.NotifyChestUsed();
 
         if (ChestUI.Instance != null && ChestUI.Instance.IsOpen)
         {

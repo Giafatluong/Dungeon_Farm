@@ -63,4 +63,105 @@ public static class UIEscapeManager
 
         return false;
     }
+
+    private static GameObject _cachedHealthBarCanvas;
+    private static GameObject _cachedMiddleBar;
+    private static CurrentItemPanel _cachedHotbar;
+
+    /// <summary>
+    /// Closes all active modal windows across the scene to guarantee zero UI overlap.
+    /// </summary>
+    public static void CloseAllModals(bool includeInventory = true, string exceptModal = null)
+    {
+        if (exceptModal != "Chest")
+        {
+            if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) ChestUI.Instance.Close();
+            if (HomeChest.Instance != null && HomeChest.Instance.isOpen) HomeChest.Instance.CloseChest();
+        }
+
+        if (exceptModal != "Kitchen")
+        {
+            if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) KitchenUI.Instance.Close();
+            if (KitchenStation.Instance != null && KitchenStation.Instance.isOpen) KitchenStation.Instance.CloseKitchen();
+        }
+
+        if (exceptModal != "Statue")
+        {
+            if (StatueUI.Instance != null && StatueUI.Instance.IsOpen) StatueUI.Instance.Close();
+        }
+
+        if (exceptModal != "DungeonEntrance")
+        {
+            if (DungeonEntranceUI.Instance != null && DungeonEntranceUI.Instance.IsOpen) DungeonEntranceUI.Instance.Close();
+        }
+
+        if (includeInventory && exceptModal != "Inventory")
+        {
+            if (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen)
+            {
+                InventoryController.Instance.CloseInventoryPanel();
+            }
+        }
+
+        if (ItemTooltipUI.Instance != null)
+        {
+            ItemTooltipUI.Instance.Hide(immediate: true);
+        }
+    }
+
+    /// <summary>
+    /// Notifies the manager that a modal UI has opened. Closes conflicting modals and hides HUD to prevent overlap.
+    /// </summary>
+    public static void NotifyModalOpened(string modalName)
+    {
+        CloseAllModals(includeInventory: true, exceptModal: modalName);
+
+        // Hide HUD hotbar and status bars so they never overlap with the modal window
+        SetHUDVisible(false);
+    }
+
+    /// <summary>
+    /// Notifies the manager that a modal UI has closed. Restores HUD if no other modals remain open.
+    /// </summary>
+    public static void NotifyModalClosed(string modalName)
+    {
+        if (ItemTooltipUI.Instance != null)
+        {
+            ItemTooltipUI.Instance.Hide(immediate: true);
+        }
+
+        // If no more modals are active, restore HUD
+        if (!IsAnyModalUIOpen(includeInventory: true, includeMainMenu: true))
+        {
+            SetHUDVisible(true);
+        }
+    }
+
+    /// <summary>
+    /// Toggles visibility of background exploration HUD (Hotbar, HealthBar, MiddleBar).
+    /// </summary>
+    public static void SetHUDVisible(bool visible)
+    {
+        // Don't show base HUD during combat!
+        if (visible && CombatManager.Instance != null && (CombatManager.Instance.isCombatActive || CombatManager.Instance.isPreparingCombat))
+            return;
+
+        if (_cachedHotbar == null)
+            _cachedHotbar = Object.FindFirstObjectByType<CurrentItemPanel>(FindObjectsInactive.Include);
+        if (_cachedHotbar != null)
+            _cachedHotbar.gameObject.SetActive(visible);
+
+        if (_cachedHealthBarCanvas == null)
+        {
+            _cachedHealthBarCanvas = GameObject.Find("HealthBarCanvas");
+            if (_cachedHealthBarCanvas == null) _cachedHealthBarCanvas = GameObject.Find("HealthBarcanvas");
+        }
+        if (_cachedHealthBarCanvas != null)
+            _cachedHealthBarCanvas.SetActive(visible);
+
+        if (_cachedMiddleBar == null)
+            _cachedMiddleBar = GameObject.Find("MiddleBar");
+        if (_cachedMiddleBar != null)
+            _cachedMiddleBar.SetActive(visible);
+    }
 }

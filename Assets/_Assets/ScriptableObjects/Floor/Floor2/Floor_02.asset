@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b361ef3d9b53cdd41b30d69a54936c4a, type: 3}
-  m_Name: Đầm Lầy Quái Vật (Floor 2)
+  m_Name: Floor_02
   m_EditorClassIdentifier: Assembly-CSharp::FloorData
-  floorName: Đầm Lầy Quái Vật
+  floorName: "\u0110\u1EA7m L\u1EA7y Qu\u00E1i V\u1EADt (Floor 2)"
   floorNumber: 2
   waves:
   - {fileID: 11400000, guid: bee3ba3a9438e8f3e1ab9f5ae0cff799, type: 2}
@@ -31,7 +31,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 9e0ea82002eab79926eca9cc0e87dbf7, type: 2}
   - {fileID: 11400000, guid: d98d33549aad94f2677671eec611d5f4, type: 2}
   - {fileID: 11400000, guid: 4ff651bb1e8facfe53032b57ae4848a3, type: 2}
-  bossName: King Slime
+  bossName: "Slime Ch\u00FAa Kh\u1ED5ng L\u1ED3"
   clearRewardItems:
   - itemData: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
     amount: 6
@@ -39,13 +39,13 @@ MonoBehaviour:
     amount: 6
   - itemData: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
     amount: 4
-  - itemData: {fileID: 11400000, guid: 90c8846f9ae7d4a4fb3425fb40027a06, type: 2}
-    amount: 2
-  - itemData: {fileID: 11400000, guid: 7b235b7cc0dbff740ad1722db4b69233, type: 2}
+  - itemData: {fileID: 11400000, guid: ea2db54ad97c8e94e968dd42f17c610f, type: 2}
+    amount: 3
+  - itemData: {fileID: 11400000, guid: 071dfcdc261b2524f8a7a2e8938beda0, type: 2}
     amount: 2
   bonusPermanentATK: 0
   bonusPermanentDEF: 1
   bonusPermanentMaxHP: 10
   bonusPermanentSpeed: 0
-  victoryTitle: ĐẦM LẦY ĐÃ ĐƯỢC THANH TẨY!
-  victoryDescription: "Vua Slime khổng lồ đã tan rã! Đầm Lầy Quái Vật đã bình yên, mang về những hạt giống phong phú và nguồn sống dồi dào."
+  victoryTitle: "CHINH PH\u1EE4C T\u1EA6NG 2 TH\u00C0NH C\u00D4NG!"
+  victoryDescription: "Slime Ch\u00FAa \u0111\u00E3 tan r\u00E3! B\u1EA1n \u0111\u00E3 v\u01B0\u1EE3t qua 16 ph\u00F2ng \u0111\u1EA7m l\u1EA7y kh\u1EAFc nghi\u1EC7t, mang v\u1EC1 h\u1EA1t gi\u1ED1ng Ng\u00F4, B\u1EAFp C\u1EA3i, C\u00E0 Chua \u0111\u1EC3 n\u1EA5u c\u00E1c m\u00F3n ph\u00F2ng th\u1EE7 ki\u00EAn c\u1ED1."

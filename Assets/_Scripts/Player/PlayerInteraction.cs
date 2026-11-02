@@ -98,6 +98,22 @@ public class PlayerInteraction : MonoBehaviour
             if (DungeonEntrance.Instance != null && DungeonEntrance.Instance.playerInRange)
                 return;
 
+            // Harvest ready crop if standing in range
+            if (currentFarmPlots != null && currentFarmPlots.Count > 0)
+            {
+                if (TutorialManager.Instance == null || TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.HarvestCrop))
+                {
+                    for (int i = 0; i < currentFarmPlots.Count; i++)
+                    {
+                        if (currentFarmPlots[i] != null && currentFarmPlots[i].currentState == FarmPlot.State.Ready)
+                        {
+                            currentFarmPlots[i].Harvest();
+                            return;
+                        }
+                    }
+                }
+            }
+
             InteractBed();
         }
     }
@@ -147,10 +163,14 @@ public class PlayerInteraction : MonoBehaviour
 
         if (farmPlot.currentState == FarmPlot.State.Empty)
         {
+            if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.PlantSeed))
+                return;
             farmPlot.Planted();
         }
         else if (farmPlot.currentState == FarmPlot.State.Ready)
         {
+            if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.HarvestCrop))
+                return;
             farmPlot.Harvest();
         }
         else if (farmPlot.currentState == FarmPlot.State.Planted && farmPlot.currentCrop != null)
@@ -167,6 +187,9 @@ public class PlayerInteraction : MonoBehaviour
 
         private void InteractBed()
     {
+        if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.BedSleep))
+            return;
+
         if (currentBeds.Count == 0)
         {
             BedInteraction[] allBeds = FindObjectsByType<BedInteraction>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);

@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b361ef3d9b53cdd41b30d69a54936c4a, type: 3}
-  m_Name: Thành Cổ Quỷ Dữ (Floor 3)
+  m_Name: Floor_03
   m_EditorClassIdentifier: Assembly-CSharp::FloorData
-  floorName: Thành Cổ Quỷ Dữ
+  floorName: "Th\u00E0nh C\u1ED5 Qu\u1EF7 D\u1EEF (Floor 3)"
   floorNumber: 3
   waves:
   - {fileID: 11400000, guid: 6728364bf1a6b74a40895e1fe86f905a, type: 2}
@@ -33,17 +33,17 @@ MonoBehaviour:
   - {fileID: 11400000, guid: aa8013c457f72658a8fb75298adb08e8, type: 2}
   - {fileID: 11400000, guid: cab0e083cb93ef7a7761fa418388453e, type: 2}
   - {fileID: 11400000, guid: 3c342df02fa4826e38cc135657c7c34b, type: 2}
-  bossName: Dark Flying Rider
+  bossName: "K\u1EF5 S\u0129 B\u1EA7u Tr\u1EDDi H\u1EAFc \u00C1m"
   clearRewardItems:
   - itemData: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
     amount: 8
-  - itemData: {fileID: 11400000, guid: ea2db54ad97c8e94e968dd42f17c610f, type: 2}
+  - itemData: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
     amount: 8
   - itemData: {fileID: 11400000, guid: 44e0ea967df46ab40801462a3092738b, type: 2}
     amount: 3
   bonusPermanentATK: 2
-  bonusPermanentDEF: 0
+  bonusPermanentDEF: 1
   bonusPermanentMaxHP: 15
   bonusPermanentSpeed: 2
-  victoryTitle: VÔ ĐỊCH HẦM NGỤC - THÀNH CỔ SỤP ĐỔ!
-  victoryDescription: "Kỵ Sĩ Hắc Ám đã bị tiêu diệt hoàn toàn! Bạn đã trở thành huyền thoại dũng cảm nhất lục địa với kho tàng báu vật vô giá."
+  victoryTitle: "V\u00D4 \u0110\u1ECACH H\u1EA6M NG\u1EE4C - TH\u00C0NH C\u1ED4 S\u1EE4P \u0110\u1ED4!"
+  victoryDescription: "K\u1EF5 S\u0129 B\u1EA7u Tr\u1EDDi H\u1EAFc \u00C1m \u0111\u00E3 b\u1ECB ti\u00EAu di\u1EC7t ho\u00E0n to\u00E0n! B\u1EA1n \u0111\u00E3 l\u00E0m ch\u1EE7 \u1ED8t Hi\u1EC3m t\u1ED1i th\u01B0\u1EE3ng v\u00E0 tr\u1EDF th\u00E0nh huy\u1EC1n tho\u1EA1i n\u00F4ng d\u00E2n d\u0169ng c\u1EA3m nh\u1EA5t."

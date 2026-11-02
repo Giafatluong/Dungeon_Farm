@@ -47,6 +47,17 @@ public class StatueUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI blessingButtonText;
     private GameObject blessingModalGO;
 
+    public enum OfferingViewCategory
+    {
+        AllPillars,
+        Might,       // ATK
+        Protection,  // DEF
+        Swiftness,   // Speed
+        Vitality     // Max HP
+    }
+
+    private OfferingViewCategory currentViewCategory = OfferingViewCategory.AllPillars;
+
     private Statue currentStatue;
     private List<Offering> currentOfferings;
     private ItemContainer backpackContainer;
@@ -155,7 +166,7 @@ public class StatueUI : MonoBehaviour
         isExplicitlyOpened = true;
         currentStatue = statue;
         currentOfferings = offerings;
-        if (currentOfferings == null || currentOfferings.Count == 0)
+        if (currentOfferings == null || currentOfferings.Count < 40)
         {
             Offering[] allOfferings = GameAssetHelper.LoadAll<Offering>();
             if (allOfferings != null && allOfferings.Length > 0)
@@ -193,7 +204,7 @@ public class StatueUI : MonoBehaviour
             }
         }
 
-        InventoryController.Instance?.CloseInventoryPanel();
+        UIEscapeManager.NotifyModalOpened("Statue");
 
         if (statuePanel != null)
         {
@@ -220,6 +231,9 @@ public class StatueUI : MonoBehaviour
         {
             statuePanel.SetActive(false);
         }
+
+        UIEscapeManager.NotifyModalClosed("Statue");
+        TutorialManager.Instance?.NotifyStatueOfferingDone();
     }
 
     public void SetFeedback(string message)
@@ -301,6 +315,12 @@ public class StatueUI : MonoBehaviour
     {
         if (offering == null || backpackContainer == null) return;
 
+        if (!offering.IsUnlocked())
+        {
+            SetFeedback("<color=#FF6666>Cột mốc này đang bị khóa! Cần hoàn thành cột mốc trước đó.</color>");
+            return;
+        }
+
         bool isDone = offering.completed ||
             (ProgressionManager.Instance != null && ProgressionManager.Instance.IsOfferingCompleted(offering.offeringKey));
         if (isDone)
@@ -365,13 +385,15 @@ public class StatueUI : MonoBehaviour
         int atk = ProgressionManager.Instance != null ? ProgressionManager.Instance.permanentATK : 0;
         int def = ProgressionManager.Instance != null ? ProgressionManager.Instance.permanentDEF : 0;
         int spd = ProgressionManager.Instance != null ? ProgressionManager.Instance.permanentSpeed : 0;
+        int hp = ProgressionManager.Instance != null ? ProgressionManager.Instance.permanentMaxHP : 0;
 
         PlayerStats ps = FindFirstObjectByType<PlayerStats>();
-        int totalAtk = ps != null ? ps.GetCurrentATK() : (10 + atk);
-        int totalDef = ps != null ? ps.GetCurrentDEF() : def;
-        int totalSpd = ps != null ? ps.GetCurrentSpeed() : (10 + spd);
+        int totalHp = ps != null ? ps.maxHealth : (35 + hp);
+        int totalAtk = ps != null ? ps.GetCurrentATK() : (7 + atk);
+        int totalDef = ps != null ? ps.GetCurrentDEF() : (1 + def);
+        int totalSpd = ps != null ? ps.GetCurrentSpeed() : (14 + spd);
 
-        permanentStatsText.text = $"<b>Blessed Permanent Stats:</b>   <color=#FF7777>ATK: {totalAtk} (+{atk})</color>   |   <color=#77AAFF>DEF: {totalDef} (+{def})</color>   |   <color=#FFFF77>Speed: {totalSpd} (+{spd})</color>";
+        permanentStatsText.text = $"<b>Blessed Permanent Stats:</b>   <color=#55FF88>HP: {totalHp} (+{hp})</color>   |   <color=#FF7777>ATK: {totalAtk} (+{atk})</color>   |   <color=#77AAFF>DEF: {totalDef} (+{def})</color>   |   <color=#FFFF77>Speed: {totalSpd} (+{spd})</color>";
     }
 
     #region Run Blessings UI (Divine Blessings & Build Paths)
@@ -699,12 +721,327 @@ public class StatueUI : MonoBehaviour
         foreach (Transform child in offeringsContainer) toDestroy.Add(child.gameObject);
         for (int i = 0; i < toDestroy.Count; i++) { toDestroy[i].transform.SetParent(null); Destroy(toDestroy[i]); }
 
-        for (int i = 0; i < currentOfferings.Count; i++)
+        // Sort by Category then Milestone Tier
+        currentOfferings.Sort((a, b) =>
         {
-            Offering off = currentOfferings[i];
-            if (off == null) continue;
+            if (a.rewardStat != b.rewardStat) return a.rewardStat.CompareTo(b.rewardStat);
+            return a.tier.CompareTo(b.tier);
+        });
 
-            CreateOfferingCard(off, offeringsContainer);
+        // 1. Navigation Category Tabs
+        BuildCategoryTabs(offeringsContainer);
+
+        // 2. Render View
+        if (currentViewCategory == OfferingViewCategory.AllPillars)
+        {
+            var atkList = currentOfferings.FindAll(o => o.rewardStat == Offering.RewardStat.ATK);
+            var defList = currentOfferings.FindAll(o => o.rewardStat == Offering.RewardStat.DEF);
+            var spdList = currentOfferings.FindAll(o => o.rewardStat == Offering.RewardStat.Speed);
+            var hpList = currentOfferings.FindAll(o => o.rewardStat == Offering.RewardStat.MaxHP);
+
+            if (atkList.Count > 0) CreatePillarCard(Offering.RewardStat.ATK, atkList, offeringsContainer);
+            if (defList.Count > 0) CreatePillarCard(Offering.RewardStat.DEF, defList, offeringsContainer);
+            if (spdList.Count > 0) CreatePillarCard(Offering.RewardStat.Speed, spdList, offeringsContainer);
+            if (hpList.Count > 0) CreatePillarCard(Offering.RewardStat.MaxHP, hpList, offeringsContainer);
+        }
+        else
+        {
+            Offering.RewardStat filterStat = currentViewCategory switch
+            {
+                OfferingViewCategory.Might => Offering.RewardStat.ATK,
+                OfferingViewCategory.Protection => Offering.RewardStat.DEF,
+                OfferingViewCategory.Swiftness => Offering.RewardStat.Speed,
+                OfferingViewCategory.Vitality => Offering.RewardStat.MaxHP,
+                _ => Offering.RewardStat.ATK
+            };
+
+            var filtered = currentOfferings.FindAll(o => o.rewardStat == filterStat);
+            for (int i = 0; i < filtered.Count; i++)
+            {
+                CreateOfferingCard(filtered[i], offeringsContainer);
+            }
+        }
+    }
+
+    private void BuildCategoryTabs(Transform parent)
+    {
+        GameObject tabsGO = new GameObject("CategoryTabsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+        tabsGO.transform.SetParent(parent, false);
+
+        LayoutElement le = tabsGO.GetComponent<LayoutElement>();
+        le.minHeight = 28f;
+        le.preferredHeight = 28f;
+        le.flexibleHeight = 0;
+
+        HorizontalLayoutGroup hlg = tabsGO.GetComponent<HorizontalLayoutGroup>();
+        hlg.spacing = 6;
+        hlg.childControlWidth = true;
+        hlg.childControlHeight = true;
+        hlg.childForceExpandWidth = true;
+        hlg.childForceExpandHeight = true;
+
+        CreateTabButton("4 Trụ Cột", OfferingViewCategory.AllPillars, tabsGO.transform);
+        CreateTabButton("ATK (10 Bậc)", OfferingViewCategory.Might, tabsGO.transform);
+        CreateTabButton("DEF (10 Bậc)", OfferingViewCategory.Protection, tabsGO.transform);
+        CreateTabButton("SPD (10 Bậc)", OfferingViewCategory.Swiftness, tabsGO.transform);
+        CreateTabButton("HP (10 Bậc)", OfferingViewCategory.Vitality, tabsGO.transform);
+    }
+
+    private void CreateTabButton(string label, OfferingViewCategory category, Transform parent)
+    {
+        GameObject btnGO = new GameObject($"Tab_{category}", typeof(RectTransform), typeof(Image), typeof(Button));
+        btnGO.transform.SetParent(parent, false);
+
+        bool isSelected = currentViewCategory == category;
+        Image img = btnGO.GetComponent<Image>();
+        if (isSelected)
+        {
+            DungeonUIAssetHelper.StyleSlicedFrame(img, new Color(0.85f, 0.7f, 0.2f, 0.95f));
+        }
+        else
+        {
+            DungeonUIAssetHelper.StyleSlicedPanel(img, DungeonUIAssetHelper.PanelStyle.Slate);
+            img.color = new Color(0.18f, 0.2f, 0.26f, 0.95f);
+        }
+
+        Button btn = btnGO.GetComponent<Button>();
+        btn.onClick.AddListener(() =>
+        {
+            currentViewCategory = category;
+            BuildOfferingsList();
+        });
+
+        GameObject txtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        txtGO.transform.SetParent(btnGO.transform, false);
+        RectTransform txtRT = txtGO.GetComponent<RectTransform>();
+        txtRT.anchorMin = Vector2.zero;
+        txtRT.anchorMax = Vector2.one;
+        txtRT.sizeDelta = Vector2.zero;
+
+        TextMeshProUGUI tmp = txtGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(tmp);
+        tmp.fontSize = 10;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.text = label;
+        tmp.color = isSelected ? new Color(1f, 0.9f, 0.4f) : new Color(0.8f, 0.85f, 0.9f);
+    }
+
+    public static string GetTierProgressBar(int currentTier, int maxTier = 10)
+    {
+        System.Text.StringBuilder sb = new();
+        for (int i = 1; i <= maxTier; i++)
+        {
+            if (i <= currentTier)
+                sb.Append("<color=#55FF88>●</color> ");
+            else if (i == 5)
+                sb.Append("<color=#FFD700>◆</color> "); // Boss 1 Milestone Gate
+            else if (i == 10)
+                sb.Append("<color=#FF77FF>★</color> "); // Boss 2/3 Milestone Gate
+            else
+                sb.Append("<color=#555566>○</color> ");
+        }
+        return sb.ToString().TrimEnd();
+    }
+
+    private void CreatePillarCard(Offering.RewardStat stat, List<Offering> tierList, Transform parent)
+    {
+        if (tierList == null || tierList.Count == 0) return;
+
+        tierList.Sort((a, b) => a.tier.CompareTo(b.tier));
+
+        int completedCount = 0;
+        Offering activeTargetOffering = null;
+        for (int i = 0; i < tierList.Count; i++)
+        {
+            bool done = tierList[i].completed ||
+                (ProgressionManager.Instance != null && ProgressionManager.Instance.IsOfferingCompleted(tierList[i].offeringKey));
+            if (done)
+            {
+                completedCount++;
+            }
+            else if (activeTargetOffering == null)
+            {
+                activeTargetOffering = tierList[i];
+            }
+        }
+
+        bool isMaxed = completedCount >= tierList.Count;
+
+        // Card Root
+        GameObject cardGO = new GameObject($"PillarCard_{stat}", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(LayoutElement));
+        cardGO.transform.SetParent(parent, false);
+
+        LayoutElement cardLE = cardGO.GetComponent<LayoutElement>();
+        cardLE.minHeight = 114f;
+        cardLE.preferredHeight = 114f;
+        cardLE.flexibleHeight = 0;
+
+        Image cardBg = cardGO.GetComponent<Image>();
+        if (isMaxed)
+            DungeonUIAssetHelper.StyleSlicedPanel(cardBg, DungeonUIAssetHelper.PanelStyle.Wood);
+        else
+            DungeonUIAssetHelper.StyleSlicedPanel(cardBg, DungeonUIAssetHelper.PanelStyle.Slate);
+
+        Outline outline = cardGO.AddComponent<Outline>();
+        if (isMaxed)
+            outline.effectColor = new Color(0.25f, 0.85f, 0.45f, 0.85f);
+        else if (activeTargetOffering != null && activeTargetOffering.tier == 5)
+            outline.effectColor = new Color(1f, 0.78f, 0.2f, 0.95f); // Golden Boss Gate Outline!
+        else if (activeTargetOffering != null && activeTargetOffering.tier == 10)
+            outline.effectColor = new Color(0.9f, 0.45f, 1f, 0.95f); // Purple Ultimate Gate Outline!
+        else
+            outline.effectColor = new Color(0.55f, 0.5f, 0.35f, 0.6f);
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
+
+        VerticalLayoutGroup vlg = cardGO.GetComponent<VerticalLayoutGroup>();
+        vlg.padding = new RectOffset(10, 10, 6, 6);
+        vlg.spacing = 4;
+        vlg.childControlWidth = true;
+        vlg.childControlHeight = false;
+        vlg.childForceExpandWidth = true;
+        vlg.childForceExpandHeight = false;
+
+        // Header Row (Pillar Name + Progress Dots + Tier Badge)
+        GameObject headerGO = new GameObject("Header", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+        headerGO.transform.SetParent(cardGO.transform, false);
+
+        LayoutElement headerLE = headerGO.GetComponent<LayoutElement>();
+        headerLE.minHeight = 22f;
+        headerLE.preferredHeight = 22f;
+
+        HorizontalLayoutGroup hlg = headerGO.GetComponent<HorizontalLayoutGroup>();
+        hlg.spacing = 8;
+        hlg.childControlWidth = false;
+        hlg.childControlHeight = true;
+        hlg.childForceExpandWidth = false;
+        hlg.childForceExpandHeight = true;
+
+        string pillarTitle = stat switch
+        {
+            Offering.RewardStat.ATK => "Trụ Cột Chiến Binh (ATK)",
+            Offering.RewardStat.DEF => "Trụ Cột Hộ Vệ (DEF)",
+            Offering.RewardStat.Speed => "Trụ Cột Nhanh Nhẹn (Speed)",
+            Offering.RewardStat.MaxHP => "Trụ Cột Sinh Mệnh (Max HP)",
+            _ => "Trụ Cột Lễ Vật"
+        };
+        GameObject titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
+        titleGO.transform.SetParent(headerGO.transform, false);
+        TextMeshProUGUI titleTMP = titleGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(titleTMP);
+        titleTMP.fontSize = 12;
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.text = pillarTitle;
+        titleTMP.color = isMaxed ? new Color(0.4f, 1f, 0.6f) : new Color(1f, 0.88f, 0.45f);
+        titleGO.GetComponent<RectTransform>().sizeDelta = new Vector2(210, 22);
+
+        GameObject dotsGO = new GameObject("Dots", typeof(RectTransform), typeof(TextMeshProUGUI));
+        dotsGO.transform.SetParent(headerGO.transform, false);
+        TextMeshProUGUI dotsTMP = dotsGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(dotsTMP);
+        dotsTMP.fontSize = 11;
+        dotsTMP.alignment = TextAlignmentOptions.Center;
+        dotsTMP.text = GetTierProgressBar(completedCount, 10);
+        dotsGO.GetComponent<RectTransform>().sizeDelta = new Vector2(170, 22);
+
+        GameObject tierBadgeGO = new GameObject("TierBadge", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
+        tierBadgeGO.transform.SetParent(headerGO.transform, false);
+        Image tbImg = tierBadgeGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(tbImg, GetStatBadgeColor(stat));
+        tierBadgeGO.GetComponent<RectTransform>().sizeDelta = new Vector2(110, 20);
+
+        GameObject tbTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        tbTextGO.transform.SetParent(tierBadgeGO.transform, false);
+        TextMeshProUGUI tbTMP = tbTextGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(tbTMP);
+        tbTMP.fontSize = 9.5f;
+        tbTMP.fontStyle = FontStyles.Bold;
+        tbTMP.alignment = TextAlignmentOptions.Center;
+        tbTMP.text = isMaxed ? "BẬC: 10/10 (MAX)" : $"BẬC: {completedCount}/10";
+        tbTMP.color = Color.white;
+        tbTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(110, 20);
+
+        // Sub-Header Row (Milestone Target Banner)
+        GameObject subRowGO = new GameObject("SubRow", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
+        subRowGO.transform.SetParent(cardGO.transform, false);
+        LayoutElement subLE = subRowGO.GetComponent<LayoutElement>();
+        subLE.minHeight = 18f;
+        subLE.preferredHeight = 18f;
+
+        TextMeshProUGUI subTMP = subRowGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(subTMP);
+        subTMP.fontSize = 10;
+        subTMP.alignment = TextAlignmentOptions.MidlineLeft;
+
+        string statStr = stat == Offering.RewardStat.MaxHP ? "HP" : stat.ToString();
+        if (isMaxed)
+        {
+            subTMP.text = "<color=#55FF88>★ ĐÃ ĐẠT BẬC TỐI ĐA 10/10 — THẦN LINH ĐÃ BAN PHƯỚC LÀNH ĐỈNH CAO!</color>";
+        }
+        else if (activeTargetOffering != null)
+        {
+            if (activeTargetOffering.tier == 5)
+            {
+                subTMP.text = $"<color=#FFD700><b>👑 CỘT MỐC ĐỘT PHÁ BOSS 1: BẬC 5 (+{activeTargetOffering.rewardAmount} {statStr})</b></color> <color=#FFAA55><i>— Cần Vương Miện Cổ Đại từ Boss Tầng 1!</i></color>";
+            }
+            else if (activeTargetOffering.tier == 10)
+            {
+                subTMP.text = $"<color=#FF77FF><b>💎 CỘT MỐC ĐỈNH CAO BOSS TỐI THƯỢNG: BẬC 10 (+{activeTargetOffering.rewardAmount} {statStr})</b></color> <color=#FFAAEE><i>— Cần Vật phẩm Boss Tầng 2/3!</i></color>";
+            }
+            else
+            {
+                subTMP.text = $"<color=#77CCFF>Mục tiêu nâng cấp:</color> <b>Bậc {activeTargetOffering.tier} (+{activeTargetOffering.rewardAmount} {statStr})</b>";
+            }
+        }
+
+        // Requirements Row
+        if (!isMaxed && activeTargetOffering != null)
+        {
+            GameObject reqsRowGO = new GameObject("RequirementsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+            reqsRowGO.transform.SetParent(cardGO.transform, false);
+
+            LayoutElement reqsLE = reqsRowGO.GetComponent<LayoutElement>();
+            reqsLE.minHeight = 52f;
+            reqsLE.preferredHeight = 52f;
+
+            HorizontalLayoutGroup reqsHLG = reqsRowGO.GetComponent<HorizontalLayoutGroup>();
+            reqsHLG.spacing = 8;
+            reqsHLG.childControlWidth = false;
+            reqsHLG.childControlHeight = false;
+            reqsHLG.childForceExpandWidth = false;
+            reqsHLG.childForceExpandHeight = false;
+
+            if (activeTargetOffering.requiredItems != null)
+            {
+                for (int r = 0; r < activeTargetOffering.requiredItems.Length; r++)
+                {
+                    ItemRequirement req = activeTargetOffering.requiredItems[r];
+                    if (req.item == null) continue;
+                    CreateOfferingSlot(activeTargetOffering, r, req, reqsRowGO.transform);
+                }
+            }
+
+            // Quick Offer Button
+            GameObject btnGO = new GameObject("BtnQuickOffer", typeof(RectTransform), typeof(Image), typeof(Button));
+            btnGO.transform.SetParent(reqsRowGO.transform, false);
+            Image btnBg = btnGO.GetComponent<Image>();
+            btnGO.GetComponent<RectTransform>().sizeDelta = new Vector2(100, 36);
+
+            Button btn = btnGO.GetComponent<Button>();
+            DungeonUIAssetHelper.StyleTactileButton(btn, btnBg, DungeonUIAssetHelper.ButtonStyle.Victory);
+            Offering offRef = activeTargetOffering;
+            btn.onClick.AddListener(() => QuickOffer(offRef));
+
+            GameObject btnTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+            btnTextGO.transform.SetParent(btnGO.transform, false);
+            TextMeshProUGUI btnTMP = btnTextGO.GetComponent<TextMeshProUGUI>();
+            DungeonUIAssetHelper.ApplyFont(btnTMP);
+            btnTMP.fontSize = 10;
+            btnTMP.fontStyle = FontStyles.Bold;
+            btnTMP.alignment = TextAlignmentOptions.Center;
+            btnTMP.text = "Quick Offer";
+            btnTMP.color = Color.white;
+            btnTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(100, 36);
         }
     }
 
@@ -712,6 +1049,7 @@ public class StatueUI : MonoBehaviour
     {
         bool isDone = off.completed ||
             (ProgressionManager.Instance != null && ProgressionManager.Instance.IsOfferingCompleted(off.offeringKey));
+        bool isUnlocked = off.IsUnlocked();
 
         // Card Root
         GameObject cardGO = new GameObject($"Card_{off.offeringKey}", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
@@ -726,10 +1064,41 @@ public class StatueUI : MonoBehaviour
         cardLE.flexibleHeight = 0;
 
         Image cardBg = cardGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedPanel(cardBg, isDone ? DungeonUIAssetHelper.PanelStyle.Wood : DungeonUIAssetHelper.PanelStyle.Slate);
+        if (isDone)
+        {
+            DungeonUIAssetHelper.StyleSlicedPanel(cardBg, DungeonUIAssetHelper.PanelStyle.Wood);
+        }
+        else if (!isUnlocked)
+        {
+            DungeonUIAssetHelper.StyleSlicedPanel(cardBg, DungeonUIAssetHelper.PanelStyle.Slate);
+            cardBg.color = new Color(0.12f, 0.13f, 0.17f, 0.92f);
+        }
+        else
+        {
+            DungeonUIAssetHelper.StyleSlicedPanel(cardBg, DungeonUIAssetHelper.PanelStyle.Slate);
+        }
 
         Outline outline = cardGO.AddComponent<Outline>();
-        outline.effectColor = isDone ? new Color(0.25f, 0.85f, 0.45f, 0.7f) : new Color(0.65f, 0.55f, 0.25f, 0.6f);
+        if (isDone)
+        {
+            outline.effectColor = new Color(0.25f, 0.85f, 0.45f, 0.7f);
+        }
+        else if (!isUnlocked)
+        {
+            outline.effectColor = new Color(0.35f, 0.35f, 0.4f, 0.4f);
+        }
+        else if (off.tier == 5)
+        {
+            outline.effectColor = new Color(1f, 0.78f, 0.2f, 0.95f);
+        }
+        else if (off.tier == 10)
+        {
+            outline.effectColor = new Color(0.9f, 0.45f, 1f, 0.95f);
+        }
+        else
+        {
+            outline.effectColor = new Color(0.65f, 0.55f, 0.25f, 0.6f);
+        }
         outline.effectDistance = new Vector2(1, -1);
 
         VerticalLayoutGroup vlg = cardGO.GetComponent<VerticalLayoutGroup>();
@@ -762,11 +1131,16 @@ public class StatueUI : MonoBehaviour
         nameGO.transform.SetParent(headerGO.transform, false);
         TextMeshProUGUI titleTMP = nameGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(titleTMP);
-        titleTMP.fontSize = 12;
+        titleTMP.fontSize = 11.5f;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.text = GetOfferingDisplayName(off);
-        titleTMP.color = isDone ? new Color(0.4f, 1f, 0.6f) : new Color(1f, 0.88f, 0.4f);
-        nameGO.GetComponent<RectTransform>().sizeDelta = new Vector2(230, 22);
+        if (isDone)
+            titleTMP.color = new Color(0.4f, 1f, 0.6f);
+        else if (!isUnlocked)
+            titleTMP.color = new Color(0.65f, 0.65f, 0.7f);
+        else
+            titleTMP.color = new Color(1f, 0.88f, 0.4f);
+        nameGO.GetComponent<RectTransform>().sizeDelta = new Vector2(250, 22);
 
         // Reward Badge
         GameObject badgeGO = new GameObject("RewardBadge", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
@@ -782,7 +1156,8 @@ public class StatueUI : MonoBehaviour
         badgeTMP.fontSize = 10;
         badgeTMP.alignment = TextAlignmentOptions.Center;
         badgeTMP.fontStyle = FontStyles.Bold;
-        badgeTMP.text = $"+{off.rewardAmount} {off.rewardStat}";
+        string statLabel = off.rewardStat == Offering.RewardStat.MaxHP ? "HP" : off.rewardStat.ToString();
+        badgeTMP.text = $"+{off.rewardAmount} {statLabel}";
         badgeTMP.color = Color.white;
         badgeTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
 
@@ -793,11 +1168,30 @@ public class StatueUI : MonoBehaviour
             doneGO.transform.SetParent(headerGO.transform, false);
             TextMeshProUGUI doneTMP = doneGO.GetComponent<TextMeshProUGUI>();
             DungeonUIAssetHelper.ApplyFont(doneTMP);
-            doneTMP.fontSize = 12;
+            doneTMP.fontSize = 11;
             doneTMP.fontStyle = FontStyles.Bold;
-            doneTMP.text = "[COMPLETED]";
+            doneTMP.text = "[ĐÃ HOÀN THÀNH]";
             doneTMP.color = new Color(0.35f, 1f, 0.5f);
-            doneGO.GetComponent<RectTransform>().sizeDelta = new Vector2(100, 22);
+            doneGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 22);
+        }
+        else if (!isUnlocked)
+        {
+            GameObject lockBadgeGO = new GameObject("LockBadge", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
+            lockBadgeGO.transform.SetParent(headerGO.transform, false);
+            Image lockBg = lockBadgeGO.GetComponent<Image>();
+            DungeonUIAssetHelper.StyleSlicedFrame(lockBg, new Color(0.35f, 0.15f, 0.15f, 0.95f));
+            lockBadgeGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 22);
+
+            GameObject lockTxtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+            lockTxtGO.transform.SetParent(lockBadgeGO.transform, false);
+            TextMeshProUGUI lockTMP = lockTxtGO.GetComponent<TextMeshProUGUI>();
+            DungeonUIAssetHelper.ApplyFont(lockTMP);
+            lockTMP.fontSize = 9;
+            lockTMP.fontStyle = FontStyles.Bold;
+            lockTMP.alignment = TextAlignmentOptions.Center;
+            lockTMP.text = off.tier == 5 ? "[CẦN BOSS 1]" : (off.tier == 10 ? "[CẦN BOSS TỐI THƯỢNG]" : "[CHƯA MỞ KHÓA]");
+            lockTMP.color = new Color(1f, 0.65f, 0.65f);
+            lockTxtGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 22);
         }
         else
         {
@@ -1091,17 +1485,34 @@ public class StatueUI : MonoBehaviour
     private static string GetOfferingDisplayName(Offering off)
     {
         if (off == null) return "Offering";
-        switch (off.rewardStat)
+        if (!string.IsNullOrEmpty(off.offeringName))
         {
-            case Offering.RewardStat.ATK:
-                return $"Offering of Might (+{off.rewardAmount} ATK)";
-            case Offering.RewardStat.DEF:
-                return $"Offering of Protection (+{off.rewardAmount} DEF)";
-            case Offering.RewardStat.Speed:
-                return $"Offering of Swiftness (+{off.rewardAmount} Speed)";
-            default:
-                return string.IsNullOrEmpty(off.offeringName) ? "Statue Offering" : off.offeringName;
+            return off.offeringName;
         }
+
+        string tierRoman = off.tier switch
+        {
+            1 => "I",
+            2 => "II",
+            3 => "III",
+            4 => "IV",
+            5 => "V",
+            6 => "VI",
+            7 => "VII",
+            8 => "VIII",
+            9 => "IX",
+            10 => "X",
+            _ => off.tier.ToString()
+        };
+
+        return off.rewardStat switch
+        {
+            Offering.RewardStat.ATK => $"Lễ Vật Chiến Binh {tierRoman} (+{off.rewardAmount} ATK)",
+            Offering.RewardStat.DEF => $"Lễ Vật Hộ Vệ {tierRoman} (+{off.rewardAmount} DEF)",
+            Offering.RewardStat.Speed => $"Lễ Vật Nhanh Nhẹn {tierRoman} (+{off.rewardAmount} Speed)",
+            Offering.RewardStat.MaxHP => $"Lễ Vật Sinh Mệnh {tierRoman} (+{off.rewardAmount} HP)",
+            _ => $"Lễ Vật {tierRoman} (+{off.rewardAmount})"
+        };
     }
 
     private static Color GetStatBadgeColor(Offering.RewardStat stat)
@@ -1114,6 +1525,8 @@ public class StatueUI : MonoBehaviour
                 return new Color(0.2f, 0.35f, 0.65f, 0.95f);
             case Offering.RewardStat.Speed:
                 return new Color(0.65f, 0.55f, 0.15f, 0.95f);
+            case Offering.RewardStat.MaxHP:
+                return new Color(0.18f, 0.62f, 0.32f, 0.95f);
             default:
                 return new Color(0.3f, 0.3f, 0.35f, 0.95f);
         }

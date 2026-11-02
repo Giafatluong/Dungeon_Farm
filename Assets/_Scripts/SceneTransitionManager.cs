@@ -76,8 +76,7 @@ public class SceneTransitionManager : MonoBehaviour
 
         if (ProgressionManager.Instance != null)
         {
-            int targetFloor = floor > 0 ? floor : ProgressionManager.Instance.currentFloor;
-            if (targetFloor <= 0) targetFloor = 1;
+            int targetFloor = floor >= 0 ? floor : ProgressionManager.Instance.currentFloor;
             ProgressionManager.Instance.StartRun(targetFloor);
         }
         SceneManager.LoadScene("Dungeon");

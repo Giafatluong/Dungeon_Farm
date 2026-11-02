@@ -30,7 +30,7 @@ public static class GameAssetHelper
             if (allValid) return cachedArray;
         }
 
-        List<T> resultList = new();
+        HashSet<T> resultSet = new();
 
         // 1. Try Resources.LoadAll if present
         T[] resLoaded = Resources.LoadAll<T>("");
@@ -38,9 +38,9 @@ public static class GameAssetHelper
         {
             for (int i = 0; i < resLoaded.Length; i++)
             {
-                if (resLoaded[i] != null && !resultList.Contains(resLoaded[i]))
+                if (resLoaded[i] != null)
                 {
-                    resultList.Add(resLoaded[i]);
+                    resultSet.Add(resLoaded[i]);
                 }
             }
         }
@@ -53,9 +53,9 @@ public static class GameAssetHelper
         {
             string path = AssetDatabase.GUIDToAssetPath(guids[i]);
             T asset = AssetDatabase.LoadAssetAtPath<T>(path);
-            if (asset != null && !resultList.Contains(asset))
+            if (asset != null)
             {
-                resultList.Add(asset);
+                resultSet.Add(asset);
             }
         }
 #endif
@@ -66,14 +66,15 @@ public static class GameAssetHelper
         {
             for (int i = 0; i < memLoaded.Length; i++)
             {
-                if (memLoaded[i] != null && !resultList.Contains(memLoaded[i]))
+                if (memLoaded[i] != null)
                 {
-                    resultList.Add(memLoaded[i]);
+                    resultSet.Add(memLoaded[i]);
                 }
             }
         }
 
-        T[] finalArray = resultList.ToArray();
+        T[] finalArray = new T[resultSet.Count];
+        resultSet.CopyTo(finalArray);
         _cache[type] = finalArray;
         return finalArray;
     }

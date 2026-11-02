@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Range
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Dark Archer
-  maxHealth: 24
-  ATK: 8
-  DEF: 1
+  maxHealth: 32
+  ATK: 11
+  DEF: 2
   speed: 18
   isRanged: 1
   possibleIntents: 000000000100000003000000
@@ -26,10 +26,20 @@ MonoBehaviour:
     duration: 2
     durationType: 0
   lootDrops:
-  - item: {fileID: 11400000, guid: ea2db54ad97c8e94e968dd42f17c610f, type: 2}
-    dropChance: 0.5
+  - item: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
+    dropChance: 0.6
     minAmount: 1
     maxAmount: 2
     requireUnlock: 0
+  - item: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
+    dropChance: 0.55
+    minAmount: 1
+    maxAmount: 2
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: 24d50eb236d912048b08475f98b0e46a, type: 2}
+    dropChance: 0.35
+    minAmount: 1
+    maxAmount: 1
+    requireUnlock: 0
   dropUnlockedSeeds: 1
-  seedDropChance: 0.35
+  seedDropChance: 0.55

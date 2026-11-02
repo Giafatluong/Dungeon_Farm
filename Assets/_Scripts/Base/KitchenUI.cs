@@ -247,7 +247,7 @@ public class KitchenUI : MonoBehaviour
         backpackContainer = backpack;
         chestContainer = chest;
 
-        InventoryController.Instance?.CloseInventoryPanel();
+        UIEscapeManager.NotifyModalOpened("Kitchen");
 
         if (kitchenPanel == null)
         {
@@ -284,6 +284,8 @@ public class KitchenUI : MonoBehaviour
         {
             kitchenPanel.SetActive(false);
         }
+
+        UIEscapeManager.NotifyModalClosed("Kitchen");
 
         if (currentStation != null)
         {
@@ -653,12 +655,12 @@ public class KitchenUI : MonoBehaviour
         if (currentStation != null && currentStation.hasCompletedFood)
         {
             if (progressSlider != null) progressSlider.value = 1f;
-            if (progressStatusText != null) progressStatusText.text = "🎉 ĐÃ NẤU XONG!";
+            if (progressStatusText != null) progressStatusText.text = "ĐÃ NẤU XONG!";
             if (stoveSubtitleText != null)
             {
-                stoveSubtitleText.text = "✨ Món Ăn Thơm Lừng Đã Hoàn Thành • Nhấp Nhận Để Bỏ Vào Balo!";
+                stoveSubtitleText.text = "Món Ăn Thơm Lừng Đã Hoàn Thành - Nhấp Nhận Để Bỏ Vào Balo!";
             }
-            if (cookButtonText != null) cookButtonText.text = "🎁 NHẬN MÓN ĂN";
+            if (cookButtonText != null) cookButtonText.text = "NHẬN MÓN ĂN";
             if (cookButton != null)
             {
                 cookButton.interactable = true;
@@ -969,17 +971,19 @@ public class KitchenUI : MonoBehaviour
 
         if (detail != null)
         {
+            DungeonUIAssetHelper.ApplyFont(detail, withOutline: true);
             StringBuilder sb = new StringBuilder();
             if (recipe.resultFood != null)
             {
-                if (recipe.resultFood.healthValue > 0) sb.Append($"Hồi {recipe.resultFood.healthValue} HP");
+                if (recipe.resultFood.healthValue > 0) sb.Append($"<color=#FF6B6B><b>+{recipe.resultFood.healthValue} HP</b></color>");
                 if (recipe.resultFood.hungerValue > 0)
                 {
-                    if (sb.Length > 0) sb.Append(" & ");
-                    sb.Append($"{recipe.resultFood.hungerValue} Độ No");
+                    if (sb.Length > 0) sb.Append(" <color=#CBD5E1>|</color> ");
+                    sb.Append($"<color=#FFD043><b>+{recipe.resultFood.hungerValue} Độ No</b></color>");
                 }
             }
-            sb.Append(" | Cần: ");
+            if (sb.Length > 0) sb.Append(" <color=#94A3B8>|</color> ");
+            sb.Append("<color=#CBD5E1>Cần: </color>");
             if (recipe.ingredients != null)
             {
                 for (int ing = 0; ing < recipe.ingredients.Length; ing++)
@@ -987,8 +991,8 @@ public class KitchenUI : MonoBehaviour
                     var req = recipe.ingredients[ing];
                     if (req != null && req.item != null)
                     {
-                        if (ing > 0) sb.Append(" + ");
-                        sb.Append($"{req.item.itemName}x{req.amount}");
+                        if (ing > 0) sb.Append("<color=#94A3B8> + </color>");
+                        sb.Append($"<color=#F1F5F9><b>{req.item.itemName}x{req.amount}</b></color>");
                     }
                 }
             }
@@ -1162,7 +1166,7 @@ public class KitchenUI : MonoBehaviour
             isInternalUpdating = false;
         }
 
-        ShowToast("⚡ Đã sắp xếp và gộp gọn Balo nguyên liệu!");
+        ShowToast("Đã sắp xếp và gộp gọn Balo nguyên liệu!");
         RefreshBackpackGrid();
     }
     #endregion
@@ -1199,8 +1203,8 @@ public class KitchenUI : MonoBehaviour
     {
         if (food == null) return "";
         List<string> parts = new List<string>();
-        if (food.healthValue > 0) parts.Add($"<color=#E53935>❤️ +{food.healthValue} HP</color>");
-        if (food.hungerValue > 0) parts.Add($"<color=#FB8C00>🍗 +{food.hungerValue} Độ No</color>");
+        if (food.healthValue > 0) parts.Add($"<color=#FF6B6B><b>+{food.healthValue} HP</b></color>");
+        if (food.hungerValue > 0) parts.Add($"<color=#FFD043><b>+{food.hungerValue} Độ No</b></color>");
         if (food.foodBuff != null)
         {
             for (int i = 0; i < food.foodBuff.Length; i++)
@@ -1209,7 +1213,7 @@ public class KitchenUI : MonoBehaviour
                 if (fb != null && fb.buffs != null)
                 {
                     string stat = CombatUI.GetBuffStatLabel(fb.buffs);
-                    parts.Add($"<color=#00ACC1>⚡ +{fb.buffValue} {stat}</color>");
+                    parts.Add($"<color=#50D8FF><b>+{fb.buffValue} {stat}</b></color>");
                 }
             }
         }

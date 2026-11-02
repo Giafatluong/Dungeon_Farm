@@ -523,6 +523,26 @@ public class LootUI : MonoBehaviour
             if (CombatUI.Instance.rewardPanel != null) CombatUI.Instance.rewardPanel.SetActive(false);
         }
 
+        if (playerBackpack == null)
+        {
+            if (PlayerStats.Instance != null && PlayerStats.Instance.itemContainer != null)
+            {
+                playerBackpack = PlayerStats.Instance.itemContainer;
+            }
+            else
+            {
+                ItemContainer[] containers = GameAssetHelper.LoadAll<ItemContainer>();
+                for (int i = 0; i < containers.Length; i++)
+                {
+                    if (containers[i] != null && !containers[i].name.ToLower().Contains("chest") && !containers[i].name.ToLower().Contains("loot"))
+                    {
+                        playerBackpack = containers[i];
+                        break;
+                    }
+                }
+            }
+        }
+
         backpackContainer = playerBackpack;
         onLootClosed = onClose;
 
@@ -637,7 +657,46 @@ public class LootUI : MonoBehaviour
 
     public void OnContinueClicked()
     {
+        OnLootAllClicked();
         Close();
+    }
+
+    /// <summary>
+    /// Quick transfers an item between Loot and Backpack via right click
+    /// </summary>
+    public static void QuickTransfer(ItemContainer source, int sourceIndex)
+    {
+        if (Instance == null || !Instance.IsOpen) return;
+        if (source == null || Instance.lootContainer == null || Instance.backpackContainer == null) return;
+
+        ItemContainer target = (source == Instance.lootContainer) ? Instance.backpackContainer : Instance.lootContainer;
+        if (sourceIndex < 0 || sourceIndex >= source.itemSlots.Length) return;
+
+        ItemSlot sourceSlot = source.itemSlots[sourceIndex];
+        if (sourceSlot == null || sourceSlot.itemData == null || sourceSlot.amount <= 0) return;
+
+        int emptyOrStackIndex = -1;
+        if (sourceSlot.itemData.isStackable)
+        {
+            for (int i = 0; i < target.itemSlots.Length; i++)
+            {
+                if (target.itemSlots[i] != null && ItemContainer.IsItemMatch(target.itemSlots[i].itemData, sourceSlot.itemData))
+                {
+                    emptyOrStackIndex = i;
+                    break;
+                }
+            }
+        }
+        if (emptyOrStackIndex == -1)
+        {
+            emptyOrStackIndex = target.GetEmptySlot();
+        }
+
+        if (emptyOrStackIndex != -1)
+        {
+            ChestUI.TransferItem(source, sourceIndex, target, emptyOrStackIndex);
+            Instance.RefreshAll();
+        }
     }
 
     public void OnLootAllClicked()
@@ -711,6 +770,10 @@ public class LootUI : MonoBehaviour
         {
             slotPrefab = DungeonUIAssetHelper.GetSlotPrefab();
         }
+        if (slotPrefab == null)
+        {
+            slotPrefab = DungeonUIAssetHelper.CreateProceduralSlotPrefab();
+        }
 
         InventoryButton[] existing = parent.GetComponentsInChildren<InventoryButton>(true);
         slotList.Clear();
@@ -740,46 +803,42 @@ public class LootUI : MonoBehaviour
         }
 
         // Complete final row for Backpack (33 slots + 3 padding locked slots = 36 slots, 6x6 grid)
-        if (container == backpackContainer && container.maxSlots == 33)
+        int neededPadding = (container == backpackContainer && container.maxSlots == 33) ? 3 : 0;
+        for (int p = 0; p < neededPadding; p++)
         {
-            int neededPadding = 3;
-            for (int p = 0; p < neededPadding; p++)
+            int padIndex = container.maxSlots + p;
+            InventoryButton padBtn = null;
+            if (padIndex < existingCount)
             {
-                int padIndex = container.maxSlots + p;
-                InventoryButton padBtn = null;
-                if (padIndex < existingCount)
-                {
-                    padBtn = existing[padIndex];
-                }
-                else if (slotPrefab != null)
-                {
-                    GameObject padObj = Instantiate(slotPrefab, parent);
-                    padObj.name = $"PadSlot_{padIndex}";
-                    padBtn = padObj.GetComponent<InventoryButton>();
-                }
+                padBtn = existing[padIndex];
+            }
+            else if (slotPrefab != null)
+            {
+                GameObject padObj = Instantiate(slotPrefab, parent);
+                padObj.name = $"PadSlot_{padIndex}";
+                padBtn = padObj.GetComponent<InventoryButton>();
+            }
 
-                if (padBtn != null)
-                {
-                    padBtn.gameObject.SetActive(true);
-                    padBtn.ClearItem();
+            if (padBtn != null)
+            {
+                padBtn.gameObject.SetActive(true);
+                padBtn.ClearItem();
 
-                    Image padImg = padBtn.GetComponent<Image>();
-                    if (padImg != null)
-                    {
-                        padImg.color = new Color(0.12f, 0.15f, 0.22f, 0.45f);
-                    }
-                    Button b = padBtn.GetComponent<Button>();
-                    if (b != null) b.interactable = false;
+                Image padImg = padBtn.GetComponent<Image>();
+                if (padImg != null)
+                {
+                    padImg.color = new Color(0.12f, 0.15f, 0.22f, 0.45f);
                 }
+                Button b = padBtn.GetComponent<Button>();
+                if (b != null) b.interactable = false;
             }
         }
-        else
+
+        // Hide surplus slots beyond capacity
+        int targetTotal = container.maxSlots + neededPadding;
+        for (int i = targetTotal; i < existingCount; i++)
         {
-            // Hide surplus slots
-            for (int i = container.maxSlots; i < existingCount; i++)
-            {
-                existing[i].gameObject.SetActive(false);
-            }
+            existing[i].gameObject.SetActive(false);
         }
     }
 

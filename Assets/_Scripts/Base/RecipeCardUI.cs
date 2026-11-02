@@ -1,12 +1,13 @@
 using System.Text;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
 /// Individual Recipe Card in the Recipe Notebook (Sổ Tay Công Thức) of KitchenUI.
 /// </summary>
-public class RecipeCardUI : MonoBehaviour
+public class RecipeCardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     [Header("Visual Components")]
     public Image cardBackground;
@@ -21,9 +22,11 @@ public class RecipeCardUI : MonoBehaviour
     public Image actionButtonBackground;
     public TextMeshProUGUI actionButtonText;
     public GameObject lockIcon;
+    private RecipeData currentRecipe;
 
     public void Setup(RecipeData recipe, ItemContainer backpack, bool isCurrentlySelected, System.Action onAutoFill, ItemContainer chest = null)
     {
+        currentRecipe = recipe;
         if (recipe == null) return;
 
         // Visuals
@@ -117,5 +120,23 @@ public class RecipeCardUI : MonoBehaviour
         {
             lockIcon.SetActive(false);
         }
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (currentRecipe != null && currentRecipe.resultFood != null)
+        {
+            ItemTooltipUI.EnsureInstance()?.Show(currentRecipe.resultFood, transform.position);
+        }
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        ItemTooltipUI.Instance?.Hide();
+    }
+
+    private void OnDisable()
+    {
+        ItemTooltipUI.Instance?.Hide();
     }
 }

@@ -69,6 +69,7 @@ public class Statue : MonoBehaviour, IInteractable
     }
 
     private float nextPlayerSearchTime = 0f;
+    private Vector3 lastCheckedPlayerPos = new Vector3(float.MinValue, float.MinValue, 0f);
 
     private void Update()
     {
@@ -83,25 +84,33 @@ public class Statue : MonoBehaviour, IInteractable
 
         if (playerTransform != null)
         {
-            Vector2 statuePoint = col != null ? col.ClosestPoint(playerTransform.position) : (Vector2)GetStatueCenter();
-            float dist = Vector2.Distance(statuePoint, playerTransform.position);
-            bool wasInRange = playerInRange;
-            playerInRange = dist <= interactDistance;
-
-            if (wasInRange && !playerInRange)
+            Vector3 currentPPos = playerTransform.position;
+            if (currentPPos != lastCheckedPlayerPos)
             {
-                if (StatueUI.Instance != null && StatueUI.Instance.IsOpen)
+                lastCheckedPlayerPos = currentPPos;
+                Vector2 statuePoint = col != null ? col.ClosestPoint(currentPPos) : (Vector2)GetStatueCenter();
+                float sqrDist = ((Vector2)currentPPos - statuePoint).sqrMagnitude;
+                bool wasInRange = playerInRange;
+                playerInRange = sqrDist <= (interactDistance * interactDistance);
+
+                if (wasInRange && !playerInRange)
                 {
-                    StatueUI.Instance.Close();
+                    if (StatueUI.Instance != null && StatueUI.Instance.IsOpen)
+                    {
+                        StatueUI.Instance.Close();
+                    }
                 }
             }
         }
 
         if (playerInRange && Input.GetKeyDown(KeyCode.E))
         {
-            if (DayTransitionUI.Instance != null && DayTransitionUI.Instance.IsOpen) return;
-            if (KitchenUI.Instance != null && KitchenUI.Instance.IsOpen) return;
-            if (ChestUI.Instance != null && ChestUI.Instance.IsOpen) return;
+            if (StatueUI.Instance != null && StatueUI.Instance.IsOpen)
+            {
+                StatueUI.Instance.Close();
+                return;
+            }
+            if (UIEscapeManager.IsAnyModalUIOpen()) return;
             Interact();
         }
     }
@@ -113,7 +122,15 @@ public class Statue : MonoBehaviour, IInteractable
 
         if (playerInRange)
         {
-            Interact();
+            if (StatueUI.Instance != null && StatueUI.Instance.IsOpen)
+            {
+                StatueUI.Instance.Close();
+                return;
+            }
+            if (!UIEscapeManager.IsAnyModalUIOpen())
+            {
+                Interact();
+            }
         }
     }
     #endregion
@@ -132,11 +149,17 @@ public class Statue : MonoBehaviour, IInteractable
             }
             else
             {
+                if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.GoddessStatue))
+                    return;
+
                 ui.Open(this, offerings, playerInventory);
             }
         }
         else
         {
+            if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.GoddessStatue))
+                return;
+
             TryOfferAny();
         }
     }
@@ -178,6 +201,8 @@ public class Statue : MonoBehaviour, IInteractable
 
     private void EnsureReferences()
     {
+        EnsureOfferings();
+
         if (playerInventory == null)
         {
             InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
@@ -207,6 +232,23 @@ public class Statue : MonoBehaviour, IInteractable
             }
         }
     }
+
+    public void EnsureOfferings()
+    {
+        if (offerings == null || offerings.Count < 40)
+        {
+            Offering[] allOfferings = GameAssetHelper.LoadAll<Offering>();
+            if (allOfferings != null && allOfferings.Length > 0)
+            {
+                System.Array.Sort(allOfferings, (a, b) =>
+                {
+                    if (a.rewardStat != b.rewardStat) return a.rewardStat.CompareTo(b.rewardStat);
+                    return a.tier.CompareTo(b.tier);
+                });
+                offerings = new List<Offering>(allOfferings);
+            }
+        }
+    }
     #endregion
 
     #region Offering Logic
@@ -220,6 +262,8 @@ public class Statue : MonoBehaviour, IInteractable
             offering.completed = true;
             return false;
         }
+
+        if (!offering.IsUnlocked()) return false;
 
         if (offering.requiredItems == null || offering.requiredItems.Length == 0) return false;
 
@@ -240,6 +284,12 @@ public class Statue : MonoBehaviour, IInteractable
     public bool MakeOffering(Offering offering, ItemContainer container)
     {
         if (offering == null || container == null) return false;
+
+        if (!offering.IsUnlocked())
+        {
+            OnOfferingFailed?.Invoke("Cột mốc này đang bị khóa! Cần hoàn thành cột mốc trước đó.");
+            return false;
+        }
 
         if (!CanOffer(offering, container))
         {
@@ -265,6 +315,7 @@ public class Statue : MonoBehaviour, IInteractable
 
         Debug.Log($"Offering successful: {offering.offeringName}! Received +{offering.rewardAmount} {offering.rewardStat} permanently.");
         OnOfferingSuccess?.Invoke(offering);
+        TutorialManager.Instance?.NotifyStatueOfferingDone();
 
         if (playerStats != null)
         {

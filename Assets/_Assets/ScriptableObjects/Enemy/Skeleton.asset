@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Skeleton
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Skeleton
-  maxHealth: 26
+  maxHealth: 28
   ATK: 8
   DEF: 1
-  speed: 15
+  speed: 14
   possibleIntents: 000000000100000002000000
   intentEffects:
   - effect: {fileID: 11400000, guid: 6fbdc716dfd5399429b38f2c719b3694, type: 2}
@@ -30,15 +30,15 @@ MonoBehaviour:
     minAmount: 1
     maxAmount: 2
     requireUnlock: 0
-  - item: {fileID: 11400000, guid: 96b10b9a95c45c84484c4737865e12cb, type: 2}
-    dropChance: 0.4
+  - item: {fileID: 11400000, guid: 42b4889df87d85948a0ccdcad13f6420, type: 2}
+    dropChance: 0.5
+    minAmount: 1
+    maxAmount: 2
+    requireUnlock: 0
+  - item: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
+    dropChance: 0.35
     minAmount: 1
     maxAmount: 1
     requireUnlock: 0
-  - item: {fileID: 11400000, guid: 226d6c665818df0448ab7c09266b0818, type: 2}
-    dropChance: 0.4
-    minAmount: 1
-    maxAmount: 1
-    requireUnlock: 1
   dropUnlockedSeeds: 1
-  seedDropChance: 0.35
+  seedDropChance: 0.55

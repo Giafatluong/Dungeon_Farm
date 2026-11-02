@@ -617,11 +617,11 @@ public class RewardUI : MonoBehaviour
         infoGO.GetComponent<RectTransform>().sizeDelta = new Vector2(240, 42);
 
         TextMeshProUGUI infoTMP = infoGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(infoTMP);
+        DungeonUIAssetHelper.ApplyFont(infoTMP, withOutline: true);
         infoTMP.fontSize = 11.5f;
         infoTMP.alignment = TextAlignmentOptions.MidlineLeft;
         string tag = GetItemTag(item);
-        infoTMP.text = $"<b>{item.itemName}</b> <color=#FFD700>x{slot.amount}</color> {tag}\n<size=10><color=#9CB3CD>{GetItemDescription(item)}</color></size>";
+        infoTMP.text = $"<b>{item.itemName}</b> <color=#FFD700>x{slot.amount}</color> {tag}\n<size=10.5>{GetItemDescription(item)}</size>";
 
         // 3. Take Button (Right: 75x34)
         GameObject btnGO = new("TakeBtn", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -676,13 +676,13 @@ public class RewardUI : MonoBehaviour
     {
         if (item is FoodData food)
         {
-            return $"+{food.healthValue} HP, +{food.hungerValue} Fullness";
+            return $"<color=#FF6B6B><b>+{food.healthValue} HP</b></color> <color=#94A3B8>|</color> <color=#FFD043><b>+{food.hungerValue} Độ No</b></color>";
         }
         if (item.name.ToLower().Contains("seed") || item.itemName.ToLower().Contains("seed"))
         {
-            return "Cultivate at Farm for crops & buffs";
+            return "<color=#86EFAC>Trồng tại nông trại để thu hoạch</color>";
         }
-        return "Valuable resource";
+        return "<color=#E2E8F0>Tài nguyên quý giá</color>";
     }
 
     private void UpdateControlsState()
