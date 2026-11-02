@@ -26,6 +26,8 @@ public class CombatUI : MonoBehaviour
     public TextMeshProUGUI apText;
     public TextMeshProUGUI statsText;
     public TextMeshProUGUI buffsText;
+    public BuffBarUI playerBuffBar;
+    public BuffBarUI targetBuffBar;
 
     [Header("Action Buttons")]
     public Button attackButton;
@@ -190,7 +192,20 @@ public class CombatUI : MonoBehaviour
         DungeonUIAssetHelper.ApplyFont(apText);
         DungeonUIAssetHelper.ApplyFont(statsText);
         DungeonUIAssetHelper.ApplyFont(buffsText);
-        DungeonUIAssetHelper.ApplyFont(turnBannerText);
+        DungeonUIAssetHelper.ApplyFont(turnBannerText, withOutline: true);
+        if (turnBannerText != null)
+        {
+            turnBannerText.fontStyle = FontStyles.Bold;
+            turnBannerText.fontSize = 24;
+            turnBannerText.alignment = TextAlignmentOptions.Center;
+            turnBannerText.characterSpacing = 2f;
+
+            // Add drop shadow so turn announcement pops cleanly off the plaque background
+            Shadow shadow = turnBannerText.GetComponent<Shadow>();
+            if (shadow == null) shadow = turnBannerText.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.9f);
+            shadow.effectDistance = new Vector2(2f, -2f);
+        }
         DungeonUIAssetHelper.ApplyFont(targetHpText);
         DungeonUIAssetHelper.ApplyFont(targetNameText);
         DungeonUIAssetHelper.ApplyFont(targetIntentText);
@@ -686,6 +701,73 @@ public class CombatUI : MonoBehaviour
                 }
             }
         }
+
+        EnsurePlayerBuffBar();
+        if (playerBuffBar != null)
+        {
+            playerBuffBar.SetPlayerTarget(playerStats);
+        }
+    }
+
+    public void EnsurePlayerBuffBar()
+    {
+        if (playerBuffBar != null) return;
+        Transform parent = buffsText != null ? buffsText.transform.parent : (hpFillImage != null ? hpFillImage.transform.parent : null);
+        if (parent == null) return;
+
+        Transform existing = parent.Find("PlayerBuffBar");
+        if (existing != null)
+        {
+            playerBuffBar = existing.GetComponent<BuffBarUI>();
+            if (playerBuffBar != null) return;
+        }
+
+        GameObject go = new GameObject("PlayerBuffBar", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(BuffBarUI));
+        go.transform.SetParent(parent, false);
+        RectTransform rt = go.GetComponent<RectTransform>();
+        if (buffsText != null)
+        {
+            rt.anchorMin = buffsText.rectTransform.anchorMin;
+            rt.anchorMax = buffsText.rectTransform.anchorMax;
+            rt.pivot = buffsText.rectTransform.pivot;
+            rt.anchoredPosition = buffsText.rectTransform.anchoredPosition;
+            rt.sizeDelta = new Vector2(240, 24);
+            buffsText.gameObject.SetActive(false); // Hide raw text in favor of Slay the Spire-style interactive buff icons
+        }
+        else
+        {
+            rt.anchorMin = new Vector2(0, 0);
+            rt.anchorMax = new Vector2(0, 0);
+            rt.pivot = new Vector2(0, 0);
+            rt.anchoredPosition = new Vector2(16, 16);
+            rt.sizeDelta = new Vector2(240, 24);
+        }
+
+        playerBuffBar = go.GetComponent<BuffBarUI>();
+    }
+
+    public void EnsureTargetBuffBar()
+    {
+        if (targetBuffBar != null) return;
+        if (targetInfoPanel == null) return;
+
+        Transform existing = targetInfoPanel.transform.Find("TargetBuffBar");
+        if (existing != null)
+        {
+            targetBuffBar = existing.GetComponent<BuffBarUI>();
+            if (targetBuffBar != null) return;
+        }
+
+        GameObject go = new GameObject("TargetBuffBar", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(BuffBarUI));
+        go.transform.SetParent(targetInfoPanel.transform, false);
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0f);
+        rt.anchorMax = new Vector2(0.5f, 0f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(0, -6f);
+        rt.sizeDelta = new Vector2(200, 22);
+
+        targetBuffBar = go.GetComponent<BuffBarUI>();
     }
 
     #region Combat Speed & Damage Preview
@@ -877,11 +959,11 @@ public class CombatUI : MonoBehaviour
             if (turnBannerText != null)
             {
                 turnBannerText.text = combatManager.isAmbushCurrent
-                    ? $"AMBUSH! KẺ ĐỊCH TẤN CÔNG TRONG {secs}s"
+                    ? "KẺ ĐỊCH MAI PHỤC!"
                     : $"CHUẨN BỊ CHIẾN ĐẤU ({secs}s)";
                 turnBannerText.color = combatManager.isAmbushCurrent
-                    ? new Color(1f, 0.4f, 0.2f)
-                    : new Color(1f, 0.85f, 0.2f);
+                    ? new Color(1f, 0.35f, 0.2f)
+                    : new Color(1f, 0.92f, 0.25f);
             }
 
             if (turnBannerBg != null)
@@ -909,32 +991,18 @@ public class CombatUI : MonoBehaviour
         }
 
         bool isPlayer = combatManager.currentTurn == CombatManager.Turn.Player;
-        int pSpd = playerStats != null ? playerStats.GetCurrentSpeed() : 0;
-        int maxEnemySpd = 0;
-        if (combatManager.enemies != null)
-        {
-            for (int i = 0; i < combatManager.enemies.Length; i++)
-            {
-                if (combatManager.enemies[i] != null && combatManager.enemies[i].currentHealth > 0)
-                {
-                    int s = combatManager.enemies[i].GetCurrentSpeed();
-                    if (s > maxEnemySpd) maxEnemySpd = s;
-                }
-            }
-        }
 
         if (turnBannerText != null)
         {
             if (isPlayer)
             {
-                string initiative = pSpd >= maxEnemySpd ? "TIÊN CƠ (BẠN ĐI TRƯỚC)" : "LƯỢT CỦA BẠN";
-                turnBannerText.text = $"{initiative}  [Bạn: {pSpd} SPD >= Địch: {maxEnemySpd} SPD]";
-                turnBannerText.color = new Color(0.35f, 1f, 0.65f);
+                turnBannerText.text = "LƯỢT CỦA BẠN";
+                turnBannerText.color = new Color(1f, 0.92f, 0.25f); // Radiant Gold with black outline
             }
             else
             {
-                turnBannerText.text = $"LƯỢT KẺ ĐỊCH  [Địch: {maxEnemySpd} SPD > Bạn: {pSpd} SPD]";
-                turnBannerText.color = new Color(1f, 0.45f, 0.45f);
+                turnBannerText.text = "LƯỢT KẺ ĐỊCH";
+                turnBannerText.color = new Color(1f, 0.28f, 0.28f); // Danger Crimson with black outline
             }
         }
 
@@ -978,6 +1046,12 @@ public class CombatUI : MonoBehaviour
         }
 
         targetInfoPanel.SetActive(true);
+
+        EnsureTargetBuffBar();
+        if (targetBuffBar != null)
+        {
+            targetBuffBar.SetEnemyTarget(enemy);
+        }
 
         if (targetNameText != null)
         {

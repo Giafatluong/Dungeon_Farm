@@ -44,6 +44,7 @@ public static class DungeonUIAssetHelper
     private static Sprite _tentSprite;
     private static GameObject _slotPrefab;
     private static TMP_FontAsset _fontAsset;
+    private static Material _outlineMaterial;
     private static readonly Dictionary<string, Sprite> _spriteCache = new(System.StringComparer.OrdinalIgnoreCase);
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -57,6 +58,7 @@ public static class DungeonUIAssetHelper
         _tentSprite = null;
         _slotPrefab = null;
         _fontAsset = null;
+        _outlineMaterial = null;
         _spriteCache.Clear();
     }
     #endregion
@@ -295,7 +297,21 @@ public static class DungeonUIAssetHelper
 
     public static Material GetOutlineMaterial()
     {
-        return null;
+        if (_outlineMaterial != null) return _outlineMaterial;
+        _outlineMaterial = Resources.Load<Material>("Fonts & Materials/LiberationSans SDF - Outline");
+        if (_outlineMaterial == null)
+        {
+            Material[] mats = Resources.FindObjectsOfTypeAll<Material>();
+            for (int i = 0; i < mats.Length; i++)
+            {
+                if (mats[i] != null && mats[i].name == "LiberationSans SDF - Outline")
+                {
+                    _outlineMaterial = mats[i];
+                    break;
+                }
+            }
+        }
+        return _outlineMaterial;
     }
 
     public static TMP_FontAsset GetFontAsset()
@@ -345,6 +361,14 @@ public static class DungeonUIAssetHelper
         if (font != null && tmp.font == null)
         {
             tmp.font = font;
+        }
+        if (withOutline)
+        {
+            Material outlineMat = GetOutlineMaterial();
+            if (outlineMat != null)
+            {
+                tmp.fontSharedMaterial = outlineMat;
+            }
         }
     }
     #endregion

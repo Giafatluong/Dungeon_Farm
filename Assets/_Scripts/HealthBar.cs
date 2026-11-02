@@ -16,6 +16,7 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
     private int lastAtk = -1;
 
     [SerializeField] private Image ghostHealthBar;
+    [SerializeField] private BuffBarUI buffBar;
     private Coroutine ghostDrainRoutine;
     private static readonly WaitForSeconds WaitGhostDelay = new WaitForSeconds(0.2f);
 
@@ -211,6 +212,12 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
         {
             intentText.gameObject.SetActive(true);
         }
+
+        EnsureBuffBar();
+        if (buffBar != null)
+        {
+            buffBar.SetEnemyTarget(enemy);
+        }
     }
 
     private void HandleIntentChanged(EnemyStats sender, EnemyData.EnemyIntent newIntent)
@@ -219,6 +226,28 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
         {
             lastIntent = null; // force immediate re-evaluation in next frame
         }
+    }
+
+    private void EnsureBuffBar()
+    {
+        if (buffBar != null) return;
+        Transform existing = transform.Find("BuffBar");
+        if (existing != null)
+        {
+            buffBar = existing.GetComponent<BuffBarUI>();
+            if (buffBar != null) return;
+        }
+
+        GameObject go = new GameObject("BuffBar", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(BuffBarUI));
+        go.transform.SetParent(transform, false);
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0f);
+        rt.anchorMax = new Vector2(0.5f, 0f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(0, -6f);
+        rt.sizeDelta = new Vector2(140, 22);
+
+        buffBar = go.GetComponent<BuffBarUI>();
     }
 
     private void EnsureIntentText()
@@ -265,6 +294,12 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
         if (intentText != null)
         {
             intentText.gameObject.SetActive(false);
+        }
+
+        EnsureBuffBar();
+        if (buffBar != null)
+        {
+            buffBar.SetPlayerTarget(player);
         }
     }
 
