@@ -375,7 +375,7 @@ public class MerchantUI : MonoBehaviour
         Button btn = btnGO.GetComponent<Button>();
         btn.onClick.AddListener(() =>
         {
-            PlayerStats ps = FindFirstObjectByType<PlayerStats>();
+            PlayerStats ps = PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>();
             if (ps != null)
             {
                 ps.currentHealth = Mathf.Min(ps.maxHealth, ps.currentHealth + 20);

@@ -566,6 +566,8 @@ public class DungeonSummaryUI : MonoBehaviour
     /// </summary>
     public static void AdvanceDayOnReturnStatic()
     {
+        DungeonEntrance.SetReturnToEntranceFlag();
+
         // Mark run as inactive to avoid duplicate triggers during scene transition
         if (ProgressionManager.Instance != null)
         {

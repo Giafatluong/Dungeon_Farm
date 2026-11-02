@@ -56,7 +56,7 @@ public class HomeChest : MonoBehaviour, IInteractable
 
         if (backpackContainer == null)
         {
-            InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+            InventoryPanel invPanel = InventoryPanel.Instance != null ? InventoryPanel.Instance : FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
             if (invPanel != null)
             {
                 backpackContainer = invPanel.ItemContainer;
@@ -185,7 +185,7 @@ public class HomeChest : MonoBehaviour, IInteractable
 
         if (backpackContainer == null)
         {
-            InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+            InventoryPanel invPanel = InventoryPanel.Instance != null ? InventoryPanel.Instance : FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
             if (invPanel != null)
             {
                 backpackContainer = invPanel.ItemContainer;

@@ -39,6 +39,11 @@ public class CombatUI : MonoBehaviour
     public TextMeshProUGUI combatLogText;
     public TextMeshProUGUI stageProgressText;
 
+    [Header("Battle Speed Control")]
+    private GameObject speedButtonGO;
+    private TextMeshProUGUI speedButtonText;
+    private EnemyStats cachedTarget;
+
     [Header("Target Info HUD")]
     public GameObject targetInfoPanel;
     public TextMeshProUGUI targetNameText;
@@ -107,6 +112,7 @@ public class CombatUI : MonoBehaviour
         if (rewardPanel != null) rewardPanel.SetActive(false);
 
         ApplyFigmaGOTYStyling();
+        EnsureSpeedButtonConstructed();
         RefreshAll();
 
         CombatTutorialGuide.EnsureInitialized(this);
@@ -178,17 +184,27 @@ public class CombatUI : MonoBehaviour
             if (panelImg != null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
         }
 
-        // 5. High-Contrast Outlined Typography
-        DungeonUIAssetHelper.ApplyFont(hpText, withOutline: true);
-        DungeonUIAssetHelper.ApplyFont(hungerText, withOutline: true);
-        DungeonUIAssetHelper.ApplyFont(apText, withOutline: true);
-        DungeonUIAssetHelper.ApplyFont(statsText, withOutline: true);
-        DungeonUIAssetHelper.ApplyFont(buffsText, withOutline: true);
-        DungeonUIAssetHelper.ApplyFont(turnBannerText, withOutline: true);
-        DungeonUIAssetHelper.ApplyFont(combatLogText, withOutline: true);
-        DungeonUIAssetHelper.ApplyFont(targetHpText, withOutline: true);
-        DungeonUIAssetHelper.ApplyFont(targetNameText, withOutline: true);
-        DungeonUIAssetHelper.ApplyFont(targetIntentText, withOutline: true);
+        // 5. High-Contrast Typography
+        DungeonUIAssetHelper.ApplyFont(hpText);
+        DungeonUIAssetHelper.ApplyFont(hungerText);
+        DungeonUIAssetHelper.ApplyFont(apText);
+        DungeonUIAssetHelper.ApplyFont(statsText);
+        DungeonUIAssetHelper.ApplyFont(buffsText);
+        DungeonUIAssetHelper.ApplyFont(turnBannerText);
+        DungeonUIAssetHelper.ApplyFont(targetHpText);
+        DungeonUIAssetHelper.ApplyFont(targetNameText);
+        DungeonUIAssetHelper.ApplyFont(targetIntentText);
+
+        // Deactivate on-screen debug log notifications
+        if (combatLogText != null)
+        {
+            combatLogText.text = "";
+            combatLogText.gameObject.SetActive(false);
+            if (combatLogText.transform.parent != null && combatLogText.transform.parent.name.Contains("CombatLog"))
+            {
+                combatLogText.transform.parent.gameObject.SetActive(false);
+            }
+        }
     }
 
     private void OnDestroy()
@@ -221,7 +237,7 @@ public class CombatUI : MonoBehaviour
             if (combatManager != null && combatManager.playerStats != null)
                 playerStats = combatManager.playerStats;
             else
-                playerStats = FindFirstObjectByType<PlayerStats>();
+                playerStats = PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>();
         }
         if (turnManager == null) turnManager = FindFirstObjectByType<TurnManager>();
         if (targetSelector == null) targetSelector = FindFirstObjectByType<EnemyTargetSelector>();
@@ -355,6 +371,12 @@ public class CombatUI : MonoBehaviour
             {
                 targetSelector.CycleTarget(combatManager.enemies, forward: false);
             }
+        }
+
+        // Battle Speed Toggle (Shortcut T)
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            CycleBattleSpeed();
         }
 
         bool isAtEntrance = waveManager != null && waveManager.isAtEntrance;
@@ -586,7 +608,16 @@ public class CombatUI : MonoBehaviour
         {
             cachedAP = curAP;
             cachedMaxAP = maxAP;
-            if (apText != null) apText.text = $"<color=#00FFAA>AP: {curAP} / {maxAP}</color>";
+            if (apText != null)
+            {
+                string orbs = "";
+                for (int i = 0; i < maxAP; i++)
+                {
+                    if (i < curAP) orbs += "<color=#00FFAA><b>[■]</b></color> ";
+                    else orbs += "<color=#556677><b>[ ]</b></color> ";
+                }
+                apText.text = $"{orbs} <size=12><color=#A0EEDD>AP: {curAP}/{maxAP}</color></size>";
+            }
         }
 
         int atk = playerStats.GetCurrentATK();
@@ -657,6 +688,99 @@ public class CombatUI : MonoBehaviour
         }
     }
 
+    #region Combat Speed & Damage Preview
+    public int CalculatePredictedDamage(EnemyStats target)
+    {
+        if (playerStats == null || target == null) return 0;
+        int atk = playerStats.GetCurrentATK();
+
+        // Blessing: Swift Momentum
+        if (ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.SwiftMomentum))
+        {
+            int speedDiff = Mathf.Max(0, playerStats.GetCurrentSpeed() - target.GetCurrentSpeed());
+            atk += speedDiff;
+        }
+
+        int targetDef = target.GetCurrentDEF();
+        int baseDmg = Mathf.Max(0, atk - targetDef);
+
+        // Blessing: Bitter Decay (bonus 4 direct poison damage)
+        if (ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.BitterDecay))
+        {
+            baseDmg += 4;
+        }
+
+        return baseDmg;
+    }
+
+    public void CycleBattleSpeed()
+    {
+        float speed = CombatManager.CycleBattleSpeed();
+        UpdateSpeedButtonText();
+        DamagePopupManager.ShowText(
+            playerStats != null ? playerStats.transform.position + Vector3.up * 1.5f : Vector3.zero,
+            $"Tốc độ: {speed:F1}x",
+            new Color(0.35f, 1f, 0.65f),
+            2.5f
+        );
+    }
+
+    private void UpdateSpeedButtonText()
+    {
+        if (speedButtonText == null) return;
+        float speed = CombatManager.BattleSpeed;
+        if (speed >= 1.9f)
+        {
+            speedButtonText.text = "<color=#FF5555><b>▶▶▶ 2.0x [T]</b></color>";
+        }
+        else if (speed >= 1.4f)
+        {
+            speedButtonText.text = "<color=#FFD700><b>▶▶ 1.5x [T]</b></color>";
+        }
+        else
+        {
+            speedButtonText.text = "<color=#FFFFFF><b>▶ 1.0x [T]</b></color>";
+        }
+    }
+
+    private void EnsureSpeedButtonConstructed()
+    {
+        if (speedButtonGO != null) return;
+        Canvas c = DungeonUIAssetHelper.GetMainScreenCanvas();
+        if (c == null) c = GetComponentInParent<Canvas>();
+        if (c == null) return;
+
+        speedButtonGO = new GameObject("CombatSpeedButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        speedButtonGO.transform.SetParent(c.transform, false);
+        RectTransform rt = speedButtonGO.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(1f, 1f);
+        rt.anchorMax = new Vector2(1f, 1f);
+        rt.pivot = new Vector2(1f, 1f);
+        rt.anchoredPosition = new Vector2(-20, -20);
+        rt.sizeDelta = new Vector2(120, 32);
+
+        Image img = speedButtonGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(img, new Color(0.2f, 0.25f, 0.35f, 0.95f));
+
+        Button btn = speedButtonGO.GetComponent<Button>();
+        btn.onClick.AddListener(CycleBattleSpeed);
+
+        GameObject txtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        txtGO.transform.SetParent(speedButtonGO.transform, false);
+        RectTransform trt = txtGO.GetComponent<RectTransform>();
+        trt.anchorMin = Vector2.zero;
+        trt.anchorMax = Vector2.one;
+        trt.offsetMin = Vector2.zero;
+        trt.offsetMax = Vector2.zero;
+        speedButtonText = txtGO.GetComponent<TextMeshProUGUI>();
+        speedButtonText.fontSize = 13f;
+        speedButtonText.alignment = TextAlignmentOptions.Center;
+        DungeonUIAssetHelper.ApplyFont(speedButtonText);
+
+        UpdateSpeedButtonText();
+    }
+    #endregion
+
     public void UpdateActionButtons()
     {
         if (combatManager == null || playerStats == null) return;
@@ -670,7 +794,8 @@ public class CombatUI : MonoBehaviour
             ? (int)CombatTutorialGuide.Instance.CurrentPhase * 10 + (CombatTutorialGuide.Instance.HasPlayerDefended ? 1 : 0)
             : -1;
 
-        if (isPlayerTurn == cachedIsPlayerTurn && hasAP == cachedHasAP && isAlive == cachedIsAlive && isActing == cachedIsActing && canFreeEat == cachedCanFreeEat && tutPhase == cachedTutPhase)
+        EnemyStats curSelected = targetSelector != null ? targetSelector.selectedEnemy : null;
+        if (isPlayerTurn == cachedIsPlayerTurn && hasAP == cachedHasAP && isAlive == cachedIsAlive && isActing == cachedIsActing && canFreeEat == cachedCanFreeEat && tutPhase == cachedTutPhase && curSelected == cachedTarget)
             return;
 
         cachedIsPlayerTurn = isPlayerTurn;
@@ -679,6 +804,7 @@ public class CombatUI : MonoBehaviour
         cachedIsActing = isActing;
         cachedCanFreeEat = canFreeEat;
         cachedTutPhase = tutPhase;
+        cachedTarget = curSelected;
 
         bool isAtEntrance = waveManager != null && waveManager.isAtEntrance;
         bool canAct = isPlayerTurn && hasAP && isAlive && !isActing;
@@ -697,9 +823,47 @@ public class CombatUI : MonoBehaviour
             if (!CombatTutorialGuide.Instance.IsActionAllowed(CombatTutorialGuide.CombatAction.EndTurn)) allowEndTurn = false;
         }
 
-        if (attackButton != null) attackButton.interactable = allowAttack;
-        if (defendButton != null) defendButton.interactable = allowDefend;
-        if (eatButton != null) eatButton.interactable = allowEat;
+        if (attackButton != null)
+        {
+            attackButton.interactable = allowAttack;
+            var txt = attackButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (txt != null)
+            {
+                EnemyStats curTarget = targetSelector != null ? targetSelector.selectedEnemy : null;
+                if (curTarget != null && curTarget.currentHealth > 0)
+                {
+                    int dmg = CalculatePredictedDamage(curTarget);
+                    txt.text = $"ATTACK [1]\n<size=11><color=#FFDD88>Sát thương: {dmg}</color></size>";
+                }
+                else
+                {
+                    txt.text = "ATTACK [1]\n<size=11><color=#D0D0D0>(1 AP)</color></size>";
+                }
+            }
+        }
+        if (defendButton != null)
+        {
+            defendButton.interactable = allowDefend;
+            var txt = defendButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (txt != null)
+            {
+                int defVal = playerStats != null ? playerStats.defendValue : 5;
+                bool isFree = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.BastionStrike) && combatManager != null && !combatManager.hasDefendedThisTurn;
+                string cost = isFree ? "<color=#50FA7B>0 AP</color>" : "1 AP";
+                txt.text = $"DEFEND [2]\n<size=11><color=#AADDFF>+{defVal} DEF ({cost})</color></size>";
+            }
+        }
+        if (eatButton != null)
+        {
+            eatButton.interactable = allowEat;
+            var txt = eatButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (txt != null)
+            {
+                bool isFreeEat = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast) && combatManager != null && !combatManager.hasEatenThisTurn;
+                string eatCost = isFreeEat ? "<color=#50FA7B>0 AP</color>" : "1 AP";
+                txt.text = $"EAT [3]\n<size=11><color=#FFD700>Ăn ({eatCost})</color></size>";
+            }
+        }
         if (endTurnButton != null) endTurnButton.interactable = allowEndTurn;
     }
 
@@ -713,8 +877,8 @@ public class CombatUI : MonoBehaviour
             if (turnBannerText != null)
             {
                 turnBannerText.text = combatManager.isAmbushCurrent
-                    ? $"AMBUSH! ENEMIES ATTACK IN {secs}s"
-                    : $"PREPARING COMBAT ({secs}s)";
+                    ? $"AMBUSH! KẺ ĐỊCH TẤN CÔNG TRONG {secs}s"
+                    : $"CHUẨN BỊ CHIẾN ĐẤU ({secs}s)";
                 turnBannerText.color = combatManager.isAmbushCurrent
                     ? new Color(1f, 0.4f, 0.2f)
                     : new Color(1f, 0.85f, 0.2f);
@@ -722,6 +886,7 @@ public class CombatUI : MonoBehaviour
 
             if (turnBannerBg != null)
             {
+                turnBannerBg.gameObject.SetActive(true);
                 DungeonUIAssetHelper.StylePlaque(turnBannerBg, combatManager.isAmbushCurrent
                     ? DungeonUIAssetHelper.PlaqueStyle.Defeat
                     : DungeonUIAssetHelper.PlaqueStyle.Gold);
@@ -731,52 +896,46 @@ public class CombatUI : MonoBehaviour
 
         if (!combatManager.isCombatActive)
         {
-            if (waveManager != null && waveManager.isAtEntrance)
-            {
-                if (turnBannerText != null)
-                {
-                    int floor = ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1;
-                    turnBannerText.text = $"DUNGEON ENTRANCE - FLOOR {floor} (LOBBY)";
-                    turnBannerText.color = new Color(1f, 0.88f, 0.35f);
-                }
-                if (turnBannerBg != null)
-                {
-                    DungeonUIAssetHelper.StylePlaque(turnBannerBg, DungeonUIAssetHelper.PlaqueStyle.Gold);
-                }
-                return;
-            }
-
-            if (CampUI.Instance != null && CampUI.Instance.camp != null && CampUI.Instance.camp.isCampOpen)
-            {
-                if (turnBannerText != null)
-                {
-                    turnBannerText.text = "CAMPFIRE - REST & RECOVER";
-                    turnBannerText.color = new Color(1f, 0.85f, 0.3f);
-                }
-                if (turnBannerBg != null)
-                {
-                    DungeonUIAssetHelper.StylePlaque(turnBannerBg, DungeonUIAssetHelper.PlaqueStyle.Wood);
-                }
-                return;
-            }
-
-            if (turnBannerText != null)
-            {
-                turnBannerText.text = "SAFE (NO ENEMIES)";
-                turnBannerText.color = new Color(0.7f, 0.9f, 0.7f);
-            }
             if (turnBannerBg != null)
             {
-                DungeonUIAssetHelper.StylePlaque(turnBannerBg, DungeonUIAssetHelper.PlaqueStyle.Victory);
+                turnBannerBg.gameObject.SetActive(false);
             }
             return;
         }
 
+        if (turnBannerBg != null && !turnBannerBg.gameObject.activeSelf)
+        {
+            turnBannerBg.gameObject.SetActive(true);
+        }
+
         bool isPlayer = combatManager.currentTurn == CombatManager.Turn.Player;
+        int pSpd = playerStats != null ? playerStats.GetCurrentSpeed() : 0;
+        int maxEnemySpd = 0;
+        if (combatManager.enemies != null)
+        {
+            for (int i = 0; i < combatManager.enemies.Length; i++)
+            {
+                if (combatManager.enemies[i] != null && combatManager.enemies[i].currentHealth > 0)
+                {
+                    int s = combatManager.enemies[i].GetCurrentSpeed();
+                    if (s > maxEnemySpd) maxEnemySpd = s;
+                }
+            }
+        }
+
         if (turnBannerText != null)
         {
-            turnBannerText.text = isPlayer ? "YOUR TURN (PLAYER TURN)" : "ENEMY TURN";
-            turnBannerText.color = isPlayer ? new Color(1f, 0.95f, 0.45f) : new Color(1f, 0.4f, 0.4f);
+            if (isPlayer)
+            {
+                string initiative = pSpd >= maxEnemySpd ? "TIÊN CƠ (BẠN ĐI TRƯỚC)" : "LƯỢT CỦA BẠN";
+                turnBannerText.text = $"{initiative}  [Bạn: {pSpd} SPD >= Địch: {maxEnemySpd} SPD]";
+                turnBannerText.color = new Color(0.35f, 1f, 0.65f);
+            }
+            else
+            {
+                turnBannerText.text = $"LƯỢT KẺ ĐỊCH  [Địch: {maxEnemySpd} SPD > Bạn: {pSpd} SPD]";
+                turnBannerText.color = new Color(1f, 0.45f, 0.45f);
+            }
         }
 
         if (turnBannerBg != null)
@@ -822,13 +981,15 @@ public class CombatUI : MonoBehaviour
 
         if (targetNameText != null)
         {
+            int enemySpd = enemy.GetCurrentSpeed();
+            string spdStr = $"    <color=#FFEE55><b>SPD: {enemySpd}</b></color>";
             if (enemy is Boss boss)
             {
-                targetNameText.text = $"TARGET: <color=#FF5533>[BOSS]</color> {boss.bossName} (Phase {boss.GetCurrentPhase()})";
+                targetNameText.text = $"TARGET: <color=#FF5533>[BOSS]</color> {boss.bossName} (Phase {boss.GetCurrentPhase()}){spdStr}";
             }
             else
             {
-                targetNameText.text = $"TARGET: {enemy.enemyData?.enemyName ?? "Enemy"}";
+                targetNameText.text = $"TARGET: {enemy.enemyData?.enemyName ?? "Enemy"}{spdStr}";
             }
         }
 
@@ -840,7 +1001,23 @@ public class CombatUI : MonoBehaviour
 
         if (targetHpText != null)
         {
-            targetHpText.text = $"HP: {enemy.currentHealth} / {maxHp}";
+            int predictedDmg = CalculatePredictedDamage(enemy);
+            int afterHp = Mathf.Max(0, enemy.currentHealth - predictedDmg);
+            if (predictedDmg > 0)
+            {
+                if (afterHp == 0)
+                {
+                    targetHpText.text = $"HP: {enemy.currentHealth}/{maxHp}  ->  <color=#FF4444><b>0 [KẾT LIỄU!]</b></color>";
+                }
+                else
+                {
+                    targetHpText.text = $"HP: {enemy.currentHealth}/{maxHp}  ->  <color=#FFA726><b>{afterHp}</b> (-{predictedDmg})</color>";
+                }
+            }
+            else
+            {
+                targetHpText.text = $"HP: {enemy.currentHealth}/{maxHp}  <color=#888888>(DEF chặn đòn)</color>";
+            }
         }
 
         if (targetIntentText != null)
@@ -919,10 +1096,6 @@ public class CombatUI : MonoBehaviour
 
     public void LogMessage(string message)
     {
-        if (combatLogText != null)
-        {
-            combatLogText.text = message;
-        }
         Debug.Log($"[CombatUI] {message}");
     }
 
@@ -1121,7 +1294,7 @@ public class CombatUI : MonoBehaviour
         ItemContainer inventory = playerStats != null ? playerStats.itemContainer : null;
         if (inventory == null)
         {
-            InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+            InventoryPanel invPanel = InventoryPanel.Instance != null ? InventoryPanel.Instance : FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
             if (invPanel != null && invPanel.ItemContainer != null) inventory = invPanel.ItemContainer;
         }
 
@@ -1551,6 +1724,8 @@ public class CombatUI : MonoBehaviour
 
     private void PerformReturnToBase()
     {
+        DungeonEntrance.SetReturnToEntranceFlag();
+
         if (SceneTransitionManager.Instance != null)
         {
             SceneTransitionManager.Instance.LoadBase();

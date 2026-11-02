@@ -56,8 +56,8 @@ public class FarmPlot : MonoBehaviour
             // Auto-fallback: check inventory for a valid seed so player is not stuck
             if (itemContainer == null)
             {
-                if (_cachedPlayerStats == null) _cachedPlayerStats = FindFirstObjectByType<PlayerStats>();
-                if (_cachedPlayerStats != null) itemContainer = _cachedPlayerStats.itemContainer;
+                PlayerStats ps = GetCachedPlayerStats();
+                if (ps != null) itemContainer = ps.itemContainer;
             }
             if (itemContainer != null)
             {
@@ -85,8 +85,8 @@ public class FarmPlot : MonoBehaviour
 
         if (itemContainer == null)
         {
-            if (_cachedPlayerStats == null) _cachedPlayerStats = FindFirstObjectByType<PlayerStats>();
-            if (_cachedPlayerStats != null) itemContainer = _cachedPlayerStats.itemContainer;
+            PlayerStats ps = GetCachedPlayerStats();
+            if (ps != null) itemContainer = ps.itemContainer;
         }
 
         if (itemContainer == null || !itemContainer.HasItem(selectedItem))
@@ -153,6 +153,20 @@ public class FarmPlot : MonoBehaviour
     private static List<CropData> _cachedCrops;
     private static PlayerStats _cachedPlayerStats;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        _cachedCrops = null;
+        _cachedPlayerStats = null;
+    }
+
+    private static PlayerStats GetCachedPlayerStats()
+    {
+        if (_cachedPlayerStats != null) return _cachedPlayerStats;
+        _cachedPlayerStats = PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>();
+        return _cachedPlayerStats;
+    }
+
     public void EnsureAvailableCrops()
     {
         if (availableCrops != null && availableCrops.Count > 0) return;
@@ -197,8 +211,8 @@ public class FarmPlot : MonoBehaviour
             {
                 if (itemContainer == null)
                 {
-                    if (_cachedPlayerStats == null) _cachedPlayerStats = FindFirstObjectByType<PlayerStats>();
-                    if (_cachedPlayerStats != null) itemContainer = _cachedPlayerStats.itemContainer;
+                    PlayerStats ps = GetCachedPlayerStats();
+                    if (ps != null) itemContainer = ps.itemContainer;
                 }
                 if (itemContainer != null)
                 {
@@ -374,8 +388,8 @@ public class FarmPlot : MonoBehaviour
 
         if (itemContainer == null)
         {
-            if (_cachedPlayerStats == null) _cachedPlayerStats = FindFirstObjectByType<PlayerStats>();
-            if (_cachedPlayerStats != null) itemContainer = _cachedPlayerStats.itemContainer;
+            PlayerStats ps = GetCachedPlayerStats();
+            if (ps != null) itemContainer = ps.itemContainer;
         }
 
         LoadPlotData();

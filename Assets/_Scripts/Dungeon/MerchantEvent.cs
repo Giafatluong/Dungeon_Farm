@@ -509,7 +509,7 @@ public class MerchantEvent : MonoBehaviour
 
     private void Start()
     {
-        cachedDayManager = FindFirstObjectByType<DayManager>();
+        cachedDayManager = DayManager.Instance != null ? DayManager.Instance : FindFirstObjectByType<DayManager>();
         if (cachedDayManager != null)
         {
             cachedDayManager.OnNewDay += HandleNewDay;

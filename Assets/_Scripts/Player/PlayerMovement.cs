@@ -88,10 +88,14 @@ public class PlayerMovement : MonoBehaviour
 
         if (InventoryController.Instance == null)
         {
-            if (inventoryPanel == null && Time.time >= nextInvSearchTime)
+            if (inventoryPanel == null)
             {
-                nextInvSearchTime = Time.time + 1.0f;
-                inventoryPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+                inventoryPanel = InventoryPanel.Instance;
+                if (inventoryPanel == null && Time.time >= nextInvSearchTime)
+                {
+                    nextInvSearchTime = Time.time + 1.0f;
+                    inventoryPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+                }
             }
             if (inventoryPanel != null && inventoryPanel.gameObject.activeSelf) return true;
         }

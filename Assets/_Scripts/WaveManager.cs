@@ -438,7 +438,9 @@ public class WaveManager : MonoBehaviour
             isFirstTime = ProgressionManager.Instance.RecordBossDefeated(floorNum);
         }
 
-        PlayerStats pStats = (combatManager != null && combatManager.playerStats != null) ? combatManager.playerStats : FindFirstObjectByType<PlayerStats>();
+        PlayerStats pStats = (combatManager != null && combatManager.playerStats != null)
+            ? combatManager.playerStats
+            : (PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>());
         ItemContainer backpack = pStats != null ? pStats.itemContainer : null;
 
         FloorVictoryUI victoryUI = FloorVictoryUI.EnsureInstance();
@@ -520,9 +522,12 @@ public class WaveManager : MonoBehaviour
         currentWaveIndex++;
 
         // Reduce hunger and decrement turn buffs on stage transition
-        if (combatManager != null && combatManager.playerStats != null)
+        PlayerStats pStatsTransition = (combatManager != null && combatManager.playerStats != null)
+            ? combatManager.playerStats
+            : (PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>());
+        if (pStatsTransition != null)
         {
-            combatManager.playerStats.OnStageTransition();
+            pStatsTransition.OnStageTransition();
         }
 
         UpdateProgressBar();
@@ -681,7 +686,9 @@ public class WaveManager : MonoBehaviour
             return;
         }
 
-        PlayerStats pStats = (combatManager != null && combatManager.playerStats != null) ? combatManager.playerStats : FindFirstObjectByType<PlayerStats>();
+        PlayerStats pStats = (combatManager != null && combatManager.playerStats != null)
+            ? combatManager.playerStats
+            : (PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>());
         ItemContainer container = pStats != null ? pStats.itemContainer : null;
 
         CampUI campUI = CampUI.EnsureInstance();
@@ -738,7 +745,7 @@ public class WaveManager : MonoBehaviour
 
         PlayerStats ps = (combatManager != null && combatManager.playerStats != null)
             ? combatManager.playerStats
-            : FindFirstObjectByType<PlayerStats>();
+            : (PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>());
         ItemContainer backpack = ps != null ? ps.itemContainer : null;
 
         DungeonEventUI eventUI = DungeonEventUI.EnsureInstance();
@@ -809,7 +816,7 @@ public class WaveManager : MonoBehaviour
 
         PlayerStats ps = (combatManager != null && combatManager.playerStats != null)
             ? combatManager.playerStats
-            : FindFirstObjectByType<PlayerStats>();
+            : (PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>());
         ItemContainer backpack = ps != null ? ps.itemContainer : null;
 
         int floorNum = ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor > 0
@@ -865,7 +872,7 @@ public class WaveManager : MonoBehaviour
 
         PlayerStats ps = (combatManager != null && combatManager.playerStats != null)
             ? combatManager.playerStats
-            : FindFirstObjectByType<PlayerStats>();
+            : (PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>());
         ItemContainer backpack = ps != null ? ps.itemContainer : null;
 
         RewardUI rewardUI = RewardUI.EnsureInstance();

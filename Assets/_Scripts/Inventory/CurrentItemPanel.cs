@@ -6,12 +6,17 @@ public class CurrentItemPanel : MonoBehaviour
     [SerializeField] private InventoryPanel inventoryPanel;
     [SerializeField] private List<InventoryButton> inventoryButtons;
 
-    private void Awake()
+    private void EnsureInventoryPanel()
     {
         if (inventoryPanel == null)
         {
-            inventoryPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+            inventoryPanel = InventoryPanel.Instance != null ? InventoryPanel.Instance : FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
         }
+    }
+
+    private void Awake()
+    {
+        EnsureInventoryPanel();
     }
 
     private void Start()
@@ -21,10 +26,7 @@ public class CurrentItemPanel : MonoBehaviour
 
     private void OnEnable()
     {
-        if (inventoryPanel == null)
-        {
-            inventoryPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
-        }
+        EnsureInventoryPanel();
 
         if (inventoryPanel != null && inventoryPanel.ItemContainer != null)
         {
@@ -66,10 +68,7 @@ public class CurrentItemPanel : MonoBehaviour
 
     public void SetCurrentItem()
     {
-        if (inventoryPanel == null)
-        {
-            inventoryPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
-        }
+        EnsureInventoryPanel();
 
         if (inventoryPanel == null || inventoryPanel.ItemContainer == null || inventoryButtons == null)
             return;

@@ -558,7 +558,6 @@ public class DungeonEventUI : MonoBehaviour
 
         if (CombatUI.Instance != null)
         {
-            CombatUI.Instance.LogMessage($"[Event] {choiceLabel} resolved.");
             CombatUI.Instance.RefreshAll();
         }
     }

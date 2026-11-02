@@ -22,14 +22,41 @@ public class EnemyTargetSelector : MonoBehaviour
         OnTargetChanged?.Invoke(null);
     }
 
-    public void CheckTarget()
+    public void SelectNextLivingEnemy(EnemyStats excludeEnemy = null)
     {
-        if (selectedEnemy == null) return;
-
-        if (selectedEnemy.currentHealth <= 0)
+        CombatManager cm = CombatManager.Instance != null ? CombatManager.Instance : Object.FindFirstObjectByType<CombatManager>();
+        EnemyStats[] list = cm != null ? cm.enemies : null;
+        if (list == null || list.Length == 0)
         {
-            selectedEnemy = null;
-            OnTargetChanged?.Invoke(null);
+            ClearTarget();
+            return;
+        }
+
+        for (int i = 0; i < list.Length; i++)
+        {
+            EnemyStats e = list[i];
+            if (e != null && e != excludeEnemy && e.currentHealth > 0)
+            {
+                SelectEnemy(e);
+                return;
+            }
+        }
+
+        ClearTarget();
+    }
+
+    public void CheckTarget(EnemyStats[] fallbackEnemies = null)
+    {
+        if (selectedEnemy == null || selectedEnemy.currentHealth <= 0)
+        {
+            if (fallbackEnemies != null)
+            {
+                AutoSelectTarget(fallbackEnemies);
+            }
+            else
+            {
+                SelectNextLivingEnemy();
+            }
         }
     }
 

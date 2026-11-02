@@ -628,11 +628,6 @@ public class LootUI : MonoBehaviour
     /// </summary>
     public void Close()
     {
-        if (CombatUI.Instance != null && CombatUI.Instance.combatLogText != null)
-        {
-            CombatUI.Instance.combatLogText.gameObject.SetActive(true);
-        }
-
         if (lootContainer != null)
         {
             lootContainer.OnInventoryChange -= RefreshAll;

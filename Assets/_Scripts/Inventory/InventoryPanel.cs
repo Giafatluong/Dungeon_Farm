@@ -5,6 +5,8 @@ using TMPro;
 
 public class InventoryPanel : MonoBehaviour
 {
+    public static InventoryPanel Instance { get; private set; }
+
     [SerializeField] private ItemContainer itemContainer;
     [SerializeField] private List<InventoryButton> inventoryButtons;
     [SerializeField] private Canvas canvas;
@@ -14,6 +16,22 @@ public class InventoryPanel : MonoBehaviour
     private TextMeshProUGUI statsBarText;
 
     public ItemContainer ItemContainer => itemContainer;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        Instance = null;
+    }
+
+    private void Awake()
+    {
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
 
     private void Start()
     {

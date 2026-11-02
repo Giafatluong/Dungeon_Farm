@@ -25,7 +25,7 @@ public class CameraController : MonoBehaviour
     {
         if (player == null)
         {
-            PlayerMovement pm = FindFirstObjectByType<PlayerMovement>();
+            PlayerMovement pm = PlayerMovement.Instance != null ? PlayerMovement.Instance : FindFirstObjectByType<PlayerMovement>();
             if (pm != null) player = pm.gameObject;
         }
     }
@@ -38,10 +38,15 @@ public class CameraController : MonoBehaviour
 
         if (player == null)
         {
-            if (Time.time >= nextSearchTime)
+            PlayerMovement pm = PlayerMovement.Instance;
+            if (pm != null)
+            {
+                player = pm.gameObject;
+            }
+            else if (Time.time >= nextSearchTime)
             {
                 nextSearchTime = Time.time + 1.0f;
-                PlayerMovement pm = FindFirstObjectByType<PlayerMovement>();
+                pm = FindFirstObjectByType<PlayerMovement>();
                 if (pm != null) player = pm.gameObject;
             }
         }

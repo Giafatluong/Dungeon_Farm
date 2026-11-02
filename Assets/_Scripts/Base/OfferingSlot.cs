@@ -235,15 +235,32 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
         if (needed <= 0) return;
 
         int available = GetTotalItemCount(backpack, requiredItem);
-        if (available <= 0)
+        int deposit = 0;
+        if (available > 0)
         {
-            StatueUI.Instance?.SetFeedback($"<color=#FFAA55>You don't have {requiredItem.itemName} in your backpack.</color>");
-            return;
+            deposit = Mathf.Min(available, needed);
+            backpack.RemoveItem(requiredItem, deposit);
+            backpack.NotifyChange();
         }
 
-        int deposit = Mathf.Min(available, needed);
-        backpack.RemoveItem(requiredItem, deposit);
-        backpack.NotifyChange();
+        if (deposit < needed && HomeChest.Instance != null && HomeChest.Instance.chestContainer != null)
+        {
+            int chestAvail = GetTotalItemCount(HomeChest.Instance.chestContainer, requiredItem);
+            if (chestAvail > 0)
+            {
+                int fromChest = Mathf.Min(chestAvail, needed - deposit);
+                HomeChest.Instance.chestContainer.RemoveItem(requiredItem, fromChest);
+                HomeChest.Instance.chestContainer.NotifyChange();
+                HomeChest.Instance.SaveChestData();
+                deposit += fromChest;
+            }
+        }
+
+        if (deposit <= 0)
+        {
+            StatueUI.Instance?.SetFeedback($"<color=#FFAA55>Bạn không có {requiredItem.itemName} trong ba lô hoặc Rương Nhà.</color>");
+            return;
+        }
 
         ApplyContribution(deposit);
     }

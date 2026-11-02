@@ -604,6 +604,7 @@ public class ProgressionManager : MonoBehaviour
 
     public void HandlePlayerDeath(ItemContainer inventory)
     {
+        DungeonEntrance.SetReturnToEntranceFlag();
         HandlePlayerDeathWithoutReload(inventory);
 
         if (!DungeonSummaryUI.HasConfirmedReturn)
@@ -663,6 +664,7 @@ public class ProgressionManager : MonoBehaviour
 
     public void CompleteRun()
     {
+        DungeonEntrance.SetReturnToEntranceFlag();
         Debug.Log("Dungeon Run completed successfully!");
         runActive = false;
         RecordBossDefeated(currentFloor);
@@ -705,6 +707,7 @@ public class ProgressionManager : MonoBehaviour
 
     public void RetreatRun()
     {
+        DungeonEntrance.SetReturnToEntranceFlag();
         Debug.Log("Player retreated safely from the dungeon! Keeping all loot.");
         runActive = false;
 

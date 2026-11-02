@@ -67,9 +67,34 @@ public class CombatManager : MonoBehaviour
 
     public static CombatManager Instance { get; private set; }
 
+    #region Battle Speed
+    public static float BattleSpeed { get; private set; } = 1.0f;
+    public static event System.Action<float> OnBattleSpeedChanged;
+
+    public static void SetBattleSpeed(float speed)
+    {
+        BattleSpeed = Mathf.Clamp(speed, 1.0f, 2.0f);
+        PlayerPrefs.SetFloat("Combat_BattleSpeed", BattleSpeed);
+        PlayerPrefs.Save();
+        if (Instance != null && Instance.isCombatActive && !Instance.isPreparingCombat)
+        {
+            Time.timeScale = BattleSpeed;
+        }
+        OnBattleSpeedChanged?.Invoke(BattleSpeed);
+    }
+
+    public static float CycleBattleSpeed()
+    {
+        float next = BattleSpeed >= 1.9f ? 1.0f : (BattleSpeed >= 1.4f ? 2.0f : 1.5f);
+        SetBattleSpeed(next);
+        return next;
+    }
+    #endregion
+
     private void Awake()
     {
         Instance = this;
+        BattleSpeed = PlayerPrefs.GetFloat("Combat_BattleSpeed", 1.0f);
         if (turnManager == null) turnManager = GetComponent<TurnManager>();
         if (speedManager == null) speedManager = GetComponent<SpeedManager>();
         if (targetSelector == null) targetSelector = GetComponent<EnemyTargetSelector>();
@@ -87,6 +112,7 @@ public class CombatManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        Time.timeScale = 1.0f;
         if (playerStats != null)
         {
             playerStats.OnPlayerDeath -= HandlePlayerDeath;
@@ -207,6 +233,7 @@ public class CombatManager : MonoBehaviour
         preparationTimeRemaining = 0f;
         isPreparingCombat = false;
         isCombatActive = true;
+        Time.timeScale = BattleSpeed;
 
         OnCombatStarted?.Invoke();
         LogMessage("Combat started!");
@@ -217,8 +244,8 @@ public class CombatManager : MonoBehaviour
         }
     }
 
-    private bool hasEatenThisTurn = false;
-    private bool hasDefendedThisTurn = false;
+    public bool hasEatenThisTurn { get; private set; } = false;
+    public bool hasDefendedThisTurn { get; private set; } = false;
     public EnemyStats currentActingEnemy { get; private set; }
 
     public bool CanPlayerEatFree()
@@ -387,17 +414,26 @@ public class CombatManager : MonoBehaviour
         if (!isCombatActive || currentTurn != Turn.Player || isPlayerActing) return;
         if (playerStats == null || playerStats.currentAP <= 0) return;
 
-        if (targetSelector == null || targetSelector.selectedEnemy == null)
+        if (targetSelector == null || targetSelector.selectedEnemy == null || targetSelector.selectedEnemy.currentHealth <= 0)
         {
-            LogMessage("No target selected!");
-            return;
+            if (targetSelector != null) targetSelector.AutoSelectTarget(enemies);
+            if (targetSelector == null || targetSelector.selectedEnemy == null || targetSelector.selectedEnemy.currentHealth <= 0)
+            {
+                LogMessage("No target selected!");
+                return;
+            }
         }
 
         EnemyStats target = targetSelector.selectedEnemy;
         if (target.currentHealth <= 0)
         {
-            LogMessage("Target is already dead!");
-            return;
+            if (targetSelector != null) targetSelector.SelectNextLivingEnemy(target);
+            target = targetSelector != null ? targetSelector.selectedEnemy : null;
+            if (target == null || target.currentHealth <= 0)
+            {
+                LogMessage("Target is already dead!");
+                return;
+            }
         }
 
         StartPlayerActionCooldown(0.48f);
@@ -447,7 +483,7 @@ public class CombatManager : MonoBehaviour
 
         if (target.currentHealth <= 0)
         {
-            targetSelector.AutoSelectTarget(enemies);
+            if (targetSelector != null) targetSelector.SelectNextLivingEnemy(target);
         }
 
         CheckAllEnemiesDead();
@@ -726,7 +762,7 @@ public class CombatManager : MonoBehaviour
             }
             if (backpack == null)
             {
-                InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+                InventoryPanel invPanel = InventoryPanel.Instance != null ? InventoryPanel.Instance : FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
                 if (invPanel != null && invPanel.ItemContainer != null) backpack = invPanel.ItemContainer;
             }
             if (backpack == null)

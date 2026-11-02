@@ -10,6 +10,14 @@ public class DungeonEntrance : MonoBehaviour
     private Transform playerTransform;
     private float nextPlayerSearchTime;
 
+    public const string SpawnAtEntranceKey = "SpawnAtDungeonEntrance";
+
+    public static void SetReturnToEntranceFlag()
+    {
+        PlayerPrefs.SetInt(SpawnAtEntranceKey, 1);
+        PlayerPrefs.Save();
+    }
+
     private void Awake()
     {
         Instance = this;
@@ -28,6 +36,37 @@ public class DungeonEntrance : MonoBehaviour
             dungeonEntranceUI = FindFirstObjectByType<DungeonEntranceUI>(FindObjectsInactive.Include);
         }
         FindPlayer();
+
+        if (PlayerPrefs.GetInt(SpawnAtEntranceKey, 0) == 1)
+        {
+            PlayerPrefs.SetInt(SpawnAtEntranceKey, 0);
+            PlayerPrefs.Save();
+            PositionPlayerAtEntrance();
+        }
+    }
+
+    public void PositionPlayerAtEntrance()
+    {
+        if (playerTransform == null) FindPlayer();
+        if (playerTransform != null)
+        {
+            Vector3 spawnPos = transform.position + new Vector3(0f, -1.2f, 0f);
+            playerTransform.position = spawnPos;
+
+            Rigidbody2D rb = playerTransform.GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.position = spawnPos;
+                rb.linearVelocity = Vector2.zero;
+            }
+
+            if (Camera.main != null)
+            {
+                CameraController cam = Camera.main.GetComponent<CameraController>();
+                Vector3 camOffset = cam != null ? cam.offset : new Vector3(0, 1.5f, -10f);
+                Camera.main.transform.position = spawnPos + camOffset;
+            }
+        }
     }
 
     private void FindPlayer()

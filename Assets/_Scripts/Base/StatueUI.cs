@@ -177,7 +177,7 @@ public class StatueUI : MonoBehaviour
         backpackContainer = backpack;
         if (backpackContainer == null)
         {
-            InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+            InventoryPanel invPanel = InventoryPanel.Instance != null ? InventoryPanel.Instance : FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
             if (invPanel != null && invPanel.ItemContainer != null)
             {
                 backpackContainer = invPanel.ItemContainer;
@@ -185,7 +185,7 @@ public class StatueUI : MonoBehaviour
         }
         if (backpackContainer == null)
         {
-            PlayerStats ps = FindFirstObjectByType<PlayerStats>();
+            PlayerStats ps = PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>();
             if (ps != null && ps.itemContainer != null)
             {
                 backpackContainer = ps.itemContainer;
@@ -233,7 +233,10 @@ public class StatueUI : MonoBehaviour
         }
 
         UIEscapeManager.NotifyModalClosed("Statue");
-        TutorialManager.Instance?.NotifyStatueOfferingDone();
+        if (ProgressionManager.Instance != null && ProgressionManager.Instance.permanentATK > 0)
+        {
+            TutorialManager.Instance?.NotifyStatueOfferingDone();
+        }
     }
 
     public void SetFeedback(string message)
@@ -286,7 +289,7 @@ public class StatueUI : MonoBehaviour
             }
 
             // Sync with PlayerStats and show celebratory popup
-            PlayerStats ps = FindFirstObjectByType<PlayerStats>();
+            PlayerStats ps = PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>();
             if (ps != null)
             {
                 ps.RefreshStatsFromProgression();
@@ -300,6 +303,7 @@ public class StatueUI : MonoBehaviour
 
             SetFeedback($"<color=#FFD700>[BLESSING] DIVINE BLESSING! Completed {GetOfferingDisplayName(offering)}! (+{offering.rewardAmount} {offering.rewardStat} permanently)</color>");
             Debug.Log($"[StatueUI] Offering completed: {offering.offeringName}! Rewarded permanent +{offering.rewardAmount} {offering.rewardStat}");
+            TutorialManager.Instance?.NotifyStatueOfferingDone();
 
             RefreshAllOfferingSlots();
             UpdatePermanentStatsDisplay();
@@ -342,10 +346,30 @@ public class StatueUI : MonoBehaviour
             if (needed <= 0) continue;
 
             int available = GetTotalItemCount(backpackContainer, req.item);
-            if (available <= 0) continue;
+            int deposit = 0;
 
-            int deposit = Mathf.Min(available, needed);
-            backpackContainer.RemoveItem(req.item, deposit);
+            if (available > 0)
+            {
+                int backpackDeposit = Mathf.Min(available, needed);
+                backpackContainer.RemoveItem(req.item, backpackDeposit);
+                deposit += backpackDeposit;
+            }
+
+            // Fallback: If backpack doesn't have enough, check HomeChest!
+            if (deposit < needed && HomeChest.Instance != null && HomeChest.Instance.chestContainer != null)
+            {
+                int chestAvail = GetTotalItemCount(HomeChest.Instance.chestContainer, req.item);
+                if (chestAvail > 0)
+                {
+                    int chestDeposit = Mathf.Min(chestAvail, needed - deposit);
+                    HomeChest.Instance.chestContainer.RemoveItem(req.item, chestDeposit);
+                    HomeChest.Instance.chestContainer.NotifyChange();
+                    HomeChest.Instance.SaveChestData();
+                    deposit += chestDeposit;
+                }
+            }
+
+            if (deposit <= 0) continue;
 
             if (ProgressionManager.Instance != null)
             {
@@ -387,7 +411,7 @@ public class StatueUI : MonoBehaviour
         int spd = ProgressionManager.Instance != null ? ProgressionManager.Instance.permanentSpeed : 0;
         int hp = ProgressionManager.Instance != null ? ProgressionManager.Instance.permanentMaxHP : 0;
 
-        PlayerStats ps = FindFirstObjectByType<PlayerStats>();
+        PlayerStats ps = PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>();
         int totalHp = ps != null ? ps.maxHealth : (35 + hp);
         int totalAtk = ps != null ? ps.GetCurrentATK() : (7 + atk);
         int totalDef = ps != null ? ps.GetCurrentDEF() : (1 + def);
@@ -1345,12 +1369,12 @@ public class StatueUI : MonoBehaviour
             }
             else
             {
-                InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+                InventoryPanel invPanel = InventoryPanel.Instance != null ? InventoryPanel.Instance : FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
                 if (invPanel != null && invPanel.ItemContainer != null) container = invPanel.ItemContainer;
             }
             if (container == null)
             {
-                PlayerStats ps = FindFirstObjectByType<PlayerStats>();
+                PlayerStats ps = PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>();
                 if (ps != null && ps.itemContainer != null) container = ps.itemContainer;
             }
             if (container != null) backpackContainer = container;
@@ -1461,7 +1485,7 @@ public class StatueUI : MonoBehaviour
     {
         if (slotPrefab != null) return;
 
-        InventoryPanel invPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+        InventoryPanel invPanel = InventoryPanel.Instance != null ? InventoryPanel.Instance : FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
         if (invPanel != null)
         {
             InventoryButton btn = invPanel.GetComponentInChildren<InventoryButton>(true);

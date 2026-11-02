@@ -611,6 +611,7 @@ public class KitchenUI : MonoBehaviour
         bool success = currentStation.ClaimFood(backpackContainer, out string failReason);
         if (success)
         {
+            TutorialManager.Instance?.NotifyDishCooked();
             ShowToast($"🎉 Đã nhận món: <color=#88FF88>{dish.DisplayName}</color> x{amount} vào Balo!");
             RefreshUI();
         }

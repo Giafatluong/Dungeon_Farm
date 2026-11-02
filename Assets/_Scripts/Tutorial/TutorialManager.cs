@@ -213,7 +213,7 @@ public class TutorialManager : MonoBehaviour
                 }
 
                 // Grant 3 Carrot Seeds to player's inventory so they can practice planting
-                PlayerStats ps = Object.FindFirstObjectByType<PlayerStats>();
+                PlayerStats ps = PlayerStats.Instance != null ? PlayerStats.Instance : Object.FindFirstObjectByType<PlayerStats>();
                 if (ps != null && ps.itemContainer != null && carrot.seedItem != null)
                 {
                     if (!ps.itemContainer.HasItem(carrot.seedItem))
@@ -257,10 +257,25 @@ public class TutorialManager : MonoBehaviour
         return null;
     }
 
+    public int GetItemCount(ItemContainer container, ItemData item)
+    {
+        if (container == null || item == null || container.itemSlots == null) return 0;
+        int count = 0;
+        for (int i = 0; i < container.itemSlots.Length; i++)
+        {
+            var slot = container.itemSlots[i];
+            if (slot != null && ItemContainer.IsItemMatch(slot.itemData, item))
+            {
+                count += slot.amount;
+            }
+        }
+        return count;
+    }
+
     public void EnsureItemInInventory(ItemData item, int minCount)
     {
         if (item == null) return;
-        PlayerStats ps = Object.FindFirstObjectByType<PlayerStats>();
+        PlayerStats ps = PlayerStats.Instance != null ? PlayerStats.Instance : Object.FindFirstObjectByType<PlayerStats>();
         if (ps != null && ps.itemContainer != null)
         {
             int currentCount = 0;
@@ -439,20 +454,31 @@ public class TutorialManager : MonoBehaviour
                 {
                     stepIndex = 5,
                     totalSteps = 8,
-                    objectiveTitle = "Nấu Ăn: Chế Biến Súp Tốc Độ",
+                    objectiveTitle = "Nấu Ăn: Tìm Hiểu Độ No & Tốc Độ",
                     targetLabel = "Bếp Lửa Trại (Kitchen)",
                     actionKeyPrompt = "[E] MỞ BẾP -> [Nấu Ăn]",
-                    actionInstruction = "Đến Bếp Lửa lửa trại, nhấn <color=#FFEA30><b>[E]</b></color>, chọn Súp Cà Rốt (tốn 3 Cà Rốt) và bấm <color=#FFA726><b>[Nấu Ăn]</b></color>.",
-                    fullDialogue = "Đừng ăn nông sản sống, hãy chế biến thành món ăn hoàn chỉnh!\n" +
-                                   "- Đi lại Bếp Lửa Trại phía trên, nhấn phím <color=#FFEA30><b>[E]</b></color> để mở Bếp.\n" +
-                                   "- Chọn món <color=#FFA726><b>[Súp Cà Rốt]</b></color> (cần 3 Cà Rốt) và bấm nút <color=#FFA726><b>[Nấu Ăn]</b></color>.\n" +
-                                   "- Súp Cà Rốt hồi +18 HP, +25 Độ No và ban tặng <color=#FFEE55><b>Buff Tốc Độ (Speed)</b></color> cực mạnh giúp bạn luôn được đi trước quái vật trong hầm ngục! Giữ bát súp trong ba lô nhé!",
+                    actionInstruction = "Đến Bếp Lửa trại, nhấn <color=#FFEA30><b>[E]</b></color>, chọn Súp Cà Rốt (tốn 3 Cà Rốt) và bấm <color=#FFA726><b>[Nấu Ăn]</b></color>.",
+                    fullDialogue = "Nấu ăn là chìa khóa sinh tồn để chi phối Tốc Độ và Độ No:\n" +
+                                   "- Nhấn <color=#FFEA30><b>[E]</b></color> mở Bếp, chọn <color=#FFA726><b>[Súp Cà Rốt]</b></color> (tốn 3 Cà Rốt) và bấm [Nấu Ăn].\n" +
+                                   "- <color=#50FA7B><b>Cơ chế Tốc Độ (Speed):</b></color> Ai có SPD cao hơn sẽ được RA ĐÒN TRƯỚC! Quái vật có 10 SPD, bạn chỉ có 9 SPD nên ăn Súp Cà Rốt (+2 SPD) sẽ giúp bạn đạt 11 SPD để giành quyền đi trước.\n" +
+                                   "- <color=#FFD700><b>Cơ chế Độ No (Fullness):</b></color> Có 3 mốc quan trọng:\n" +
+                                   "  + <color=#50FA7B><b>No Nê (30% - 79%):</b></color> Buff toàn diện +2 ATK, +1 DEF, +2 SPD!\n" +
+                                   "  + <color=#FF6B6B><b>Đói (< 30%):</b></color> Suy nhược -2 ATK, -3 SPD (về 0 sẽ bị trừ thẳng vào máu)!\n" +
+                                   "  + <color=#FFA500><b>Bội Thực (>= 80%):</b></color> Hồi máu nhưng bị nặng nề giảm -4 SPD.\n" +
+                                   "Mỗi phòng hầm ngục tiêu hao 12 Độ No, hãy luôn chuẩn bị thức ăn đầy đủ nhé!",
                     targetPosition = kPos,
                     targetTransform = kitchen != null ? kitchen.transform : null
                 });
                 break;
 
             case TutorialStep.HomeChest:
+                // Ensure player has the 4 carrots in backpack before opening chest, so they see them clearly
+                CropData cCropChest = GetCarrotCropData();
+                if (cCropChest != null && cCropChest.producedItem != null)
+                {
+                    EnsureItemInInventory(cCropChest.producedItem, 4);
+                }
+
                 HomeChest chest = HomeChest.Instance != null ? HomeChest.Instance : Object.FindFirstObjectByType<HomeChest>();
                 Vector3 cPos = chest != null ? chest.transform.position : new Vector3(10.985f, -1.701f, 0f);
 
@@ -460,14 +486,17 @@ public class TutorialManager : MonoBehaviour
                 {
                     stepIndex = 6,
                     totalSteps = 8,
-                    objectiveTitle = "Rương Nhà: Bảo Hiểm An Toàn 100%",
+                    objectiveTitle = "Rương Nhà: Soạn Ba Lô Đi Chiến Dịch",
                     targetLabel = "Rương Nhà An Toàn",
-                    actionKeyPrompt = "[E] MỞ RƯƠNG -> Cất Đồ",
-                    actionInstruction = "Đến Rương Nhà cạnh lều, nhấn <color=#FFEA30><b>[E]</b></color> mở rương cất bớt hạt giống phòng rủi ro khi tử trận.",
-                    fullDialogue = "CẢNH BÁO SINH TỬ VỀ HẦM NGỤC:\n" +
-                                   "- Nếu bạn ngã xuống (HP = 0) trong hầm ngục, bạn sẽ <color=#FF6B6B><b>MẤT TOÀN BỘ VẬT PHẨM TRONG BA LÔ!</b></color>\n" +
-                                   "- Hãy đi lại chiếc Rương Nhà bằng gỗ màu nâu cạnh lều, nhấn phím <color=#FFEA30><b>[E]</b></color> mở rương và cất bớt hạt giống quý vào đây.\n" +
-                                   "Tất cả nông sản và hạt giống trong Rương Nhà được bảo hiểm an toàn tuyệt đối 100%! Nhấn [ESC] đóng rương để tiếp tục.",
+                    actionKeyPrompt = "[E] MỞ RƯƠNG -> Cất Hạt Giống",
+                    actionInstruction = "Đến Rương Nhà cạnh lều, nhấn <color=#FFEA30><b>[E]</b></color> cất các túi Hạt Giống vào để bảo vệ. LƯU Ý: GIỮ LẠI 4 CÀ RỐT & SÚP trong ba lô!",
+                    fullDialogue = "QUY TẮC SOẠN BA LÔ TRƯỚC KHI VÀO HẦM NGỤC:\n" +
+                                   "- Nếu ngã xuống (HP = 0) trong hầm ngục, bạn sẽ <color=#FF6B6B><b>MẤT TOÀN BỘ VẬT PHẨM TRONG BA LÔ!</b></color>\n" +
+                                   "- Hãy mở Rương Nhà và <color=#50FA7B><b>CẤT CÁC TÚI HẠT GIỐNG</b></color> quý vào đây để bảo hiểm an toàn 100%.\n" +
+                                   "- <color=#FFEA30><b>ĐẶC BIỆT LƯU Ý - ĐỪNG CẤT HẾT:</b></color>\n" +
+                                   "  + <color=#50FA7B><b>Giữ lại ít nhất 4 củ Cà Rốt:</b></color> Để bước tiếp theo dâng lễ Tượng Thần nhận <color=#FF6B6B><b>+1 ATK Vĩnh Viễn!</b></color>\n" +
+                                   "  + <color=#50FA7B><b>Giữ lại bát Súp Cà Rốt:</b></color> Để tăng tốc độ và hồi phục khi chiến đấu.\n" +
+                                   "Sau khi cất hạt giống xong, nhấn [ESC] đóng rương để tiếp tục sang phía Đông!",
                     targetPosition = cPos,
                     targetTransform = chest != null ? chest.transform : null
                 });
@@ -490,11 +519,12 @@ public class TutorialManager : MonoBehaviour
                     objectiveTitle = "Tượng Nữ Thần: Dâng Lễ Tăng Chỉ Số",
                     targetLabel = "Tượng Nữ Thần (Ancient Shrine)",
                     actionKeyPrompt = "[E] DÂNG LỄ (4 Cà Rốt)",
-                    actionInstruction = "Đến Tượng Thần ở phía Đông, nhấn <color=#FFEA30><b>[E]</b></color> dâng 4 Cà Rốt nhận <color=#FF6B6B><b>+1 ATK</b></color> vĩnh viễn.",
-                    fullDialogue = "Đây là Tượng Nữ Thần Cổ Đại — nơi gia tăng sức mạnh vĩnh viễn cho bạn:\n" +
+                    actionInstruction = "Đến Tượng Thần ở phía Đông, nhấn <color=#FFEA30><b>[E]</b></color> dùng 4 Cà Rốt đã giữ lại để dâng lễ nhận <color=#FF6B6B><b>+1 ATK</b></color> vĩnh viễn.",
+                    fullDialogue = "Đây là Tượng Nữ Thần Cổ Đại — nơi bạn dùng nông sản để đổi lấy sức mạnh vĩnh viễn:\n" +
                                    "- Đến trước Tượng Thần ở phía Đông, nhấn phím <color=#FFEA30><b>[E]</b></color> mở giao diện Dâng Lễ.\n" +
-                                   "- Chọn Trụ Chiến Binh, bấm nút <color=#FFA726><b>[Dâng Lễ Nhanh]</b></color> để cúng 4 củ Cà Rốt nhận ngay <color=#FF6B6B><b>+1 Sức Đánh (ATK) Vĩnh Viễn!</b></color>\n" +
-                                   "Có 4 trụ cột: HP, ATK, DEF và Speed. Càng dâng lễ bậc cao, bạn càng mở khóa nhiều Phước Lành Thần Thánh!",
+                                   "- Chọn Trụ Chiến Binh, bấm nút <color=#FFA726><b>[Quick Offer]</b></color> để hiến tế 4 củ Cà Rốt đã giữ lại trong ba lô.\n" +
+                                   "- Nhận ngay <color=#FF6B6B><b>+1 Sức Đánh (ATK) Vĩnh Viễn!</b></color>\n" +
+                                   "Tượng Thần sẽ mở thêm nhiều Phước Lành khi bạn dâng lễ nông sản cấp cao sau này (hệ thống tự động nhận diện cả vật phẩm trong Rương Nhà).",
                     targetPosition = sPos,
                     targetTransform = statue != null ? statue.transform : null
                 });
@@ -626,6 +656,39 @@ public class TutorialManager : MonoBehaviour
     {
         if (currentStep == TutorialStep.HomeChest)
         {
+            // Fail-safe: If the player stored all carrots into the chest, ensure 4 carrots are in backpack for the statue!
+            CropData cCrop = GetCarrotCropData();
+            if (cCrop != null && cCrop.producedItem != null)
+            {
+                ItemData carrotItem = cCrop.producedItem;
+                PlayerStats ps = PlayerStats.Instance != null ? PlayerStats.Instance : Object.FindFirstObjectByType<PlayerStats>();
+                if (ps != null && ps.itemContainer != null)
+                {
+                    int inBackpack = GetItemCount(ps.itemContainer, carrotItem);
+                    if (inBackpack < 4)
+                    {
+                        int needed = 4 - inBackpack;
+                        if (HomeChest.Instance != null && HomeChest.Instance.chestContainer != null)
+                        {
+                            int inChest = GetItemCount(HomeChest.Instance.chestContainer, carrotItem);
+                            int toTake = Mathf.Min(needed, inChest);
+                            if (toTake > 0)
+                            {
+                                HomeChest.Instance.chestContainer.RemoveItem(carrotItem, toTake);
+                                HomeChest.Instance.chestContainer.NotifyChange();
+                                HomeChest.Instance.SaveChestData();
+                                ps.itemContainer.AddItem(carrotItem, toTake);
+                                needed -= toTake;
+                            }
+                        }
+                        if (needed > 0)
+                        {
+                            ps.itemContainer.AddItem(carrotItem, needed);
+                        }
+                    }
+                }
+            }
+
             AdvanceToNextStep();
         }
     }
@@ -665,6 +728,7 @@ public class TutorialManager : MonoBehaviour
         PlayerPrefs.DeleteKey(DungeonTutorialDoneKey);
         PlayerPrefs.DeleteKey("HarvestHollow_CombatTutorial_Completed");
         PlayerPrefs.DeleteKey("HarvestHollow_IntroCutscene_Played");
+        PlayerPrefs.DeleteKey("Tut_Reward_Intro_Seen");
         PlayerPrefs.DeleteKey("Tut_Event_Intro_Seen");
         PlayerPrefs.DeleteKey("Tut_Merchant_Intro_Seen");
         PlayerPrefs.DeleteKey("Tut_Camp_Intro_Seen");

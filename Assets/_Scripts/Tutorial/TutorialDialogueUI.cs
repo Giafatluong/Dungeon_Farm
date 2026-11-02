@@ -155,7 +155,11 @@ public class TutorialDialogueUI : MonoBehaviour
                     // Fast-forward text
                     if (typewriterRoutine != null) StopCoroutine(typewriterRoutine);
                     isTyping = false;
-                    if (dialogueBodyText != null) dialogueBodyText.text = currentInfo.fullDialogue;
+                    if (dialogueBodyText != null)
+                    {
+                        dialogueBodyText.text = currentInfo.fullDialogue;
+                        dialogueBodyText.maxVisibleCharacters = 99999;
+                    }
                     if (continuePromptText != null) continuePromptText.gameObject.SetActive(true);
                 }
                 else
@@ -314,19 +318,30 @@ public class TutorialDialogueUI : MonoBehaviour
     private IEnumerator TypewriterRoutine(string fullText)
     {
         isTyping = true;
-        if (dialogueBodyText != null) dialogueBodyText.text = "";
+        if (dialogueBodyText != null)
+        {
+            dialogueBodyText.text = fullText;
+            dialogueBodyText.maxVisibleCharacters = 0;
+        }
+
+        yield return null;
+
+        int totalChars = (dialogueBodyText != null && dialogueBodyText.textInfo != null)
+            ? dialogueBodyText.textInfo.characterCount
+            : fullText.Length;
 
         float charDelay = 0.015f;
-        for (int i = 1; i <= fullText.Length; i++)
+        for (int i = 1; i <= totalChars; i++)
         {
             if (dialogueBodyText != null)
             {
-                dialogueBodyText.text = fullText.Substring(0, i);
+                dialogueBodyText.maxVisibleCharacters = i;
             }
             yield return new WaitForSeconds(charDelay);
         }
 
         isTyping = false;
+        if (dialogueBodyText != null) dialogueBodyText.maxVisibleCharacters = 99999;
         if (continuePromptText != null) continuePromptText.gameObject.SetActive(true);
     }
 
@@ -503,7 +518,7 @@ public class TutorialDialogueUI : MonoBehaviour
         rt.anchorMax = new Vector2(0f, 1f);
         rt.pivot = new Vector2(0f, 1f);
         rt.anchoredPosition = new Vector2(25, -25);
-        rt.sizeDelta = new Vector2(400, 150);
+        rt.sizeDelta = new Vector2(430, 165);
 
         Image frameImg = trackerRootGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(frameImg, new Color(0.18f, 0.45f, 0.35f, 0.95f)); // Emerald frame
@@ -557,11 +572,11 @@ public class TutorialDialogueUI : MonoBehaviour
         iRT.anchorMax = new Vector2(1, 1);
         iRT.pivot = new Vector2(0, 1);
         iRT.anchoredPosition = new Vector2(12, -62);
-        iRT.sizeDelta = new Vector2(-24, 45);
+        iRT.sizeDelta = new Vector2(-24, 52);
         trackerInstructionText = instGO.GetComponent<TextMeshProUGUI>();
         trackerInstructionText.fontSize = 13.5f;
         trackerInstructionText.color = Color.white;
-        trackerInstructionText.lineSpacing = -4;
+        trackerInstructionText.lineSpacing = 0;
         DungeonUIAssetHelper.ApplyFont(trackerInstructionText, withOutline: true);
 
         // Status / Distance meter text
@@ -615,7 +630,7 @@ public class TutorialDialogueUI : MonoBehaviour
         edgeArrowIconRT.anchoredPosition = new Vector2(18, 0);
         edgeArrowIconRT.sizeDelta = new Vector2(26, 26);
         TextMeshProUGUI aTMP = arrowGO.GetComponent<TextMeshProUGUI>();
-        aTMP.text = "➤";
+        aTMP.text = ">";
         aTMP.alignment = TextAlignmentOptions.Center;
         aTMP.fontSize = 20;
         aTMP.fontStyle = FontStyles.Bold;
@@ -660,7 +675,7 @@ public class TutorialDialogueUI : MonoBehaviour
         worldArrowRT.anchoredPosition = new Vector2(0, 0);
         worldArrowRT.sizeDelta = new Vector2(30, 26);
         TextMeshProUGUI arrowTMP = arrowGO.GetComponent<TextMeshProUGUI>();
-        arrowTMP.text = "▼";
+        arrowTMP.text = "v";
         arrowTMP.fontSize = 22;
         arrowTMP.fontStyle = FontStyles.Bold;
         arrowTMP.alignment = TextAlignmentOptions.Center;
@@ -734,7 +749,7 @@ public class TutorialDialogueUI : MonoBehaviour
         dialogueBoxRT.anchorMax = new Vector2(0.5f, 0f);
         dialogueBoxRT.pivot = new Vector2(0.5f, 0f);
         dialogueBoxRT.anchoredPosition = new Vector2(0, 105);
-        dialogueBoxRT.sizeDelta = new Vector2(780, 160);
+        dialogueBoxRT.sizeDelta = new Vector2(820, 175);
 
         Image boxImg = dialogueBoxGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(boxImg, new Color(0.15f, 0.55f, 0.40f, 1f)); // Emerald jade frame
@@ -800,13 +815,14 @@ public class TutorialDialogueUI : MonoBehaviour
         nameGO.transform.SetParent(headerGO.transform, false);
         RectTransform nameRT = nameGO.GetComponent<RectTransform>();
         nameRT.anchorMin = new Vector2(0, 0);
-        nameRT.anchorMax = new Vector2(0.5f, 1);
+        nameRT.anchorMax = new Vector2(0.32f, 1);
         nameRT.offsetMin = Vector2.zero;
         nameRT.offsetMax = Vector2.zero;
         speakerNameText = nameGO.GetComponent<TextMeshProUGUI>();
-        speakerNameText.text = "🌿 Tinh Linh Mầm Cây";
-        speakerNameText.fontSize = 17;
+        speakerNameText.text = "Tinh Linh Mầm Cây";
+        speakerNameText.fontSize = 15.5f;
         speakerNameText.fontStyle = FontStyles.Bold;
+        speakerNameText.textWrappingMode = TextWrappingModes.NoWrap;
         speakerNameText.color = new Color(0.35f, 1f, 0.65f, 1f); // Bright neon jade
         DungeonUIAssetHelper.ApplyFont(speakerNameText, withOutline: true);
 
@@ -814,14 +830,15 @@ public class TutorialDialogueUI : MonoBehaviour
         GameObject badgeGO = new GameObject("ObjectiveBadge", typeof(RectTransform), typeof(TextMeshProUGUI));
         badgeGO.transform.SetParent(headerGO.transform, false);
         RectTransform badgeRT = badgeGO.GetComponent<RectTransform>();
-        badgeRT.anchorMin = new Vector2(0.5f, 0);
+        badgeRT.anchorMin = new Vector2(0.32f, 0);
         badgeRT.anchorMax = new Vector2(1, 1);
         badgeRT.offsetMin = Vector2.zero;
         badgeRT.offsetMax = Vector2.zero;
         objectiveBadgeText = badgeGO.GetComponent<TextMeshProUGUI>();
         objectiveBadgeText.alignment = TextAlignmentOptions.Right;
-        objectiveBadgeText.fontSize = 13;
+        objectiveBadgeText.fontSize = 12.5f;
         objectiveBadgeText.fontStyle = FontStyles.Bold;
+        objectiveBadgeText.textWrappingMode = TextWrappingModes.NoWrap;
         objectiveBadgeText.color = new Color(1f, 0.92f, 0.30f, 1f); // Bright sunlight gold
         DungeonUIAssetHelper.ApplyFont(objectiveBadgeText, withOutline: true);
 
@@ -831,12 +848,12 @@ public class TutorialDialogueUI : MonoBehaviour
         RectTransform bodyRT = bodyGO.GetComponent<RectTransform>();
         bodyRT.anchorMin = new Vector2(0, 0);
         bodyRT.anchorMax = new Vector2(1, 1);
-        bodyRT.offsetMin = new Vector2(0, 20);
-        bodyRT.offsetMax = new Vector2(0, -26);
+        bodyRT.offsetMin = new Vector2(0, 22);
+        bodyRT.offsetMax = new Vector2(0, -28);
         dialogueBodyText = bodyGO.GetComponent<TextMeshProUGUI>();
-        dialogueBodyText.fontSize = 15;
+        dialogueBodyText.fontSize = 14f;
         dialogueBodyText.color = Color.white;
-        dialogueBodyText.lineSpacing = -3;
+        dialogueBodyText.lineSpacing = 2.0f;
         DungeonUIAssetHelper.ApplyFont(dialogueBodyText, withOutline: true);
 
         // Continue Prompt Text

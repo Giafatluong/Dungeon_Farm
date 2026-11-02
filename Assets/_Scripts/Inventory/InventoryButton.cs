@@ -244,6 +244,21 @@ public class InventoryButton : MonoBehaviour,
     {
         if (eventData.button == PointerEventData.InputButton.Left)
         {
+            // Shift + LeftClick quick transfer to Chest or Loot UI (standard muscle memory)
+            if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+            {
+                if (ChestUI.Instance != null && ChestUI.Instance.IsOpen && itemContainer != null)
+                {
+                    ChestUI.QuickTransfer(itemContainer, slotIndex);
+                    return;
+                }
+                else if (LootUI.Instance != null && LootUI.Instance.IsOpen && itemContainer != null)
+                {
+                    LootUI.QuickTransfer(itemContainer, slotIndex);
+                    return;
+                }
+            }
+
             SelectItem();
         }
         else if (eventData.button == PointerEventData.InputButton.Right)

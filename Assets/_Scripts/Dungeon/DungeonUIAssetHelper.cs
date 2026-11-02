@@ -301,15 +301,39 @@ public static class DungeonUIAssetHelper
     public static TMP_FontAsset GetFontAsset()
     {
         if (_fontAsset != null) return _fontAsset;
+
+        // 1. Try TMP default font asset from project settings
+        if (TMP_Settings.defaultFontAsset != null)
+        {
+            _fontAsset = TMP_Settings.defaultFontAsset;
+            return _fontAsset;
+        }
+
+        // 2. Try loading main LiberationSans SDF directly
+        _fontAsset = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+        if (_fontAsset != null) return _fontAsset;
+
+        // 3. Search loaded font assets: prioritize exact match "LiberationSans SDF" (NEVER the fallback asset)
         TMP_FontAsset[] allFonts = Resources.FindObjectsOfTypeAll<TMP_FontAsset>();
         for (int i = 0; i < allFonts.Length; i++)
         {
-            if (allFonts[i] != null && allFonts[i].name.Contains("LiberationSans"))
+            if (allFonts[i] != null && allFonts[i].name == "LiberationSans SDF")
             {
                 _fontAsset = allFonts[i];
                 return _fontAsset;
             }
         }
+
+        // 4. Any other non-fallback font
+        for (int i = 0; i < allFonts.Length; i++)
+        {
+            if (allFonts[i] != null && !allFonts[i].name.Contains("Fallback"))
+            {
+                _fontAsset = allFonts[i];
+                return _fontAsset;
+            }
+        }
+
         if (allFonts.Length > 0) _fontAsset = allFonts[0];
         return _fontAsset;
     }

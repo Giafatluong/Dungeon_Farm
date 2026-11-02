@@ -762,10 +762,6 @@ public class RewardUI : MonoBehaviour
         {
             hintText.text = message;
         }
-        if (CombatUI.Instance != null)
-        {
-            CombatUI.Instance.LogMessage($"[Treasure] {message}");
-        }
     }
     #endregion
 

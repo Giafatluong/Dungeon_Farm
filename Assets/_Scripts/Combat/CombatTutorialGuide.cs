@@ -370,24 +370,28 @@ public class CombatTutorialGuide : MonoBehaviour
 
                 if (bannerTitleText != null)
                 {
-                    bannerTitleText.text = "<color=#FFD700>HƯỚNG DẪN CHIẾN ĐẤU [1/4]: 6 THUỘC TÍNH & 3 AP</color>";
+                    bannerTitleText.text = "<color=#FFD700>HƯỚNG DẪN CHIẾN ĐẤU [1/4]: CƠ CHẾ TỐC ĐỘ (SPD) & ĐỘ NO</color>";
                 }
                 if (bannerBodyText != null)
                 {
-                    bannerBodyText.text = "Nhìn bảng nhân vật góc dưới bên trái: <b>HP</b> (Máu), <b>3 AP</b> (Hành động), <b>ATK/DEF</b> (Công/Thủ), <b>SPD</b> (Tốc độ đi trước) và <b>Độ No</b>! Hãy bấm <color=#FFA500><b>[EAT] (Phím 3)</b></color> ăn Súp Cà Rốt nhận Buff Tốc Độ để giành lượt đi trước quái vật!";
+                    bannerBodyText.text = "1. <b>Tốc Độ (SPD):</b> Ai có SPD cao hơn sẽ ĐI TRƯỚC! Quái vật có <color=#FF6B6B><b>10 SPD</b></color>, bạn có <color=#5599FF><b>9 SPD</b></color> (sẽ bị đánh trước!).\n" +
+                                          "2. <b>Độ No:</b> Giữ ở mốc 'No Nê' (30%-79%) để nhận Buff toàn diện (+2 ATK, +1 DEF, +2 SPD).\n" +
+                                          "Hãy bấm <color=#FFA500><b>[EAT] (Phím 3)</b></color> ăn Súp Cà Rốt để tăng lên <color=#50FA7B><b>11 SPD</b></color> (> 10 SPD) giành quyền ĐI TRƯỚC!";
                 }
-                PointToButton(combatUI != null && combatUI.eatButton != null ? combatUI.eatButton.GetComponent<RectTransform>() : null, "[EAT] ĂN SÚP (1 AP)");
+                PointToButton(combatUI != null && combatUI.eatButton != null ? combatUI.eatButton.GetComponent<RectTransform>() : null, "[EAT] ĂN SÚP (+2 SPD)");
                 if (enemyIntentPillGO != null) enemyIntentPillGO.SetActive(false);
                 break;
 
             case CombatPhase.AttackTarget:
                 if (bannerTitleText != null)
                 {
-                    bannerTitleText.text = "<color=#FFD700>HƯỚNG DẪN CHIẾN ĐẤU [2/4]: TẤN CÔNG KẺ ĐỊCH</color>";
+                    bannerTitleText.text = "<color=#50FA7B>TỐC ĐỘ ĐÃ ĐẠT 11 SPD > 10 SPD: BẠN ĐÃ ĐI TRƯỚC!</color>";
                 }
                 if (bannerBodyText != null)
                 {
-                    bannerBodyText.text = "Súp đã kích hoạt Buff Tốc Độ! Quái vật đã được chọn mục tiêu, hãy bấm <color=#FF5555><b>[ATTACK] (Phím 1)</b></color> để tung đòn tấn công!";
+                    bannerBodyText.text = "Xuất sắc! Sau khi ăn Súp, Tốc Độ đạt <color=#50FA7B><b>11 SPD</b></color> (cao hơn 10 SPD của địch), giúp bạn <color=#FFD700><b>GIÀNH QUYỀN ĐI TRƯỚC!</b></color>\n" +
+                                          "Độ No đạt mức 'No Nê' sung mãn (+2 ATK, +1 DEF, +2 SPD).\n" +
+                                          "Giờ bạn đã nắm lượt đi, hãy bấm <color=#FF5555><b>[ATTACK] (Phím 1)</b></color> để tung đòn tấn công!";
                 }
                 PointToButton(combatUI != null && combatUI.attackButton != null ? combatUI.attackButton.GetComponent<RectTransform>() : null, "[ATTACK] TẤN CÔNG (1 AP)");
                 if (enemyIntentPillGO != null) enemyIntentPillGO.SetActive(false);
@@ -599,7 +603,7 @@ public class CombatTutorialGuide : MonoBehaviour
         bannerCardRT.anchorMax = new Vector2(0.5f, 1f);
         bannerCardRT.pivot = new Vector2(0.5f, 1f);
         bannerCardRT.anchoredPosition = new Vector2(0, -95);
-        bannerCardRT.sizeDelta = new Vector2(660, 120);
+        bannerCardRT.sizeDelta = new Vector2(760, 145);
 
         Image cardFrame = cardGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(cardFrame, new Color(0.85f, 0.55f, 0.18f, 0.98f)); // Golden amber
@@ -688,7 +692,7 @@ public class CombatTutorialGuide : MonoBehaviour
         aRT.anchoredPosition = new Vector2(0, -6);
         aRT.sizeDelta = new Vector2(30, 24);
         TextMeshProUGUI arrowTMP = arrowGO.GetComponent<TextMeshProUGUI>();
-        arrowTMP.text = "▼";
+        arrowTMP.text = "v";
         arrowTMP.fontSize = 22;
         arrowTMP.fontStyle = FontStyles.Bold;
         arrowTMP.alignment = TextAlignmentOptions.Center;

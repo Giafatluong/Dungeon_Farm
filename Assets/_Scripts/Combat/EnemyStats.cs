@@ -411,9 +411,9 @@ public class EnemyStats : MonoBehaviour
 
         OnEnemyDeath?.Invoke(this);
 
-        if (targetSelector != null && targetSelector.selectedEnemy == this)
+        if (targetSelector != null)
         {
-            targetSelector.ClearTarget();
+            targetSelector.SelectNextLivingEnemy(this);
         }
 
         EnemyCombatVisual visual = CombatVisual != null ? CombatVisual : (CombatVisual = GetComponent<EnemyCombatVisual>());

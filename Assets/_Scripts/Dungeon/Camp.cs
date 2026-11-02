@@ -195,6 +195,8 @@ public class Camp : MonoBehaviour
 
     private void PerformCampExit()
     {
+        DungeonEntrance.SetReturnToEntranceFlag();
+
         if (ProgressionManager.Instance != null)
         {
             ProgressionManager.Instance.RetreatRun();

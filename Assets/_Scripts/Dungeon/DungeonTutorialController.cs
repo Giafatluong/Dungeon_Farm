@@ -16,6 +16,7 @@ public class DungeonTutorialController : MonoBehaviour
     public const string EventIntroSeenKey = "Tut_Event_Intro_Seen";
     public const string MerchantIntroSeenKey = "Tut_Merchant_Intro_Seen";
     public const string CampIntroSeenKey = "Tut_Camp_Intro_Seen";
+    public const string RewardIntroSeenKey = "Tut_Reward_Intro_Seen";
 
     [Header("UI Overlay Elements")]
     private GameObject overlayCanvasGO;
@@ -149,7 +150,7 @@ public class DungeonTutorialController : MonoBehaviour
                 break;
 
             case WaveData.WaveType.Reward:
-                if (isTutorialFloor || PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0)
+                if (isTutorialFloor || PlayerPrefs.GetInt(RewardIntroSeenKey, 0) == 0)
                 {
                     StartCoroutine(ShowRewardStageGuideDelayed());
                 }
@@ -215,6 +216,12 @@ public class DungeonTutorialController : MonoBehaviour
             keyPrompt: "Bấm [LẤY HẾT] -> Bấm [TIẾP TỤC]"
         );
 
+        if (!isTutorialFloor)
+        {
+            PlayerPrefs.SetInt(RewardIntroSeenKey, 1);
+            PlayerPrefs.Save();
+        }
+
         RewardUI rewardUI = RewardUI.Instance != null ? RewardUI.Instance : FindFirstObjectByType<RewardUI>();
         if (rewardUI != null && rewardUI.lootAllButton != null)
         {
@@ -254,8 +261,11 @@ public class DungeonTutorialController : MonoBehaviour
             keyPrompt: "Đọc chi phí & Nhấp chọn một phương án"
         );
 
-        PlayerPrefs.SetInt(EventIntroSeenKey, 1);
-        PlayerPrefs.Save();
+        if (!isTutorialFloor)
+        {
+            PlayerPrefs.SetInt(EventIntroSeenKey, 1);
+            PlayerPrefs.Save();
+        }
 
         DungeonEventUI eventUI = DungeonEventUI.Instance != null ? DungeonEventUI.Instance : FindFirstObjectByType<DungeonEventUI>();
         if (eventUI != null && eventUI.choicesContainer != null)
@@ -293,8 +303,11 @@ public class DungeonTutorialController : MonoBehaviour
             keyPrompt: "Bấm [ĐỔI] món đồ cần thiết hoặc [TIẾP TỤC]"
         );
 
-        PlayerPrefs.SetInt(MerchantIntroSeenKey, 1);
-        PlayerPrefs.Save();
+        if (!isTutorialFloor)
+        {
+            PlayerPrefs.SetInt(MerchantIntroSeenKey, 1);
+            PlayerPrefs.Save();
+        }
 
         MerchantUI merchantUI = MerchantUI.Instance != null ? MerchantUI.Instance : FindFirstObjectByType<MerchantUI>();
         if (merchantUI != null && merchantUI.continueButton != null)
@@ -313,12 +326,15 @@ public class DungeonTutorialController : MonoBehaviour
         ShowBanner(
             stageBadge: isTutorialFloor ? $"ẢI {stageNum}/{totalStages}: LỬA TRẠI NGHỈ CHÂN (CAMP ROOM)" : "TRẠI NGHỈ CHÂN (CAMP)",
             title: "TRẠI NGHỈ CHÂN: ĂN UỐNG, TIÊU HÓA, HỒI MÁU & RÚT LUI",
-            instruction: "Hoạt động tại Trại: Ăn uống, Nấu ăn dã chiến, Tập luyện tiêu hóa (đốt bớt độ no để có thể ăn tiếp) và Nghỉ ngơi hồi máu (+25 HP). ⚠️ CẢNH BÁO: Mỗi hành động làm tăng Nguy cơ Phục kích (Ambush Risk)! Hãy dùng nút <color=#FFEA30><b>[RÚT LUI AN TOÀN]</b></color> để mang 100% chiến lợi phẩm và hạt giống trở về Căn Cứ!",
+            instruction: "Hoạt động tại Trại: Ăn uống, Nấu ăn dã chiến, Tập luyện tiêu hóa (đốt bớt độ no để có thể ăn tiếp) và Nghỉ ngơi hồi máu (+25 HP). CẢNH BÁO: Mỗi hành động làm tăng Nguy cơ Phục kích (Ambush Risk)! Hãy dùng nút <color=#FFEA30><b>[RÚT LUI AN TOÀN]</b></color> để mang 100% chiến lợi phẩm và hạt giống trở về Căn Cứ!",
             keyPrompt: "Nghỉ ngơi hồi máu / Bấm [RÚT LUI AN TOÀN] hoặc [TIẾP TỤC]"
         );
 
-        PlayerPrefs.SetInt(CampIntroSeenKey, 1);
-        PlayerPrefs.Save();
+        if (!isTutorialFloor)
+        {
+            PlayerPrefs.SetInt(CampIntroSeenKey, 1);
+            PlayerPrefs.Save();
+        }
 
         CampUI campUI = CampUI.Instance != null ? CampUI.Instance : FindFirstObjectByType<CampUI>();
         if (campUI != null)
@@ -338,6 +354,7 @@ public class DungeonTutorialController : MonoBehaviour
     {
         PlayerPrefs.SetInt(TutorialManager.DungeonTutorialDoneKey, 1);
         PlayerPrefs.SetInt(TutorialManager.TutorialDoneKey, 1);
+        PlayerPrefs.SetInt(RewardIntroSeenKey, 1);
         PlayerPrefs.SetInt(EventIntroSeenKey, 1);
         PlayerPrefs.SetInt(MerchantIntroSeenKey, 1);
         PlayerPrefs.SetInt(CampIntroSeenKey, 1);
@@ -402,10 +419,11 @@ public class DungeonTutorialController : MonoBehaviour
     #region Banner Controls
     public void ShowBanner(string stageBadge, string title, string instruction, string keyPrompt)
     {
-        if (bannerGO == null) ConstructUI();
+        ConstructUI();
         if (bannerGO == null) return;
 
         bannerGO.SetActive(true);
+
         if (stageBadgeText != null) stageBadgeText.text = stageBadge;
         if (titleText != null) titleText.text = title;
         if (instructionText != null) instructionText.text = instruction;
@@ -445,7 +463,7 @@ public class DungeonTutorialController : MonoBehaviour
         bannerRT.anchorMax = new Vector2(0.5f, 1f);
         bannerRT.pivot = new Vector2(0.5f, 1f);
         bannerRT.anchoredPosition = new Vector2(0, -90);
-        bannerRT.sizeDelta = new Vector2(860, 165);
+        bannerRT.sizeDelta = new Vector2(880, 165);
 
         Image bannerFrame = bannerGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(bannerFrame, new Color(0.20f, 0.70f, 0.50f, 1f)); // Vivid emerald frame
@@ -461,6 +479,35 @@ public class DungeonTutorialController : MonoBehaviour
         Image plImg = plate.GetComponent<Image>();
         plImg.color = new Color(0.05f, 0.07f, 0.09f, 0.98f); // Solid pitch dark
 
+        // Close Button (Top-Right)
+        GameObject closeBtnGO = new GameObject("CloseButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        closeBtnGO.transform.SetParent(plate.transform, false);
+        RectTransform cRT = closeBtnGO.GetComponent<RectTransform>();
+        cRT.anchorMin = new Vector2(1, 1);
+        cRT.anchorMax = new Vector2(1, 1);
+        cRT.pivot = new Vector2(1, 1);
+        cRT.anchoredPosition = new Vector2(-8, -6);
+        cRT.sizeDelta = new Vector2(76, 24);
+        Image cImg = closeBtnGO.GetComponent<Image>();
+        cImg.color = new Color(0.18f, 0.20f, 0.25f, 0.95f);
+        Button cBtn = closeBtnGO.GetComponent<Button>();
+        cBtn.onClick.AddListener(HideBanner);
+
+        GameObject cTxtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        cTxtGO.transform.SetParent(closeBtnGO.transform, false);
+        RectTransform ctRT = cTxtGO.GetComponent<RectTransform>();
+        ctRT.anchorMin = Vector2.zero;
+        ctRT.anchorMax = Vector2.one;
+        ctRT.offsetMin = Vector2.zero;
+        ctRT.offsetMax = Vector2.zero;
+        TextMeshProUGUI cTmp = cTxtGO.GetComponent<TextMeshProUGUI>();
+        cTmp.text = "[ Đóng ]";
+        cTmp.fontSize = 12;
+        cTmp.fontStyle = FontStyles.Bold;
+        cTmp.alignment = TextAlignmentOptions.Center;
+        cTmp.color = new Color(0.95f, 0.95f, 0.95f);
+        DungeonUIAssetHelper.ApplyFont(cTmp, withOutline: true);
+
         // Stage Badge
         GameObject badgeGO = new GameObject("Badge", typeof(RectTransform), typeof(TextMeshProUGUI));
         badgeGO.transform.SetParent(plate.transform, false);
@@ -475,7 +522,7 @@ public class DungeonTutorialController : MonoBehaviour
         stageBadgeText.fontStyle = FontStyles.Bold;
         stageBadgeText.alignment = TextAlignmentOptions.Center;
         stageBadgeText.color = new Color(0.35f, 1f, 0.65f); // Bright neon emerald
-        DungeonUIAssetHelper.ApplyFont(stageBadgeText, withOutline: true);
+        DungeonUIAssetHelper.ApplyFont(stageBadgeText);
 
         // Title
         GameObject titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -491,7 +538,7 @@ public class DungeonTutorialController : MonoBehaviour
         titleText.fontStyle = FontStyles.Bold;
         titleText.alignment = TextAlignmentOptions.Center;
         titleText.color = new Color(1f, 0.92f, 0.30f); // Bright sunlight gold
-        DungeonUIAssetHelper.ApplyFont(titleText, withOutline: true);
+        DungeonUIAssetHelper.ApplyFont(titleText);
 
         // Instruction Body
         GameObject instGO = new GameObject("Instruction", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -506,8 +553,8 @@ public class DungeonTutorialController : MonoBehaviour
         instructionText.fontSize = 13.5f;
         instructionText.alignment = TextAlignmentOptions.Center;
         instructionText.color = Color.white; // Pure white for crystal clarity
-        instructionText.lineSpacing = -2;
-        DungeonUIAssetHelper.ApplyFont(instructionText, withOutline: true);
+        instructionText.lineSpacing = 0;
+        DungeonUIAssetHelper.ApplyFont(instructionText);
 
         // Key Prompt Footer
         GameObject keyGO = new GameObject("KeyPrompt", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -523,7 +570,7 @@ public class DungeonTutorialController : MonoBehaviour
         keyPromptText.fontStyle = FontStyles.Bold;
         keyPromptText.alignment = TextAlignmentOptions.Center;
         keyPromptText.color = new Color(0.35f, 0.90f, 1f); // Bright electric cyan
-        DungeonUIAssetHelper.ApplyFont(keyPromptText, withOutline: true);
+        DungeonUIAssetHelper.ApplyFont(keyPromptText);
 
         bannerGO.SetActive(false);
 
@@ -557,7 +604,7 @@ public class DungeonTutorialController : MonoBehaviour
         TextMeshProUGUI aTMP = arrowGO.GetComponent<TextMeshProUGUI>();
         aTMP.fontSize = 18;
         aTMP.alignment = TextAlignmentOptions.Center;
-        aTMP.text = "▼";
+        aTMP.text = "v";
         aTMP.color = new Color(1f, 0.90f, 0.20f);
         DungeonUIAssetHelper.ApplyFont(aTMP, withOutline: true);
 
@@ -573,7 +620,7 @@ public class DungeonTutorialController : MonoBehaviour
         pointerBadgeText.fontStyle = FontStyles.Bold;
         pointerBadgeText.alignment = TextAlignmentOptions.Center;
         pointerBadgeText.color = new Color(1f, 0.95f, 0.30f);
-        DungeonUIAssetHelper.ApplyFont(pointerBadgeText, withOutline: true);
+        DungeonUIAssetHelper.ApplyFont(pointerBadgeText);
 
         pointerGO.SetActive(false);
     }
