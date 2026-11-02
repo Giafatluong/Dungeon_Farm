@@ -41,6 +41,49 @@ public class RewardChest : MonoBehaviour
     }
 
     /// <summary>
+    /// Checks whether an item is an advanced cooked combo dish (crafted in Base Kitchen).
+    /// Advanced combo meals should not drop from dungeon chests to keep the farming & cooking progression loop intact.
+    /// </summary>
+    public static bool IsAdvancedComboFood(ItemData item)
+    {
+        if (item == null) return false;
+        if (item is FoodData fd)
+        {
+            if (fd.foodBuff != null)
+            {
+                for (int i = 0; i < fd.foodBuff.Length; i++)
+                {
+                    var fb = fd.foodBuff[i];
+                    if (fb != null && (fb.buffDurationType == FoodData.BuffDurationType.Combat || fb.buffDurationType == FoodData.BuffDurationType.Floor))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            string n = item.name.ToLower();
+            string iname = item.itemName != null ? item.itemName.ToLower() : "";
+            if (n.Contains("salad") || n.Contains("soup") || n.Contains("butter") || n.Contains("spicy") ||
+                iname.Contains("salad") || iname.Contains("soup") || iname.Contains("bơ") || iname.Contains("cay"))
+            {
+                return true;
+            }
+
+            if (fd.foodBuff != null && fd.foodBuff.Length > 0)
+            {
+                for (int b = 0; b < fd.foodBuff.Length; b++)
+                {
+                    if (fd.foodBuff[b] != null && fd.foodBuff[b].buffValue >= 3)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Generates a list of loot for this reward stage.
     /// </summary>
     public List<ItemSlot> GenerateChestLoot(WaveData waveData, int floorNumber)
@@ -88,6 +131,10 @@ public class RewardChest : MonoBehaviour
                 ItemData it = allItems[i];
                 if (it == null) continue;
 
+                // Never drop advanced cooked combo dishes from dungeon chests
+                // (High-tier combo meals are exclusive rewards for cooking in the Base Kitchen!)
+                if (IsAdvancedComboFood(it)) continue;
+
                 // Filter seeds by floor: Higher-tier seeds only drop on deeper floors
                 if (it.itemType == ItemData.ItemType.Seed || it.name.ToLower().Contains("seed"))
                 {
@@ -106,11 +153,17 @@ public class RewardChest : MonoBehaviour
         }
         else
         {
-            // Filter loaded candidateItems if any seeds do not meet the minimum floor requirement
+            // Filter loaded candidateItems if any seeds do not meet the minimum floor requirement or are combo dishes
             for (int i = _cachedCandidates.Count - 1; i >= 0; i--)
             {
                 ItemData it = _cachedCandidates[i];
-                if (it != null && (it.itemType == ItemData.ItemType.Seed || it.name.ToLower().Contains("seed")))
+                if (it == null || IsAdvancedComboFood(it))
+                {
+                    _cachedCandidates.RemoveAt(i);
+                    continue;
+                }
+
+                if (it.itemType == ItemData.ItemType.Seed || it.name.ToLower().Contains("seed"))
                 {
                     if (floorNumber < ProgressionManager.GetSeedMinFloor(it))
                     {
@@ -120,12 +173,12 @@ public class RewardChest : MonoBehaviour
             }
         }
 
-        // If strict floor filter left no candidate items, load all items without restriction as guaranteed fallback
+        // If strict floor filter left no candidate items, load basic seeds and raw crops without restriction
         if (_cachedCandidates.Count == 0)
         {
             for (int i = 0; i < allItems.Length; i++)
             {
-                if (allItems[i] != null && !_cachedCandidates.Contains(allItems[i]))
+                if (allItems[i] != null && !IsAdvancedComboFood(allItems[i]) && !_cachedCandidates.Contains(allItems[i]))
                 {
                     _cachedCandidates.Add(allItems[i]);
                 }
@@ -141,11 +194,11 @@ public class RewardChest : MonoBehaviour
 
         List<ItemData> candidateItems = _cachedCandidates;
 
-        // 4. Procedurally roll a rich assortment of 3 to 5 distinct items (multiple rows)
+        // 4. Procedurally roll a balanced assortment of 2 to 4 distinct items
         ShuffleList(candidateItems);
-        int minRolls = Mathf.Max(3, minLootItems);
+        int minRolls = Mathf.Max(2, minLootItems);
         int maxRolls = Mathf.Max(minRolls + 1, maxLootItems + 1);
-        int rolls = Mathf.Clamp(Random.Range(minRolls, maxRolls) + (bonusRollsPerFloor * Mathf.Max(0, floorNumber - 1)), minRolls, 6);
+        int rolls = Mathf.Clamp(Random.Range(minRolls, maxRolls) + (bonusRollsPerFloor * Mathf.Max(0, floorNumber - 1)), 2, 4);
         int itemsToPick = Mathf.Min(rolls, candidateItems.Count);
 
         for (int i = 0; i < itemsToPick; i++)
@@ -157,18 +210,18 @@ public class RewardChest : MonoBehaviour
             int amount = 1;
             if (n.Contains("seed") || it.itemName.ToLower().Contains("seed"))
             {
-                // Seeds drop in stacks of 2 to 5
-                amount = Random.Range(2, 6);
+                // Seeds drop in stacks of 1 to 3
+                amount = Random.Range(1, 4);
             }
             else if (it is FoodData)
             {
-                // Prepared food drops in stacks of 1 to 2
-                amount = Random.Range(1, 3);
+                // Raw produce / basic food drops in stacks of 1
+                amount = 1;
             }
             else
             {
-                // Harvest crops/materials drop in stacks of 2 to 4
-                amount = Random.Range(2, 5);
+                // Harvest crops/materials drop in stacks of 1 to 2
+                amount = Random.Range(1, 3);
             }
 
             result.Add(new ItemSlot { itemData = it, amount = amount });

@@ -259,13 +259,19 @@ public class FarmPlot : MonoBehaviour
 
     public void NextDay()
     {
-        int curDay = (DayManager.Instance != null) ? DayManager.Instance.GetCurrentDay() : PlayerPrefs.GetInt("Farm_CurrentDay", 1);
-        if (_lastAdvancedDay == curDay)
-            return; // Already grown for this day, avoid duplicate stacking
+        AdvanceDays(1);
+    }
 
+    public void AdvanceDays(int days)
+    {
+        if (days <= 0) return;
+        int curDay = (DayManager.Instance != null) ? DayManager.Instance.GetCurrentDay() : PlayerPrefs.GetInt("Farm_CurrentDay", 1);
         _lastAdvancedDay = curDay;
 
-        NextDayInternal();
+        for (int i = 0; i < days; i++)
+        {
+            NextDayInternal();
+        }
         UpdateCropVisual();
         SavePlotData(false);
     }

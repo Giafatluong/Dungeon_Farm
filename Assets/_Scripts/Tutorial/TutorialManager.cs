@@ -431,9 +431,9 @@ public class TutorialManager : MonoBehaviour
                     actionKeyPrompt = "Chọn Hạt -> Click Chuột Vào Đất",
                     actionInstruction = "Chọn <color=#50FA7B><b>Hạt Giống Cà Rốt</b></color> trên thanh Hotbar, rồi <color=#FFEA30><b>Click Chuột Trái</b></color> vào ô đất trống để gieo hạt.",
                     fullDialogue = "Đất trống rồi đừng để lãng phí! Quy trình trồng trọt rất đơn giản:\n" +
-                                   "- Bước 1: Nhìn xuống thanh Hotbar (11 ô ở đáy màn hình), click hoặc bấm phím số để chọn <color=#50FA7B><b>[Hạt Giống Cà Rốt]</b></color>.\n" +
-                                   "- Bước 2: Di chuột vào ô đất trống vừa thu hoạch và <color=#FFEA30><b>Click Chuột Trái</b></color> để gieo hạt xuống đất.\n" +
-                                   "Cây sẽ tự động lớn lên khi ngày trôi qua (khi bạn ngủ hoặc đi qua các phòng hầm ngục)!",
+                                   "- Bước 1: Chọn <color=#50FA7B><b>[Hạt Giống Cà Rốt]</b></color> trên thanh Hotbar ở đáy màn hình.\n" +
+                                   "- Bước 2: Di chuột vào ô đất trống vừa thu hoạch và <color=#FFEA30><b>Click Chuột Trái</b></color> để gieo hạt.\n" +
+                                   "- <color=#FFD700><b>Đồng Hồ Sinh Học:</b></color> Khi đi thám hiểm hầm ngục, cây ở nhà vẫn âm thầm lớn lên (cứ mỗi 2 phòng vượt qua = 1 Ngày trôi qua ở Nông Trại). Vượt ải trở về là mùa màng đã chín rộ!",
                     targetPosition = emptyPos,
                     targetTransform = emptyPlot != null ? emptyPlot.transform : null
                 });
@@ -460,12 +460,11 @@ public class TutorialManager : MonoBehaviour
                     actionInstruction = "Đến Bếp Lửa trại, nhấn <color=#FFEA30><b>[E]</b></color>, chọn Súp Cà Rốt (tốn 3 Cà Rốt) và bấm <color=#FFA726><b>[Nấu Ăn]</b></color>.",
                     fullDialogue = "Nấu ăn là chìa khóa sinh tồn để chi phối Tốc Độ và Độ No:\n" +
                                    "- Nhấn <color=#FFEA30><b>[E]</b></color> mở Bếp, chọn <color=#FFA726><b>[Súp Cà Rốt]</b></color> (tốn 3 Cà Rốt) và bấm [Nấu Ăn].\n" +
-                                   "- <color=#50FA7B><b>Cơ chế Tốc Độ (Speed):</b></color> Ai có SPD cao hơn sẽ được RA ĐÒN TRƯỚC! Quái vật có 10 SPD, bạn chỉ có 9 SPD nên ăn Súp Cà Rốt (+2 SPD) sẽ giúp bạn đạt 11 SPD để giành quyền đi trước.\n" +
-                                   "- <color=#FFD700><b>Cơ chế Độ No (Fullness):</b></color> Có 3 mốc quan trọng:\n" +
-                                   "  + <color=#50FA7B><b>No Nê (30% - 79%):</b></color> Buff toàn diện +2 ATK, +1 DEF, +2 SPD!\n" +
-                                   "  + <color=#FF6B6B><b>Đói (< 30%):</b></color> Suy nhược -2 ATK, -3 SPD (về 0 sẽ bị trừ thẳng vào máu)!\n" +
-                                   "  + <color=#FFA500><b>Bội Thực (>= 80%):</b></color> Hồi máu nhưng bị nặng nề giảm -4 SPD.\n" +
-                                   "Mỗi phòng hầm ngục tiêu hao 12 Độ No, hãy luôn chuẩn bị thức ăn đầy đủ nhé!",
+                                   "- <color=#50FA7B><b>Tốc Độ (SPD):</b></color> Ai có SPD cao hơn sẽ RA ĐÒN TRƯỚC! Ăn Súp (+2 SPD) giúp bạn đạt 11 SPD > 10 SPD của quái để giành quyền đi trước.\n" +
+                                   "- <color=#FFD700><b>Độ No (Fullness):</b></color> Có 3 mốc (hiển thị bằng icon tròn dưới thanh máu):\n" +
+                                   "  + <color=#50FA7B><b>No Nê (30-79%):</b></color> +2 ATK, +1 DEF, +2 SPD!  |  <color=#FF6B6B><b>Đói (<30%):</b></color> -2 ATK, -3 SPD.\n" +
+                                   "  + <color=#FFA500><b>Bội Thực (>=80%):</b></color> Hồi máu nhưng bị giảm -4 SPD.\n" +
+                                   "Rê chuột vào icon dưới thanh máu để xem chi tiết. Nhớ chuẩn bị thức ăn trước khi xuống hầm ngục nhé!",
                     targetPosition = kPos,
                     targetTransform = kitchen != null ? kitchen.transform : null
                 });
@@ -538,14 +537,13 @@ public class TutorialManager : MonoBehaviour
                 {
                     stepIndex = 8,
                     totalSteps = 8,
-                    objectiveTitle = "Cổng Hầm Ngục: Kích Hoạt Phước Lành",
+                    objectiveTitle = "Cổng Hầm Ngục: Tiến Vào Ải Hướng Dẫn",
                     targetLabel = "Cổng Hầm Ngục (Dungeon Gate)",
-                    actionKeyPrompt = "[E] VÀO CỔNG -> [Tiến Vào]",
-                    actionInstruction = "Đến Cổng Hầm Ngục ngay cạnh Tượng Thần, nhấn <color=#FFEA30><b>[E]</b></color> nhận Phước Lành miễn phí và bấm <color=#50FA7B>[Tiến Vào]</color>.",
+                    actionKeyPrompt = "[E] VÀO HẦM NGỤC",
+                    actionInstruction = "Đến Cổng Hầm Ngục ngay cạnh Tượng Thần, nhấn <color=#FFEA30><b>[E]</b></color> để tiến thẳng vào Hầm Ngục Hướng Dẫn (Tầng 0).",
                     fullDialogue = "Bạn đã nắm vững toàn bộ chu trình sinh tồn ở Căn cứ!\n" +
                                    "- Bụng no, bát Súp Tốc Độ sẵn sàng trong túi, +1 ATK vĩnh viễn đã kích hoạt và hạt giống đã cất an toàn!\n" +
-                                   "- Bước lại Cổng Hầm Ngục ngay cạnh Tượng Thần, nhấn phím <color=#FFEA30><b>[E]</b></color>.\n" +
-                                   "- Nhận Phước Lành 'Bảo Hộ Thần Thánh' (bảo vệ đồ miễn phí) và bấm <color=#50FA7B><b>[Tiến Vào]</b></color> để bước vào Hầm Ngục Hướng Dẫn (Ải 0)!",
+                                   "- Bước lại Cổng Hầm Ngục ngay cạnh Tượng Thần, nhấn phím <color=#FFEA30><b>[E]</b></color> để tiến thẳng vào Hầm Ngục Hướng Dẫn (Tầng 0)!",
                     targetPosition = dPos,
                     targetTransform = entrance != null ? entrance.transform : null
                 });

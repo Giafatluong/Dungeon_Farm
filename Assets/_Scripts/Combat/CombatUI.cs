@@ -196,15 +196,23 @@ public class CombatUI : MonoBehaviour
         if (turnBannerText != null)
         {
             turnBannerText.fontStyle = FontStyles.Bold;
-            turnBannerText.fontSize = 24;
+            turnBannerText.enableAutoSizing = true;
+            turnBannerText.fontSizeMin = 18;
+            turnBannerText.fontSizeMax = 22;
             turnBannerText.alignment = TextAlignmentOptions.Center;
-            turnBannerText.characterSpacing = 2f;
+            turnBannerText.characterSpacing = 2.5f;
+            turnBannerText.textWrappingMode = TextWrappingModes.NoWrap;
 
-            // Add drop shadow so turn announcement pops cleanly off the plaque background
+            // Thick dark outline and solid drop-shadow so the text pops out crisply on the wood/gold plaque
+            Outline outline = turnBannerText.GetComponent<Outline>();
+            if (outline == null) outline = turnBannerText.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0.12f, 0.06f, 0.02f, 0.98f);
+            outline.effectDistance = new Vector2(1.8f, -1.8f);
+
             Shadow shadow = turnBannerText.GetComponent<Shadow>();
             if (shadow == null) shadow = turnBannerText.gameObject.AddComponent<Shadow>();
-            shadow.effectColor = new Color(0f, 0f, 0f, 0.9f);
-            shadow.effectDistance = new Vector2(2f, -2f);
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.95f);
+            shadow.effectDistance = new Vector2(2.5f, -2.5f);
         }
         DungeonUIAssetHelper.ApplyFont(targetHpText);
         DungeonUIAssetHelper.ApplyFont(targetNameText);
@@ -638,16 +646,16 @@ public class CombatUI : MonoBehaviour
         int atk = playerStats.GetCurrentATK();
         int def = playerStats.GetCurrentDEF();
         int spd = playerStats.GetCurrentSpeed();
-        int defCount = playerStats.defendCount;
-        if (atk != cachedAtk || def != cachedDef || spd != cachedSpd || defCount != cachedDefendCount)
+        int shield = playerStats.currentShield;
+        if (atk != cachedAtk || def != cachedDef || spd != cachedSpd || shield != cachedDefendCount)
         {
             cachedAtk = atk;
             cachedDef = def;
             cachedSpd = spd;
-            cachedDefendCount = defCount;
+            cachedDefendCount = shield;
             if (statsText != null)
             {
-                string shieldStr = defCount > 0 ? $" <color=#50D8FF>(+{playerStats.defendValue * defCount} Shield)</color>" : "";
+                string shieldStr = shield > 0 ? $" <color=#50D8FF>(+{shield} Shield)</color>" : "";
                 statsText.text = $"<color=#FFA726><b>ATK: {atk}</b></color>    <color=#50D8FF><b>DEF: {def}</b></color>{shieldStr}    <color=#FFEE55><b>SPD: {spd}</b></color>";
             }
         }
@@ -953,6 +961,15 @@ public class CombatUI : MonoBehaviour
     {
         if (combatManager == null) return;
 
+        if (turnBannerBg != null)
+        {
+            RectTransform bgRT = turnBannerBg.rectTransform;
+            if (bgRT != null)
+            {
+                bgRT.sizeDelta = new Vector2(460, 52);
+            }
+        }
+
         if (combatManager.isPreparingCombat)
         {
             int secs = Mathf.CeilToInt(combatManager.preparationTimeRemaining);
@@ -962,8 +979,8 @@ public class CombatUI : MonoBehaviour
                     ? "KẺ ĐỊCH MAI PHỤC!"
                     : $"CHUẨN BỊ CHIẾN ĐẤU ({secs}s)";
                 turnBannerText.color = combatManager.isAmbushCurrent
-                    ? new Color(1f, 0.35f, 0.2f)
-                    : new Color(1f, 0.92f, 0.25f);
+                    ? new Color(1f, 0.45f, 0.25f)
+                    : new Color(1f, 0.95f, 0.35f);
             }
 
             if (turnBannerBg != null)
@@ -990,6 +1007,15 @@ public class CombatUI : MonoBehaviour
             turnBannerBg.gameObject.SetActive(true);
         }
 
+        if (turnBannerBg != null)
+        {
+            RectTransform bgRT = turnBannerBg.rectTransform;
+            if (bgRT != null)
+            {
+                bgRT.sizeDelta = new Vector2(460, 52);
+            }
+        }
+
         bool isPlayer = combatManager.currentTurn == CombatManager.Turn.Player;
 
         if (turnBannerText != null)
@@ -997,12 +1023,12 @@ public class CombatUI : MonoBehaviour
             if (isPlayer)
             {
                 turnBannerText.text = "LƯỢT CỦA BẠN";
-                turnBannerText.color = new Color(1f, 0.92f, 0.25f); // Radiant Gold with black outline
+                turnBannerText.color = new Color(1f, 0.95f, 0.30f); // Bright Sunlight Gold
             }
             else
             {
                 turnBannerText.text = "LƯỢT KẺ ĐỊCH";
-                turnBannerText.color = new Color(1f, 0.28f, 0.28f); // Danger Crimson with black outline
+                turnBannerText.color = new Color(1f, 0.32f, 0.32f); // Danger Crimson
             }
         }
 

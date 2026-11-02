@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Slime
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Slime
-  maxHealth: 28
-  ATK: 6
-  DEF: 0
+  maxHealth: 38
+  ATK: 8
+  DEF: 1
   speed: 8
   possibleIntents: 000000000200000003000000
   intentEffects:

@@ -325,9 +325,10 @@ public class DungeonTutorialController : MonoBehaviour
 
         ShowBanner(
             stageBadge: isTutorialFloor ? $"ẢI {stageNum}/{totalStages}: LỬA TRẠI NGHỈ CHÂN (CAMP ROOM)" : "TRẠI NGHỈ CHÂN (CAMP)",
-            title: "TRẠI NGHỈ CHÂN: ĂN UỐNG, TIÊU HÓA, HỒI MÁU & RÚT LUI",
-            instruction: "Hoạt động tại Trại: Ăn uống, Nấu ăn dã chiến, Tập luyện tiêu hóa (đốt bớt độ no để có thể ăn tiếp) và Nghỉ ngơi hồi máu (+25 HP). CẢNH BÁO: Mỗi hành động làm tăng Nguy cơ Phục kích (Ambush Risk)! Hãy dùng nút <color=#FFEA30><b>[RÚT LUI AN TOÀN]</b></color> để mang 100% chiến lợi phẩm và hạt giống trở về Căn Cứ!",
-            keyPrompt: "Nghỉ ngơi hồi máu / Bấm [RÚT LUI AN TOÀN] hoặc [TIẾP TỤC]"
+            title: "TRẠI NGHỈ CHÂN: ĂN UỐNG, HỒI MÁU & RÚT LUI",
+            instruction: "Tại Trại: Ăn uống, Nấu ăn dã chiến, Tập luyện và Nghỉ ngơi (+25 HP). Cẩn thận: Mỗi hành động tăng Nguy cơ Phục kích!\n" +
+                         "<color=#FFD700><b>Rút Lui An Toàn:</b></color> Bấm <color=#FFEA30><b>[RÚT LUI AN TOÀN]</b></color> để mang 100% quà về Căn Cứ. Thời gian ở Nông Trại sẽ trôi tương ứng để cây trồng lớn lên và chín rộ!",
+            keyPrompt: "Nghỉ ngơi hồi máu / Bấm [RÚT LUI AN TOÀN] mang 100% quà về"
         );
 
         if (!isTutorialFloor)
@@ -462,8 +463,8 @@ public class DungeonTutorialController : MonoBehaviour
         bannerRT.anchorMin = new Vector2(0.5f, 1f);
         bannerRT.anchorMax = new Vector2(0.5f, 1f);
         bannerRT.pivot = new Vector2(0.5f, 1f);
-        bannerRT.anchoredPosition = new Vector2(0, -90);
-        bannerRT.sizeDelta = new Vector2(880, 165);
+        bannerRT.anchoredPosition = new Vector2(0, -85);
+        bannerRT.sizeDelta = new Vector2(920, 185);
 
         Image bannerFrame = bannerGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(bannerFrame, new Color(0.20f, 0.70f, 0.50f, 1f)); // Vivid emerald frame
@@ -516,7 +517,7 @@ public class DungeonTutorialController : MonoBehaviour
         bRT.anchorMax = new Vector2(0.5f, 1f);
         bRT.pivot = new Vector2(0.5f, 1f);
         bRT.anchoredPosition = new Vector2(0, -8);
-        bRT.sizeDelta = new Vector2(820, 22);
+        bRT.sizeDelta = new Vector2(860, 22);
         stageBadgeText = badgeGO.GetComponent<TextMeshProUGUI>();
         stageBadgeText.fontSize = 13.5f;
         stageBadgeText.fontStyle = FontStyles.Bold;
@@ -532,7 +533,7 @@ public class DungeonTutorialController : MonoBehaviour
         tRT.anchorMax = new Vector2(0.5f, 1f);
         tRT.pivot = new Vector2(0.5f, 1f);
         tRT.anchoredPosition = new Vector2(0, -30);
-        tRT.sizeDelta = new Vector2(820, 26);
+        tRT.sizeDelta = new Vector2(860, 26);
         titleText = titleGO.GetComponent<TextMeshProUGUI>();
         titleText.fontSize = 16.5f;
         titleText.fontStyle = FontStyles.Bold;
@@ -540,7 +541,7 @@ public class DungeonTutorialController : MonoBehaviour
         titleText.color = new Color(1f, 0.92f, 0.30f); // Bright sunlight gold
         DungeonUIAssetHelper.ApplyFont(titleText);
 
-        // Instruction Body
+        // Instruction Body (Auto-sizing enabled so multiple paragraphs never bleed outside)
         GameObject instGO = new GameObject("Instruction", typeof(RectTransform), typeof(TextMeshProUGUI));
         instGO.transform.SetParent(plate.transform, false);
         RectTransform iRT = instGO.GetComponent<RectTransform>();
@@ -548,9 +549,12 @@ public class DungeonTutorialController : MonoBehaviour
         iRT.anchorMax = new Vector2(0.5f, 1f);
         iRT.pivot = new Vector2(0.5f, 1f);
         iRT.anchoredPosition = new Vector2(0, -56);
-        iRT.sizeDelta = new Vector2(820, 72);
+        iRT.sizeDelta = new Vector2(860, 88);
         instructionText = instGO.GetComponent<TextMeshProUGUI>();
         instructionText.fontSize = 13.5f;
+        instructionText.enableAutoSizing = true;
+        instructionText.fontSizeMin = 11f;
+        instructionText.fontSizeMax = 13.5f;
         instructionText.alignment = TextAlignmentOptions.Center;
         instructionText.color = Color.white; // Pure white for crystal clarity
         instructionText.lineSpacing = 0;
@@ -564,7 +568,7 @@ public class DungeonTutorialController : MonoBehaviour
         kRT.anchorMax = new Vector2(0.5f, 0f);
         kRT.pivot = new Vector2(0.5f, 0f);
         kRT.anchoredPosition = new Vector2(0, 8);
-        kRT.sizeDelta = new Vector2(800, 20);
+        kRT.sizeDelta = new Vector2(860, 20);
         keyPromptText = keyGO.GetComponent<TextMeshProUGUI>();
         keyPromptText.fontSize = 13f;
         keyPromptText.fontStyle = FontStyles.Bold;

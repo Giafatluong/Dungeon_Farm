@@ -9,6 +9,9 @@ public class EnemyStats : MonoBehaviour
 
     [Header("Runtime State")]
     public int currentHealth;
+    public int maxHealthScaled = 0;
+    public int scaledATKBonus = 0;
+    public int scaledDEFBonus = 0;
     public EnemyData.EnemyIntent currentIntent;
     public bool isIntentLocked = false;
     public bool hasActedThisRound = false;
@@ -16,6 +19,8 @@ public class EnemyStats : MonoBehaviour
     public int defendBonus = 5;
     public int defenseReduction = 0;
     public List<ActiveBuff> activeBuffs = new List<ActiveBuff>();
+
+    public int MaxHealth => maxHealthScaled > 0 ? maxHealthScaled : (enemyData != null ? enemyData.maxHealth : 1);
 
     [Header("Placement Configuration")]
     public bool isFlying = false;
@@ -46,6 +51,23 @@ public class EnemyStats : MonoBehaviour
         {
             currentHealth = enemyData.maxHealth;
             if (enemyData.isRanged) isRanged = true;
+
+            // Apply dynamic floor scaling for Floor 2, 3, etc.
+            int currentFloorNum = ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor > 0
+                ? ProgressionManager.Instance.currentFloor
+                : 1;
+
+            if (currentFloorNum > 1)
+            {
+                // Floor 2: +25% HP, +2 ATK, +1 DEF
+                // Floor 3: +50% HP, +4 ATK, +2 DEF
+                // Floor 4+: +75% HP, +6 ATK, +3 DEF
+                float hpMultiplier = 1f + (currentFloorNum - 1) * 0.25f;
+                currentHealth = Mathf.RoundToInt(enemyData.maxHealth * hpMultiplier);
+                scaledATKBonus = (currentFloorNum - 1) * 2;
+                scaledDEFBonus = (currentFloorNum - 1) * 1;
+            }
+            maxHealthScaled = currentHealth;
         }
 
         SelectNextIntent();
@@ -55,7 +77,7 @@ public class EnemyStats : MonoBehaviour
     {
         if (enemyData != null && currentHealth <= 0)
         {
-            currentHealth = enemyData.maxHealth;
+            currentHealth = maxHealthScaled > 0 ? maxHealthScaled : enemyData.maxHealth;
         }
 
         if (targetSelector == null)
@@ -83,7 +105,7 @@ public class EnemyStats : MonoBehaviour
 
     public int GetCurrentATK()
     {
-        int value = enemyData != null ? enemyData.ATK : 0;
+        int value = (enemyData != null ? enemyData.ATK : 0) + scaledATKBonus;
         for (int i = 0; i < activeBuffs.Count; i++)
         {
             if (activeBuffs[i] != null && activeBuffs[i].buff != null &&
@@ -97,7 +119,7 @@ public class EnemyStats : MonoBehaviour
 
     public int GetCurrentDEF()
     {
-        int value = enemyData != null ? enemyData.DEF : 0;
+        int value = (enemyData != null ? enemyData.DEF : 0) + scaledDEFBonus;
         if (isDefending) value += defendBonus;
         value -= defenseReduction;
         for (int i = 0; i < activeBuffs.Count; i++)
@@ -306,8 +328,17 @@ public class EnemyStats : MonoBehaviour
         switch (currentIntent)
         {
             case EnemyData.EnemyIntent.Attack:
-                int dmg = Mathf.Max(0, GetCurrentATK() - playerStats.GetCurrentDEF() - (playerStats.defendCount * playerStats.defendValue));
-                Debug.Log($"[EnemyStats] {enemyData?.enemyName} attacks for {dmg} damage!");
+                int netDmg = Mathf.Max(0, GetCurrentATK() - playerStats.GetCurrentDEF());
+                int absorbed = Mathf.Min(playerStats.currentShield, netDmg);
+                playerStats.currentShield -= absorbed;
+                int dmg = netDmg - absorbed;
+
+                if (absorbed > 0)
+                {
+                    DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.5f, $"Blocked {absorbed}!", new Color(0.4f, 0.85f, 1f), 4.2f);
+                }
+
+                Debug.Log($"[EnemyStats] {enemyData?.enemyName} attacks for {dmg} damage (Absorbed: {absorbed}, Shield Left: {playerStats.currentShield})!");
 
                 if (visual != null)
                 {

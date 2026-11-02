@@ -19,9 +19,9 @@ MonoBehaviour:
   isStackable: 1
   isRare: 0
   hungerValue: 30
-  healthValue: 25
+  healthValue: 12
   foodBuff:
   - buffs: {fileID: 11400000, guid: 2c54625ab304a2649b5fcfa7060c0828, type: 2}
     buffDurationType: 1
     buffDuration: 2
-    buffValue: 4
+    buffValue: 2

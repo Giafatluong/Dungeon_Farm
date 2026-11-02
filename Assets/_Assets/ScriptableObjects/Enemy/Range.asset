@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Range
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Dark Archer
-  maxHealth: 32
-  ATK: 11
+  maxHealth: 42
+  ATK: 14
   DEF: 2
   speed: 18
   isRanged: 1

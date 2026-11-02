@@ -130,6 +130,16 @@ public class DungeonEntrance : MonoBehaviour
 
         if (UIEscapeManager.IsAnyModalUIOpen()) return;
 
+        // In tutorial: bypass floor selection UI and directly enter Floor 0
+        bool isTutorialActive = (TutorialManager.Instance != null && !TutorialManager.Instance.IsTutorialCompleted)
+                             || PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0;
+
+        if (isTutorialActive)
+        {
+            EnterTutorialFloorDirectly();
+            return;
+        }
+
         if (dungeonEntranceUI == null)
         {
             dungeonEntranceUI = FindFirstObjectByType<DungeonEntranceUI>(FindObjectsInactive.Include);
@@ -141,6 +151,37 @@ public class DungeonEntrance : MonoBehaviour
         }
 
         dungeonEntranceUI.Open();
+    }
+
+    private void EnterTutorialFloorDirectly()
+    {
+        Debug.Log("[DungeonEntrance] In Tutorial: directly entering Floor 0 without floor selection UI.");
+        if (dungeonEntranceUI == null)
+        {
+            dungeonEntranceUI = FindFirstObjectByType<DungeonEntranceUI>(FindObjectsInactive.Include);
+        }
+
+        if (dungeonEntranceUI != null)
+        {
+            dungeonEntranceUI.EnterFloorDirectly(0);
+            return;
+        }
+
+        TutorialManager.Instance?.NotifyDungeonEntered();
+
+        if (ProgressionManager.Instance != null)
+        {
+            ProgressionManager.Instance.currentFloor = 0;
+        }
+
+        if (SceneTransitionManager.Instance == null)
+        {
+            ProgressionManager.Instance?.StartRun(0);
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Dungeon");
+            return;
+        }
+
+        SceneTransitionManager.Instance.LoadDungeon(0);
     }
 
     private void OnTriggerEnter2D(Collider2D other)

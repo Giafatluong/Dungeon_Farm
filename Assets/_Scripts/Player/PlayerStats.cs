@@ -12,6 +12,7 @@ public class PlayerStats : MonoBehaviour
     public int DEF = 1;
     public int speed = 14;
     public int defendCount;
+    public int currentShield;
     public int defendValue = 5;
 
     [Header("Action Point")]
@@ -245,6 +246,7 @@ public class PlayerStats : MonoBehaviour
     public void Defend()
     {
         defendCount++;
+        currentShield += defendValue;
         OnPlayerDefended?.Invoke();
     }
 
@@ -597,6 +599,7 @@ public class PlayerStats : MonoBehaviour
     public void OnCombatComplete()
     {
         defendCount = 0;
+        currentShield = 0;
         ReduceCombatBuffDuration();
         ClearTurnBuffs();
     }

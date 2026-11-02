@@ -20,5 +20,5 @@ MonoBehaviour:
   - {fileID: 96002049, guid: 19de471ec8e70ba418cdc18ac63ae945, type: 3}
   - {fileID: 238081888, guid: 19de471ec8e70ba418cdc18ac63ae945, type: 3}
   - {fileID: 67024681, guid: 19de471ec8e70ba418cdc18ac63ae945, type: 3}
-  growthTime: 12
+  growthTime: 2
   harvestAmount: 3

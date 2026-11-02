@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: ME1
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Goblin Warrior
-  maxHealth: 42
-  ATK: 12
-  DEF: 2
+  maxHealth: 54
+  ATK: 14
+  DEF: 3
   speed: 15
   possibleIntents: 000000000100000002000000
   intentEffects:

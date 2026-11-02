@@ -161,6 +161,15 @@ public class DungeonEntranceUI : MonoBehaviour
 
     public void Open()
     {
+        // In tutorial: bypass floor selection UI and directly enter Floor 0
+        bool isTutorialActive = (TutorialManager.Instance != null && !TutorialManager.Instance.IsTutorialCompleted)
+                             || PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0;
+        if (isTutorialActive)
+        {
+            EnterFloorDirectly(0);
+            return;
+        }
+
         UIEscapeManager.NotifyModalOpened("DungeonEntrance");
         EnsureUIConstructed();
 
@@ -234,6 +243,27 @@ public class DungeonEntranceUI : MonoBehaviour
     private static readonly Color ColorStatusLockedText = new Color(0.65f, 0.65f, 0.65f);
     private static readonly Color ColorStatusLockedBg = new Color(0.18f, 0.18f, 0.20f, 0.85f);
 
+    public void EnterFloorDirectly(int floor)
+    {
+        Close();
+        TutorialManager.Instance?.NotifyDungeonEntered();
+
+        if (ProgressionManager.Instance != null)
+        {
+            ProgressionManager.Instance.currentFloor = floor;
+        }
+
+        if (SceneTransitionManager.Instance == null)
+        {
+            Debug.Log("Scene Transition Manager is NULL, fallback loading Dungeon directly");
+            ProgressionManager.Instance?.StartRun(floor);
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Dungeon");
+            return;
+        }
+
+        SceneTransitionManager.Instance.LoadDungeon(floor);
+    }
+
     public void EnterSelectedFloor()
     {
         // First-time dungeon check: If player has not completed Dungeon Tutorial, force Tutorial Floor (Floor 0)
@@ -251,23 +281,7 @@ public class DungeonEntranceUI : MonoBehaviour
             return;
         }
 
-        Close();
-        TutorialManager.Instance?.NotifyDungeonEntered();
-
-        if (ProgressionManager.Instance != null)
-        {
-            ProgressionManager.Instance.currentFloor = floorToEnter;
-        }
-
-        if (SceneTransitionManager.Instance == null)
-        {
-            Debug.Log("Scene Transition Manager is NULL, fallback loading Dungeon directly");
-            ProgressionManager.Instance?.StartRun(floorToEnter);
-            UnityEngine.SceneManagement.SceneManager.LoadScene("Dungeon");
-            return;
-        }
-
-        SceneTransitionManager.Instance.LoadDungeon(floorToEnter);
+        EnterFloorDirectly(floorToEnter);
     }
 
     public void SelectFloor(int floor)

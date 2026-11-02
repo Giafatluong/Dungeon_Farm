@@ -333,7 +333,7 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
             transform.position = enemyTarget.transform.position + new Vector3(offset.x, topY, offset.z);
 
             int curHp = enemyTarget.currentHealth;
-            int maxHp = enemyTarget.enemyData != null ? enemyTarget.enemyData.maxHealth : 1;
+            int maxHp = enemyTarget != null ? enemyTarget.MaxHealth : 1;
 
             if (curHp != lastHealth || maxHp != lastMaxHealth)
             {

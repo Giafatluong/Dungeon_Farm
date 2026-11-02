@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Bat
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Cave Bat
-  maxHealth: 20
-  ATK: 7
+  maxHealth: 28
+  ATK: 10
   DEF: 0
   speed: 20
   possibleIntents: 0000000003000000

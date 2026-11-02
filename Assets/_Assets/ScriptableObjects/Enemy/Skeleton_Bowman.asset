@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Skeleton_Bowman
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Skeleton Bowman
-  maxHealth: 24
-  ATK: 8
+  maxHealth: 30
+  ATK: 11
   DEF: 1
   speed: 18
   isRanged: 1

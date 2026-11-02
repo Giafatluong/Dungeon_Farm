@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: SlimeBoss
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: King Slime (Boss)
-  maxHealth: 125
-  ATK: 14
+  maxHealth: 175
+  ATK: 16
   DEF: 3
   speed: 12
   possibleIntents: 00000000010000000200000003000000

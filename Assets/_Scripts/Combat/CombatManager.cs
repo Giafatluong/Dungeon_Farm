@@ -194,6 +194,7 @@ public class CombatManager : MonoBehaviour
         if (playerStats != null)
         {
             playerStats.defendCount = 0;
+            playerStats.currentShield = 0;
         }
 
         if (enemies != null)
@@ -275,6 +276,7 @@ public class CombatManager : MonoBehaviour
         {
             playerStats.currentAP = playerStats.maxAP;
             playerStats.defendCount = 0;
+            playerStats.currentShield = 0;
 
             // Fullness Tier 3 (Overstuffed) passive effect: digestion heals +2 HP per turn
             if (playerStats.GetCurrentFullnessTier() == PlayerStats.FullnessTier.Overstuffed && playerStats.currentHealth < playerStats.maxHealth)

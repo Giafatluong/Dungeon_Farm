@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Flying
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Flying Imp
-  maxHealth: 34
-  ATK: 10
-  DEF: 1
+  maxHealth: 44
+  ATK: 12
+  DEF: 2
   speed: 19
   possibleIntents: 000000000100000003000000
   intentEffects:

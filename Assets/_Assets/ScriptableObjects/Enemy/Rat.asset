@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Rat
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Sewer Rat
-  maxHealth: 18
-  ATK: 6
+  maxHealth: 26
+  ATK: 9
   DEF: 0
   speed: 17
   possibleIntents: 0000000003000000

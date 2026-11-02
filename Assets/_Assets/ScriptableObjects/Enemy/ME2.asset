@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: ME2
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Armored Orc
-  maxHealth: 58
-  ATK: 14
+  maxHealth: 72
+  ATK: 16
   DEF: 4
   speed: 11
   possibleIntents: 000000000100000002000000

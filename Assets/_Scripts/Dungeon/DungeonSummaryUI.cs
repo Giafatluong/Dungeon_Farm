@@ -97,6 +97,7 @@ public class DungeonSummaryUI : MonoBehaviour
     private GameObject emptyLootNoticeGO;
     private Action onConfirmedReturnCallback;
     private ExpeditionResult currentResult = ExpeditionResult.Retreat;
+    private int calculatedDaysToAdvance = 1;
 
     public bool IsOpen => summaryPanel != null && summaryPanel.activeSelf;
     #endregion
@@ -248,6 +249,17 @@ public class DungeonSummaryUI : MonoBehaviour
             stagesCleared = totalStages;
         }
 
+        // Calculate DaysAdvanced = max(1, floor(W / 2) + (bossDefeated ? 1 : 0))
+        if (floorNum == 0)
+        {
+            calculatedDaysToAdvance = 1; // Tutorial floor always advances exactly 1 day
+        }
+        else
+        {
+            int bossBonus = bossDefeated ? 1 : 0;
+            calculatedDaysToAdvance = Mathf.Max(1, (stagesCleared / 2) + bossBonus);
+        }
+
         // 2. Style Header
         ApplyHeaderTheme(result, floorNum);
 
@@ -305,8 +317,9 @@ public class DungeonSummaryUI : MonoBehaviour
         if (statDayTransitionText != null)
         {
             int curDay = DayManager.Instance != null ? DayManager.Instance.currentDay : PlayerPrefs.GetInt("Farm_CurrentDay", 1);
-            int nextDay = curDay + 1;
-            statDayTransitionText.text = $"<b>[Time Passed]</b> <color=#FFE066>New Day Arrives ({nextDay})</color> <i>(+1 Day)</i>";
+            int nextDay = curDay + calculatedDaysToAdvance;
+            string bonusStr = (bossDefeated && floorNum != 0) ? " <color=#FFD700>(+1 Ngày Diệt Boss)</color>" : "";
+            statDayTransitionText.text = $"<b>[Thời Gian Trôi Qua]</b> <color=#FFE066>Ngày {nextDay}</color> <i>(+{calculatedDaysToAdvance} Ngày){bonusStr}</i>\n<color=#88FF88><i>(Cây trồng ở Căn cứ lớn thêm +{calculatedDaysToAdvance} Ngày!)</i></color>";
         }
 
         // 4. Special Protection Notice
@@ -539,8 +552,8 @@ public class DungeonSummaryUI : MonoBehaviour
         HasConfirmedReturn = true;
         Close();
 
-        // Automatically advance 1 day and restore stamina after expedition
-        AdvanceDayOnReturnStatic();
+        // Automatically advance calculated days and update farm crops based on expedition progress
+        AdvanceDayOnReturnStatic(calculatedDaysToAdvance);
 
         if (onConfirmedReturnCallback != null)
         {
@@ -561,11 +574,12 @@ public class DungeonSummaryUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Shared static helper to advance 1 day, update farm crops, and restore stamina when ending a run.
+    /// Shared static helper to advance days, update farm crops, and restore stamina when ending a run.
     /// Can be called directly or from any dungeon exit flow.
     /// </summary>
-    public static void AdvanceDayOnReturnStatic()
+    public static void AdvanceDayOnReturnStatic(int days = 1)
     {
+        if (days < 1) days = 1;
         DungeonEntrance.SetReturnToEntranceFlag();
 
         // Mark run as inactive to avoid duplicate triggers during scene transition
@@ -575,19 +589,19 @@ public class DungeonSummaryUI : MonoBehaviour
             ProgressionManager.Instance.ClearRunBlessing();
         }
 
-        // Advance to new day: triggers farm crop growth (+1 day) and resets boss cooldown
+        // Advance to new day: triggers farm crop growth (+X days) and resets boss cooldown
         DayManager dm = DayManager.Instance != null ? DayManager.Instance : FindFirstObjectByType<DayManager>();
         if (dm != null)
         {
-            dm.AdvanceDay();
+            dm.AdvanceDay(days);
         }
         else
         {
             int curDay = PlayerPrefs.GetInt("Farm_CurrentDay", 1);
-            PlayerPrefs.SetInt("Farm_CurrentDay", curDay + 1);
+            PlayerPrefs.SetInt("Farm_CurrentDay", curDay + days);
             PlayerPrefs.Save();
         }
-        Debug.Log("[DungeonSummaryUI] Expedition finished: Automatically advanced 1 day (Farm crops grew +1 day older)!");
+        Debug.Log($"[DungeonSummaryUI] Expedition finished: Automatically advanced +{days} day(s) (Farm crops grew +{days} day(s) older)!");
 
         // 2. Restore baseline health and fullness upon day transition
         PlayerStats ps = PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>();

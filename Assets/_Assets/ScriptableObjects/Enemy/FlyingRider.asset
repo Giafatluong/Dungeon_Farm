@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: FlyingRider
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   enemyName: Dark Flying Rider (Boss)
-  maxHealth: 165
-  ATK: 17
+  maxHealth: 220
+  ATK: 19
   DEF: 4
   speed: 20
   possibleIntents: 00000000010000000200000003000000

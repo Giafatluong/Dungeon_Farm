@@ -390,8 +390,8 @@ public class CombatTutorialGuide : MonoBehaviour
                 if (bannerBodyText != null)
                 {
                     bannerBodyText.text = "Xuất sắc! Sau khi ăn Súp, Tốc Độ đạt <color=#50FA7B><b>11 SPD</b></color> (cao hơn 10 SPD của địch), giúp bạn <color=#FFD700><b>GIÀNH QUYỀN ĐI TRƯỚC!</b></color>\n" +
-                                          "Độ No đạt mức 'No Nê' sung mãn (+2 ATK, +1 DEF, +2 SPD).\n" +
-                                          "Giờ bạn đã nắm lượt đi, hãy bấm <color=#FF5555><b>[ATTACK] (Phím 1)</b></color> để tung đòn tấn công!";
+                                          "<color=#50FA7B><b>Thanh Buff Dưới Máu:</b></color> Các biểu tượng tròn hiển thị trạng thái No Nê & Súp Tốc Độ. Hãy rê chuột vào icon để xem chi tiết!\n" +
+                                          "Giờ đến lượt bạn, hãy bấm <color=#FF5555><b>[ATTACK] (Phím 1)</b></color> để tung đòn tấn công!";
                 }
                 PointToButton(combatUI != null && combatUI.attackButton != null ? combatUI.attackButton.GetComponent<RectTransform>() : null, "[ATTACK] TẤN CÔNG (1 AP)");
                 if (enemyIntentPillGO != null) enemyIntentPillGO.SetActive(false);
@@ -401,13 +401,14 @@ public class CombatTutorialGuide : MonoBehaviour
                 EnsureEnemyAttackIntent(lockIntent: true);
                 if (bannerTitleText != null)
                 {
-                    bannerTitleText.text = "<color=#FFD700>HƯỚNG DẪN CHIẾN ĐẤU [3/4]: Ý ĐỊNH & PHÒNG THỦ</color>";
+                    bannerTitleText.text = "<color=#FFD700>HƯỚNG DẪN CHIẾN ĐẤU [3/4]: Ý ĐỊNH & GIÁP ẢO</color>";
                 }
                 if (bannerBodyText != null)
                 {
-                    bannerBodyText.text = "Chú ý nhãn đỏ trên đầu quái vật: <b>Ý Định (Intent)</b> của nó là <color=#FF5555><b>Tấn Công (6 DMG)</b></color>! Quái sắp đánh bạn! Hãy bấm <color=#5599FF><b>[DEFEND] (Phím 2)</b></color> để dựng Khiên đỡ đòn!";
+                    bannerBodyText.text = "Chú ý nhãn đỏ trên đầu quái vật: <b>Ý Định (Intent)</b> của nó là <color=#FF5555><b>Tấn Công (6 DMG)</b></color>! Quái sắp đánh bạn!\n" +
+                                          "Hãy bấm <color=#5599FF><b>[DEFEND] (Phím 2)</b></color> để nhận <color=#5599FF><b>+5 Giáp Ảo (Shield)</b></color> hấp thụ toàn bộ đòn đánh trước khi trừ vào máu!";
                 }
-                PointToButton(combatUI != null && combatUI.defendButton != null ? combatUI.defendButton.GetComponent<RectTransform>() : null, "[DEFEND] THỦ (+10 KHIÊN)");
+                PointToButton(combatUI != null && combatUI.defendButton != null ? combatUI.defendButton.GetComponent<RectTransform>() : null, "[DEFEND] THỦ (+5 GIÁP ẢO)");
                 if (enemyIntentPillGO != null)
                 {
                     enemyIntentPillGO.SetActive(true);
@@ -425,7 +426,7 @@ public class CombatTutorialGuide : MonoBehaviour
                 }
                 if (bannerBodyText != null)
                 {
-                    bannerBodyText.text = "Quan sát quái vật lao đến tấn công: Khiên (+10 DEF) của bạn sẽ hấp thụ toàn bộ đòn đánh của nó mà không mất giọt máu nào!";
+                    bannerBodyText.text = "Quan sát quái vật lao đến tấn công: Giáp Ảo (+5 Shield) kết hợp DEF sẽ hấp thụ hoàn toàn đòn đánh (BLOCKED!) mà không mất giọt máu nào!";
                 }
                 PointToButton(null, "");
                 if (enemyIntentPillGO != null) enemyIntentPillGO.SetActive(true);
@@ -435,17 +436,17 @@ public class CombatTutorialGuide : MonoBehaviour
                 if (enemyIntentPillGO != null) enemyIntentPillGO.SetActive(false);
                 if (bannerTitleText != null)
                 {
-                    bannerTitleText.text = "<color=#00FF7F>PHÒNG THỦ THÀNH CÔNG! [4/4]: KẾT LIỄU QUÁI VẬT</color>";
+                    bannerTitleText.text = "<color=#00FF7F>HẤP THỤ THÀNH CÔNG! [4/4]: KẾT LIỄU QUÁI VẬT</color>";
                 }
                 if (bannerBodyText != null)
                 {
                     if (hasPlayerDefendedInTutorial)
                     {
-                        bannerBodyText.text = "Xuất sắc! Khiên (+10 DEF) đã chặn trọn vẹn sát thương (BLOCKED)! Giờ đến lượt bạn, hãy bấm <color=#FF5555><b>[ATTACK] (Phím 1)</b></color> để kết liễu quái vật!";
+                        bannerBodyText.text = "Xuất sắc! Giáp Ảo đã hấp thụ trọn vẹn sát thương (BLOCKED)! Giờ đến lượt bạn hồi đầy 3 AP, hãy bấm <color=#FF5555><b>[ATTACK] (Phím 1)</b></color> để kết liễu quái vật!";
                     }
                     else
                     {
-                        bannerBodyText.text = "Quái vật vừa tấn công bạn! Lần sau nhớ dùng [DEFEND] để chặn sát thương nhé. Giờ hãy bấm <color=#FF5555><b>[ATTACK] (Phím 1)</b></color> để kết liễu nó!";
+                        bannerBodyText.text = "Quái vật vừa tấn công bạn! Lần sau nhớ dùng [DEFEND] để nhận Giáp Ảo chặn sát thương nhé. Giờ hãy bấm <color=#FF5555><b>[ATTACK] (Phím 1)</b></color> để kết liễu nó!";
                     }
                 }
                 PointToButton(combatUI != null && combatUI.attackButton != null ? combatUI.attackButton.GetComponent<RectTransform>() : null, "[ATTACK] KẾT LIỄU!");
@@ -516,11 +517,12 @@ public class CombatTutorialGuide : MonoBehaviour
             hasPlayerDefendedInTutorial = true;
             if (bannerTitleText != null)
             {
-                bannerTitleText.text = "<color=#5599FF>KHIÊN ĐÃ DỰNG! (+10 DEF)</color>";
+                bannerTitleText.text = "<color=#5599FF>GIÁP ẢO ĐÃ KÍCH HOẠT! (+5 SHIELD)</color>";
             }
             if (bannerBodyText != null)
             {
-                bannerBodyText.text = "Khiên đã sẵn sàng (+10 DEF)! Bây giờ hãy bấm <color=#FFA500><b>[KẾT THÚC LƯỢT] (Phím Space)</b></color> để nhường lượt cho quái vật đánh vào Khiên của bạn!";
+                bannerBodyText.text = "Giáp Ảo (+5 Shield) đã sẵn sàng! Quan sát biểu tượng Khiên xanh xuất hiện dưới thanh máu của bạn.\n" +
+                                      "Bây giờ hãy bấm <color=#FFA500><b>[KẾT THÚC LƯỢT] (Phím Space)</b></color> để nhường lượt cho quái vật đánh vào Giáp Ảo của bạn!";
             }
             PointToButton(combatUI != null && combatUI.endTurnButton != null ? combatUI.endTurnButton.GetComponent<RectTransform>() : null, "[KẾT THÚC LƯỢT] (Space)");
 
@@ -602,8 +604,8 @@ public class CombatTutorialGuide : MonoBehaviour
         bannerCardRT.anchorMin = new Vector2(0.5f, 1f);
         bannerCardRT.anchorMax = new Vector2(0.5f, 1f);
         bannerCardRT.pivot = new Vector2(0.5f, 1f);
-        bannerCardRT.anchoredPosition = new Vector2(0, -95);
-        bannerCardRT.sizeDelta = new Vector2(760, 145);
+        bannerCardRT.anchoredPosition = new Vector2(0, -90);
+        bannerCardRT.sizeDelta = new Vector2(820, 168);
 
         Image cardFrame = cardGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(cardFrame, new Color(0.85f, 0.55f, 0.18f, 0.98f)); // Golden amber
@@ -628,7 +630,10 @@ public class CombatTutorialGuide : MonoBehaviour
         tRT.anchoredPosition = new Vector2(14, -8);
         tRT.sizeDelta = new Vector2(-120, 24);
         bannerTitleText = titleGO.GetComponent<TextMeshProUGUI>();
-        bannerTitleText.fontSize = 16;
+        bannerTitleText.fontSize = 15.5f;
+        bannerTitleText.enableAutoSizing = true;
+        bannerTitleText.fontSizeMin = 13f;
+        bannerTitleText.fontSizeMax = 15.5f;
         bannerTitleText.fontStyle = FontStyles.Bold;
         bannerTitleText.color = new Color(1f, 0.92f, 0.30f); // Bright sunlight gold
         DungeonUIAssetHelper.ApplyFont(bannerTitleText, withOutline: true);
@@ -662,18 +667,21 @@ public class CombatTutorialGuide : MonoBehaviour
         skipTmp.color = new Color(0.95f, 0.95f, 0.95f);
         DungeonUIAssetHelper.ApplyFont(skipTmp, withOutline: true);
 
-        // Body instruction text
+        // Body instruction text (Auto-sizing enabled so multi-point explanations never bleed over borders)
         GameObject bodyGO = new GameObject("BodyText", typeof(RectTransform), typeof(TextMeshProUGUI));
         bodyGO.transform.SetParent(plate.transform, false);
         RectTransform bRT = bodyGO.GetComponent<RectTransform>();
         bRT.anchorMin = new Vector2(0, 0);
         bRT.anchorMax = new Vector2(1, 1);
-        bRT.offsetMin = new Vector2(14, 8);
-        bRT.offsetMax = new Vector2(-14, -34);
+        bRT.offsetMin = new Vector2(16, 8);
+        bRT.offsetMax = new Vector2(-16, -34);
         bannerBodyText = bodyGO.GetComponent<TextMeshProUGUI>();
-        bannerBodyText.fontSize = 14;
+        bannerBodyText.fontSize = 13.5f;
+        bannerBodyText.enableAutoSizing = true;
+        bannerBodyText.fontSizeMin = 11.5f;
+        bannerBodyText.fontSizeMax = 13.5f;
         bannerBodyText.color = Color.white;
-        bannerBodyText.lineSpacing = -4;
+        bannerBodyText.lineSpacing = 0;
         DungeonUIAssetHelper.ApplyFont(bannerBodyText, withOutline: true);
 
         // Floating Spotlight Pointer

@@ -96,9 +96,10 @@ public class DayManager : MonoBehaviour
         }
     }
 
-    public void AdvanceDay()
+    public void AdvanceDay(int days = 1)
     {
-        currentDay++;
+        if (days < 1) days = 1;
+        currentDay += days;
         PlayerPrefs.SetInt("Farm_CurrentDay", currentDay);
 
         // Safe multicast invocation: an exception in one listener will NEVER crash or block others
@@ -124,13 +125,18 @@ public class DayManager : MonoBehaviour
             }
         }
 
+        if (OnDayChanged != null)
+        {
+            OnDayChanged.Invoke(currentDay);
+        }
+
         // Direct notification to all active FarmPlots in the current scene to guarantee 100% reliable day advancement
         FarmPlot[] plots = FindObjectsByType<FarmPlot>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         for (int i = 0; i < plots.Length; i++)
         {
             if (plots[i] != null)
             {
-                plots[i].NextDay();
+                plots[i].AdvanceDays(days);
             }
         }
 

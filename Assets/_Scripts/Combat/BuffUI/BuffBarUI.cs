@@ -124,7 +124,7 @@ public class BuffBarUI : MonoBehaviour
         {
             int hash = 17;
             hash = hash * 31 + (int)p.GetCurrentFullnessTier();
-            hash = hash * 31 + p.defendCount;
+            hash = hash * 31 + p.currentShield;
             if (p.activeBuffs != null)
             {
                 hash = hash * 31 + p.activeBuffs.Count;
@@ -188,13 +188,13 @@ public class BuffBarUI : MonoBehaviour
     private void CollectPlayerBuffs(PlayerStats p, List<BuffDisplayInfo> list)
     {
         // 1. Guard / Active Shield (Defend)
-        if (p.defendCount > 0)
+        if (p.currentShield > 0)
         {
-            int totalShield = p.defendCount * p.defendValue;
+            int totalShield = p.currentShield;
             list.Add(new BuffDisplayInfo
             {
                 id = "player_guard",
-                title = $"Khiên Chống Đỡ (+{totalShield} DEF)",
+                title = $"Khiên Chống Đỡ (+{totalShield} Shield)",
                 category = "[PHÒNG HỘ]",
                 categoryColor = new Color(0.2f, 0.7f, 1f),
                 icon = BuffSpriteFactory.GetSprite("def_buff"),
