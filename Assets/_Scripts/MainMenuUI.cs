@@ -196,6 +196,7 @@ public class MainMenuUI : MonoBehaviour
     public void Open()
     {
         AutoBindReferences();
+        EnsureBackground();
         RefreshSaveSummary();
         ShowSubPanel(mainButtonsPanel);
 
@@ -341,6 +342,13 @@ public class MainMenuUI : MonoBehaviour
         PlayerPrefs.SetInt("Farm_CurrentDay", 1);
         PlayerPrefs.SetInt("Dungeon_HighestUnlockedFloor", 1);
         PlayerPrefs.Save();
+
+        // Reset Tutorial progress and prepare tutorial crops immediately
+        if (TutorialManager.Instance != null)
+        {
+            TutorialManager.Instance.ResetTutorial();
+            TutorialManager.Instance.EnsureTutorialCropsReady();
+        }
 
         // 2. Reset all ProgressionManager progression (Permanent stats, Dungeon floors, Bosses, Blessings, Recipes)
         if (ProgressionManager.Instance != null)
@@ -515,12 +523,32 @@ public class MainMenuUI : MonoBehaviour
 
         if (menuRootGO != null)
         {
+            Image rootImg = menuRootGO.GetComponent<Image>();
+            if (rootImg != null)
+            {
+                rootImg.color = new Color(0.04f, 0.07f, 0.11f, 1f); // Opaque atmospheric base
+            }
+
+            EnsureBackground();
+
             if (menuCanvasGroup == null)
                 menuCanvasGroup = menuRootGO.GetComponent<CanvasGroup>();
 
             Transform cm = menuRootGO.transform.Find("CenterModal");
             if (cm != null)
             {
+                Transform titleTextT = cm.Find("TitlePlaque/TitleText");
+                if (titleTextT != null)
+                {
+                    TextMeshProUGUI tTMP = titleTextT.GetComponent<TextMeshProUGUI>();
+                    if (tTMP != null && tTMP.text != "HARVEST & HOLLOW")
+                    {
+                        tTMP.text = "HARVEST & HOLLOW";
+                        tTMP.fontStyle = FontStyles.Bold;
+                        DungeonUIAssetHelper.ApplyFont(tTMP, withOutline: true);
+                    }
+                }
+
                 if (saveInfoText == null)
                 {
                     Transform saveT = cm.Find("SaveInfoBox/SaveText");
@@ -589,6 +617,280 @@ public class MainMenuUI : MonoBehaviour
         }
 
         saveInfoText.text = $"Current Progress: <color=#FFE066><b>Day {currentDay}</b></color>  |  Dungeon: <color=#80CBC4><b>Floor {unlockedFloor}</b></color>";
+    }
+    #endregion
+
+    #region Atmospheric Main Menu Background
+    private GameObject backgroundRootGO;
+    private static Sprite _cachedGradientSprite;
+
+    private void EnsureBackground()
+    {
+        if (menuRootGO == null) return;
+
+        Transform existingBg = menuRootGO.transform.Find("MainMenu_Background");
+        if (existingBg != null)
+        {
+            backgroundRootGO = existingBg.gameObject;
+            backgroundRootGO.transform.SetSiblingIndex(0);
+            return;
+        }
+
+        backgroundRootGO = new GameObject("MainMenu_Background", typeof(RectTransform));
+        backgroundRootGO.transform.SetParent(menuRootGO.transform, false);
+        backgroundRootGO.transform.SetSiblingIndex(0); // Place behind CenterModal
+
+        RectTransform bgRT = backgroundRootGO.GetComponent<RectTransform>();
+        bgRT.anchorMin = Vector2.zero;
+        bgRT.anchorMax = Vector2.one;
+        bgRT.offsetMin = Vector2.zero;
+        bgRT.offsetMax = Vector2.zero;
+
+        // 1. Fullscreen Atmospheric Deep Sky Gradient (Midnight Navy -> Twilight Teal -> Pine Forest Earth)
+        GameObject skyGO = new GameObject("SkyGradient", typeof(RectTransform), typeof(Image));
+        skyGO.transform.SetParent(backgroundRootGO.transform, false);
+        RectTransform skyRT = skyGO.GetComponent<RectTransform>();
+        skyRT.anchorMin = Vector2.zero;
+        skyRT.anchorMax = Vector2.one;
+        skyRT.offsetMin = Vector2.zero;
+        skyRT.offsetMax = Vector2.zero;
+        Image skyImg = skyGO.GetComponent<Image>();
+        skyImg.sprite = GetOrCreateGradientSprite();
+        skyImg.color = Color.white;
+        skyImg.raycastTarget = false;
+
+        // 2. Stars & Fireflies Cluster
+        GameObject starsGO = new GameObject("StarsCluster", typeof(RectTransform));
+        starsGO.transform.SetParent(backgroundRootGO.transform, false);
+        RectTransform starsRT = starsGO.GetComponent<RectTransform>();
+        starsRT.anchorMin = Vector2.zero;
+        starsRT.anchorMax = Vector2.one;
+        starsRT.offsetMin = Vector2.zero;
+        starsRT.offsetMax = Vector2.zero;
+
+        System.Random rnd = new System.Random(42);
+        for (int i = 0; i < 40; i++)
+        {
+            GameObject star = new GameObject($"Star_{i}", typeof(RectTransform), typeof(Image));
+            star.transform.SetParent(starsGO.transform, false);
+            RectTransform sRT = star.GetComponent<RectTransform>();
+            float rx = (float)rnd.NextDouble();
+            float ry = 0.32f + (float)rnd.NextDouble() * 0.65f; // Upper 68% of screen
+            sRT.anchorMin = new Vector2(rx, ry);
+            sRT.anchorMax = new Vector2(rx, ry);
+            float sz = 2.5f + (float)rnd.NextDouble() * 3.5f;
+            sRT.sizeDelta = new Vector2(sz, sz);
+
+            Image sImg = star.GetComponent<Image>();
+            float a = 0.35f + (float)rnd.NextDouble() * 0.55f;
+            sImg.color = (i % 3 == 0)
+                ? new Color(0.65f, 0.95f, 1f, a)  // Ice cyan star
+                : (i % 3 == 1)
+                    ? new Color(1f, 0.95f, 0.65f, a) // Warm gold star
+                    : new Color(0.7f, 1f, 0.85f, a);  // Emerald glow
+            sImg.raycastTarget = false;
+        }
+
+        // 3. Silhouette Horizon Layer (Bottom 36%)
+        GameObject horizonGO = new GameObject("HorizonLandscape", typeof(RectTransform));
+        horizonGO.transform.SetParent(backgroundRootGO.transform, false);
+        RectTransform hzRT = horizonGO.GetComponent<RectTransform>();
+        hzRT.anchorMin = new Vector2(0f, 0f);
+        hzRT.anchorMax = new Vector2(1f, 0.36f);
+        hzRT.offsetMin = Vector2.zero;
+        hzRT.offsetMax = Vector2.zero;
+
+        // Dark Forest Ground Silhouette
+        GameObject groundGO = new GameObject("GroundSilhouette", typeof(RectTransform), typeof(Image));
+        groundGO.transform.SetParent(horizonGO.transform, false);
+        RectTransform groundRT = groundGO.GetComponent<RectTransform>();
+        groundRT.anchorMin = Vector2.zero;
+        groundRT.anchorMax = new Vector2(1f, 0.65f);
+        groundRT.offsetMin = Vector2.zero;
+        groundRT.offsetMax = Vector2.zero;
+        Image groundImg = groundGO.GetComponent<Image>();
+        groundImg.color = new Color(0.03f, 0.07f, 0.06f, 0.96f); // Deep dark forest floor
+        groundImg.raycastTarget = false;
+
+        // Distant Trees & Nature Elements
+        Sprite oakSprite = DungeonUIAssetHelper.FindSprite("Oak_Tree") ?? DungeonUIAssetHelper.FindSprite("Spruce_tree");
+        Sprite birchSprite = DungeonUIAssetHelper.FindSprite("Birch_Tree") ?? DungeonUIAssetHelper.FindSprite("Spruce_Tree_Small");
+        Sprite tentSprite = DungeonUIAssetHelper.GetTentSprite();
+        Sprite chestSprite = DungeonUIAssetHelper.GetChestSprite();
+
+        // Left Camp: Tent & Campfire
+        if (tentSprite != null)
+        {
+            GameObject tentGO = new GameObject("CampTent", typeof(RectTransform), typeof(Image));
+            tentGO.transform.SetParent(horizonGO.transform, false);
+            RectTransform tRT = tentGO.GetComponent<RectTransform>();
+            tRT.anchorMin = new Vector2(0.11f, 0.35f);
+            tRT.anchorMax = new Vector2(0.11f, 0.35f);
+            tRT.sizeDelta = new Vector2(96, 84);
+            Image tImg = tentGO.GetComponent<Image>();
+            tImg.sprite = tentSprite;
+            tImg.color = new Color(0.18f, 0.28f, 0.22f, 0.90f);
+            tImg.preserveAspect = true;
+            tImg.raycastTarget = false;
+        }
+
+        // Warm Campfire Glow
+        GameObject fireGlowGO = new GameObject("CampfireGlow", typeof(RectTransform), typeof(Image));
+        fireGlowGO.transform.SetParent(horizonGO.transform, false);
+        RectTransform fgRT = fireGlowGO.GetComponent<RectTransform>();
+        fgRT.anchorMin = new Vector2(0.18f, 0.22f);
+        fgRT.anchorMax = new Vector2(0.18f, 0.22f);
+        fgRT.sizeDelta = new Vector2(90, 90);
+        Image fgImg = fireGlowGO.GetComponent<Image>();
+        fgImg.color = new Color(1f, 0.55f, 0.15f, 0.25f); // Warm campfire ambiance
+        fgImg.raycastTarget = false;
+
+        // Tree clusters on left & right
+        if (oakSprite != null)
+        {
+            CreateSilhouettedTree(horizonGO.transform, oakSprite, new Vector2(0.04f, 0.42f), new Vector2(110, 140));
+            CreateSilhouettedTree(horizonGO.transform, birchSprite ?? oakSprite, new Vector2(0.24f, 0.38f), new Vector2(85, 110));
+
+            CreateSilhouettedTree(horizonGO.transform, oakSprite, new Vector2(0.82f, 0.40f), new Vector2(120, 150));
+            CreateSilhouettedTree(horizonGO.transform, birchSprite ?? oakSprite, new Vector2(0.92f, 0.44f), new Vector2(95, 120));
+            CreateSilhouettedTree(horizonGO.transform, oakSprite, new Vector2(0.74f, 0.34f), new Vector2(80, 100));
+        }
+
+        // Dungeon Chest on right horizon
+        if (chestSprite != null)
+        {
+            GameObject chestGO = new GameObject("DungeonChest", typeof(RectTransform), typeof(Image));
+            chestGO.transform.SetParent(horizonGO.transform, false);
+            RectTransform cRT = chestGO.GetComponent<RectTransform>();
+            cRT.anchorMin = new Vector2(0.88f, 0.20f);
+            cRT.anchorMax = new Vector2(0.88f, 0.20f);
+            cRT.sizeDelta = new Vector2(46, 46);
+            Image cImg = chestGO.GetComponent<Image>();
+            cImg.sprite = chestSprite;
+            cImg.color = new Color(0.90f, 0.72f, 0.28f, 0.80f);
+            cImg.preserveAspect = true;
+            cImg.raycastTarget = false;
+        }
+
+        // 4. Cinematic Dark Edge Vignette
+        GameObject vignetteGO = new GameObject("VignetteShadow", typeof(RectTransform), typeof(Image));
+        vignetteGO.transform.SetParent(backgroundRootGO.transform, false);
+        RectTransform vRT = vignetteGO.GetComponent<RectTransform>();
+        vRT.anchorMin = Vector2.zero;
+        vRT.anchorMax = Vector2.one;
+        vRT.offsetMin = Vector2.zero;
+        vRT.offsetMax = Vector2.zero;
+        Image vImg = vignetteGO.GetComponent<Image>();
+        vImg.color = new Color(0.02f, 0.03f, 0.05f, 0.45f);
+        vImg.raycastTarget = false;
+
+        // 5. Grand Atmospheric Title Header (Positioned above CenterModal)
+        GameObject headerGO = new GameObject("TitleHeaderBar", typeof(RectTransform));
+        headerGO.transform.SetParent(backgroundRootGO.transform, false);
+        RectTransform hdrRT = headerGO.GetComponent<RectTransform>();
+        hdrRT.anchorMin = new Vector2(0.5f, 1f);
+        hdrRT.anchorMax = new Vector2(0.5f, 1f);
+        hdrRT.pivot = new Vector2(0.5f, 1f);
+        hdrRT.anchoredPosition = new Vector2(0, -32);
+        hdrRT.sizeDelta = new Vector2(850, 96);
+
+        GameObject titleTextGO = new GameObject("MainTitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        titleTextGO.transform.SetParent(headerGO.transform, false);
+        RectTransform ttRT = titleTextGO.GetComponent<RectTransform>();
+        ttRT.anchorMin = new Vector2(0f, 0.35f);
+        ttRT.anchorMax = new Vector2(1f, 1f);
+        ttRT.offsetMin = Vector2.zero;
+        ttRT.offsetMax = Vector2.zero;
+        TextMeshProUGUI titleTMP = titleTextGO.GetComponent<TextMeshProUGUI>();
+        titleTMP.text = "HARVEST & HOLLOW";
+        titleTMP.fontSize = 38;
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.alignment = TextAlignmentOptions.Center;
+        titleTMP.characterSpacing = 4f;
+        titleTMP.color = new Color(1f, 0.88f, 0.42f, 1f); // Radiant sunlight gold
+        DungeonUIAssetHelper.ApplyFont(titleTMP, withOutline: true);
+
+        GameObject subTextGO = new GameObject("SubTitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        subTextGO.transform.SetParent(headerGO.transform, false);
+        RectTransform stRT = subTextGO.GetComponent<RectTransform>();
+        stRT.anchorMin = new Vector2(0f, 0f);
+        stRT.anchorMax = new Vector2(1f, 0.38f);
+        stRT.offsetMin = Vector2.zero;
+        stRT.offsetMax = Vector2.zero;
+        TextMeshProUGUI subTMP = subTextGO.GetComponent<TextMeshProUGUI>();
+        subTMP.text = "✦  NÔNG TRẠI THANH BÌNH  •  THÁM HIỂM HẦM NGỤC  ✦";
+        subTMP.fontSize = 13.5f;
+        subTMP.fontStyle = FontStyles.Bold;
+        subTMP.alignment = TextAlignmentOptions.Center;
+        subTMP.characterSpacing = 2.5f;
+        subTMP.color = new Color(0.55f, 0.85f, 0.80f, 0.95f); // Soft tranquil mint
+        DungeonUIAssetHelper.ApplyFont(subTMP, withOutline: true);
+
+        // 6. Bottom Navigation Hint
+        GameObject hintGO = new GameObject("BottomHintText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        hintGO.transform.SetParent(backgroundRootGO.transform, false);
+        RectTransform hintRT = hintGO.GetComponent<RectTransform>();
+        hintRT.anchorMin = new Vector2(0f, 0f);
+        hintRT.anchorMax = new Vector2(1f, 0f);
+        hintRT.pivot = new Vector2(0.5f, 0f);
+        hintRT.anchoredPosition = new Vector2(0, 16);
+        hintRT.sizeDelta = new Vector2(-40, 24);
+        TextMeshProUGUI hintTMP = hintGO.GetComponent<TextMeshProUGUI>();
+        hintTMP.text = "<color=#607D8B>Harvest & Hollow v1.0</color>   |   <color=#90A4AE>Nhấn [Tiếp Tục] hoặc [Chơi Mới] để bắt đầu hành trình!</color>";
+        hintTMP.fontSize = 12.5f;
+        hintTMP.alignment = TextAlignmentOptions.Center;
+        DungeonUIAssetHelper.ApplyFont(hintTMP, withOutline: true);
+    }
+
+    private static Sprite GetOrCreateGradientSprite()
+    {
+        if (_cachedGradientSprite != null) return _cachedGradientSprite;
+
+        int width = 16;
+        int height = 256;
+        Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        tex.wrapMode = TextureWrapMode.Clamp;
+        tex.filterMode = FilterMode.Bilinear;
+
+        Color topColor = new Color(0.04f, 0.07f, 0.12f, 1f);     // Midnight Starfield
+        Color midColor = new Color(0.08f, 0.14f, 0.18f, 1f);     // Twilight Teal Dusk
+        Color bottomColor = new Color(0.05f, 0.10f, 0.08f, 1f);  // Pine Forest Gloom
+
+        Color[] pixels = new Color[width * height];
+        for (int y = 0; y < height; y++)
+        {
+            float t = (float)y / (height - 1);
+            Color rowColor = t < 0.5f
+                ? Color.Lerp(bottomColor, midColor, t * 2f)
+                : Color.Lerp(midColor, topColor, (t - 0.5f) * 2f);
+
+            for (int x = 0; x < width; x++)
+            {
+                pixels[y * width + x] = rowColor;
+            }
+        }
+
+        tex.SetPixels(pixels);
+        tex.Apply();
+
+        _cachedGradientSprite = Sprite.Create(tex, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
+        return _cachedGradientSprite;
+    }
+
+    private void CreateSilhouettedTree(Transform parent, Sprite treeSprite, Vector2 anchorPos, Vector2 size)
+    {
+        if (treeSprite == null || parent == null) return;
+        GameObject treeGO = new GameObject("TreeSilhouette", typeof(RectTransform), typeof(Image));
+        treeGO.transform.SetParent(parent, false);
+        RectTransform tRT = treeGO.GetComponent<RectTransform>();
+        tRT.anchorMin = anchorPos;
+        tRT.anchorMax = anchorPos;
+        tRT.sizeDelta = size;
+        Image tImg = treeGO.GetComponent<Image>();
+        tImg.sprite = treeSprite;
+        tImg.color = new Color(0.06f, 0.12f, 0.09f, 0.85f); // Deep forest green silhouette
+        tImg.preserveAspect = true;
+        tImg.raycastTarget = false;
     }
     #endregion
 }

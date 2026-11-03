@@ -399,6 +399,12 @@ public class FarmPlot : MonoBehaviour
         }
 
         LoadPlotData();
+
+        // If tutorial is active and this plot has no saved data, ensure tutorial crops are ready right on spawn
+        if (currentState == State.Empty && PlayerPrefs.GetInt(TutorialManager.TutorialDoneKey, 0) == 0)
+        {
+            TutorialManager.Instance?.EnsureTutorialCropsReady();
+        }
     }
 
     private void OnDestroy()

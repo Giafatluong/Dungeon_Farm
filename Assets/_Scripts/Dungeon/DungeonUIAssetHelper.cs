@@ -501,7 +501,7 @@ public static class DungeonUIAssetHelper
     #endregion
 
     #region Utilities
-    private static Sprite FindSprite(string spriteName)
+    public static Sprite FindSprite(string spriteName)
     {
         if (string.IsNullOrEmpty(spriteName)) return null;
         if (_spriteCache.TryGetValue(spriteName, out Sprite cached))

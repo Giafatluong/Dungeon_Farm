@@ -114,6 +114,12 @@ public class TutorialManager : MonoBehaviour
             managerGO.AddComponent<TutorialDialogueUI>();
             DontDestroyOnLoad(managerGO);
         }
+
+        string activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        if (string.IsNullOrEmpty(activeScene) || activeScene == "Base" || activeScene.Contains("Base"))
+        {
+            Instance.EnsureTutorialCropsReady();
+        }
     }
 
     private void Awake()
@@ -125,6 +131,25 @@ public class TutorialManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        EnsureTutorialCropsReady();
+    }
+
+    private void OnEnable()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += HandleSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= HandleSceneLoaded;
+    }
+
+    private void HandleSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        if (scene.name == "Base" || scene.name.Contains("Base"))
+        {
+            EnsureTutorialCropsReady();
+        }
     }
 
     private void Start()
@@ -189,11 +214,32 @@ public class TutorialManager : MonoBehaviour
                 }
             }
 
+            // Fallback: search available crops directly on scene plots
+            if (carrot == null)
+            {
+                for (int i = 0; i < allPlots.Length; i++)
+                {
+                    if (allPlots[i] != null && allPlots[i].availableCrops != null)
+                    {
+                        for (int j = 0; j < allPlots[i].availableCrops.Count; j++)
+                        {
+                            if (allPlots[i].availableCrops[j] != null && allPlots[i].availableCrops[j].cropName.ToLower().Contains("carrot"))
+                            {
+                                carrot = allPlots[i].availableCrops[j];
+                                break;
+                            }
+                        }
+                    }
+                    if (carrot != null) break;
+                }
+            }
+
             if (carrot != null)
             {
-                Vector3 playerPos = PlayerMovement.Instance != null ? PlayerMovement.Instance.transform.position : new Vector3(12f, 0.5f, 0f);
+                // Fixed reference anchor: Eastern entrance of farm plots towards the house / bed
+                Vector3 farmEntranceAnchor = new Vector3(12f, 0.5f, 0f);
                 System.Array.Sort(allPlots, (a, b) =>
-                    Vector3.Distance(a.transform.position, playerPos).CompareTo(Vector3.Distance(b.transform.position, playerPos)));
+                    Vector3.Distance(a.transform.position, farmEntranceAnchor).CompareTo(Vector3.Distance(b.transform.position, farmEntranceAnchor)));
 
                 int countToPlant = Mathf.Min(6, allPlots.Length);
                 for (int i = 0; i < countToPlant; i++)
@@ -306,15 +352,16 @@ public class TutorialManager : MonoBehaviour
             {
                 if (lastPlayerPos != Vector3.zero)
                 {
+                    const float requiredDistance = 2.0f;
                     distanceTraveled += Vector3.Distance(pm.transform.position, lastPlayerPos);
-                    if (Mathf.Abs(distanceTraveled - lastReportedProgress) >= 0.1f || distanceTraveled >= 6.0f)
+                    if (Mathf.Abs(distanceTraveled - lastReportedProgress) >= 0.1f || distanceTraveled >= requiredDistance)
                     {
                         lastReportedProgress = distanceTraveled;
                         TutorialDialogueUI.Instance?.UpdateDynamicProgress(
-                            $"Tiến độ di chuyển: <color=#FFD700><b>{Mathf.Min(6f, distanceTraveled):F1}m / 6.0m</b></color>"
+                            $"Tiến độ di chuyển: <color=#FFD700><b>{Mathf.Min(requiredDistance, distanceTraveled):F1}m / {requiredDistance:F1}m</b></color>"
                         );
                     }
-                    if (distanceTraveled >= 6.0f)
+                    if (distanceTraveled >= requiredDistance)
                     {
                         AdvanceToNextStep();
                     }
@@ -338,6 +385,7 @@ public class TutorialManager : MonoBehaviour
 
     public void OnIntroCutsceneFinished()
     {
+        EnsureTutorialCropsReady();
         SetStep(TutorialStep.Movement);
     }
 
@@ -347,6 +395,12 @@ public class TutorialManager : MonoBehaviour
         currentStep = newStep;
         PlayerPrefs.SetInt(TutorialStepKey, (int)currentStep);
         PlayerPrefs.Save();
+
+        // Always ensure tutorial crops are visible on all early steps
+        if (currentStep <= TutorialStep.HarvestCrop)
+        {
+            EnsureTutorialCropsReady();
+        }
 
         switch (currentStep)
         {
@@ -364,7 +418,7 @@ public class TutorialManager : MonoBehaviour
                     fullDialogue = "Chào mừng bạn đến với Harvest & Hollow! Tôi là Tinh Linh Mầm Cây, sẽ đồng hành hướng dẫn bạn.\n" +
                                    "- Dùng các phím <color=#50FA7B><b>[W, A, S, D]</b></color> để di chuyển bước chân đầu tiên quanh nông trại.\n" +
                                    "- Giữ phím <color=#50FA7B><b>[Left Shift]</b></color> khi đi để chạy nhanh (tăng 1.5x tốc độ).\n" +
-                                   "Hãy đi dạo một đoạn 6 mét quanh sân nông trại để làm quen cơ thể nhé!",
+                                   "Hãy bước vài bước (khoảng 2 mét) quanh sân nông trại để làm quen cơ thể nhé!",
                     targetPosition = null,
                     targetTransform = null
                 });

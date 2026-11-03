@@ -47,6 +47,7 @@ public class IntroCutsceneController : MonoBehaviour
     private void Start()
     {
         FindReferences();
+        TutorialManager.Instance?.EnsureTutorialCropsReady();
 
         // Check if cutscene should play on new game (only in Base scene)
         string activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
@@ -143,8 +144,8 @@ public class IntroCutsceneController : MonoBehaviour
         Statue statue = Statue.Instance != null ? Statue.Instance : FindFirstObjectByType<Statue>();
         if (statue != null) statuePos = statue.GetStatueCenter() + new Vector3(0, 0, -10f);
 
-        // Waypoint 2: Base Farm Plots & Campfire
-        Vector3 farmCenter = new Vector3(14.0f, -2.5f, -10f);
+        // Waypoint 2: Base Farm Plots & Ripe Crops
+        Vector3 farmCenter = new Vector3(2.5f, 0.5f, -10f);
 
         // Waypoint 3: Player Bed
         Vector3 playerPos = playerMovement != null ? playerMovement.transform.position + new Vector3(0, 1.2f, -10f) : new Vector3(12.0f, 0.5f, -10f);
