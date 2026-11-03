@@ -54,8 +54,9 @@ public class InventoryButton : MonoBehaviour,
         Button btn = GetComponent<Button>();
         if (btn != null)
         {
-            btn.onClick.RemoveListener(SelectItem);
-            btn.onClick.AddListener(SelectItem);
+            // OnPointerClick already handles click events (including Shift+Click for transfers).
+            // Removing btn.onClick listener prevents double-invocation that causes instant deselection!
+            btn.onClick.RemoveAllListeners();
         }
 
         FixTextLayout();
@@ -222,8 +223,14 @@ public class InventoryButton : MonoBehaviour,
         UpdateHighlight();
     }
 
+    private static float lastGlobalSelectTime = -1f;
+
     public void SelectItem()
     {
+        if (Time.unscaledTime - lastGlobalSelectTime < 0.08f)
+            return;
+        lastGlobalSelectTime = Time.unscaledTime;
+
         if (currentItem != null)
         {
             if (selectedItem != null && ItemContainer.IsItemMatch(selectedItem, currentItem))

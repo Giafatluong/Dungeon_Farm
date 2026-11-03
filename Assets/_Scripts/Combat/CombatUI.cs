@@ -187,11 +187,15 @@ public class CombatUI : MonoBehaviour
         }
 
         // 5. High-Contrast Typography
+        DungeonUIAssetHelper.ApplyFont(playerNameText);
+        if (playerNameText != null) { playerNameText.enableAutoSizing = true; playerNameText.fontSizeMin = 10f; }
         DungeonUIAssetHelper.ApplyFont(hpText);
         DungeonUIAssetHelper.ApplyFont(hungerText);
         DungeonUIAssetHelper.ApplyFont(apText);
         DungeonUIAssetHelper.ApplyFont(statsText);
+        if (statsText != null) { statsText.enableAutoSizing = true; statsText.fontSizeMin = 9f; }
         DungeonUIAssetHelper.ApplyFont(buffsText);
+        if (buffsText != null) { buffsText.enableAutoSizing = true; buffsText.fontSizeMin = 8.5f; }
         DungeonUIAssetHelper.ApplyFont(turnBannerText, withOutline: true);
         if (turnBannerText != null)
         {
@@ -216,7 +220,10 @@ public class CombatUI : MonoBehaviour
         }
         DungeonUIAssetHelper.ApplyFont(targetHpText);
         DungeonUIAssetHelper.ApplyFont(targetNameText);
+        if (targetNameText != null) { targetNameText.enableAutoSizing = true; targetNameText.fontSizeMin = 10f; }
         DungeonUIAssetHelper.ApplyFont(targetIntentText);
+        if (targetIntentText != null) { targetIntentText.enableAutoSizing = true; targetIntentText.fontSizeMin = 9.5f; }
+        if (stageProgressText != null) { DungeonUIAssetHelper.ApplyFont(stageProgressText); stageProgressText.enableAutoSizing = true; stageProgressText.fontSizeMin = 10f; }
 
         // Deactivate on-screen debug log notifications
         if (combatLogText != null)

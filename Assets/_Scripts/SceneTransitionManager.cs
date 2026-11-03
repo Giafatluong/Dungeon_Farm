@@ -59,6 +59,12 @@ public class SceneTransitionManager : MonoBehaviour
     private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         Time.timeScale = 1f;
+
+        // Clean up UI caches and ensure no stale modal windows or tooltips persist across scenes
+        UIEscapeManager.ResetSceneCache();
+        UIEscapeManager.CloseAllModals(includeInventory: true);
+        ItemTooltipUI.Instance?.Hide(immediate: true);
+
         if (DayTransitionUI.Instance != null)
         {
             DayTransitionUI.Instance.ResetToHiddenState();
@@ -66,6 +72,14 @@ public class SceneTransitionManager : MonoBehaviour
 
         if (scene.name == "Base")
         {
+            // Fail-safe: If returning to Base while run was still marked active (e.g. abrupt exit/reload), clean it up
+            if (ProgressionManager.Instance != null && ProgressionManager.Instance.runActive)
+            {
+                ProgressionManager.Instance.runActive = false;
+                ProgressionManager.Instance.ClearRunBlessing();
+                DungeonSummaryUI.AdvanceDayOnReturnStatic();
+            }
+
             bool cameFromDungeon = SpawnAtDungeonEntranceOnBaseLoad 
                                 || (previousSceneName != null && previousSceneName.Equals("Dungeon", System.StringComparison.OrdinalIgnoreCase));
 
@@ -140,6 +154,9 @@ public class SceneTransitionManager : MonoBehaviour
         Time.timeScale = 1f;
         DayTransitionUI.Instance?.ResetToHiddenState();
 
+        FarmPlot.SaveAllPlots();
+        PlayerPrefs.Save();
+
         if (ProgressionManager.Instance != null)
         {
             int targetFloor = floor >= 0 ? floor : ProgressionManager.Instance.currentFloor;
@@ -167,6 +184,7 @@ public class SceneTransitionManager : MonoBehaviour
             DungeonSummaryUI.AdvanceDayOnReturnStatic();
         }
 
+        PlayerPrefs.Save();
         SceneManager.LoadScene("Base");
     }
 
@@ -177,6 +195,12 @@ public class SceneTransitionManager : MonoBehaviour
 
         Time.timeScale = 1f;
         DayTransitionUI.Instance?.ResetToHiddenState();
+
+        if (SceneManager.GetActiveScene().name == "Base")
+        {
+            FarmPlot.SaveAllPlots();
+        }
+        PlayerPrefs.Save();
         SceneManager.LoadScene(sceneName);
     }
 }

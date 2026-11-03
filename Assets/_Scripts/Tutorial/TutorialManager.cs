@@ -53,8 +53,8 @@ public class TutorialManager : MonoBehaviour
                 return false;
 
             case TutorialStep.Movement:
-                // Only movement is expected, keep stations and inventory locked
-                return false;
+                // Allow opening inventory at all times to check bag
+                return interaction == TutorialInteraction.Inventory;
 
             case TutorialStep.OpenInventory:
                 return interaction == TutorialInteraction.Inventory;
@@ -92,7 +92,6 @@ public class TutorialManager : MonoBehaviour
     private Vector3 lastPlayerPos;
     private float distanceTraveled = 0f;
     private float lastReportedProgress = -1f;
-    private float inventoryOpenedTimer = 0f;
     private int cropsHarvestedInTutorial = 0;
     private const int RequiredHarvestCount = 3;
     private bool isAdvancingStep = false;
@@ -149,6 +148,24 @@ public class TutorialManager : MonoBehaviour
         if (scene.name == "Base" || scene.name.Contains("Base"))
         {
             EnsureTutorialCropsReady();
+
+            // When returning to Base, re-bind active tutorial step to new scene's live transforms and targets
+            if (currentStep > TutorialStep.None && currentStep < TutorialStep.Combat && currentStep != TutorialStep.IntroCutscene)
+            {
+                SetStep(currentStep);
+            }
+            else if (currentStep == TutorialStep.Combat)
+            {
+                if (PlayerPrefs.GetInt(TutorialDoneKey, 0) == 1)
+                {
+                    currentStep = TutorialStep.Completed;
+                }
+                else
+                {
+                    // Returned before completing combat (e.g. retreated) -> guide player back to Dungeon Gate
+                    SetStep(TutorialStep.DungeonGate);
+                }
+            }
         }
     }
 
@@ -176,17 +193,24 @@ public class TutorialManager : MonoBehaviour
         }
     }
 
+    private static float _lastEnsureTutorialCropsTime = -1f;
+
     /// <summary>
     /// Ensures 6 closest farm plots to the player have ripe, mature carrots ready for harvesting,
     /// and grants 3 carrot seeds so the player has enough resources for cooking, planting, and statue offerings.
     /// </summary>
     public void EnsureTutorialCropsReady()
     {
+        // Prevent duplicate scene-wide scans within the same fraction of a second
+        if (Time.realtimeSinceStartup - _lastEnsureTutorialCropsTime < 0.25f) return;
+        _lastEnsureTutorialCropsTime = Time.realtimeSinceStartup;
+
         // If tutorial has already completed, do not tamper with user's farm
         if (PlayerPrefs.GetInt(TutorialDoneKey, 0) == 1) return;
 
-        // Only plant if player is on intro or early farming steps
-        if (currentStep > TutorialStep.PlantSeed && currentStep != TutorialStep.IntroCutscene && currentStep != TutorialStep.None) return;
+        // Only prepare starter crops during initial tutorial steps (Intro, Movement, Inventory, HarvestCrop)
+        if (currentStep > TutorialStep.HarvestCrop && currentStep != TutorialStep.IntroCutscene && currentStep != TutorialStep.None) return;
+        if (PlayerPrefs.GetInt("Tutorial_StarterCropsPrepared", 0) == 1 && currentStep >= TutorialStep.PlantSeed) return;
 
         FarmPlot[] allPlots = Object.FindObjectsByType<FarmPlot>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         if (allPlots == null || allPlots.Length == 0) return;
@@ -247,6 +271,9 @@ public class TutorialManager : MonoBehaviour
                     FarmPlot p = allPlots[i];
                     if (p != null)
                     {
+                        // Never overwrite a plot that is already planted by the player
+                        if (p.currentState == FarmPlot.State.Planted) continue;
+
                         p.currentState = FarmPlot.State.Ready;
                         p.currentCrop = carrot;
                         int maxStage = (carrot.growthStages != null && carrot.growthStages.Length > 0) ? carrot.growthStages.Length - 1 : 0;
@@ -257,6 +284,8 @@ public class TutorialManager : MonoBehaviour
                         p.SavePlotData(true);
                     }
                 }
+                PlayerPrefs.SetInt("Tutorial_StarterCropsPrepared", 1);
+                PlayerPrefs.Save();
 
                 // Grant 3 Carrot Seeds to player's inventory so they can practice planting
                 PlayerStats ps = PlayerStats.Instance != null ? PlayerStats.Instance : Object.FindFirstObjectByType<PlayerStats>();
@@ -374,11 +403,7 @@ public class TutorialManager : MonoBehaviour
         {
             if (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen)
             {
-                inventoryOpenedTimer += Time.deltaTime;
-                if (inventoryOpenedTimer >= 1.0f)
-                {
-                    AdvanceToNextStep();
-                }
+                AdvanceToNextStep();
             }
         }
     }
@@ -425,7 +450,6 @@ public class TutorialManager : MonoBehaviour
                 break;
 
             case TutorialStep.OpenInventory:
-                inventoryOpenedTimer = 0f;
                 TutorialDialogueUI.Instance?.ShowStep(new TutorialStepInfo
                 {
                     stepIndex = 2,

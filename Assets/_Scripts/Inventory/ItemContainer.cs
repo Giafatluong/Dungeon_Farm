@@ -15,10 +15,8 @@ public class ItemContainer : ScriptableObject
 
     public event System.Action OnInventoryChange;
 
-    private void OnEnable()
+    public void EnsureSlots()
     {
-        OnInventoryChange = null;
-
         if (itemSlots == null || itemSlots.Length != maxSlots)
         {
             if (itemSlots == null)
@@ -38,6 +36,12 @@ public class ItemContainer : ScriptableObject
                 itemSlots[i] = new ItemSlot();
             }
         }
+    }
+
+    private void OnEnable()
+    {
+        OnInventoryChange = null;
+        EnsureSlots();
     }
 
     private void TriggerChange()
@@ -69,7 +73,8 @@ public class ItemContainer : ScriptableObject
         if (itemData == null || amount <= 0)
             return false;
 
-        int limit = itemSlots != null ? itemSlots.Length : maxSlots;
+        EnsureSlots();
+        int limit = itemSlots.Length;
 
         if (itemData.isStackable)
         {
@@ -133,8 +138,9 @@ public class ItemContainer : ScriptableObject
         if (itemData == null || amount <= 0)
             return;
 
+        EnsureSlots();
         bool changed = false;
-        int limit = itemSlots != null ? itemSlots.Length : maxSlots;
+        int limit = itemSlots.Length;
 
         for (int i = 0; i < limit; i++)
         {
@@ -172,7 +178,8 @@ public class ItemContainer : ScriptableObject
 
     public int GetItemCount(ItemData itemData)
     {
-        if (itemData == null || itemSlots == null) return 0;
+        if (itemData == null) return 0;
+        EnsureSlots();
         int total = 0;
         int limit = itemSlots.Length;
         for (int i = 0; i < limit; i++)
@@ -195,7 +202,8 @@ public class ItemContainer : ScriptableObject
         if (itemData == null || requiredAmount <= 0)
             return false;
 
-        int limit = itemSlots != null ? itemSlots.Length : maxSlots;
+        EnsureSlots();
+        int limit = itemSlots.Length;
         if (requiredAmount == 1)
         {
             for (int i = 0; i < limit; i++)
@@ -215,7 +223,8 @@ public class ItemContainer : ScriptableObject
 
     public int GetEmptySlot()
     {
-        int limit = itemSlots != null ? itemSlots.Length : maxSlots;
+        EnsureSlots();
+        int limit = itemSlots.Length;
         for (int i = 0; i < limit; i++)
         {
             if (itemSlots[i] == null || itemSlots[i].itemData == null)
@@ -230,10 +239,11 @@ public class ItemContainer : ScriptableObject
     public bool CanAddItem(ItemData itemData, int amount = 1)
     {
         if (itemData == null || amount <= 0) return false;
+        EnsureSlots();
         if (itemData.isStackable && HasItem(itemData)) return true;
 
         int emptyCount = 0;
-        int limit = itemSlots != null ? itemSlots.Length : maxSlots;
+        int limit = itemSlots.Length;
         for (int i = 0; i < limit; i++)
         {
             if (itemSlots[i] == null || itemSlots[i].itemData == null)
@@ -247,6 +257,7 @@ public class ItemContainer : ScriptableObject
 
     public void SwapSlots(int indexA, int indexB)
     {
+        EnsureSlots();
         if (indexA < 0 || indexA >= itemSlots.Length)
             return;
 
@@ -297,6 +308,7 @@ public class ItemContainer : ScriptableObject
     /// </summary>
     public void Clear()
     {
+        EnsureSlots();
         if (itemSlots != null)
         {
             for (int i = 0; i < itemSlots.Length; i++)

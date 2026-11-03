@@ -757,11 +757,14 @@ public class DungeonEntranceUI : MonoBehaviour
         dtRT.anchorMax = new Vector2(0.5f, 0);
         dtRT.pivot = new Vector2(0.5f, 0);
         dtRT.anchoredPosition = new Vector2(0, 56);
-        dtRT.sizeDelta = new Vector2(500, 20);
+        dtRT.sizeDelta = new Vector2(520, 28);
 
         detailsText = detailsTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(detailsText);
         detailsText.fontSize = 11.5f;
+        detailsText.enableAutoSizing = true;
+        detailsText.fontSizeMin = 9.5f;
+        detailsText.fontSizeMax = 11.5f;
         detailsText.alignment = TextAlignmentOptions.Center;
         detailsText.textWrappingMode = TextWrappingModes.Normal;
         detailsText.text = "";
@@ -800,6 +803,8 @@ public class DungeonEntranceUI : MonoBehaviour
         enterButtonText = enterTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(enterButtonText);
         enterButtonText.fontSize = 13.5f;
+        enterButtonText.enableAutoSizing = true;
+        enterButtonText.fontSizeMin = 10.5f;
         enterButtonText.fontStyle = FontStyles.Bold;
         enterButtonText.alignment = TextAlignmentOptions.Center;
         enterButtonText.text = "ENTER FLOOR 1 (ENTER)";
@@ -930,6 +935,8 @@ public class DungeonEntranceUI : MonoBehaviour
         TextMeshProUGUI nameText = nameGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(nameText);
         nameText.fontSize = 14;
+        nameText.enableAutoSizing = true;
+        nameText.fontSizeMin = 10.5f;
         nameText.fontStyle = FontStyles.Bold;
         nameText.alignment = TextAlignmentOptions.Left;
         nameText.text = data.floorName;
@@ -947,6 +954,8 @@ public class DungeonEntranceUI : MonoBehaviour
         TextMeshProUGUI bossText = bossGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(bossText);
         bossText.fontSize = 10.5f;
+        bossText.enableAutoSizing = true;
+        bossText.fontSizeMin = 8.5f;
         bossText.alignment = TextAlignmentOptions.Left;
         bossText.text = $"Boss: {data.bossName}";
         bossText.color = new Color(0.6f, 0.72f, 0.82f);
@@ -973,6 +982,8 @@ public class DungeonEntranceUI : MonoBehaviour
         TextMeshProUGUI sText = sTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(sText);
         sText.fontSize = 11;
+        sText.enableAutoSizing = true;
+        sText.fontSizeMin = 8.5f;
         sText.fontStyle = FontStyles.Bold;
         sText.alignment = TextAlignmentOptions.Center;
         sText.text = "READY";

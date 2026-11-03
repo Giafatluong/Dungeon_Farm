@@ -17,7 +17,7 @@ public class ItemDrop : MonoBehaviour
     [Header("Drop Effect")]
     public float jumpForce = 3f;
     public float horizontalForce = 2f;
-    public float dropTime = 1f;
+    public float dropTime = 0.22f; // Snappy bouncy hop instead of 1.0s delay
     public bool canCollect = false;
 
     public bool IsMoving => isMoving;
@@ -61,18 +61,48 @@ public class ItemDrop : MonoBehaviour
 
     private void Update()
     {
-        if (!isMoving || player == null) return;
-        if (!canCollect) return;
+        if (player == null)
+        {
+            EnsurePlayer();
+            if (player == null) return;
+        }
+
+        // Auto-magnet: If player is within 3.0m, automatically pull item into player's bag!
+        if (canCollect && !isMoving && Time.time >= collectCooldownUntil)
+        {
+            float distSq = (transform.position - player.transform.position).sqrMagnitude;
+            if (distSq <= 9.0f) // 3.0m radius
+            {
+                StartMove(player);
+            }
+        }
+
+        if (!isMoving || !canCollect) return;
+
+        float dist = Vector3.Distance(transform.position, player.transform.position);
+        float currentSpeed = Mathf.Max(moveSpeed, moveSpeed * (2.8f / Mathf.Max(0.4f, dist)));
 
         transform.position = Vector3.MoveTowards(
             transform.position,
             player.transform.position,
-            moveSpeed * Time.deltaTime
+            currentSpeed * Time.deltaTime
         );
 
-        if ((transform.position - player.transform.position).sqrMagnitude < 1f)
+        if ((transform.position - player.transform.position).sqrMagnitude < 0.6f)
         {
             Collect();
+        }
+    }
+
+    private void EnsurePlayer()
+    {
+        if (player != null) return;
+        if (PlayerMovement.Instance != null) player = PlayerMovement.Instance.gameObject;
+        else if (PlayerStats.Instance != null) player = PlayerStats.Instance.gameObject;
+        else
+        {
+            GameObject p = GameObject.FindGameObjectWithTag("Player");
+            if (p != null) player = p;
         }
     }
 

@@ -17,24 +17,47 @@ public class CurrentItemPanel : MonoBehaviour
     private void Awake()
     {
         EnsureInventoryPanel();
+        EnsureButtons();
+    }
+
+    private void EnsureButtons()
+    {
+        if (inventoryButtons == null || inventoryButtons.Count == 0)
+        {
+            inventoryButtons = new List<InventoryButton>(GetComponentsInChildren<InventoryButton>(true));
+        }
     }
 
     private void Start()
     {
+        EnsureInventoryPanel();
+        EnsureButtons();
+        SubscribeContainerEvent();
         SetCurrentItem();
     }
 
     private void OnEnable()
     {
         EnsureInventoryPanel();
+        EnsureButtons();
+        SubscribeContainerEvent();
+    }
 
+    private void OnDisable()
+    {
+        UnsubscribeContainerEvent();
+    }
+
+    private void SubscribeContainerEvent()
+    {
         if (inventoryPanel != null && inventoryPanel.ItemContainer != null)
         {
+            inventoryPanel.ItemContainer.OnInventoryChange -= SetCurrentItem;
             inventoryPanel.ItemContainer.OnInventoryChange += SetCurrentItem;
         }
     }
 
-    private void OnDisable()
+    private void UnsubscribeContainerEvent()
     {
         if (inventoryPanel != null && inventoryPanel.ItemContainer != null)
         {
@@ -69,6 +92,8 @@ public class CurrentItemPanel : MonoBehaviour
     public void SetCurrentItem()
     {
         EnsureInventoryPanel();
+        EnsureButtons();
+        SubscribeContainerEvent();
 
         if (inventoryPanel == null || inventoryPanel.ItemContainer == null || inventoryButtons == null)
             return;

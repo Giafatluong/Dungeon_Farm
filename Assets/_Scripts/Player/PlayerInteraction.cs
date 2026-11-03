@@ -42,6 +42,7 @@ public class PlayerInteraction : MonoBehaviour
 
     private void Awake()
     {
+        if (currentFarmPlots != null) currentFarmPlots.Clear();
         mainCam = Camera.main;
         if (inventoryController == null)
         {
@@ -52,6 +53,12 @@ public class PlayerInteraction : MonoBehaviour
         if (GetComponent<InteractionPromptUI>() == null)
         {
             gameObject.AddComponent<InteractionPromptUI>();
+        }
+
+        // World-class farming grid bracket highlight & crop hover tooltip
+        if (GetComponent<FarmCursorHighlight>() == null)
+        {
+            gameObject.AddComponent<FarmCursorHighlight>();
         }
     }
 
@@ -65,17 +72,56 @@ public class PlayerInteraction : MonoBehaviour
         return true;
     }
 
+    private FarmPlot _lastSweptPlot = null;
+    private float _sweepCooldownTimer = 0f;
+
     private void Update()
     {
         if (IsAnyUIOpen()) return;
         if (inventoryController != null && !inventoryController.isInteractable) return;
 
-        if (Input.GetMouseButtonDown(0))
-        {
-            if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-                return;
+        // Continuous sweep farming: single click or drag/hold across plots
+        bool pointerOverUI = UnityEngine.EventSystems.EventSystem.current != null &&
+                             UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
 
-            InteractFarmPlot();
+        if (!pointerOverUI)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                FarmPlot plot = GetHoveredFarmPlot(out bool isNear);
+                if (plot != null && isNear)
+                {
+                    _lastSweptPlot = plot;
+                    _sweepCooldownTimer = 0.08f;
+                    ExecuteFarmPlotInteraction(plot);
+                }
+            }
+            else if (Input.GetMouseButton(0))
+            {
+                _sweepCooldownTimer -= Time.deltaTime;
+                FarmPlot plot = GetHoveredFarmPlot(out bool isNear);
+                if (plot != null && isNear)
+                {
+                    // Only sweep actionable plots (Ready to harvest or Empty to plant)
+                    if (plot.currentState == FarmPlot.State.Ready || plot.currentState == FarmPlot.State.Empty)
+                    {
+                        if (plot != _lastSweptPlot && _sweepCooldownTimer <= 0f)
+                        {
+                            _lastSweptPlot = plot;
+                            _sweepCooldownTimer = 0.08f;
+                            ExecuteFarmPlotInteraction(plot);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                _lastSweptPlot = null;
+            }
+        }
+        else
+        {
+            _lastSweptPlot = null;
         }
 
         if (Input.GetKeyDown(KeyCode.E))
@@ -101,6 +147,7 @@ public class PlayerInteraction : MonoBehaviour
             // Harvest ready crop if standing in range
             if (currentFarmPlots != null && currentFarmPlots.Count > 0)
             {
+                currentFarmPlots.RemoveAll(p => p == null);
                 if (TutorialManager.Instance == null || TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.HarvestCrop))
                 {
                     for (int i = 0; i < currentFarmPlots.Count; i++)
@@ -123,10 +170,11 @@ public class PlayerInteraction : MonoBehaviour
         return UIEscapeManager.IsAnyModalUIOpen(includeInventory: false, includeMainMenu: true);
     }
 
-    private void InteractFarmPlot()
+    public FarmPlot GetHoveredFarmPlot(out bool isNear)
     {
+        isNear = false;
         if (mainCam == null) mainCam = Camera.main;
-        if (mainCam == null) return;
+        if (mainCam == null) return null;
         Vector2 mousePosition = mainCam.ScreenToWorldPoint(Input.mousePosition);
 
         ContactFilter2D filter = ContactFilter2D.noFilter;
@@ -137,8 +185,7 @@ public class PlayerInteraction : MonoBehaviour
         }
 
         int hitCount = Physics2D.OverlapPoint(mousePosition, filter, overlapBuffer);
-        if (hitCount <= 0)
-            return;
+        if (hitCount <= 0) return null;
 
         FarmPlot farmPlot = null;
         for (int i = 0; i < hitCount; i++)
@@ -149,29 +196,33 @@ public class PlayerInteraction : MonoBehaviour
             }
         }
 
-        if (farmPlot == null)
-            return;
+        if (farmPlot == null) return null;
 
         for (int i = currentFarmPlots.Count - 1; i >= 0; i--)
         {
             if (currentFarmPlots[i] == null) currentFarmPlots.RemoveAt(i);
         }
 
-        bool isNearPlot = currentFarmPlots.Contains(farmPlot) || Vector2.Distance(transform.position, farmPlot.transform.position) <= 2.5f;
-        if (!isNearPlot)
-            return;
+        isNear = currentFarmPlots.Contains(farmPlot) || Vector2.Distance(transform.position, farmPlot.transform.position) <= 2.5f;
+        return farmPlot;
+    }
+
+    public bool ExecuteFarmPlotInteraction(FarmPlot farmPlot)
+    {
+        if (farmPlot == null) return false;
 
         if (farmPlot.currentState == FarmPlot.State.Empty)
         {
             if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.PlantSeed))
-                return;
-            farmPlot.Planted();
+                return false;
+            return farmPlot.Planted();
         }
         else if (farmPlot.currentState == FarmPlot.State.Ready)
         {
             if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.HarvestCrop))
-                return;
+                return false;
             farmPlot.Harvest();
+            return true;
         }
         else if (farmPlot.currentState == FarmPlot.State.Planted && farmPlot.currentCrop != null)
         {
@@ -182,7 +233,10 @@ public class PlayerInteraction : MonoBehaviour
             int daysNeeded = Mathf.Max(1, farmPlot.currentCrop.growthTime) - farmPlot.daysInCurrentStage;
             string progressMsg = $"{farmPlot.currentCrop.cropName}: Stage {stageNum}/{totalStages} (~{daysNeeded} days left)";
             DamagePopupManager.ShowText(farmPlot.transform.position + Vector3.up * 0.8f, progressMsg, new Color(0.4f, 0.85f, 1f), 3.5f);
+            return true;
         }
+
+        return false;
     }
 
         private void InteractBed()

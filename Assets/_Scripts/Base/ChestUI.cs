@@ -253,6 +253,14 @@ public class ChestUI : MonoBehaviour
         if (itemHoverInfoText == null && win != null)
             itemHoverInfoText = win.Find("FooterHintBar/ItemInfoText")?.GetComponent<TextMeshProUGUI>();
 
+        // Enable auto-sizing on text fields to prevent clipping / overflowing
+        if (headerTitleText != null) { headerTitleText.enableAutoSizing = true; headerTitleText.fontSizeMin = 14f; }
+        if (headerSubtitleText != null) { headerSubtitleText.enableAutoSizing = true; headerSubtitleText.fontSizeMin = 10f; }
+        if (chestCapacityText != null) { chestCapacityText.enableAutoSizing = true; chestCapacityText.fontSizeMin = 9.5f; }
+        if (backpackCapacityText != null) { backpackCapacityText.enableAutoSizing = true; backpackCapacityText.fontSizeMin = 9.5f; }
+        if (hintFooterText != null) { hintFooterText.enableAutoSizing = true; hintFooterText.fontSizeMin = 9f; }
+        if (itemHoverInfoText != null) { itemHoverInfoText.enableAutoSizing = true; itemHoverInfoText.fontSizeMin = 9f; }
+
         // Prefab
         if (slotPrefab == null)
             slotPrefab = DungeonUIAssetHelper.GetSlotPrefab();

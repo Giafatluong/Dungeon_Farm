@@ -140,6 +140,9 @@ public class FarmPlot : MonoBehaviour
             cropRenderer.sprite = currentCrop.growthStages[currentStage];
         }
 
+        int curDay = (DayManager.Instance != null) ? DayManager.Instance.GetCurrentDay() : PlayerPrefs.GetInt("Farm_CurrentDay", 1);
+        _lastAdvancedDay = curDay;
+
         SavePlotData();
 
         if (VFXManager.Instance != null)
@@ -266,6 +269,7 @@ public class FarmPlot : MonoBehaviour
     {
         if (days <= 0) return;
         int curDay = (DayManager.Instance != null) ? DayManager.Instance.GetCurrentDay() : PlayerPrefs.GetInt("Farm_CurrentDay", 1);
+        if (_lastAdvancedDay == curDay) return; // Prevent duplicate advancement on the same day
         _lastAdvancedDay = curDay;
 
         for (int i = 0; i < days; i++)
@@ -353,6 +357,10 @@ public class FarmPlot : MonoBehaviour
     private void OnDisable()
     {
         UnsubscribeFromDayManager();
+        if (currentState != State.Empty && currentCrop != null)
+        {
+            SavePlotData(false);
+        }
     }
 
     private void SubscribeToDayManager()
@@ -469,9 +477,26 @@ public class FarmPlot : MonoBehaviour
         {
             for (int i = 0; i < availableCrops.Count; i++)
             {
-                if (availableCrops[i] != null && (availableCrops[i].name.Equals(cropName, System.StringComparison.OrdinalIgnoreCase) || availableCrops[i].cropName.Equals(cropName, System.StringComparison.OrdinalIgnoreCase)))
+                if (availableCrops[i] != null && 
+                    (string.Equals(availableCrops[i].name, cropName, System.StringComparison.OrdinalIgnoreCase) || 
+                     string.Equals(availableCrops[i].cropName, cropName, System.StringComparison.OrdinalIgnoreCase)))
                 {
                     foundCrop = availableCrops[i];
+                    break;
+                }
+            }
+        }
+
+        if (foundCrop == null)
+        {
+            CropData[] allCrops = GameAssetHelper.LoadAll<CropData>();
+            for (int i = 0; i < allCrops.Length; i++)
+            {
+                if (allCrops[i] != null && 
+                    (string.Equals(allCrops[i].name, cropName, System.StringComparison.OrdinalIgnoreCase) || 
+                     string.Equals(allCrops[i].cropName, cropName, System.StringComparison.OrdinalIgnoreCase)))
+                {
+                    foundCrop = allCrops[i];
                     break;
                 }
             }
@@ -504,6 +529,23 @@ public class FarmPlot : MonoBehaviour
         {
             UpdateCropVisual();
         }
+    }
+
+    /// <summary>
+    /// Flushes all active plots in the current scene to PlayerPrefs.
+    /// Call before leaving Base scene to guarantee zero data loss.
+    /// </summary>
+    public static void SaveAllPlots()
+    {
+        FarmPlot[] plots = Object.FindObjectsByType<FarmPlot>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        for (int i = 0; i < plots.Length; i++)
+        {
+            if (plots[i] != null)
+            {
+                plots[i].SavePlotData(false);
+            }
+        }
+        PlayerPrefs.Save();
     }
     #endregion
 }

@@ -518,7 +518,7 @@ public class TutorialDialogueUI : MonoBehaviour
         rt.anchorMax = new Vector2(0f, 1f);
         rt.pivot = new Vector2(0f, 1f);
         rt.anchoredPosition = new Vector2(25, -25);
-        rt.sizeDelta = new Vector2(440, 185);
+        rt.sizeDelta = new Vector2(450, 195);
 
         Image frameImg = trackerRootGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(frameImg, new Color(0.18f, 0.45f, 0.35f, 0.95f)); // Emerald frame
@@ -572,14 +572,14 @@ public class TutorialDialogueUI : MonoBehaviour
         iRT.anchorMax = new Vector2(1, 1);
         iRT.pivot = new Vector2(0, 1);
         iRT.anchoredPosition = new Vector2(12, -60);
-        iRT.sizeDelta = new Vector2(-24, 72);
+        iRT.sizeDelta = new Vector2(-24, 80);
         trackerInstructionText = instGO.GetComponent<TextMeshProUGUI>();
         trackerInstructionText.fontSize = 13.5f;
         trackerInstructionText.enableAutoSizing = true;
-        trackerInstructionText.fontSizeMin = 11.5f;
+        trackerInstructionText.fontSizeMin = 10.5f;
         trackerInstructionText.fontSizeMax = 13.5f;
         trackerInstructionText.color = Color.white;
-        trackerInstructionText.lineSpacing = 0;
+        trackerInstructionText.lineSpacing = -3f;
         DungeonUIAssetHelper.ApplyFont(trackerInstructionText, withOutline: true);
 
         // Status / Distance meter text
@@ -589,10 +589,13 @@ public class TutorialDialogueUI : MonoBehaviour
         sRT.anchorMin = new Vector2(0, 0);
         sRT.anchorMax = new Vector2(1, 0);
         sRT.pivot = new Vector2(0, 0);
-        sRT.anchoredPosition = new Vector2(12, 10);
+        sRT.anchoredPosition = new Vector2(12, 8);
         sRT.sizeDelta = new Vector2(-24, 24);
         trackerStatusText = statusGO.GetComponent<TextMeshProUGUI>();
         trackerStatusText.fontSize = 13.5f;
+        trackerStatusText.enableAutoSizing = true;
+        trackerStatusText.fontSizeMin = 10.5f;
+        trackerStatusText.fontSizeMax = 13.5f;
         trackerStatusText.fontStyle = FontStyles.Bold;
         trackerStatusText.color = new Color(0.35f, 1f, 0.65f); // Bright neon emerald
         DungeonUIAssetHelper.ApplyFont(trackerStatusText, withOutline: true);
@@ -752,7 +755,7 @@ public class TutorialDialogueUI : MonoBehaviour
         dialogueBoxRT.anchorMax = new Vector2(0.5f, 0f);
         dialogueBoxRT.pivot = new Vector2(0.5f, 0f);
         dialogueBoxRT.anchoredPosition = new Vector2(0, 90);
-        dialogueBoxRT.sizeDelta = new Vector2(900, 215);
+        dialogueBoxRT.sizeDelta = new Vector2(920, 235);
 
         Image boxImg = dialogueBoxGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(boxImg, new Color(0.15f, 0.55f, 0.40f, 1f)); // Emerald jade frame
@@ -818,7 +821,7 @@ public class TutorialDialogueUI : MonoBehaviour
         nameGO.transform.SetParent(headerGO.transform, false);
         RectTransform nameRT = nameGO.GetComponent<RectTransform>();
         nameRT.anchorMin = new Vector2(0, 0);
-        nameRT.anchorMax = new Vector2(0.32f, 1);
+        nameRT.anchorMax = new Vector2(0.24f, 1);
         nameRT.offsetMin = Vector2.zero;
         nameRT.offsetMax = Vector2.zero;
         speakerNameText = nameGO.GetComponent<TextMeshProUGUI>();
@@ -833,13 +836,16 @@ public class TutorialDialogueUI : MonoBehaviour
         GameObject badgeGO = new GameObject("ObjectiveBadge", typeof(RectTransform), typeof(TextMeshProUGUI));
         badgeGO.transform.SetParent(headerGO.transform, false);
         RectTransform badgeRT = badgeGO.GetComponent<RectTransform>();
-        badgeRT.anchorMin = new Vector2(0.32f, 0);
+        badgeRT.anchorMin = new Vector2(0.25f, 0);
         badgeRT.anchorMax = new Vector2(1, 1);
         badgeRT.offsetMin = Vector2.zero;
         badgeRT.offsetMax = Vector2.zero;
         objectiveBadgeText = badgeGO.GetComponent<TextMeshProUGUI>();
         objectiveBadgeText.alignment = TextAlignmentOptions.Right;
         objectiveBadgeText.fontSize = 12.5f;
+        objectiveBadgeText.enableAutoSizing = true;
+        objectiveBadgeText.fontSizeMin = 10f;
+        objectiveBadgeText.fontSizeMax = 12.5f;
         objectiveBadgeText.fontStyle = FontStyles.Bold;
         objectiveBadgeText.textWrappingMode = TextWrappingModes.NoWrap;
         objectiveBadgeText.color = new Color(1f, 0.92f, 0.30f, 1f); // Bright sunlight gold
@@ -851,16 +857,16 @@ public class TutorialDialogueUI : MonoBehaviour
         RectTransform bodyRT = bodyGO.GetComponent<RectTransform>();
         bodyRT.anchorMin = new Vector2(0, 0);
         bodyRT.anchorMax = new Vector2(1, 1);
-        bodyRT.offsetMin = new Vector2(0, 24);
-        bodyRT.offsetMax = new Vector2(0, -28);
+        bodyRT.offsetMin = new Vector2(0, 20);
+        bodyRT.offsetMax = new Vector2(0, -26);
         dialogueBodyText = bodyGO.GetComponent<TextMeshProUGUI>();
         dialogueBodyText.fontSize = 14f;
         dialogueBodyText.enableAutoSizing = true;
-        dialogueBodyText.fontSizeMin = 11.5f;
+        dialogueBodyText.fontSizeMin = 10f;
         dialogueBodyText.fontSizeMax = 14f;
-        dialogueBodyText.overflowMode = TextOverflowModes.Ellipsis;
+        dialogueBodyText.overflowMode = TextOverflowModes.Overflow;
         dialogueBodyText.color = Color.white;
-        dialogueBodyText.lineSpacing = 0f;
+        dialogueBodyText.lineSpacing = -6f;
         DungeonUIAssetHelper.ApplyFont(dialogueBodyText, withOutline: true);
 
         // Continue Prompt Text

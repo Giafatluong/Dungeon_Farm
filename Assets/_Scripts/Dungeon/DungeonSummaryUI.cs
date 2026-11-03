@@ -710,6 +710,9 @@ public class DungeonSummaryUI : MonoBehaviour
         titleText = titleGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(titleText);
         titleText.fontSize = 20;
+        titleText.enableAutoSizing = true;
+        titleText.fontSizeMin = 14f;
+        titleText.fontSizeMax = 20f;
         titleText.fontStyle = FontStyles.Bold;
         titleText.alignment = TextAlignmentOptions.MidlineLeft;
         titleText.text = "DUNGEON EXPEDITION SUMMARY";
@@ -725,6 +728,9 @@ public class DungeonSummaryUI : MonoBehaviour
         subtitleText = subGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(subtitleText);
         subtitleText.fontSize = 12;
+        subtitleText.enableAutoSizing = true;
+        subtitleText.fontSizeMin = 9.5f;
+        subtitleText.fontSizeMax = 12f;
         subtitleText.color = new Color(0.85f, 0.88f, 0.95f);
         subtitleText.alignment = TextAlignmentOptions.MidlineLeft;
         subtitleText.text = "Overview of progress, stages cleared, and all secured expedition loot.";
@@ -818,6 +824,9 @@ public class DungeonSummaryUI : MonoBehaviour
         specialNoticeText = noticeTxtGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(specialNoticeText);
         specialNoticeText.fontSize = 11.5f;
+        specialNoticeText.enableAutoSizing = true;
+        specialNoticeText.fontSizeMin = 9f;
+        specialNoticeText.fontSizeMax = 11.5f;
         specialNoticeText.color = Color.white;
         specialNoticeText.alignment = TextAlignmentOptions.TopLeft;
 
@@ -972,6 +981,9 @@ public class DungeonSummaryUI : MonoBehaviour
         TextMeshProUGUI tmp = textGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(tmp);
         tmp.fontSize = 12;
+        tmp.enableAutoSizing = true;
+        tmp.fontSizeMin = 9.5f;
+        tmp.fontSizeMax = 12f;
         tmp.color = Color.white;
         tmp.alignment = TextAlignmentOptions.MidlineLeft;
         tmp.text = defaultText;

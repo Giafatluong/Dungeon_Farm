@@ -33,10 +33,38 @@ public class InventoryPanel : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
+    private void EnsureItemContainer()
+    {
+        if (itemContainer == null)
+        {
+            if (PlayerStats.Instance != null && PlayerStats.Instance.itemContainer != null)
+            {
+                itemContainer = PlayerStats.Instance.itemContainer;
+            }
+            else
+            {
+                PlayerStats ps = FindFirstObjectByType<PlayerStats>();
+                if (ps != null && ps.itemContainer != null) itemContainer = ps.itemContainer;
+            }
+        }
+    }
+
+    private void EnsureButtons()
+    {
+        if (inventoryButtons == null || inventoryButtons.Count == 0)
+        {
+            inventoryButtons = new List<InventoryButton>(GetComponentsInChildren<InventoryButton>(true));
+        }
+    }
+
     private void Start()
     {
+        EnsureItemContainer();
+        EnsureButtons();
+
         for (int i = 0; i < inventoryButtons.Count; i++)
         {
+            if (inventoryButtons[i] == null) continue;
             inventoryButtons[i].SetSlotData(itemContainer, i);
             inventoryButtons[i].SetCanvas(canvas);
         }
@@ -51,11 +79,17 @@ public class InventoryPanel : MonoBehaviour
 
     private void OnEnable()
     {
+        EnsureItemContainer();
+        EnsureButtons();
+
         if (itemContainer != null)
         {
+            itemContainer.OnInventoryChange -= RefreshInventory;
             itemContainer.OnInventoryChange += RefreshInventory;
         }
 
+        // Always refresh all slot buttons immediately when inventory panel opens
+        RefreshInventory();
         RemoveStatsBar();
     }
 
@@ -67,6 +101,11 @@ public class InventoryPanel : MonoBehaviour
         }
 
         RemoveStatsBar();
+
+        if (InventoryController.Instance != null)
+        {
+            InventoryController.Instance.isInteractable = true;
+        }
     }
 
     private void RefreshInventory()
@@ -90,9 +129,17 @@ public class InventoryPanel : MonoBehaviour
 
     public void SetInventoryButton()
     {
+        EnsureItemContainer();
+        EnsureButtons();
+        if (inventoryButtons == null || itemContainer == null || itemContainer.itemSlots == null)
+            return;
+
         for (int i = 0; i < inventoryButtons.Count; i++)
         {
+            if (inventoryButtons[i] == null) continue;
+
             if (i < itemContainer.itemSlots.Length &&
+                itemContainer.itemSlots[i] != null &&
                 itemContainer.itemSlots[i].itemData != null)
             {
                 inventoryButtons[i].SetItem(

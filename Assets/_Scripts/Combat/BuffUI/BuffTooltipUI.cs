@@ -63,6 +63,21 @@ public class BuffTooltipUI : MonoBehaviour
         ConstructUI();
     }
 
+    private void OnEnable()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += HandleSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= HandleSceneLoaded;
+    }
+
+    private void HandleSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        Hide();
+    }
+
     private void ConstructUI()
     {
         if (rootGO != null) return;
@@ -112,6 +127,9 @@ public class BuffTooltipUI : MonoBehaviour
         titleText = titleGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(titleText);
         titleText.fontSize = 14;
+        titleText.enableAutoSizing = true;
+        titleText.fontSizeMin = 11f;
+        titleText.fontSizeMax = 14f;
         titleText.fontStyle = FontStyles.Bold;
         titleText.color = Color.white;
 
@@ -155,6 +173,9 @@ public class BuffTooltipUI : MonoBehaviour
         descText = descGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(descText);
         descText.fontSize = 12;
+        descText.enableAutoSizing = true;
+        descText.fontSizeMin = 9.5f;
+        descText.fontSizeMax = 12f;
         descText.color = new Color(0.85f, 0.90f, 0.95f, 1f);
         descText.textWrappingMode = TextWrappingModes.Normal;
 

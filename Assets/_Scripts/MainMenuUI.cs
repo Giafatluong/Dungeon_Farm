@@ -343,13 +343,6 @@ public class MainMenuUI : MonoBehaviour
         PlayerPrefs.SetInt("Dungeon_HighestUnlockedFloor", 1);
         PlayerPrefs.Save();
 
-        // Reset Tutorial progress and prepare tutorial crops immediately
-        if (TutorialManager.Instance != null)
-        {
-            TutorialManager.Instance.ResetTutorial();
-            TutorialManager.Instance.EnsureTutorialCropsReady();
-        }
-
         // 2. Reset all ProgressionManager progression (Permanent stats, Dungeon floors, Bosses, Blessings, Recipes)
         if (ProgressionManager.Instance != null)
         {
@@ -383,6 +376,13 @@ public class MainMenuUI : MonoBehaviour
         }
 
         InventoryButton.selectedItem = null;
+
+        // Reset Tutorial progress and prepare tutorial crops and seeds immediately after clearing containers
+        if (TutorialManager.Instance != null)
+        {
+            TutorialManager.Instance.ResetTutorial();
+            TutorialManager.Instance.EnsureTutorialCropsReady();
+        }
 
         // 5. Reset all Statue Offerings
         try

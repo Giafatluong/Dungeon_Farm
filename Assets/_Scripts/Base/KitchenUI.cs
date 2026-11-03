@@ -963,7 +963,12 @@ public class KitchenUI : MonoBehaviour
             dishIcon.gameObject.SetActive(dishIcon.sprite != null);
         }
 
-        if (title != null) title.text = recipe.DisplayName;
+        if (title != null)
+        {
+            title.text = recipe.DisplayName;
+            title.enableAutoSizing = true;
+            title.fontSizeMin = 10.5f;
+        }
         if (stars != null)
         {
             stars.text = "";
@@ -973,6 +978,8 @@ public class KitchenUI : MonoBehaviour
         if (detail != null)
         {
             DungeonUIAssetHelper.ApplyFont(detail, withOutline: true);
+            detail.enableAutoSizing = true;
+            detail.fontSizeMin = 8.5f;
             StringBuilder sb = new StringBuilder();
             if (recipe.resultFood != null)
             {
@@ -1004,6 +1011,7 @@ public class KitchenUI : MonoBehaviour
 
         if (actionBtn != null)
         {
+            if (actionText != null) { actionText.enableAutoSizing = true; actionText.fontSizeMin = 8f; }
             actionBtn.onClick.RemoveAllListeners();
             if (isCurrentlySelected)
             {
@@ -1329,6 +1337,14 @@ public class KitchenUI : MonoBehaviour
         // Toast
         if (toastObject == null) toastObject = root.Find("KitchenOverlay/FeedbackToast")?.gameObject;
         if (feedbackToastText == null && toastObject != null) feedbackToastText = toastObject.GetComponentInChildren<TextMeshProUGUI>();
+
+        // Safe auto-sizing across kitchen labels to prevent text overflow
+        if (titleText != null) { titleText.enableAutoSizing = true; titleText.fontSizeMin = 14f; }
+        if (stoveSubtitleText != null) { stoveSubtitleText.enableAutoSizing = true; stoveSubtitleText.fontSizeMin = 9.5f; }
+        if (previewFoodTitle != null) { previewFoodTitle.enableAutoSizing = true; previewFoodTitle.fontSizeMin = 10f; }
+        if (previewFoodStats != null) { previewFoodStats.enableAutoSizing = true; previewFoodStats.fontSizeMin = 8.5f; }
+        if (backpackSubtitleText != null) { backpackSubtitleText.enableAutoSizing = true; backpackSubtitleText.fontSizeMin = 9.5f; }
+        if (feedbackToastText != null) { feedbackToastText.enableAutoSizing = true; feedbackToastText.fontSizeMin = 10f; }
     }
 
     private void RegisterButtonEvents()

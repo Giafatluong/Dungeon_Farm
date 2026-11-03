@@ -68,6 +68,14 @@ public static class UIEscapeManager
     private static GameObject _cachedMiddleBar;
     private static CurrentItemPanel _cachedHotbar;
 
+    public static void ResetSceneCache()
+    {
+        _lastConsumedFrame = -1;
+        _cachedHealthBarCanvas = null;
+        _cachedMiddleBar = null;
+        _cachedHotbar = null;
+    }
+
     /// <summary>
     /// Closes all active modal windows across the scene to guarantee zero UI overlap.
     /// </summary>

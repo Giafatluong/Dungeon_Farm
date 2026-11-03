@@ -77,8 +77,17 @@ public class InventoryController : MonoBehaviour
         return false;
     }
 
+    private void EnsurePanels()
+    {
+        if (inventoryPanel == null)
+            inventoryPanel = FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+        if (currentItemPanel == null)
+            currentItemPanel = FindFirstObjectByType<CurrentItemPanel>(FindObjectsInactive.Include);
+    }
+
     public void SwapInventoryPanel()
     {
+        EnsurePanels();
         if (inventoryPanel == null)
             return;
 
@@ -94,6 +103,7 @@ public class InventoryController : MonoBehaviour
 
     public void CloseInventoryPanel()
     {
+        EnsurePanels();
         if (inventoryPanel != null)
             inventoryPanel.gameObject.SetActive(false);
 
@@ -108,8 +118,12 @@ public class InventoryController : MonoBehaviour
     {
         if (IsAnyModalOpen()) return;
 
+        EnsurePanels();
         if (inventoryPanel != null)
+        {
             inventoryPanel.gameObject.SetActive(true);
+            inventoryPanel.SetInventoryButton();
+        }
 
         if (currentItemPanel != null)
             currentItemPanel.gameObject.SetActive(false);

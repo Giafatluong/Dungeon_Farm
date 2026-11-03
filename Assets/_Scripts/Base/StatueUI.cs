@@ -653,7 +653,10 @@ public class StatueUI : MonoBehaviour
 
         TextMeshProUGUI descTMP = descGO.GetComponent<TextMeshProUGUI>();
         descTMP.fontSize = 9.5f;
-        descTMP.lineSpacing = 1.5f;
+        descTMP.enableAutoSizing = true;
+        descTMP.fontSizeMin = 8f;
+        descTMP.fontSizeMax = 9.5f;
+        descTMP.lineSpacing = 1.0f;
         descTMP.alignment = TextAlignmentOptions.TopLeft;
 
         if (!isUnlocked)
