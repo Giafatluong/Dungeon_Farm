@@ -58,9 +58,17 @@ public class InventoryController : MonoBehaviour
         // Toggle inventory with I or B
         if (Input.GetKeyDown(KeyCode.I) || Input.GetKeyDown(KeyCode.B))
         {
+            if (TutorialManager.Instance != null && TutorialManager.Instance.IsInputBlocked)
+                return;
+
             // Gate during tutorial (e.g. movement phase must finish before opening inventory)
             if (!IsInventoryOpen && TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.Inventory))
+            {
+                PlayerMovement pm = PlayerMovement.Instance;
+                Vector3 pos = pm != null ? pm.transform.position + Vector3.up * 1.0f : transform.position;
+                DamagePopupManager.ShowText(pos, "Hãy hoàn thành bước hiện tại trước!", new Color(1f, 0.9f, 0.3f), 1.5f);
                 return;
+            }
 
             // Do not open inventory if a modal popup (Chest, Kitchen, Statue, Dungeon, etc.) is active
             if (!IsInventoryOpen && IsAnyModalOpen())
@@ -108,10 +116,14 @@ public class InventoryController : MonoBehaviour
             inventoryPanel.gameObject.SetActive(false);
 
         if (currentItemPanel != null)
+        {
             currentItemPanel.gameObject.SetActive(true);
+            currentItemPanel.SetCurrentItem();
+        }
 
         isInteractable = true;
         UIEscapeManager.NotifyModalClosed("Inventory");
+        CurrentItemPanel.RefreshHotbar();
     }
 
     public void OpenInventoryPanel()

@@ -142,6 +142,7 @@ public static class UIEscapeManager
         if (!IsAnyModalUIOpen(includeInventory: true, includeMainMenu: true))
         {
             SetHUDVisible(true);
+            CurrentItemPanel.RefreshHotbar();
         }
     }
 
@@ -157,7 +158,13 @@ public static class UIEscapeManager
         if (_cachedHotbar == null)
             _cachedHotbar = Object.FindFirstObjectByType<CurrentItemPanel>(FindObjectsInactive.Include);
         if (_cachedHotbar != null)
+        {
             _cachedHotbar.gameObject.SetActive(visible);
+            if (visible)
+            {
+                _cachedHotbar.SetCurrentItem();
+            }
+        }
 
         if (_cachedHealthBarCanvas == null)
         {

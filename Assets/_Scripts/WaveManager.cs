@@ -25,12 +25,14 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private MerchantEvent merchantEvent;
     [SerializeField] private RewardChest rewardChest;
     [SerializeField] private FloorGenerator floorGenerator;
+    [SerializeField] private DungeonBackgroundController backgroundController;
     #endregion
 
     #region Properties & State
     private WaveData[] runtimeWaves;
     private int currentWaveIndex = -1;
     private bool isTransitioning;
+    public bool IsTransitioning => isTransitioning;
     private int currentFloorScore = 0;
     private WaveData.WaveType lastResolvedType = (WaveData.WaveType)(-1);
     private FloorData cachedActiveFloor;
@@ -227,6 +229,10 @@ public class WaveManager : MonoBehaviour
         // Hand-crafted or procedural runtime waves established
         ApplyRoguelikeMerchantEncounter();
 
+        int floorNum = ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1;
+        if (backgroundController == null) backgroundController = DungeonBackgroundController.EnsureInstance();
+        backgroundController?.SetFloorTheme(floorNum);
+
         // Safe entrance room buffer with right arrow UI
         EnterEntranceRoom();
     }
@@ -250,6 +256,14 @@ public class WaveManager : MonoBehaviour
         {
             arrowUI.Show(floorNum, totalStages, ProceedFromEntrance);
         }
+
+        DungeonTutorialController tutController = DungeonTutorialController.Instance != null
+            ? DungeonTutorialController.Instance
+            : DungeonTutorialController.EnsureInstance();
+        if (tutController != null)
+        {
+            tutController.ShowEntranceRoomGuide();
+        }
     }
 
     public void ProceedFromEntrance()
@@ -260,6 +274,8 @@ public class WaveManager : MonoBehaviour
         _isAtEntrance = false;
 
         DungeonEntranceArrowUI.Instance?.Hide();
+        DungeonTutorialController.Instance?.HideBanner();
+        DungeonTutorialController.Instance?.HidePointer();
 
         StartCoroutine(TransitionFromEntranceToFirstWave());
     }
@@ -494,6 +510,30 @@ public class WaveManager : MonoBehaviour
         {
             combatManager.playerStats.ReduceFloorBuffDuration();
         }
+
+        if (healthBarManager != null)
+        {
+            healthBarManager.ClearEnemyHealthBars();
+        }
+
+        if (targetSelector != null)
+        {
+            targetSelector.ClearTarget();
+        }
+
+        if (combatManager != null)
+        {
+            combatManager.SetEnemies(new EnemyStats[0]);
+        }
+
+        for (int i = 0; i < runtimeInstantiatedWaves.Count; i++)
+        {
+            if (runtimeInstantiatedWaves[i] != null)
+            {
+                Destroy(runtimeInstantiatedWaves[i]);
+            }
+        }
+        runtimeInstantiatedWaves.Clear();
 
         cachedActiveFloor = null;
         currentWaveIndex = -1;
@@ -973,13 +1013,20 @@ public class WaveManager : MonoBehaviour
 
         if (enemiesToSpawn == null || enemiesToSpawn.Length == 0)
         {
-            Debug.Log("Wave has no enemy");
+            Debug.LogWarning("[WaveManager] Wave has no enemy to spawn! Continuing to next stage to avoid softlock.");
+            Continue();
             return;
+        }
+
+        if (enemySpawnPoint == null && combatPositions != null && combatPositions.Length > 0)
+        {
+            enemySpawnPoint = combatPositions[0];
         }
 
         if (enemySpawnPoint == null || combatPositions == null || combatPositions.Length == 0)
         {
-            Debug.Log("Enemy Spawn Point or Combat Positions missing");
+            Debug.LogError("[WaveManager] Enemy Spawn Point or Combat Positions missing! Continuing to next stage to avoid softlock.");
+            Continue();
             return;
         }
 

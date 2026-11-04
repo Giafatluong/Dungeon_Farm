@@ -114,7 +114,7 @@ MonoBehaviour:
   defendBonus: 5
   activeBuffs: []
   isFlying: 0
-  yOffset: 0.08
+  yOffset: 0.1575
   targetSelector: {fileID: 0}
 --- !u!95 &6294551709597863169
 Animator:

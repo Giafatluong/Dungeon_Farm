@@ -15,7 +15,14 @@ public class InventoryPanel : MonoBehaviour
     private GameObject statsBarGO;
     private TextMeshProUGUI statsBarText;
 
-    public ItemContainer ItemContainer => itemContainer;
+    public ItemContainer ItemContainer
+    {
+        get
+        {
+            EnsureItemContainer();
+            return itemContainer;
+        }
+    }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics()
@@ -33,7 +40,7 @@ public class InventoryPanel : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    private void EnsureItemContainer()
+    public void EnsureItemContainer()
     {
         if (itemContainer == null)
         {

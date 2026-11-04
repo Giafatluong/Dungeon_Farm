@@ -166,7 +166,10 @@ public class HomeChest : MonoBehaviour, IInteractable
         else
         {
             if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.HomeChest))
+            {
+                DamagePopupManager.ShowText(transform.position + Vector3.up * 1.0f, "Chưa đến lúc mở rương! Hãy làm theo hướng dẫn.", Color.yellow, 2.0f);
                 return;
+            }
 
             OpenChest();
         }

@@ -29,6 +29,7 @@ public class IntroCutsceneController : MonoBehaviour
     private TextMeshProUGUI skipPromptText;
 
     private bool isCutscenePlaying = false;
+    public bool IsPlaying => isCutscenePlaying || activeCutsceneRoutine != null;
     private bool advanceRequested = false;
     private Coroutine activeCutsceneRoutine;
 
@@ -51,9 +52,20 @@ public class IntroCutsceneController : MonoBehaviour
 
         // Check if cutscene should play on new game (only in Base scene)
         string activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-        if (playOnStart && (string.IsNullOrEmpty(activeScene) || activeScene == "Base") && PlayerPrefs.GetInt(CutscenePrefKey, 0) == 0)
+        bool isBase = string.IsNullOrEmpty(activeScene) || activeScene == "Base";
+        bool shouldPlay = playOnStart && isBase && (PlayerPrefs.GetInt(CutscenePrefKey, 0) == 0 || (TutorialManager.Instance != null && TutorialManager.Instance.CurrentStep == TutorialManager.TutorialStep.IntroCutscene));
+
+        if (shouldPlay)
         {
             PlayIntroCutscene();
+        }
+        else
+        {
+            isCutscenePlaying = false;
+            if (TutorialManager.Instance != null && TutorialManager.Instance.CurrentStep == TutorialManager.TutorialStep.IntroCutscene)
+            {
+                TutorialManager.Instance.OnIntroCutsceneFinished();
+            }
         }
     }
 
@@ -87,18 +99,17 @@ public class IntroCutsceneController : MonoBehaviour
     /// </summary>
     public void PlayIntroCutscene()
     {
-        if (isCutscenePlaying) return;
+        if (activeCutsceneRoutine != null) return;
 
         FindReferences();
         EnsureUIConstructed();
 
-        if (activeCutsceneRoutine != null) StopCoroutine(activeCutsceneRoutine);
         activeCutsceneRoutine = StartCoroutine(CutsceneSequenceRoutine());
     }
 
     public void SkipCutscene()
     {
-        if (!isCutscenePlaying) return;
+        if (!isCutscenePlaying && activeCutsceneRoutine == null) return;
 
         if (activeCutsceneRoutine != null)
         {
@@ -233,6 +244,7 @@ public class IntroCutsceneController : MonoBehaviour
     {
         isCutscenePlaying = false;
         advanceRequested = false;
+        activeCutsceneRoutine = null;
 
         // Hide subtitles and skip prompt
         if (subtitleText != null) subtitleText.text = "";

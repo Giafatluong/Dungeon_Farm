@@ -389,6 +389,26 @@ public class CombatUI : MonoBehaviour
             }
         }
 
+        // When floor/dungeon victory panel is active, Space or Enter returns to base
+        if (victoryPanel != null && victoryPanel.activeSelf)
+        {
+            if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return))
+            {
+                OnReturnToBaseClicked();
+                return;
+            }
+        }
+
+        // When defeat panel is active, Space, Enter, or Escape returns to base
+        if (defeatPanel != null && defeatPanel.activeSelf)
+        {
+            if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Escape))
+            {
+                OnReturnToBaseAfterDefeatClicked();
+                return;
+            }
+        }
+
         // Target cycling is allowed whenever combat is active or preparing
         if (targetSelector != null && combatManager != null && combatManager.enemies != null && combatManager.enemies.Length > 1)
         {

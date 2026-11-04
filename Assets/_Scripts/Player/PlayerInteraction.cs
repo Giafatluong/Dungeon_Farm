@@ -69,6 +69,7 @@ public class PlayerInteraction : MonoBehaviour
     {
         if (IsAnyUIOpen()) return false;
         if (inventoryController != null && (!inventoryController.isInteractable || inventoryController.IsInventoryOpen)) return false;
+        if (TutorialManager.Instance != null && TutorialManager.Instance.IsInputBlocked) return false;
         return true;
     }
 
@@ -79,6 +80,7 @@ public class PlayerInteraction : MonoBehaviour
     {
         if (IsAnyUIOpen()) return;
         if (inventoryController != null && !inventoryController.isInteractable) return;
+        if (TutorialManager.Instance != null && TutorialManager.Instance.IsInputBlocked) return;
 
         // Continuous sweep farming: single click or drag/hold across plots
         bool pointerOverUI = UnityEngine.EventSystems.EventSystem.current != null &&
@@ -214,13 +216,19 @@ public class PlayerInteraction : MonoBehaviour
         if (farmPlot.currentState == FarmPlot.State.Empty)
         {
             if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.PlantSeed))
+            {
+                DamagePopupManager.ShowText(farmPlot.transform.position + Vector3.up * 0.8f, "Chưa đến lúc gieo hạt!", Color.yellow, 1.5f);
                 return false;
+            }
             return farmPlot.Planted();
         }
         else if (farmPlot.currentState == FarmPlot.State.Ready)
         {
             if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.HarvestCrop))
+            {
+                DamagePopupManager.ShowText(farmPlot.transform.position + Vector3.up * 0.8f, "Chưa đến lúc thu hoạch!", Color.yellow, 1.5f);
                 return false;
+            }
             farmPlot.Harvest();
             return true;
         }

@@ -227,7 +227,7 @@ public class EnemyCombatVisual : MonoBehaviour
 
             // 2. Dash forward toward player (to the left, stopping right in front of player)
             Vector3 targetPos = playerTarget != null
-                ? new Vector3(Mathf.Min(basePos.x - 0.6f, playerTarget.position.x + 0.8f), playerTarget.position.y, basePos.z)
+                ? new Vector3(Mathf.Min(basePos.x - 0.6f, playerTarget.position.x + 0.8f), basePos.y, basePos.z)
                 : basePos + Vector3.left * Mathf.Max(1.2f, lungeDistance);
 
             elapsed = 0f;

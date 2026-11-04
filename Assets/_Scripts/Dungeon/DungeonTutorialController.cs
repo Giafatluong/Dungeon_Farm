@@ -36,6 +36,7 @@ public class DungeonTutorialController : MonoBehaviour
     private WaveManager waveManager;
     private int lastObservedWave = -999;
     private bool isTutorialFloor = false;
+    private bool hasShownEntranceGuide = false;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics()
@@ -113,6 +114,19 @@ public class DungeonTutorialController : MonoBehaviour
 
         RefreshTutorialFloorState();
 
+        // Safe entrance guide auto-trigger & tracking
+        if (waveManager.isAtEntrance)
+        {
+            if (!hasShownEntranceGuide && (isTutorialFloor || PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0))
+            {
+                ShowEntranceRoomGuide();
+            }
+        }
+        else
+        {
+            hasShownEntranceGuide = false;
+        }
+
         // Track wave changes
         int currentWaveIdx = waveManager.GetCurrentWaveIndex();
         if (currentWaveIdx != lastObservedWave)
@@ -187,6 +201,14 @@ public class DungeonTutorialController : MonoBehaviour
     #region Guidance Displays
     public void ShowEntranceRoomGuide()
     {
+        RefreshTutorialFloorState();
+        if (!isTutorialFloor && PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 1)
+        {
+            return;
+        }
+
+        hasShownEntranceGuide = true;
+
         int totalStages = waveManager != null ? waveManager.GetTotalStages() : 5;
         ShowBanner(
             stageBadge: isTutorialFloor ? $"ẢI 0/{totalStages}: PHÒNG CHỜ AN TOÀN" : "PHÒNG CHỜ AN TOÀN",

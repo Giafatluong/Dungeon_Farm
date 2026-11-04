@@ -136,7 +136,7 @@ MonoBehaviour:
   defendBonus: 5
   activeBuffs: []
   isFlying: 0
-  yOffset: 0.15
+  yOffset: 0.2055
   targetSelector: {fileID: 0}
 --- !u!61 &5838493836129423109
 BoxCollider2D:

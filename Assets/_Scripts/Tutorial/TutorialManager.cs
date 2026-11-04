@@ -42,19 +42,40 @@ public class TutorialManager : MonoBehaviour
     public TutorialStep CurrentStep => currentStep;
     public bool IsTutorialCompleted => currentStep == TutorialStep.Completed || PlayerPrefs.GetInt(TutorialDoneKey, 0) == 1;
 
+    /// <summary>
+    /// True when input/interaction must be completely suspended (during cutscenes or step transition feedback).
+    /// </summary>
+    public bool IsInputBlocked
+    {
+        get
+        {
+            if (isAdvancingStep) return true;
+            if (IntroCutsceneController.Instance != null && IntroCutsceneController.Instance.IsPlaying) return true;
+            return false;
+        }
+    }
+
     public bool IsInteractionAllowed(TutorialInteraction interaction)
     {
-        if (IsTutorialCompleted || currentStep == TutorialStep.None || currentStep == TutorialStep.Completed)
+        if (IsTutorialCompleted || currentStep == TutorialStep.Completed)
             return true;
+
+        if (IsInputBlocked)
+            return false;
+
+        // Bed sleep is strictly prohibited throughout the entire tutorial
+        if (interaction == TutorialInteraction.BedSleep)
+            return false;
 
         switch (currentStep)
         {
+            case TutorialStep.None:
             case TutorialStep.IntroCutscene:
                 return false;
 
             case TutorialStep.Movement:
-                // Allow opening inventory at all times to check bag
-                return interaction == TutorialInteraction.Inventory;
+                // Only movement is allowed. Do NOT allow inventory or any interactions.
+                return false;
 
             case TutorialStep.OpenInventory:
                 return interaction == TutorialInteraction.Inventory;
@@ -78,10 +99,10 @@ public class TutorialManager : MonoBehaviour
                 return interaction == TutorialInteraction.DungeonGate || interaction == TutorialInteraction.Inventory;
 
             case TutorialStep.Combat:
-                return true;
+                return interaction != TutorialInteraction.BedSleep;
 
             default:
-                return true;
+                return false;
         }
     }
 
@@ -130,6 +151,17 @@ public class TutorialManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        if (PlayerPrefs.GetInt(TutorialDoneKey, 0) == 1)
+        {
+            currentStep = TutorialStep.Completed;
+        }
+        else
+        {
+            int savedStep = PlayerPrefs.GetInt(TutorialStepKey, (int)TutorialStep.IntroCutscene);
+            currentStep = (TutorialStep)savedStep;
+        }
+
         EnsureTutorialCropsReady();
     }
 
@@ -185,7 +217,14 @@ public class TutorialManager : MonoBehaviour
 
         if (currentStep == TutorialStep.IntroCutscene)
         {
-            // Intro Cutscene Controller will call OnIntroCutsceneFinished when done
+            if (IntroCutsceneController.Instance != null)
+            {
+                IntroCutsceneController.Instance.PlayIntroCutscene();
+            }
+            else
+            {
+                OnIntroCutsceneFinished();
+            }
         }
         else
         {

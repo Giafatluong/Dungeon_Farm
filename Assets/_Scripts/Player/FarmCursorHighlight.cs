@@ -233,7 +233,8 @@ public class FarmCursorHighlight : MonoBehaviour
         if (mainCam == null) mainCam = Camera.main;
 
         // Hide if any modal UI (chest, dialogue, cooking, main menu, or inventory) is open
-        bool isUIBlocking = UIEscapeManager.IsAnyModalUIOpen(includeInventory: true, includeMainMenu: true);
+        bool isUIBlocking = UIEscapeManager.IsAnyModalUIOpen(includeInventory: true, includeMainMenu: true)
+                         || (TutorialManager.Instance != null && TutorialManager.Instance.IsInputBlocked);
         bool pointerOverUI = UnityEngine.EventSystems.EventSystem.current != null &&
                              UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
 

@@ -171,6 +171,8 @@ public class RewardUI : MonoBehaviour
             rewardPanel.transform.SetAsLastSibling();
         }
 
+        UIEscapeManager.NotifyModalOpened("Reward");
+
         RefreshAll();
 
         SetHint("Click <b>[Take]</b> to pick up an item or <b>[CLAIM ALL]</b> to store all into backpack.");
@@ -188,6 +190,9 @@ public class RewardUI : MonoBehaviour
         {
             rewardPanel.SetActive(false);
         }
+
+        UIEscapeManager.NotifyModalClosed("Reward");
+        CurrentItemPanel.RefreshHotbar();
 
         onCompleteCallback?.Invoke();
         onCompleteCallback = null;

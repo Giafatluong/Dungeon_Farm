@@ -42,6 +42,9 @@ public class PlayerCombatVisual : MonoBehaviour
     private Coroutine currentVisualRoutine;
     private bool isMovingTransition = false;
 
+    public bool IsMovingTransition => isMovingTransition;
+    public static event System.Action<bool> OnMoveTransitionStateChanged;
+
     private void Awake()
     {
         if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
@@ -119,6 +122,7 @@ public class PlayerCombatVisual : MonoBehaviour
     private IEnumerator MoveTransitionRoutine(float duration, System.Action onComplete)
     {
         isMovingTransition = true;
+        OnMoveTransitionStateChanged?.Invoke(true);
         FaceRight();
         float elapsed = 0f;
 
@@ -144,6 +148,7 @@ public class PlayerCombatVisual : MonoBehaviour
         finally
         {
             isMovingTransition = false;
+            OnMoveTransitionStateChanged?.Invoke(false);
             transform.position = originalPosition;
             SetIdle();
             currentVisualRoutine = null;
@@ -411,8 +416,7 @@ public class PlayerCombatVisual : MonoBehaviour
         if (target != null)
         {
             float targetX = Mathf.Max(startPos.x + 0.6f, target.transform.position.x - 0.8f);
-            float targetY = target.transform.position.y;
-            targetPos = new Vector3(targetX, targetY, startPos.z);
+            targetPos = new Vector3(targetX, startPos.y, startPos.z);
         }
         else
         {

@@ -47,7 +47,11 @@ public class CombatTutorialGuide : MonoBehaviour
         switch (currentPhase)
         {
             case CombatPhase.OverviewAndEat:
-                return action == CombatAction.Eat;
+                if (action == CombatAction.Eat) return true;
+                // Safety net: if player has already eaten this turn, or has no edible food, allow Attack to avoid soft-lock
+                if (combatManager != null && (combatManager.hasEatenThisTurn || !HasAnyEdibleFood()))
+                    return action == CombatAction.Attack;
+                return false;
 
             case CombatPhase.AttackTarget:
                 return action == CombatAction.Attack;
@@ -55,7 +59,11 @@ public class CombatTutorialGuide : MonoBehaviour
             case CombatPhase.DefendAndEndTurn:
                 if (!hasPlayerDefendedInTutorial)
                 {
-                    return action == CombatAction.Defend;
+                    if (action == CombatAction.Defend) return true;
+                    // Safety net: if player has 0 AP or already defended, allow EndTurn so they can progress
+                    if (combatManager != null && combatManager.hasDefendedThisTurn) return action == CombatAction.EndTurn;
+                    if (combatUI != null && combatUI.playerStats != null && combatUI.playerStats.currentAP <= 0 && action == CombatAction.EndTurn) return true;
+                    return false;
                 }
                 else
                 {
@@ -66,12 +74,8 @@ public class CombatTutorialGuide : MonoBehaviour
                 return false;
 
             case CombatPhase.FinishTheFight:
-                // Primary action is Attack
-                if (action == CombatAction.Attack) return true;
-                // Safety net: if player runs out of AP, allow EndTurn so they can progress
-                if (combatUI != null && combatUI.playerStats != null && combatUI.playerStats.currentAP <= 0 && action == CombatAction.EndTurn)
-                    return true;
-                return false;
+                // Allow all actions freely in final phase to finish off the enemy
+                return true;
 
             default:
                 return true;
@@ -151,8 +155,8 @@ public class CombatTutorialGuide : MonoBehaviour
 
         ConstructUI();
 
-        // If combat is already active and it's player's turn, start immediately
-        if (combatManager != null && combatManager.isCombatActive && combatManager.currentTurn == CombatManager.Turn.Player)
+        // If tutorial is required, pre-activate OverviewAndEat immediately so player cannot perform unintended actions early
+        if (PlayerPrefs.GetInt(CombatTutorialDoneKey, 0) == 0)
         {
             EnsureEnemyAttackIntent(lockIntent: true);
             SetPhase(CombatPhase.OverviewAndEat);
@@ -178,9 +182,13 @@ public class CombatTutorialGuide : MonoBehaviour
     {
         if (currentPhase == CombatPhase.None || currentPhase == CombatPhase.Finished) return;
 
-        // ESC to dismiss / skip combat tutorial
+        // ESC to dismiss / skip combat tutorial (do not skip if food panel is active, let food panel close instead)
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            if (combatUI != null && combatUI.foodPanel != null && combatUI.foodPanel.activeSelf)
+            {
+                return;
+            }
             SkipTutorial();
             return;
         }
@@ -286,17 +294,29 @@ public class CombatTutorialGuide : MonoBehaviour
     {
         if (PlayerPrefs.GetInt(CombatTutorialDoneKey, 0) == 1) return;
         EnsureEnemyAttackIntent(lockIntent: true);
-        StartCoroutine(StartGuideDelay());
-    }
-
-    private IEnumerator StartGuideDelay()
-    {
-        yield return new WaitForSeconds(0.4f);
-        EnsureEnemyAttackIntent(lockIntent: true);
         if (currentPhase == CombatPhase.None)
         {
             SetPhase(CombatPhase.OverviewAndEat);
         }
+    }
+
+    private bool HasAnyEdibleFood()
+    {
+        PlayerStats ps = combatUI != null && combatUI.playerStats != null
+            ? combatUI.playerStats
+            : Object.FindFirstObjectByType<PlayerStats>();
+        if (ps == null || ps.itemContainer == null) return false;
+
+        for (int i = 0; i < ps.itemContainer.itemSlots.Length; i++)
+        {
+            var slot = ps.itemContainer.itemSlots[i];
+            if (slot != null && slot.itemData != null && slot.amount > 0)
+            {
+                if (slot.itemData is FoodData || slot.itemData.itemType == ItemData.ItemType.Food || slot.itemData.itemType == ItemData.ItemType.Produce)
+                    return true;
+            }
+        }
+        return false;
     }
 
     private void EnsurePlayerHasTutorialFood()
@@ -335,7 +355,13 @@ public class CombatTutorialGuide : MonoBehaviour
 
         if (soup != null)
         {
-            ps.itemContainer.AddItem(soup, 1);
+            bool added = ps.itemContainer.AddItem(soup, 1);
+            if (!added && ps.itemContainer.itemSlots.Length > 0)
+            {
+                // Bag was completely full! Replace slot 0 with soup so tutorial is never blocked
+                ps.itemContainer.itemSlots[0].itemData = soup;
+                ps.itemContainer.itemSlots[0].amount = 1;
+            }
         }
     }
 

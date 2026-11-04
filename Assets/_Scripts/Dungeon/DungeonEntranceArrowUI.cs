@@ -79,7 +79,13 @@ public class DungeonEntranceArrowUI : MonoBehaviour
             arrowTMP.color = c;
         }
 
-        // 2. Keyboard shortcuts to quickly advance
+        // 2. Keyboard shortcuts to quickly advance (ignore if modal or eating panel is open)
+        if (UIEscapeManager.IsAnyModalUIOpen())
+            return;
+
+        if (CombatUI.Instance != null && CombatUI.Instance.foodPanel != null && CombatUI.Instance.foodPanel.activeSelf)
+            return;
+
         if (Input.GetKeyDown(KeyCode.Space) ||
             Input.GetKeyDown(KeyCode.Return) ||
             Input.GetKeyDown(KeyCode.KeypadEnter) ||

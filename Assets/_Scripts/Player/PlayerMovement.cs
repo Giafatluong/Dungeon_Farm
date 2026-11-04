@@ -105,7 +105,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        if (IsInCombat() || IsAnyUIOpen())
+        bool isTutorialBlocked = TutorialManager.Instance != null && TutorialManager.Instance.IsInputBlocked;
+
+        if (IsInCombat() || IsAnyUIOpen() || isTutorialBlocked)
         {
             movement = Vector2.zero;
             isSprinting = false;

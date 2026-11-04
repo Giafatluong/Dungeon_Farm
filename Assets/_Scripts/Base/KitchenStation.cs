@@ -282,7 +282,10 @@ public class KitchenStation : MonoBehaviour, IInteractable
         else
         {
             if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.Cooking))
+            {
+                DamagePopupManager.ShowText(transform.position + Vector3.up * 1.0f, "Chưa đến lúc nấu ăn! Hãy làm theo hướng dẫn.", Color.yellow, 2.0f);
                 return;
+            }
 
             OpenKitchen();
         }

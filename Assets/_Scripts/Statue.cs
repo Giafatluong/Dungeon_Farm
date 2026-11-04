@@ -150,7 +150,10 @@ public class Statue : MonoBehaviour, IInteractable
             else
             {
                 if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.GoddessStatue))
+                {
+                    DamagePopupManager.ShowText(GetStatueCenter() + Vector3.up * 1.0f, "Chưa đến lúc dâng lễ! Hãy làm theo hướng dẫn.", Color.yellow, 2.0f);
                     return;
+                }
 
                 ui.Open(this, offerings, playerInventory);
             }
@@ -158,7 +161,10 @@ public class Statue : MonoBehaviour, IInteractable
         else
         {
             if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.GoddessStatue))
+            {
+                DamagePopupManager.ShowText(GetStatueCenter() + Vector3.up * 1.0f, "Chưa đến lúc dâng lễ! Hãy làm theo hướng dẫn.", Color.yellow, 2.0f);
                 return;
+            }
 
             TryOfferAny();
         }

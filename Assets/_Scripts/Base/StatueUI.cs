@@ -233,6 +233,7 @@ public class StatueUI : MonoBehaviour
         }
 
         UIEscapeManager.NotifyModalClosed("Statue");
+        CurrentItemPanel.RefreshHotbar();
         if (ProgressionManager.Instance != null && ProgressionManager.Instance.permanentATK > 0)
         {
             TutorialManager.Instance?.NotifyStatueOfferingDone();
@@ -382,6 +383,7 @@ public class StatueUI : MonoBehaviour
         if (totalDeposited > 0)
         {
             backpackContainer.NotifyChange();
+            CurrentItemPanel.RefreshHotbar();
             SetFeedback($"<color=#FFD700>Quick-offered {totalDeposited} items to {GetOfferingDisplayName(offering)}!</color>");
             CheckOfferingCompletion(offering);
         }

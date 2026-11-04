@@ -210,6 +210,7 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
             sourceSlot.amount = 0;
         }
         container.NotifyChange();
+        CurrentItemPanel.RefreshHotbar();
 
         // Apply contribution
         ApplyContribution(deposit);
@@ -241,6 +242,7 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
             deposit = Mathf.Min(available, needed);
             backpack.RemoveItem(requiredItem, deposit);
             backpack.NotifyChange();
+            CurrentItemPanel.RefreshHotbar();
         }
 
         if (deposit < needed && HomeChest.Instance != null && HomeChest.Instance.chestContainer != null)

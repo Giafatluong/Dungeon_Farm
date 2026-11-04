@@ -883,6 +883,20 @@ public class FloorVictoryUI : MonoBehaviour
         if (nextFloorButton != null)
         {
             int totalFloors = 3;
+            FloorData[] allFloors = GameAssetHelper.LoadAll<FloorData>();
+            if (allFloors != null && allFloors.Length > 0)
+            {
+                foreach (FloorData fd in allFloors)
+                {
+                    if (fd != null && fd.floorNumber > totalFloors)
+                        totalFloors = fd.floorNumber;
+                }
+            }
+            if (ProgressionManager.Instance != null && ProgressionManager.Instance.highestUnlockedFloor > totalFloors)
+            {
+                totalFloors = ProgressionManager.Instance.highestUnlockedFloor;
+            }
+
             // Floor 0 (Tutorial) can advance to Floor 1
             bool hasNextFloor = currentFloorNum < totalFloors;
             nextFloorButton.gameObject.SetActive(hasNextFloor);

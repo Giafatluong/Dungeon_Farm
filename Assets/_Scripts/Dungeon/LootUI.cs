@@ -619,6 +619,8 @@ public class LootUI : MonoBehaviour
             lootPanel.transform.SetAsLastSibling();
         }
 
+        UIEscapeManager.NotifyModalOpened("Loot");
+
         if (lootScrollRect != null) lootScrollRect.verticalNormalizedPosition = 1f;
         if (bpScrollRect != null) bpScrollRect.verticalNormalizedPosition = 1f;
     }
@@ -644,6 +646,9 @@ public class LootUI : MonoBehaviour
         {
             lootPanel.SetActive(false);
         }
+
+        UIEscapeManager.NotifyModalClosed("Loot");
+        CurrentItemPanel.RefreshHotbar();
 
         System.Action callback = onLootClosed;
         onLootClosed = null;

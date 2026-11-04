@@ -126,7 +126,10 @@ public class DungeonEntrance : MonoBehaviour
     private void OpenDungeonUI()
     {
         if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.DungeonGate))
+        {
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 1.0f, "Cổng hầm ngục đang khóa! Hãy làm theo hướng dẫn.", Color.yellow, 2.0f);
             return;
+        }
 
         if (UIEscapeManager.IsAnyModalUIOpen()) return;
 

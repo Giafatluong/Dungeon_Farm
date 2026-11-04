@@ -182,6 +182,8 @@ public class MerchantUI : MonoBehaviour
             merchantPanel.transform.SetAsLastSibling();
         }
 
+        UIEscapeManager.NotifyModalOpened("Merchant");
+
         SubscribeEvents();
 
         BuildWaresList();
@@ -226,6 +228,9 @@ public class MerchantUI : MonoBehaviour
         {
             merchantPanel.SetActive(false);
         }
+
+        UIEscapeManager.NotifyModalClosed("Merchant");
+        CurrentItemPanel.RefreshHotbar();
 
         onContinueCallback?.Invoke();
         onContinueCallback = null;

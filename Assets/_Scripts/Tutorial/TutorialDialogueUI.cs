@@ -68,6 +68,7 @@ public class TutorialDialogueUI : MonoBehaviour
     private TutorialStepInfo currentInfo;
     private bool hasActiveStep = false;
     private bool isDialogueActive = false;
+    public bool IsDialogueActive => isDialogueActive;
     private Coroutine typewriterRoutine;
     private bool isTyping = false;
     private Camera cachedCam;

@@ -37,6 +37,12 @@ public class BedInteraction : MonoBehaviour, IInteractable
 
     public void Interact()
     {
+        if (TutorialManager.Instance != null && !TutorialManager.Instance.IsInteractionAllowed(TutorialManager.TutorialInteraction.BedSleep))
+        {
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, "Cần hoàn thành hướng dẫn trước khi đi ngủ!", Color.yellow, 2.0f);
+            return;
+        }
+
         // Must be in physical range of player to sleep
         PlayerMovement pm = PlayerMovement.Instance != null ? PlayerMovement.Instance : FindFirstObjectByType<PlayerMovement>();
         if (pm != null && !IsPlayerInRange(pm.transform.position))

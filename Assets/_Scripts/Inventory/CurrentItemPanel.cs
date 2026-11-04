@@ -3,8 +3,34 @@ using System.Collections.Generic;
 
 public class CurrentItemPanel : MonoBehaviour
 {
+    public static CurrentItemPanel Instance { get; private set; }
+
     [SerializeField] private InventoryPanel inventoryPanel;
     [SerializeField] private List<InventoryButton> inventoryButtons;
+
+    private ItemContainer _subscribedContainer;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        Instance = null;
+    }
+
+    public static void RefreshHotbar()
+    {
+        if (Instance != null)
+        {
+            Instance.SetCurrentItem();
+        }
+        else
+        {
+            CurrentItemPanel panel = FindFirstObjectByType<CurrentItemPanel>(FindObjectsInactive.Include);
+            if (panel != null)
+            {
+                panel.SetCurrentItem();
+            }
+        }
+    }
 
     private void EnsureInventoryPanel()
     {
@@ -14,10 +40,51 @@ public class CurrentItemPanel : MonoBehaviour
         }
     }
 
-    private void Awake()
+    public ItemContainer GetItemContainer()
     {
         EnsureInventoryPanel();
+        if (inventoryPanel != null && inventoryPanel.ItemContainer != null)
+        {
+            return inventoryPanel.ItemContainer;
+        }
+
+        if (PlayerStats.Instance != null && PlayerStats.Instance.itemContainer != null)
+        {
+            return PlayerStats.Instance.itemContainer;
+        }
+
+        PlayerStats ps = FindFirstObjectByType<PlayerStats>(FindObjectsInactive.Include);
+        if (ps != null && ps.itemContainer != null)
+        {
+            return ps.itemContainer;
+        }
+
+        ItemContainer[] containers = GameAssetHelper.LoadAll<ItemContainer>();
+        if (containers != null)
+        {
+            for (int i = 0; i < containers.Length; i++)
+            {
+                if (containers[i] != null && !containers[i].name.ToLower().Contains("chest") && !containers[i].name.ToLower().Contains("loot"))
+                {
+                    return containers[i];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private void Awake()
+    {
+        Instance = this;
+        EnsureInventoryPanel();
         EnsureButtons();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+        UnsubscribeContainerEvent();
     }
 
     private void EnsureButtons()
@@ -41,6 +108,7 @@ public class CurrentItemPanel : MonoBehaviour
         EnsureInventoryPanel();
         EnsureButtons();
         SubscribeContainerEvent();
+        SetCurrentItem();
     }
 
     private void OnDisable()
@@ -50,18 +118,25 @@ public class CurrentItemPanel : MonoBehaviour
 
     private void SubscribeContainerEvent()
     {
-        if (inventoryPanel != null && inventoryPanel.ItemContainer != null)
+        ItemContainer container = GetItemContainer();
+        if (container == null) return;
+
+        if (_subscribedContainer != null && _subscribedContainer != container)
         {
-            inventoryPanel.ItemContainer.OnInventoryChange -= SetCurrentItem;
-            inventoryPanel.ItemContainer.OnInventoryChange += SetCurrentItem;
+            _subscribedContainer.OnInventoryChange -= SetCurrentItem;
         }
+
+        _subscribedContainer = container;
+        _subscribedContainer.OnInventoryChange -= SetCurrentItem;
+        _subscribedContainer.OnInventoryChange += SetCurrentItem;
     }
 
     private void UnsubscribeContainerEvent()
     {
-        if (inventoryPanel != null && inventoryPanel.ItemContainer != null)
+        if (_subscribedContainer != null)
         {
-            inventoryPanel.ItemContainer.OnInventoryChange -= SetCurrentItem;
+            _subscribedContainer.OnInventoryChange -= SetCurrentItem;
+            _subscribedContainer = null;
         }
     }
 
@@ -72,6 +147,9 @@ public class CurrentItemPanel : MonoBehaviour
             return;
 
         if (InventoryController.IsAnyModalOpen() || (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen))
+            return;
+
+        if (TutorialManager.Instance != null && TutorialManager.Instance.IsInputBlocked)
             return;
 
         if (inventoryButtons == null || inventoryButtons.Count == 0) return;
@@ -95,7 +173,8 @@ public class CurrentItemPanel : MonoBehaviour
         EnsureButtons();
         SubscribeContainerEvent();
 
-        if (inventoryPanel == null || inventoryPanel.ItemContainer == null || inventoryButtons == null)
+        ItemContainer container = GetItemContainer();
+        if (container == null || inventoryButtons == null)
             return;
 
         Canvas parentCanvas = GetComponentInParent<Canvas>();
@@ -104,17 +183,19 @@ public class CurrentItemPanel : MonoBehaviour
         {
             if (inventoryButtons[i] == null) continue;
 
-            inventoryButtons[i].SetSlotData(inventoryPanel.ItemContainer, i);
+            inventoryButtons[i].SetSlotData(container, i);
             if (parentCanvas != null)
             {
                 inventoryButtons[i].SetCanvas(parentCanvas);
             }
 
-            if (i < inventoryPanel.ItemContainer.itemSlots.Length &&
-                inventoryPanel.ItemContainer.itemSlots[i] != null &&
-                inventoryPanel.ItemContainer.itemSlots[i].itemData != null)
+            if (container.itemSlots != null &&
+                i < container.itemSlots.Length &&
+                container.itemSlots[i] != null &&
+                container.itemSlots[i].itemData != null &&
+                container.itemSlots[i].amount > 0)
             {
-                inventoryButtons[i].SetItem(inventoryPanel.ItemContainer.itemSlots[i].itemData, inventoryPanel.ItemContainer.itemSlots[i].amount);
+                inventoryButtons[i].SetItem(container.itemSlots[i].itemData, container.itemSlots[i].amount);
             }
             else
             {
