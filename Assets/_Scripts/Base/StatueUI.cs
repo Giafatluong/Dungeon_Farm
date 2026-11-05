@@ -49,14 +49,13 @@ public class StatueUI : MonoBehaviour
 
     public enum OfferingViewCategory
     {
-        AllPillars,
         Might,       // ATK
         Protection,  // DEF
         Swiftness,   // Speed
         Vitality     // Max HP
     }
 
-    private OfferingViewCategory currentViewCategory = OfferingViewCategory.AllPillars;
+    private OfferingViewCategory currentViewCategory = OfferingViewCategory.Might;
 
     private Statue currentStatue;
     private List<Offering> currentOfferings;
@@ -214,7 +213,7 @@ public class StatueUI : MonoBehaviour
 
         SubscribeEvents();
 
-        BuildOfferingsList();
+        BuildOfferingsList(true);
         BuildBackpackSlots(backpackContainer);
         UpdatePermanentStatsDisplay();
         UpdateBlessingDisplay();
@@ -726,7 +725,7 @@ public class StatueUI : MonoBehaviour
     }
     #endregion
 
-    private void BuildOfferingsList()
+    private void BuildOfferingsList(bool resetScroll = false)
     {
         if (offeringsContainer == null || currentOfferings == null) return;
 
@@ -743,37 +742,31 @@ public class StatueUI : MonoBehaviour
             return a.tier.CompareTo(b.tier);
         });
 
-        // 1. Navigation Category Tabs
+        // 1. Navigation Category Tabs (ATK, DEF, SPD, HP)
         BuildCategoryTabs(offeringsContainer);
 
-        // 2. Render View
-        if (currentViewCategory == OfferingViewCategory.AllPillars)
+        // 2. Render Offering Cards for the selected Category
+        Offering.RewardStat filterStat = currentViewCategory switch
         {
-            var atkList = currentOfferings.FindAll(o => o.rewardStat == Offering.RewardStat.ATK);
-            var defList = currentOfferings.FindAll(o => o.rewardStat == Offering.RewardStat.DEF);
-            var spdList = currentOfferings.FindAll(o => o.rewardStat == Offering.RewardStat.Speed);
-            var hpList = currentOfferings.FindAll(o => o.rewardStat == Offering.RewardStat.MaxHP);
+            OfferingViewCategory.Might => Offering.RewardStat.ATK,
+            OfferingViewCategory.Protection => Offering.RewardStat.DEF,
+            OfferingViewCategory.Swiftness => Offering.RewardStat.Speed,
+            OfferingViewCategory.Vitality => Offering.RewardStat.MaxHP,
+            _ => Offering.RewardStat.ATK
+        };
 
-            if (atkList.Count > 0) CreatePillarCard(Offering.RewardStat.ATK, atkList, offeringsContainer);
-            if (defList.Count > 0) CreatePillarCard(Offering.RewardStat.DEF, defList, offeringsContainer);
-            if (spdList.Count > 0) CreatePillarCard(Offering.RewardStat.Speed, spdList, offeringsContainer);
-            if (hpList.Count > 0) CreatePillarCard(Offering.RewardStat.MaxHP, hpList, offeringsContainer);
+        var filtered = currentOfferings.FindAll(o => o.rewardStat == filterStat);
+        for (int i = 0; i < filtered.Count; i++)
+        {
+            CreateOfferingCard(filtered[i], offeringsContainer);
         }
-        else
-        {
-            Offering.RewardStat filterStat = currentViewCategory switch
-            {
-                OfferingViewCategory.Might => Offering.RewardStat.ATK,
-                OfferingViewCategory.Protection => Offering.RewardStat.DEF,
-                OfferingViewCategory.Swiftness => Offering.RewardStat.Speed,
-                OfferingViewCategory.Vitality => Offering.RewardStat.MaxHP,
-                _ => Offering.RewardStat.ATK
-            };
 
-            var filtered = currentOfferings.FindAll(o => o.rewardStat == filterStat);
-            for (int i = 0; i < filtered.Count; i++)
+        if (resetScroll)
+        {
+            ScrollRect sr = offeringsContainer.GetComponentInParent<ScrollRect>();
+            if (sr != null)
             {
-                CreateOfferingCard(filtered[i], offeringsContainer);
+                sr.verticalNormalizedPosition = 1f;
             }
         }
     }
@@ -795,11 +788,10 @@ public class StatueUI : MonoBehaviour
         hlg.childForceExpandWidth = true;
         hlg.childForceExpandHeight = true;
 
-        CreateTabButton("4 Trụ Cột", OfferingViewCategory.AllPillars, tabsGO.transform);
-        CreateTabButton("ATK (10 Bậc)", OfferingViewCategory.Might, tabsGO.transform);
-        CreateTabButton("DEF (10 Bậc)", OfferingViewCategory.Protection, tabsGO.transform);
-        CreateTabButton("SPD (10 Bậc)", OfferingViewCategory.Swiftness, tabsGO.transform);
-        CreateTabButton("HP (10 Bậc)", OfferingViewCategory.Vitality, tabsGO.transform);
+        CreateTabButton("Tấn Công (ATK)", OfferingViewCategory.Might, tabsGO.transform);
+        CreateTabButton("Phòng Thủ (DEF)", OfferingViewCategory.Protection, tabsGO.transform);
+        CreateTabButton("Tốc Độ (SPD)", OfferingViewCategory.Swiftness, tabsGO.transform);
+        CreateTabButton("Sinh Mệnh (HP)", OfferingViewCategory.Vitality, tabsGO.transform);
     }
 
     private void CreateTabButton(string label, OfferingViewCategory category, Transform parent)
@@ -823,7 +815,7 @@ public class StatueUI : MonoBehaviour
         btn.onClick.AddListener(() =>
         {
             currentViewCategory = category;
-            BuildOfferingsList();
+            BuildOfferingsList(true);
         });
 
         GameObject txtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -842,224 +834,6 @@ public class StatueUI : MonoBehaviour
         tmp.color = isSelected ? new Color(1f, 0.9f, 0.4f) : new Color(0.8f, 0.85f, 0.9f);
     }
 
-    public static string GetTierProgressBar(int currentTier, int maxTier = 10)
-    {
-        System.Text.StringBuilder sb = new();
-        for (int i = 1; i <= maxTier; i++)
-        {
-            if (i <= currentTier)
-                sb.Append("<color=#55FF88>●</color> ");
-            else if (i == 5)
-                sb.Append("<color=#FFD700>◆</color> "); // Boss 1 Milestone Gate
-            else if (i == 10)
-                sb.Append("<color=#FF77FF>★</color> "); // Boss 2/3 Milestone Gate
-            else
-                sb.Append("<color=#555566>○</color> ");
-        }
-        return sb.ToString().TrimEnd();
-    }
-
-    private void CreatePillarCard(Offering.RewardStat stat, List<Offering> tierList, Transform parent)
-    {
-        if (tierList == null || tierList.Count == 0) return;
-
-        tierList.Sort((a, b) => a.tier.CompareTo(b.tier));
-
-        int completedCount = 0;
-        Offering activeTargetOffering = null;
-        for (int i = 0; i < tierList.Count; i++)
-        {
-            bool done = tierList[i].completed ||
-                (ProgressionManager.Instance != null && ProgressionManager.Instance.IsOfferingCompleted(tierList[i].offeringKey));
-            if (done)
-            {
-                completedCount++;
-            }
-            else if (activeTargetOffering == null)
-            {
-                activeTargetOffering = tierList[i];
-            }
-        }
-
-        bool isMaxed = completedCount >= tierList.Count;
-
-        // Card Root
-        GameObject cardGO = new GameObject($"PillarCard_{stat}", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(LayoutElement));
-        cardGO.transform.SetParent(parent, false);
-
-        LayoutElement cardLE = cardGO.GetComponent<LayoutElement>();
-        cardLE.minHeight = 114f;
-        cardLE.preferredHeight = 114f;
-        cardLE.flexibleHeight = 0;
-
-        Image cardBg = cardGO.GetComponent<Image>();
-        if (isMaxed)
-            DungeonUIAssetHelper.StyleSlicedPanel(cardBg, DungeonUIAssetHelper.PanelStyle.Wood);
-        else
-            DungeonUIAssetHelper.StyleSlicedPanel(cardBg, DungeonUIAssetHelper.PanelStyle.Slate);
-
-        Outline outline = cardGO.AddComponent<Outline>();
-        if (isMaxed)
-            outline.effectColor = new Color(0.25f, 0.85f, 0.45f, 0.85f);
-        else if (activeTargetOffering != null && activeTargetOffering.tier == 5)
-            outline.effectColor = new Color(1f, 0.78f, 0.2f, 0.95f); // Golden Boss Gate Outline!
-        else if (activeTargetOffering != null && activeTargetOffering.tier == 10)
-            outline.effectColor = new Color(0.9f, 0.45f, 1f, 0.95f); // Purple Ultimate Gate Outline!
-        else
-            outline.effectColor = new Color(0.55f, 0.5f, 0.35f, 0.6f);
-        outline.effectDistance = new Vector2(1.5f, -1.5f);
-
-        VerticalLayoutGroup vlg = cardGO.GetComponent<VerticalLayoutGroup>();
-        vlg.padding = new RectOffset(10, 10, 6, 6);
-        vlg.spacing = 4;
-        vlg.childControlWidth = true;
-        vlg.childControlHeight = false;
-        vlg.childForceExpandWidth = true;
-        vlg.childForceExpandHeight = false;
-
-        // Header Row (Pillar Name + Progress Dots + Tier Badge)
-        GameObject headerGO = new GameObject("Header", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
-        headerGO.transform.SetParent(cardGO.transform, false);
-
-        LayoutElement headerLE = headerGO.GetComponent<LayoutElement>();
-        headerLE.minHeight = 22f;
-        headerLE.preferredHeight = 22f;
-
-        HorizontalLayoutGroup hlg = headerGO.GetComponent<HorizontalLayoutGroup>();
-        hlg.spacing = 8;
-        hlg.childControlWidth = false;
-        hlg.childControlHeight = true;
-        hlg.childForceExpandWidth = false;
-        hlg.childForceExpandHeight = true;
-
-        string pillarTitle = stat switch
-        {
-            Offering.RewardStat.ATK => "Trụ Cột Chiến Binh (ATK)",
-            Offering.RewardStat.DEF => "Trụ Cột Hộ Vệ (DEF)",
-            Offering.RewardStat.Speed => "Trụ Cột Nhanh Nhẹn (Speed)",
-            Offering.RewardStat.MaxHP => "Trụ Cột Sinh Mệnh (Max HP)",
-            _ => "Trụ Cột Lễ Vật"
-        };
-        GameObject titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
-        titleGO.transform.SetParent(headerGO.transform, false);
-        TextMeshProUGUI titleTMP = titleGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(titleTMP);
-        titleTMP.fontSize = 12;
-        titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.text = pillarTitle;
-        titleTMP.color = isMaxed ? new Color(0.4f, 1f, 0.6f) : new Color(1f, 0.88f, 0.45f);
-        titleGO.GetComponent<RectTransform>().sizeDelta = new Vector2(210, 22);
-
-        GameObject dotsGO = new GameObject("Dots", typeof(RectTransform), typeof(TextMeshProUGUI));
-        dotsGO.transform.SetParent(headerGO.transform, false);
-        TextMeshProUGUI dotsTMP = dotsGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(dotsTMP);
-        dotsTMP.fontSize = 11;
-        dotsTMP.alignment = TextAlignmentOptions.Center;
-        dotsTMP.text = GetTierProgressBar(completedCount, 10);
-        dotsGO.GetComponent<RectTransform>().sizeDelta = new Vector2(170, 22);
-
-        GameObject tierBadgeGO = new GameObject("TierBadge", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
-        tierBadgeGO.transform.SetParent(headerGO.transform, false);
-        Image tbImg = tierBadgeGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(tbImg, GetStatBadgeColor(stat));
-        tierBadgeGO.GetComponent<RectTransform>().sizeDelta = new Vector2(110, 20);
-
-        GameObject tbTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
-        tbTextGO.transform.SetParent(tierBadgeGO.transform, false);
-        TextMeshProUGUI tbTMP = tbTextGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(tbTMP);
-        tbTMP.fontSize = 9.5f;
-        tbTMP.fontStyle = FontStyles.Bold;
-        tbTMP.alignment = TextAlignmentOptions.Center;
-        tbTMP.text = isMaxed ? "BẬC: 10/10 (MAX)" : $"BẬC: {completedCount}/10";
-        tbTMP.color = Color.white;
-        tbTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(110, 20);
-
-        // Sub-Header Row (Milestone Target Banner)
-        GameObject subRowGO = new GameObject("SubRow", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
-        subRowGO.transform.SetParent(cardGO.transform, false);
-        LayoutElement subLE = subRowGO.GetComponent<LayoutElement>();
-        subLE.minHeight = 18f;
-        subLE.preferredHeight = 18f;
-
-        TextMeshProUGUI subTMP = subRowGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(subTMP);
-        subTMP.fontSize = 10;
-        subTMP.alignment = TextAlignmentOptions.MidlineLeft;
-
-        string statStr = stat == Offering.RewardStat.MaxHP ? "HP" : stat.ToString();
-        if (isMaxed)
-        {
-            subTMP.text = "<color=#55FF88>★ ĐÃ ĐẠT BẬC TỐI ĐA 10/10 — THẦN LINH ĐÃ BAN PHƯỚC LÀNH ĐỈNH CAO!</color>";
-        }
-        else if (activeTargetOffering != null)
-        {
-            if (activeTargetOffering.tier == 5)
-            {
-                subTMP.text = $"<color=#FFD700><b>🌹 CỘT MỐC ĐỘT PHÁ BOSS 1: BẬC 5 (+{activeTargetOffering.rewardAmount} {statStr})</b></color> <color=#FFAA55><i>— Cần Hoa Hồng Cổ Đại từ Boss Tầng 1!</i></color>";
-            }
-            else if (activeTargetOffering.tier == 10)
-            {
-                subTMP.text = $"<color=#FF77FF><b>👑 CỘT MỐC ĐỈNH CAO BOSS TỐI THƯỢNG: BẬC 10 (+{activeTargetOffering.rewardAmount} {statStr})</b></color> <color=#FFAAEE><i>— Cần Vương Miện Slime hoặc Tinh Thể từ Boss Tầng 2/3!</i></color>";
-            }
-            else
-            {
-                subTMP.text = $"<color=#77CCFF>Mục tiêu nâng cấp:</color> <b>Bậc {activeTargetOffering.tier} (+{activeTargetOffering.rewardAmount} {statStr})</b>";
-            }
-        }
-
-        // Requirements Row
-        if (!isMaxed && activeTargetOffering != null)
-        {
-            GameObject reqsRowGO = new GameObject("RequirementsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
-            reqsRowGO.transform.SetParent(cardGO.transform, false);
-
-            LayoutElement reqsLE = reqsRowGO.GetComponent<LayoutElement>();
-            reqsLE.minHeight = 52f;
-            reqsLE.preferredHeight = 52f;
-
-            HorizontalLayoutGroup reqsHLG = reqsRowGO.GetComponent<HorizontalLayoutGroup>();
-            reqsHLG.spacing = 8;
-            reqsHLG.childControlWidth = false;
-            reqsHLG.childControlHeight = false;
-            reqsHLG.childForceExpandWidth = false;
-            reqsHLG.childForceExpandHeight = false;
-
-            if (activeTargetOffering.requiredItems != null)
-            {
-                for (int r = 0; r < activeTargetOffering.requiredItems.Length; r++)
-                {
-                    ItemRequirement req = activeTargetOffering.requiredItems[r];
-                    if (req.item == null) continue;
-                    CreateOfferingSlot(activeTargetOffering, r, req, reqsRowGO.transform);
-                }
-            }
-
-            // Quick Offer Button
-            GameObject btnGO = new GameObject("BtnQuickOffer", typeof(RectTransform), typeof(Image), typeof(Button));
-            btnGO.transform.SetParent(reqsRowGO.transform, false);
-            Image btnBg = btnGO.GetComponent<Image>();
-            btnGO.GetComponent<RectTransform>().sizeDelta = new Vector2(100, 36);
-
-            Button btn = btnGO.GetComponent<Button>();
-            DungeonUIAssetHelper.StyleTactileButton(btn, btnBg, DungeonUIAssetHelper.ButtonStyle.Victory);
-            Offering offRef = activeTargetOffering;
-            btn.onClick.AddListener(() => QuickOffer(offRef));
-
-            GameObject btnTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
-            btnTextGO.transform.SetParent(btnGO.transform, false);
-            TextMeshProUGUI btnTMP = btnTextGO.GetComponent<TextMeshProUGUI>();
-            DungeonUIAssetHelper.ApplyFont(btnTMP);
-            btnTMP.fontSize = 10;
-            btnTMP.fontStyle = FontStyles.Bold;
-            btnTMP.alignment = TextAlignmentOptions.Center;
-            btnTMP.text = "Quick Offer";
-            btnTMP.color = Color.white;
-            btnTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(100, 36);
-        }
-    }
-
     private void CreateOfferingCard(Offering off, Transform parent)
     {
         bool isDone = off.completed ||
@@ -1067,13 +841,10 @@ public class StatueUI : MonoBehaviour
         bool isUnlocked = off.IsUnlocked();
 
         // Card Root
-        GameObject cardGO = new GameObject($"Card_{off.offeringKey}", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
+        GameObject cardGO = new GameObject($"Card_{off.offeringKey}", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(LayoutElement));
         cardGO.transform.SetParent(parent, false);
 
-        RectTransform cardRT = cardGO.GetComponent<RectTransform>();
-        cardRT.sizeDelta = new Vector2(0, 92);
-
-        LayoutElement cardLE = cardGO.AddComponent<LayoutElement>();
+        LayoutElement cardLE = cardGO.GetComponent<LayoutElement>();
         cardLE.minHeight = 92f;
         cardLE.preferredHeight = 92f;
         cardLE.flexibleHeight = 0;
@@ -1127,8 +898,6 @@ public class StatueUI : MonoBehaviour
         // Header Row (Name + Reward Badge + Completed Badge + Quick Offer Button)
         GameObject headerGO = new GameObject("Header", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
         headerGO.transform.SetParent(cardGO.transform, false);
-        RectTransform headerRT = headerGO.GetComponent<RectTransform>();
-        headerRT.sizeDelta = new Vector2(0, 22);
 
         LayoutElement headerLE = headerGO.GetComponent<LayoutElement>();
         headerLE.minHeight = 22f;
@@ -1148,6 +917,8 @@ public class StatueUI : MonoBehaviour
         DungeonUIAssetHelper.ApplyFont(titleTMP);
         titleTMP.fontSize = 11.5f;
         titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.textWrappingMode = TextWrappingModes.NoWrap;
+        titleTMP.overflowMode = TextOverflowModes.Ellipsis;
         titleTMP.text = GetOfferingDisplayName(off);
         if (isDone)
             titleTMP.color = new Color(0.4f, 1f, 0.6f);
@@ -1164,6 +935,12 @@ public class StatueUI : MonoBehaviour
         DungeonUIAssetHelper.StyleSlicedFrame(badgeImg, GetStatBadgeColor(off.rewardStat));
         badgeGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
 
+        HorizontalLayoutGroup badgeHLG = badgeGO.GetComponent<HorizontalLayoutGroup>();
+        badgeHLG.childControlWidth = true;
+        badgeHLG.childControlHeight = true;
+        badgeHLG.childForceExpandWidth = true;
+        badgeHLG.childForceExpandHeight = true;
+
         GameObject badgeTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         badgeTextGO.transform.SetParent(badgeGO.transform, false);
         TextMeshProUGUI badgeTMP = badgeTextGO.GetComponent<TextMeshProUGUI>();
@@ -1174,7 +951,6 @@ public class StatueUI : MonoBehaviour
         string statLabel = off.rewardStat == Offering.RewardStat.MaxHP ? "HP" : off.rewardStat.ToString();
         badgeTMP.text = $"+{off.rewardAmount} {statLabel}";
         badgeTMP.color = Color.white;
-        badgeTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
 
         // Status or Quick Offer Button
         if (isDone)
@@ -1197,6 +973,12 @@ public class StatueUI : MonoBehaviour
             DungeonUIAssetHelper.StyleSlicedFrame(lockBg, new Color(0.35f, 0.15f, 0.15f, 0.95f));
             lockBadgeGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 22);
 
+            HorizontalLayoutGroup lockHLG = lockBadgeGO.GetComponent<HorizontalLayoutGroup>();
+            lockHLG.childControlWidth = true;
+            lockHLG.childControlHeight = true;
+            lockHLG.childForceExpandWidth = true;
+            lockHLG.childForceExpandHeight = true;
+
             GameObject lockTxtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
             lockTxtGO.transform.SetParent(lockBadgeGO.transform, false);
             TextMeshProUGUI lockTMP = lockTxtGO.GetComponent<TextMeshProUGUI>();
@@ -1206,14 +988,19 @@ public class StatueUI : MonoBehaviour
             lockTMP.alignment = TextAlignmentOptions.Center;
             lockTMP.text = off.tier == 5 ? "[CẦN BOSS 1]" : (off.tier == 10 ? "[CẦN BOSS TỐI THƯỢNG]" : "[CHƯA MỞ KHÓA]");
             lockTMP.color = new Color(1f, 0.65f, 0.65f);
-            lockTxtGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 22);
         }
         else
         {
-            GameObject btnGO = new GameObject("BtnQuickOffer", typeof(RectTransform), typeof(Image), typeof(Button));
+            GameObject btnGO = new GameObject("BtnQuickOffer", typeof(RectTransform), typeof(Image), typeof(Button), typeof(HorizontalLayoutGroup));
             btnGO.transform.SetParent(headerGO.transform, false);
             Image btnBg = btnGO.GetComponent<Image>();
             btnGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 22);
+
+            HorizontalLayoutGroup btnHLG = btnGO.GetComponent<HorizontalLayoutGroup>();
+            btnHLG.childControlWidth = true;
+            btnHLG.childControlHeight = true;
+            btnHLG.childForceExpandWidth = true;
+            btnHLG.childForceExpandHeight = true;
 
             Button btn = btnGO.GetComponent<Button>();
             DungeonUIAssetHelper.StyleTactileButton(btn, btnBg, DungeonUIAssetHelper.ButtonStyle.Victory);
@@ -1229,14 +1016,11 @@ public class StatueUI : MonoBehaviour
             btnTMP.alignment = TextAlignmentOptions.Center;
             btnTMP.text = "Quick Offer";
             btnTMP.color = Color.white;
-            btnTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 22);
         }
 
         // Requirements Row
         GameObject reqsRowGO = new GameObject("RequirementsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
         reqsRowGO.transform.SetParent(cardGO.transform, false);
-        RectTransform reqsRowRT = reqsRowGO.GetComponent<RectTransform>();
-        reqsRowRT.sizeDelta = new Vector2(0, 52);
 
         LayoutElement reqsLE = reqsRowGO.GetComponent<LayoutElement>();
         reqsLE.minHeight = 52f;

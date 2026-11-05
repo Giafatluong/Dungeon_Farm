@@ -63,6 +63,14 @@ public class ItemTooltipUI : MonoBehaviour
     private static readonly Color EpicText = new Color(0.99f, 0.90f, 0.54f, 1f);        // #FDE68A
     private static readonly Color EpicBadge = new Color(0.99f, 0.83f, 0.30f, 1f);       // #FCD34D
 
+    private static readonly Color CropBorder = new Color(0.22f, 0.77f, 0.38f, 1f);       // #37C461 (Emerald)
+    private static readonly Color CropBg = new Color(0.04f, 0.11f, 0.07f, 0.98f);         // #0B1C12
+    private static readonly Color CropText = new Color(0.72f, 0.96f, 0.78f, 1f);         // #B7F5C7
+    private static readonly Color CropBadge = new Color(0.35f, 0.88f, 0.52f, 1f);        // #59E085
+
+    private bool isShowingCrop = false;
+    public bool IsShowingCrop => isVisible && isShowingCrop;
+
     public static ItemTooltipUI EnsureInstance()
     {
         if (Instance != null) return Instance;
@@ -247,6 +255,7 @@ public class ItemTooltipUI : MonoBehaviour
 
         bool wasHidden = !isVisible || tooltipRoot == null || !tooltipRoot.activeSelf || currentAlpha <= 0.05f;
         currentItem = item;
+        isShowingCrop = false;
         isVisible = true;
 
         PopulateData(item);
@@ -279,10 +288,54 @@ public class ItemTooltipUI : MonoBehaviour
         }
     }
 
+    public void ShowCrop(FarmPlot plot)
+    {
+        if (plot == null || plot.currentCrop == null || plot.currentState == FarmPlot.State.Empty)
+        {
+            Hide();
+            return;
+        }
+
+        EnsureUIReady();
+
+        bool wasHidden = !isVisible || tooltipRoot == null || !tooltipRoot.activeSelf || currentAlpha <= 0.05f;
+        currentItem = null;
+        isShowingCrop = true;
+        isVisible = true;
+
+        PopulateCropData(plot);
+
+        if (tooltipRoot != null)
+        {
+            if (!tooltipRoot.activeSelf) tooltipRoot.SetActive(true);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipRT);
+
+            Vector2 targetPos = CalculateTargetPosition();
+            if (wasHidden)
+            {
+                currentPos = targetPos;
+                currentAlpha = 0f;
+                currentScale = 0.93f;
+                isFirstFrame = true;
+                if (tooltipRT != null)
+                {
+                    tooltipRT.anchoredPosition = currentPos;
+                    tooltipRT.localScale = new Vector3(currentScale, currentScale, 1f);
+                }
+                if (tooltipCG != null) tooltipCG.alpha = 0f;
+            }
+            else
+            {
+                currentScale = 0.97f;
+            }
+        }
+    }
+
     public void Hide(bool immediate = false)
     {
         isVisible = false;
         currentItem = null;
+        isShowingCrop = false;
 
         if (immediate)
         {
@@ -290,6 +343,123 @@ public class ItemTooltipUI : MonoBehaviour
             currentScale = 0.94f;
             if (tooltipCG != null) tooltipCG.alpha = 0f;
             if (tooltipRoot != null) tooltipRoot.SetActive(false);
+        }
+    }
+
+    private void PopulateCropData(FarmPlot plot)
+    {
+        CropData crop = plot.currentCrop;
+        bool isReady = plot.currentState == FarmPlot.State.Ready;
+
+        // 1. Icon
+        Sprite iconSp = null;
+        if (crop.producedItem != null && crop.producedItem.itemIcon != null)
+        {
+            iconSp = crop.producedItem.itemIcon;
+        }
+        else if (crop.growthStages != null && crop.growthStages.Length > 0)
+        {
+            iconSp = crop.growthStages[crop.growthStages.Length - 1];
+        }
+
+        if (itemIcon != null)
+        {
+            itemIcon.sprite = iconSp;
+            itemIcon.gameObject.SetActive(iconSp != null);
+        }
+
+        // 2. Title
+        string starPrefix = isReady ? "★ " : "";
+        string displayName = !string.IsNullOrEmpty(crop.cropName) ? crop.cropName : crop.name;
+        if (itemNameText != null)
+        {
+            itemNameText.text = $"{starPrefix}{displayName}";
+        }
+
+        // 3. Badges
+        if (itemRarityBadge != null)
+        {
+            itemRarityBadge.text = isReady ? "CHÍN VÀNG" : "CÂY TRỒNG";
+        }
+
+        int totalStages = (crop.growthStages != null && crop.growthStages.Length > 0) ? crop.growthStages.Length : 1;
+        int currentStageNum = Mathf.Clamp(plot.currentStage + 1, 1, totalStages);
+        if (itemTypeBadge != null)
+        {
+            itemTypeBadge.text = isReady ? "SẴN SÀNG" : $"GIAI ĐOẠN {currentStageNum}/{totalStages}";
+        }
+
+        // 4. Stats & Information
+        StringBuilder sb = new StringBuilder();
+        int harvestAmt = Mathf.Max(1, crop.harvestAmount);
+        string prodName = crop.producedItem != null ? crop.producedItem.itemName : crop.cropName;
+        sb.AppendLine($"<color=#CBD5E1>Thu hoạch được:</color>  <color=#FFD043><b>+{harvestAmt} {prodName}</b></color>");
+
+        if (isReady)
+        {
+            sb.AppendLine("<color=#CBD5E1>Thời gian:</color>  <color=#50FA7B><b>★ Sẵn sàng thu hoạch ngay!</b></color>");
+        }
+        else
+        {
+            int maxStage = totalStages - 1;
+            int daysRemaining = Mathf.Max(1, (maxStage - plot.currentStage) * Mathf.Max(1, crop.growthTime) - plot.daysInCurrentStage);
+            sb.AppendLine($"<color=#CBD5E1>Còn lại:</color>  <color=#77CCFF><b>~{daysRemaining} ngày (lần ngủ)</b></color>");
+        }
+
+        string dots = "";
+        for (int i = 0; i < totalStages; i++)
+        {
+            dots += (i < currentStageNum) ? "<color=#50FA7B>●</color> " : "<color=#64748B>○</color> ";
+        }
+        sb.AppendLine($"<color=#CBD5E1>Sinh trưởng:</color>  [ {dots.Trim()} ]");
+
+        if (statsText != null)
+        {
+            statsText.text = sb.ToString().TrimEnd();
+            statsText.gameObject.SetActive(true);
+        }
+        if (divider1 != null) divider1.gameObject.SetActive(true);
+
+        // 5. Description / Guide
+        if (descriptionText != null)
+        {
+            if (isReady)
+            {
+                descriptionText.text = "<color=#50FA7B>Cây đã chín vàng rực rỡ! Click Chuột Trái để thu hoạch nông sản vào ba lô.</color>";
+            }
+            else
+            {
+                if (crop.producedItem != null && !string.IsNullOrEmpty(crop.producedItem.description))
+                {
+                    descriptionText.text = crop.producedItem.description;
+                }
+                else
+                {
+                    descriptionText.text = "Cây đang sinh trưởng và lớn lên mỗi ngày. Hãy ngủ đủ giấc hoặc thám hiểm hầm ngục để cây mau chín!";
+                }
+            }
+            descriptionText.gameObject.SetActive(true);
+        }
+        if (divider2 != null) divider2.gameObject.SetActive(true);
+
+        // 6. Style application
+        Color borderColor = isReady ? EpicBorder : CropBorder;
+        Color bgColor = isReady ? EpicBg : CropBg;
+        Color textColor = isReady ? EpicText : CropText;
+        Color badgeColor = isReady ? EpicBadge : CropBadge;
+
+        if (outerFrameImg != null) DungeonUIAssetHelper.StyleSlicedFrame(outerFrameImg, borderColor);
+        if (innerBgImg != null) innerBgImg.color = bgColor;
+        if (itemNameText != null) itemNameText.color = textColor;
+        if (itemRarityBadge != null) itemRarityBadge.color = badgeColor;
+        if (divider1 != null) divider1.color = new Color(borderColor.r, borderColor.g, borderColor.b, 0.45f);
+        if (divider2 != null) divider2.color = new Color(borderColor.r, borderColor.g, borderColor.b, 0.25f);
+        if (cornerAccents != null)
+        {
+            for (int i = 0; i < cornerAccents.Length; i++)
+            {
+                if (cornerAccents[i] != null) cornerAccents[i].color = badgeColor;
+            }
         }
     }
 

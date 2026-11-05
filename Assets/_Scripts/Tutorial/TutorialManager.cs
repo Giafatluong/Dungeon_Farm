@@ -43,13 +43,12 @@ public class TutorialManager : MonoBehaviour
     public bool IsTutorialCompleted => currentStep == TutorialStep.Completed || PlayerPrefs.GetInt(TutorialDoneKey, 0) == 1;
 
     /// <summary>
-    /// True when input/interaction must be completely suspended (during cutscenes or step transition feedback).
+    /// True when input/interaction must be completely suspended (e.g. during cinematic cutscenes).
     /// </summary>
     public bool IsInputBlocked
     {
         get
         {
-            if (isAdvancingStep) return true;
             if (IntroCutsceneController.Instance != null && IntroCutsceneController.Instance.IsPlaying) return true;
             return false;
         }
@@ -305,9 +304,8 @@ public class TutorialManager : MonoBehaviour
         // If tutorial has already completed, do not tamper with user's farm
         if (PlayerPrefs.GetInt(TutorialDoneKey, 0) == 1) return;
 
-        // Only prepare starter crops during initial tutorial steps (Intro, Movement, Inventory, HarvestCrop)
-        if (currentStep > TutorialStep.HarvestCrop && currentStep != TutorialStep.IntroCutscene && currentStep != TutorialStep.None) return;
-        if (PlayerPrefs.GetInt("Tutorial_StarterCropsPrepared", 0) == 1 && currentStep >= TutorialStep.PlantSeed) return;
+        // If starter crops are already prepared once, never do expensive scene scans again
+        if (PlayerPrefs.GetInt("Tutorial_StarterCropsPrepared", 0) == 1) return;
 
         FarmPlot[] allPlots = Object.FindObjectsByType<FarmPlot>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         if (allPlots == null || allPlots.Length == 0) return;
@@ -559,7 +557,6 @@ public class TutorialManager : MonoBehaviour
         isAdvancingStep = false;
         currentStep = newStep;
         PlayerPrefs.SetInt(TutorialStepKey, (int)currentStep);
-        PlayerPrefs.Save();
 
         // Always ensure tutorial crops are visible on all early steps
         if (currentStep <= TutorialStep.HarvestCrop)

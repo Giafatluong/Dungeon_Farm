@@ -320,74 +320,19 @@ public class FarmCursorHighlight : MonoBehaviour
 
     private void UpdateTooltipVisual(FarmPlot plot, bool isNear)
     {
-        if (tooltipCanvasGO == null || tooltipPanelRT == null || tooltipCanvasGroup == null) return;
+        // Check if hovering over a planted or harvest-ready crop
+        bool isCropPlot = plot != null && plot.currentCrop != null &&
+                         (plot.currentState == FarmPlot.State.Planted || plot.currentState == FarmPlot.State.Ready);
 
-        // Only display tooltip after brief hover (0.08s) on non-empty plots, or empty plots with seed selected
-        bool hasSeed = InventoryButton.selectedItem != null &&
-                       (InventoryButton.selectedItem.itemType == ItemData.ItemType.Seed ||
-                        InventoryButton.selectedItem.itemName.ToLower().Contains("seed"));
-
-        bool shouldShow = hoverTimer >= 0.08f && (plot.currentState != FarmPlot.State.Empty || hasSeed);
-
-        if (shouldShow)
+        if (isCropPlot && hoverTimer >= 0.04f)
         {
-            if (!tooltipCanvasGO.activeSelf) tooltipCanvasGO.SetActive(true);
-
-            // Populate text
-            if (plot.currentState == FarmPlot.State.Ready && plot.currentCrop != null)
-            {
-                int harvestAmt = Mathf.Max(1, plot.currentCrop.harvestAmount);
-                titleText.text = $"<color=#FFE066>★ {plot.currentCrop.cropName}</color>";
-                statusText.text = $"<color=#50FA7B><b>Chín Vàng</b></color> • Nhấp chuột để Thu Hoạch (+{harvestAmt})";
-            }
-            else if (plot.currentState == FarmPlot.State.Planted && plot.currentCrop != null)
-            {
-                int totalStages = (plot.currentCrop.growthStages != null && plot.currentCrop.growthStages.Length > 0)
-                    ? plot.currentCrop.growthStages.Length
-                    : 1;
-                int currentStageNum = Mathf.Clamp(plot.currentStage + 1, 1, totalStages);
-                int daysNeeded = Mathf.Max(1, plot.currentCrop.growthTime) - plot.daysInCurrentStage;
-
-                // Visual dot progress: e.g. [ ● ● ○ ]
-                string dots = "";
-                for (int i = 0; i < totalStages; i++)
-                {
-                    dots += (i < currentStageNum) ? "<color=#50FA7B>●</color> " : "<color=#666666>○</color> ";
-                }
-
-                titleText.text = $"{plot.currentCrop.cropName}  [ {dots.Trim()} ]";
-                statusText.text = $"Giai đoạn {currentStageNum}/{totalStages} • <color=#8BE9FD>Còn ~{daysNeeded} ngày (lần ngủ) nữa</color>";
-            }
-            else if (plot.currentState == FarmPlot.State.Empty && hasSeed)
-            {
-                titleText.text = $"<color=#50FA7B>Ô Đất Trống</color>";
-                statusText.text = $"Sẵn sàng gieo hạt: <b>{InventoryButton.selectedItem.itemName}</b>";
-            }
-
-            // Position tooltip smoothly above the plot in screen-space
-            if (mainCam != null)
-            {
-                Vector3 worldAnchor = plot.transform.position + Vector3.up * 0.75f;
-                Vector3 screenPos = mainCam.WorldToScreenPoint(worldAnchor);
-
-                // Clamp to screen edges
-                screenPos.x = Mathf.Clamp(screenPos.x, 140f, Screen.width - 140f);
-                screenPos.y = Mathf.Clamp(screenPos.y, 40f, Screen.height - 40f);
-                screenPos.z = 0f;
-
-                tooltipPanelRT.position = screenPos;
-            }
-
-            currentTooltipAlpha = Mathf.MoveTowards(currentTooltipAlpha, 1f, Time.deltaTime * 12f);
-            tooltipCanvasGroup.alpha = currentTooltipAlpha;
+            ItemTooltipUI.EnsureInstance()?.ShowCrop(plot);
         }
         else
         {
-            currentTooltipAlpha = Mathf.MoveTowards(currentTooltipAlpha, 0f, Time.deltaTime * 16f);
-            tooltipCanvasGroup.alpha = currentTooltipAlpha;
-            if (currentTooltipAlpha <= 0.01f && tooltipCanvasGO.activeSelf)
+            if (ItemTooltipUI.Instance != null && ItemTooltipUI.Instance.IsShowingCrop)
             {
-                tooltipCanvasGO.SetActive(false);
+                ItemTooltipUI.Instance.Hide();
             }
         }
     }
@@ -404,6 +349,11 @@ public class FarmCursorHighlight : MonoBehaviour
             {
                 highlightGO.SetActive(false);
             }
+        }
+
+        if (ItemTooltipUI.Instance != null && ItemTooltipUI.Instance.IsShowingCrop)
+        {
+            ItemTooltipUI.Instance.Hide();
         }
 
         if (tooltipCanvasGroup != null)

@@ -257,6 +257,8 @@ public class TutorialDialogueUI : MonoBehaviour
     /// <summary>
     /// Displays completion fanfare before advancing.
     /// </summary>
+    private static readonly WaitForSeconds _typewriterDelay = new WaitForSeconds(0.015f);
+
     public void ShowCompletionFeedback(System.Action onComplete)
     {
         StartCoroutine(CompletionRoutine(onComplete));
@@ -269,7 +271,7 @@ public class TutorialDialogueUI : MonoBehaviour
             trackerStatusText.text = "<color=#50FA7B><b>HOÀN THÀNH MỤC TIÊU!</b></color>";
         }
 
-        yield return new WaitForSecondsRealtime(0.45f);
+        yield return new WaitForSecondsRealtime(0.25f);
         onComplete?.Invoke();
     }
 
@@ -331,14 +333,13 @@ public class TutorialDialogueUI : MonoBehaviour
             ? dialogueBodyText.textInfo.characterCount
             : fullText.Length;
 
-        float charDelay = 0.015f;
         for (int i = 1; i <= totalChars; i++)
         {
             if (dialogueBodyText != null)
             {
                 dialogueBodyText.maxVisibleCharacters = i;
             }
-            yield return new WaitForSeconds(charDelay);
+            yield return _typewriterDelay;
         }
 
         isTyping = false;

@@ -222,8 +222,6 @@ public class FarmPlot : MonoBehaviour
                     itemContainer.AddItem(currentCrop.producedItem, harvestCount);
                 }
             }
-
-            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, $"Harvested +{harvestCount} {currentCrop.cropName}!", new Color(1f, 0.85f, 0.2f), 4.2f);
         }
 
         if (VFXManager.Instance != null)

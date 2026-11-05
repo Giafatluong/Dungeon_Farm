@@ -234,13 +234,7 @@ public class PlayerInteraction : MonoBehaviour
         }
         else if (farmPlot.currentState == FarmPlot.State.Planted && farmPlot.currentCrop != null)
         {
-            int totalStages = (farmPlot.currentCrop.growthStages != null && farmPlot.currentCrop.growthStages.Length > 0)
-                ? farmPlot.currentCrop.growthStages.Length
-                : 1;
-            int stageNum = farmPlot.currentStage + 1;
-            int daysNeeded = Mathf.Max(1, farmPlot.currentCrop.growthTime) - farmPlot.daysInCurrentStage;
-            string progressMsg = $"{farmPlot.currentCrop.cropName}: Stage {stageNum}/{totalStages} (~{daysNeeded} days left)";
-            DamagePopupManager.ShowText(farmPlot.transform.position + Vector3.up * 0.8f, progressMsg, new Color(0.4f, 0.85f, 1f), 3.5f);
+            // Không hiển thị popup chữ bay nữa; thông tin cây trồng được hiển thị trực tiếp qua bảng tooltip khi rê chuột vào
             return true;
         }
 
