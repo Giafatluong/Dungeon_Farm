@@ -84,20 +84,61 @@ public class RewardChest : MonoBehaviour
     }
 
     /// <summary>
+    /// Checks whether an item is a Boss drop, rare relic, or goddess statue offering trophy.
+    /// These items must NEVER drop from regular dungeon chests (they only drop from Boss fights or floor completion rewards).
+    /// </summary>
+    public static bool IsBossOrRareTrophyItem(ItemData item)
+    {
+        if (item == null) return false;
+        if (item.isRare) return true;
+        if (item.GetRarity() == ItemData.ItemRarity.Epic) return true;
+
+        string n = item.name.ToLower();
+        string iname = !string.IsNullOrEmpty(item.itemName) ? item.itemName.ToLower() : "";
+        if (n.Contains("boss") || iname.Contains("boss") ||
+            n.Contains("crown") || iname.Contains("vương miện") ||
+            n.Contains("slimecore") || iname.Contains("lõi slime") ||
+            n.Contains("ancientcrown") || iname.Contains("hoa hồng cổ") ||
+            n.Contains("darkessence") || iname.Contains("tinh thể") ||
+            n.Contains("offering") || iname.Contains("hiến tế") ||
+            n.Contains("item_monster") || iname.Contains("quái") || iname.Contains("mảnh xương") || iname.Contains("cánh dơi") || iname.Contains("vuốt quỷ"))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private void AddItemByName(List<ItemSlot> list, ItemData[] allItems, string targetName, int amount)
+    {
+        if (allItems == null || list == null) return;
+        for (int i = 0; i < allItems.Length; i++)
+        {
+            if (allItems[i] != null && allItems[i].name.Equals(targetName, System.StringComparison.OrdinalIgnoreCase))
+            {
+                list.Add(new ItemSlot { itemData = allItems[i], amount = amount });
+                return;
+            }
+        }
+    }
+
+    /// <summary>
     /// Generates a list of loot for this reward stage.
     /// </summary>
     public List<ItemSlot> GenerateChestLoot(WaveData waveData, int floorNumber)
     {
         List<ItemSlot> result = new List<ItemSlot>();
+        ItemData[] allItems = GetAllProjectItems();
 
         // 1. Use custom wave loot if specified and non-empty
         if (waveData != null && waveData.customRewardLoot != null && waveData.customRewardLoot.Length > 0)
         {
             foreach (var slot in waveData.customRewardLoot)
             {
-                if (slot != null && slot.itemData != null && slot.amount > 0)
+                if (slot != null && slot.itemData != null)
                 {
-                    result.Add(new ItemSlot { itemData = slot.itemData, amount = slot.amount });
+                    int amt = slot.amount > 0 ? slot.amount : 1;
+                    result.Add(new ItemSlot { itemData = slot.itemData, amount = amt });
                 }
             }
 
@@ -109,6 +150,20 @@ public class RewardChest : MonoBehaviour
             }
         }
 
+        // Dedicated safety rule for Floor 0 (Tutorial): exclusively grant basic starter seeds & crops
+        if (floorNumber == 0)
+        {
+            AddItemByName(result, allItems, "CarrotSeed", 3);
+            AddItemByName(result, allItems, "Carrot", 2);
+            if (result.Count == 0)
+            {
+                AddItemByName(result, allItems, "WheatSeed", 3);
+                AddItemByName(result, allItems, "Wheat", 2);
+            }
+            currentChestLoot = result;
+            return result;
+        }
+
         // 2. Try configured default pool if valid
         _cachedCandidates.Clear();
         if (defaultLootPool != null && defaultLootPool.Length > 0)
@@ -117,13 +172,15 @@ public class RewardChest : MonoBehaviour
             {
                 if (s != null && s.itemData != null && !_cachedCandidates.Contains(s.itemData))
                 {
-                    _cachedCandidates.Add(s.itemData);
+                    if (!IsAdvancedComboFood(s.itemData) && !IsBossOrRareTrophyItem(s.itemData))
+                    {
+                        _cachedCandidates.Add(s.itemData);
+                    }
                 }
             }
         }
 
         // 3. Fallback: Automatically gather all available project items (seeds, crops, provisions)
-        ItemData[] allItems = GetAllProjectItems();
         if (_cachedCandidates.Count == 0)
         {
             for (int i = 0; i < allItems.Length; i++)
@@ -132,8 +189,10 @@ public class RewardChest : MonoBehaviour
                 if (it == null) continue;
 
                 // Never drop advanced cooked combo dishes from dungeon chests
-                // (High-tier combo meals are exclusive rewards for cooking in the Base Kitchen!)
                 if (IsAdvancedComboFood(it)) continue;
+
+                // Never drop boss trophies, crowns, or goddess offerings from dungeon chests
+                if (IsBossOrRareTrophyItem(it)) continue;
 
                 // Filter seeds by floor: Higher-tier seeds only drop on deeper floors
                 if (it.itemType == ItemData.ItemType.Seed || it.name.ToLower().Contains("seed"))
@@ -153,11 +212,11 @@ public class RewardChest : MonoBehaviour
         }
         else
         {
-            // Filter loaded candidateItems if any seeds do not meet the minimum floor requirement or are combo dishes
+            // Filter loaded candidateItems if any seeds do not meet the minimum floor requirement, are combo dishes, or are boss trophies
             for (int i = _cachedCandidates.Count - 1; i >= 0; i--)
             {
                 ItemData it = _cachedCandidates[i];
-                if (it == null || IsAdvancedComboFood(it))
+                if (it == null || IsAdvancedComboFood(it) || IsBossOrRareTrophyItem(it))
                 {
                     _cachedCandidates.RemoveAt(i);
                     continue;
@@ -178,7 +237,7 @@ public class RewardChest : MonoBehaviour
         {
             for (int i = 0; i < allItems.Length; i++)
             {
-                if (allItems[i] != null && !IsAdvancedComboFood(allItems[i]) && !_cachedCandidates.Contains(allItems[i]))
+                if (allItems[i] != null && !IsAdvancedComboFood(allItems[i]) && !IsBossOrRareTrophyItem(allItems[i]) && !_cachedCandidates.Contains(allItems[i]))
                 {
                     _cachedCandidates.Add(allItems[i]);
                 }

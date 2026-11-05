@@ -154,15 +154,29 @@ public class SceneTransitionManager : MonoBehaviour
         Time.timeScale = 1f;
         DayTransitionUI.Instance?.ResetToHiddenState();
 
-        FarmPlot.SaveAllPlots();
-        PlayerPrefs.Save();
+        int targetFloor = floor >= 0 ? floor : (ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1);
 
-        if (ProgressionManager.Instance != null)
-        {
-            int targetFloor = floor >= 0 ? floor : ProgressionManager.Instance.currentFloor;
-            ProgressionManager.Instance.StartRun(targetFloor);
-        }
-        SceneManager.LoadScene("Dungeon");
+        LoadingScreenUI.Instance.LoadScene(
+            "Dungeon",
+            targetFloor: targetFloor,
+            onBeforeLoad: () =>
+            {
+                FarmPlot.SaveAllPlots();
+                PlayerPrefs.Save();
+
+                if (ProgressionManager.Instance != null)
+                {
+                    ProgressionManager.Instance.StartRun(targetFloor);
+                }
+            },
+            onAfterLoad: () =>
+            {
+                if (DungeonBackgroundController.Instance != null)
+                {
+                    DungeonBackgroundController.Instance.SetFloorTheme(targetFloor);
+                }
+            }
+        );
     }
 
     public void LoadBase()
@@ -170,22 +184,32 @@ public class SceneTransitionManager : MonoBehaviour
         Time.timeScale = 1f;
         DayTransitionUI.Instance?.ResetToHiddenState();
 
-        // Mark that next Base scene load should spawn player at Dungeon Entrance
-        SpawnAtDungeonEntranceOnBaseLoad = true;
+        LoadingScreenUI.Instance.LoadScene(
+            "Base",
+            targetFloor: -1,
+            onBeforeLoad: () =>
+            {
+                // Mark that next Base scene load should spawn player at Dungeon Entrance
+                SpawnAtDungeonEntranceOnBaseLoad = true;
 
-        // When player leaves Dungeon for Base, all buffs (turn, combat, floor) are cleared:
-        PlayerStats.Instance?.ClearTemporaryBuffs();
+                // When player leaves Dungeon for Base, all buffs (turn, combat, floor) are cleared:
+                PlayerStats.Instance?.ClearTemporaryBuffs();
 
-        // If exiting to Base while expedition is active (day hasn't advanced), automatically advance 1 day:
-        if (ProgressionManager.Instance != null && ProgressionManager.Instance.runActive)
-        {
-            ProgressionManager.Instance.runActive = false;
-            ProgressionManager.Instance.ClearRunBlessing();
-            DungeonSummaryUI.AdvanceDayOnReturnStatic();
-        }
+                // If exiting to Base while expedition is active (day hasn't advanced), automatically advance 1 day:
+                if (ProgressionManager.Instance != null && ProgressionManager.Instance.runActive)
+                {
+                    ProgressionManager.Instance.runActive = false;
+                    ProgressionManager.Instance.ClearRunBlessing();
+                    DungeonSummaryUI.AdvanceDayOnReturnStatic();
+                }
 
-        PlayerPrefs.Save();
-        SceneManager.LoadScene("Base");
+                PlayerPrefs.Save();
+            },
+            onAfterLoad: () =>
+            {
+                PositionPlayerAtDungeonEntrance();
+            }
+        );
     }
 
     public void LoadScene(string sceneName)
@@ -196,11 +220,17 @@ public class SceneTransitionManager : MonoBehaviour
         Time.timeScale = 1f;
         DayTransitionUI.Instance?.ResetToHiddenState();
 
-        if (SceneManager.GetActiveScene().name == "Base")
-        {
-            FarmPlot.SaveAllPlots();
-        }
-        PlayerPrefs.Save();
-        SceneManager.LoadScene(sceneName);
+        LoadingScreenUI.Instance.LoadScene(
+            sceneName,
+            targetFloor: -1,
+            onBeforeLoad: () =>
+            {
+                if (SceneManager.GetActiveScene().name == "Base")
+                {
+                    FarmPlot.SaveAllPlots();
+                }
+                PlayerPrefs.Save();
+            }
+        );
     }
 }

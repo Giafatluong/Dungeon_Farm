@@ -135,7 +135,7 @@ public class DungeonEntranceUI : MonoBehaviour
         {
             floorNumber = 1,
             floorName = "TẦNG 1: HẦM NGỤC CỔ XƯA",
-            bossName = "Vua Xương (Skeleton King)",
+            bossName = "Vua Xương",
             subTitle = "8 Phòng Thử Thách — Nông Sản Khởi Đầu (Cà Rốt & Lúa Mì)",
             description = "Mục đích: Khởi đầu làm quen chiến đấu theo lượt và thu thập giống cây cơ bản (Cà Rốt, Lúa Mì). Quái vật đánh nhanh, ít giáp. Hãy nấu Súp Cà Rốt để tăng Tốc độ và hồi phục sinh lực!"
         });
@@ -144,7 +144,7 @@ public class DungeonEntranceUI : MonoBehaviour
         {
             floorNumber = 2,
             floorName = "TẦNG 2: ĐẦM LẦY QUÁI VẬT",
-            bossName = "Slime Chúa Khổng Lồ (King Slime)",
+            bossName = "Slime Chúa Khổng Lồ",
             subTitle = "16 Phòng Bền Bỉ — Nông Sản Phòng Thủ (Ngô, Bắp Cải, Cà Chua, Dưa Chuột)",
             description = "Mục đích: Thử thách sức bền với 16 phòng. Quái vật bọc giáp (2 DEF) và tấn công mạnh (10-14 ATK). Bắt buộc phải chuẩn bị món ăn tăng Giáp (Ngô Nướng Bơ, Salad Bắp Cải) hoặc món tăng Công (Súp Cà Chua) mới có thể sống sót!"
         });
@@ -153,7 +153,7 @@ public class DungeonEntranceUI : MonoBehaviour
         {
             floorNumber = 3,
             floorName = "TẦNG 3: THÀNH CỔ QUỶ DỮ",
-            bossName = "Kỵ Sĩ Bầu Trời Hắc Ám (Dark Flying Rider)",
+            bossName = "Kỵ Sĩ Bầu Trời Hắc Ám",
             subTitle = "18 Phòng Tối Thượng — Sát Thương Bùng Nổ & Ớt Hiểm (Chilli)",
             description = "Mục đích: Tử địa khắc nghiệt trước đây. Quái vật thiết giáp hạng nặng cực trâu (4 DEF, 14-17 ATK). Chỉ có thể vượt qua khi chuẩn bị các món ăn đại tiệc cao cấp (Ngô Cay, Canh Thập Cẩm Cay) và kết hợp phước lành thần thánh!"
         });
@@ -162,7 +162,7 @@ public class DungeonEntranceUI : MonoBehaviour
         {
             floorNumber = 4,
             floorName = "TẦNG 4: HANG ĐỘNG NHAM THẠCH",
-            bossName = "Hỏa Dơi Ma Vương (Elder Magma Bat)",
+            bossName = "Hỏa Dơi Ma Vương",
             subTitle = "12 Phòng Rực Lửa — Sát Thương Tốc Độ & Nham Thạch",
             description = "Mục đích: Hang động dung nham ngầm rực lửa. Đàn dơi lửa sở hữu Tốc độ vượt trội, luôn chiếm thế thượng phong ra đòn trước. Hãy ăn Súp Cà Rốt hoặc kích hoạt Chúc Phúc Tốc Độ để không bị dồn sát thương!"
         });
@@ -171,7 +171,7 @@ public class DungeonEntranceUI : MonoBehaviour
         {
             floorNumber = 5,
             floorName = "TẦNG 5: HẦM MỘ BĂNG GIÁ",
-            bossName = "Tướng Băng Xương (Frost Skeleton General)",
+            bossName = "Tướng Băng Xương",
             subTitle = "14 Phòng Hàn Băng — Giáp Băng Kiên Cố & Cung Thủ Bắn Tỉa",
             description = "Mục đích: Khí lạnh thấu xương làm giảm nhuệ khí. Quân đoàn hộ vệ mang khiên băng cực dày kết hợp cùng Cung thủ bóng đêm rỉa máu từ xa. Cần chuẩn bị Canh Thập Cẩm Cay hoặc Súp Cà Chua để phá tan lớp giáp băng!"
         });
@@ -180,7 +180,7 @@ public class DungeonEntranceUI : MonoBehaviour
         {
             floorNumber = 6,
             floorName = "TẦNG 6: RỪNG NẤM ĐỘC",
-            bossName = "Nấm Ma Độc Cổ Thụ (Elder Bombschroom)",
+            bossName = "Nấm Ma Độc Cổ Thụ",
             subTitle = "14 Phòng U Ám — Bào Tử Độc Tố & Nổ Cảm Tử",
             description = "Mục đích: Khu rừng nấm ngầm ngập tràn khí độc. Quái vật nấm có khả năng phát nổ cảm tử gây sát thương diện rộng. Hãy phân bổ 3 AP khéo léo để tiêu diệt chúng chớp nhoáng trước khi chúng phát nổ!"
         });
@@ -189,7 +189,7 @@ public class DungeonEntranceUI : MonoBehaviour
         {
             floorNumber = 7,
             floorName = "TẦNG 7: CẤM ĐỊA HUYẾT QUÁI",
-            bossName = "Huyết Thử Vương (Bloodfang Rat Sovereign)",
+            bossName = "Huyết Thử Vương",
             subTitle = "16 Phòng Đẫm Máu — Bầy Đàn Cắn Xé & Cấu Rỉa Liên Hoàn",
             description = "Mục đích: Ổ chuột quỷ biến dị khổng lồ với nanh vuốt tẩm độc. Chúng tấn công theo bầy đàn đông đảo và liên tục. Hãy chuẩn bị các món gia cố Giáp (Ngô Nướng Bơ, Salad Bắp Cải) để phòng thủ vững vàng!"
         });
@@ -198,7 +198,7 @@ public class DungeonEntranceUI : MonoBehaviour
         {
             floorNumber = 8,
             floorName = "TẦNG 8: TÀN TÍCH HƯ VÔ",
-            bossName = "Thiện Xạ Hư Vô Cổ Đại (Ancient Void Marksman)",
+            bossName = "Thiện Xạ Hư Vô Cổ Đại",
             subTitle = "16 Phòng Cổ Đại — Bắn Tỉa Chí Mạng & Sát Thủ Bóng Đêm",
             description = "Mục đích: Đền thờ hư vô nơi các xạ thủ cổ đại canh gác. Những mũi tên bóng tối có tỉ lệ chí mạng cực cao. Người chơi cần kết hợp Giáp phòng ngự và Chúc phúc Thần Thánh để chống chịu những đòn đánh tử thần!"
         });
@@ -207,7 +207,7 @@ public class DungeonEntranceUI : MonoBehaviour
         {
             floorNumber = 9,
             floorName = "TẦNG 9: VỰC SÂU HẮC ÁM",
-            bossName = "Tà Ma Hắc Thần (Archdemon Overlord)",
+            bossName = "Tà Ma Hắc Thần",
             subTitle = "18 Phòng Vực Thẳm — Thiết Giáp Hủy Diệt & Tiêu Hao Cơn Đói",
             description = "Mục đích: Vực thẳm sâu nhất trước thềm Ngai Vàng. Quái vật mang sức mạnh hắc ám hung hãn, lượng máu khổng lồ. Hành trình dài 18 phòng tiêu tốn rất nhiều Độ No, bắt buộc phải mang theo nhiều lương thực dự trữ!"
         });
@@ -216,7 +216,7 @@ public class DungeonEntranceUI : MonoBehaviour
         {
             floorNumber = 10,
             floorName = "TẦNG 10: NGAI VÀNG VĨNH CỬU",
-            bossName = "Chúa Tể Bóng Tối (Lord of Darkness)",
+            bossName = "Chúa Tể Bóng Tối",
             subTitle = "20 Phòng Quyết Đấu — Đỉnh Cao Hầm Ngục & Hắc Huyết Tinh Thể",
             description = "Mục đích: Đại thử thách tối thượng của Hầm Ngục. Quân đoàn tinh nhuệ thiện chiến nhất bảo vệ Ngai Vàng. Đánh bại Chúa Tể Bóng Tối để đoạt lấy Hắc Huyết Tinh Thể, hoàn thành đại nghiệp và nhận vinh quang vĩnh cửu!"
         });
@@ -641,30 +641,30 @@ public class DungeonEntranceUI : MonoBehaviour
         {
             if (!selUnlocked)
             {
-                detailsText.text = $"<color=#FF5252>Locked: Defeat Floor {selectedFloor - 1} Boss to unlock</color>";
+                detailsText.text = $"<color=#FF5252>Đang khóa: Hạ gục Boss Tầng {selectedFloor - 1} để mở khóa</color>";
             }
             else if (selDefeated)
             {
                 bool bAvailable = ProgressionManager.Instance == null || ProgressionManager.Instance.IsBossAvailable(selectedFloor);
                 if (bAvailable)
                 {
-                    detailsText.text = $"<color=#FFE082>Floor {selectedFloor} Boss has respawned! Ready to challenge again for rare rewards.</color>";
+                    detailsText.text = $"<color=#FFE082>Boss Tầng {selectedFloor} đã hồi sinh! Sẵn sàng khiêu chiến lại nhận thưởng.</color>";
                 }
                 else
                 {
                     int daysLeft = ProgressionManager.Instance != null ? ProgressionManager.Instance.GetDaysUntilBossReset(selectedFloor) : 0;
-                    detailsText.text = $"<color=#69F0AE>Floor cleared. Boss has not respawned ({daysLeft} days remaining). Boss room is empty, you can advance directly to the next floor.</color>";
+                    detailsText.text = $"<color=#69F0AE>Đã vượt tầng (Boss hồi sinh sau {daysLeft} ngày). Phòng Boss trống, có thể đi qua tầng kế.</color>";
                 }
             }
             else
             {
-                detailsText.text = $"<color=#FFE082>Floor is ready. Click [ENTER FLOOR] or press Enter to depart</color>";
+                detailsText.text = $"<color=#FFE082>Tầng đã sẵn sàng. Nhấn [TIẾN VÀO] hoặc bấm Enter để xuất phát</color>";
             }
         }
 
         if (enterButtonText != null)
         {
-            enterButtonText.text = selUnlocked ? $"ENTER FLOOR {selectedFloor} (ENTER)" : $"FLOOR {selectedFloor} (LOCKED)";
+            enterButtonText.text = selUnlocked ? $"TIẾN VÀO TẦNG {selectedFloor} (ENTER)" : $"TẦNG {selectedFloor} (ĐANG KHÓA)";
         }
 
         if (enterButton != null)
@@ -853,14 +853,14 @@ public class DungeonEntranceUI : MonoBehaviour
         titleRT.anchorMax = new Vector2(0.5f, 1);
         titleRT.pivot = new Vector2(0.5f, 1);
         titleRT.anchoredPosition = new Vector2(0, -16);
-        titleRT.sizeDelta = new Vector2(500, 26);
+        titleRT.sizeDelta = new Vector2(500, 24);
 
         titleText = titleGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(titleText);
-        titleText.fontSize = 20;
+        titleText.fontSize = 16f;
         titleText.fontStyle = FontStyles.Bold;
         titleText.alignment = TextAlignmentOptions.Center;
-        titleText.text = "SELECT DUNGEON FLOOR";
+        titleText.text = "CHỌN TẦNG HẦM NGỤC";
         titleText.color = new Color(1f, 0.85f, 0.35f);
 
         // 3. Subtitle / Prompt
@@ -871,14 +871,14 @@ public class DungeonEntranceUI : MonoBehaviour
         subRT.anchorMax = new Vector2(0.5f, 1);
         subRT.pivot = new Vector2(0.5f, 1);
         subRT.anchoredPosition = new Vector2(0, -42);
-        subRT.sizeDelta = new Vector2(500, 18);
+        subRT.sizeDelta = new Vector2(500, 16);
 
         subtitleText = subtitleGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(subtitleText);
-        subtitleText.fontSize = 11.5f;
+        subtitleText.fontSize = 10.5f;
         subtitleText.fontStyle = FontStyles.Italic;
         subtitleText.alignment = TextAlignmentOptions.Center;
-        subtitleText.text = "Defeat the previous floor Boss to unlock the next floor";
+        subtitleText.text = "Đánh bại Boss tầng trước để mở khóa tầng tiếp theo";
         subtitleText.color = new Color(0.70f, 0.75f, 0.85f);
 
         // 4. Decorative divider
@@ -898,7 +898,7 @@ public class DungeonEntranceUI : MonoBehaviour
         RectTransform scrollRT = scrollGO.GetComponent<RectTransform>();
         scrollRT.anchorMin = new Vector2(0, 0);
         scrollRT.anchorMax = new Vector2(1, 1);
-        scrollRT.offsetMin = new Vector2(24, 78); // Reserved space for Hint and Footer at bottom
+        scrollRT.offsetMin = new Vector2(24, 82); // Reserved space for Hint and Footer at bottom
         scrollRT.offsetMax = new Vector2(-24, -70); // Reserved space for Header at top
 
         ScrollRect sRect = scrollGO.GetComponent<ScrollRect>();
@@ -992,15 +992,15 @@ public class DungeonEntranceUI : MonoBehaviour
         dtRT.anchorMin = new Vector2(0.5f, 0);
         dtRT.anchorMax = new Vector2(0.5f, 0);
         dtRT.pivot = new Vector2(0.5f, 0);
-        dtRT.anchoredPosition = new Vector2(0, 56);
-        dtRT.sizeDelta = new Vector2(520, 28);
+        dtRT.anchoredPosition = new Vector2(0, 54);
+        dtRT.sizeDelta = new Vector2(520, 30);
 
         detailsText = detailsTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(detailsText);
-        detailsText.fontSize = 11.5f;
+        detailsText.fontSize = 10.5f;
         detailsText.enableAutoSizing = true;
-        detailsText.fontSizeMin = 9.5f;
-        detailsText.fontSizeMax = 11.5f;
+        detailsText.fontSizeMin = 8.5f;
+        detailsText.fontSizeMax = 10.5f;
         detailsText.alignment = TextAlignmentOptions.Center;
         detailsText.textWrappingMode = TextWrappingModes.Normal;
         detailsText.text = "";
@@ -1013,7 +1013,7 @@ public class DungeonEntranceUI : MonoBehaviour
         footerRT.anchorMax = new Vector2(0.5f, 0);
         footerRT.pivot = new Vector2(0.5f, 0);
         footerRT.anchoredPosition = new Vector2(0, 12);
-        footerRT.sizeDelta = new Vector2(500, 42);
+        footerRT.sizeDelta = new Vector2(500, 38);
 
         HorizontalLayoutGroup hlg = footerGO.GetComponent<HorizontalLayoutGroup>();
         hlg.spacing = 14;
@@ -1038,12 +1038,13 @@ public class DungeonEntranceUI : MonoBehaviour
         etRT.sizeDelta = Vector2.zero;
         enterButtonText = enterTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(enterButtonText);
-        enterButtonText.fontSize = 13.5f;
+        enterButtonText.fontSize = 12f;
         enterButtonText.enableAutoSizing = true;
-        enterButtonText.fontSizeMin = 10.5f;
+        enterButtonText.fontSizeMin = 9.5f;
+        enterButtonText.fontSizeMax = 12f;
         enterButtonText.fontStyle = FontStyles.Bold;
         enterButtonText.alignment = TextAlignmentOptions.Center;
-        enterButtonText.text = "ENTER FLOOR 1 (ENTER)";
+        enterButtonText.text = "TIẾN VÀO TẦNG 1 (ENTER)";
         enterButtonText.color = Color.white;
 
         // "Back" Button
@@ -1062,10 +1063,10 @@ public class DungeonEntranceUI : MonoBehaviour
         ctRT.sizeDelta = Vector2.zero;
         TextMeshProUGUI closeText = closeTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(closeText);
-        closeText.fontSize = 13;
+        closeText.fontSize = 12f;
         closeText.fontStyle = FontStyles.Bold;
         closeText.alignment = TextAlignmentOptions.Center;
-        closeText.text = "BACK";
+        closeText.text = "QUAY LẠI";
         closeText.color = new Color(0.9f, 0.9f, 0.9f);
 
         // Top-right 'X' close button
@@ -1076,7 +1077,7 @@ public class DungeonEntranceUI : MonoBehaviour
         xRT.anchorMax = new Vector2(1, 1);
         xRT.pivot = new Vector2(1, 1);
         xRT.anchoredPosition = new Vector2(-12, -12);
-        xRT.sizeDelta = new Vector2(28, 28);
+        xRT.sizeDelta = new Vector2(26, 26);
         Image xImg = xBtnGO.GetComponent<Image>();
         Button xBtn = xBtnGO.GetComponent<Button>();
         DungeonUIAssetHelper.StyleButton(xBtn, xImg, new Color(0.25f, 0.28f, 0.35f, 0.9f), new Color(0.85f, 0.25f, 0.25f, 1f));
@@ -1090,7 +1091,7 @@ public class DungeonEntranceUI : MonoBehaviour
         xtRT.sizeDelta = Vector2.zero;
         TextMeshProUGUI xt = xTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(xt);
-        xt.fontSize = 14;
+        xt.fontSize = 12;
         xt.fontStyle = FontStyles.Bold;
         xt.alignment = TextAlignmentOptions.Center;
         xt.text = "X";
@@ -1105,8 +1106,8 @@ public class DungeonEntranceUI : MonoBehaviour
         cardGO.transform.SetParent(parent, false);
 
         LayoutElement le = cardGO.GetComponent<LayoutElement>();
-        le.preferredHeight = 58;
-        le.minHeight = 58;
+        le.preferredHeight = 52;
+        le.minHeight = 52;
 
         Image cardBg = cardGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(cardBg, new Color(0.12f, 0.16f, 0.23f, 0.95f));
@@ -1131,7 +1132,7 @@ public class DungeonEntranceUI : MonoBehaviour
         bRT.anchorMax = new Vector2(0, 0.5f);
         bRT.pivot = new Vector2(0, 0.5f);
         bRT.anchoredPosition = new Vector2(8, 0);
-        bRT.sizeDelta = new Vector2(46, 42);
+        bRT.sizeDelta = new Vector2(38, 36);
         Image badgeBg = badgeGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlotImage(badgeBg, new Color(0.18f, 0.22f, 0.32f, 1f));
 
@@ -1143,7 +1144,7 @@ public class DungeonEntranceUI : MonoBehaviour
         btRT.sizeDelta = Vector2.zero;
         TextMeshProUGUI bText = bTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(bText);
-        bText.fontSize = 13.5f;
+        bText.fontSize = 11.5f;
         bText.fontStyle = FontStyles.Bold;
         bText.alignment = TextAlignmentOptions.Center;
         bText.text = $"T{floorNum}";
@@ -1156,8 +1157,8 @@ public class DungeonEntranceUI : MonoBehaviour
         cRT.anchorMin = new Vector2(0, 0);
         cRT.anchorMax = new Vector2(1, 1);
         cRT.pivot = new Vector2(0, 0.5f);
-        cRT.offsetMin = new Vector2(62, 3);
-        cRT.offsetMax = new Vector2(-130, -3);
+        cRT.offsetMin = new Vector2(52, 2);
+        cRT.offsetMax = new Vector2(-108, -2);
 
         // Floor Name
         GameObject nameGO = new GameObject("FloorName", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -1166,15 +1167,18 @@ public class DungeonEntranceUI : MonoBehaviour
         nRT.anchorMin = new Vector2(0, 0.5f);
         nRT.anchorMax = new Vector2(1, 1);
         nRT.pivot = new Vector2(0, 0.5f);
-        nRT.anchoredPosition = new Vector2(0, 2);
-        nRT.sizeDelta = new Vector2(0, 24);
+        nRT.anchoredPosition = new Vector2(0, 5);
+        nRT.sizeDelta = new Vector2(0, 18);
         TextMeshProUGUI nameText = nameGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(nameText);
-        nameText.fontSize = 14;
+        nameText.fontSize = 11.5f;
         nameText.enableAutoSizing = true;
-        nameText.fontSizeMin = 10.5f;
+        nameText.fontSizeMin = 9f;
+        nameText.fontSizeMax = 11.5f;
         nameText.fontStyle = FontStyles.Bold;
         nameText.alignment = TextAlignmentOptions.Left;
+        nameText.textWrappingMode = TextWrappingModes.NoWrap;
+        nameText.overflowMode = TextOverflowModes.Ellipsis;
         nameText.text = data.floorName;
         nameText.color = Color.white;
 
@@ -1185,14 +1189,17 @@ public class DungeonEntranceUI : MonoBehaviour
         bossRT.anchorMin = new Vector2(0, 0);
         bossRT.anchorMax = new Vector2(1, 0.5f);
         bossRT.pivot = new Vector2(0, 0.5f);
-        bossRT.anchoredPosition = new Vector2(0, -2);
-        bossRT.sizeDelta = new Vector2(0, 18);
+        bossRT.anchoredPosition = new Vector2(0, -5);
+        bossRT.sizeDelta = new Vector2(0, 16);
         TextMeshProUGUI bossText = bossGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(bossText);
-        bossText.fontSize = 10.5f;
+        bossText.fontSize = 9.5f;
         bossText.enableAutoSizing = true;
-        bossText.fontSizeMin = 8.5f;
+        bossText.fontSizeMin = 7.5f;
+        bossText.fontSizeMax = 9.5f;
         bossText.alignment = TextAlignmentOptions.Left;
+        bossText.textWrappingMode = TextWrappingModes.NoWrap;
+        bossText.overflowMode = TextOverflowModes.Ellipsis;
         bossText.text = $"Boss: {data.bossName}";
         bossText.color = new Color(0.6f, 0.72f, 0.82f);
 
@@ -1203,8 +1210,8 @@ public class DungeonEntranceUI : MonoBehaviour
         sRT.anchorMin = new Vector2(1, 0.5f);
         sRT.anchorMax = new Vector2(1, 0.5f);
         sRT.pivot = new Vector2(1, 0.5f);
-        sRT.anchoredPosition = new Vector2(-10, 0);
-        sRT.sizeDelta = new Vector2(116, 32);
+        sRT.anchoredPosition = new Vector2(-8, 0);
+        sRT.sizeDelta = new Vector2(96, 26);
 
         Image statusBg = statusBoxGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(statusBg, new Color(0.15f, 0.25f, 0.4f, 0.85f));
@@ -1217,12 +1224,13 @@ public class DungeonEntranceUI : MonoBehaviour
         stRT.sizeDelta = Vector2.zero;
         TextMeshProUGUI sText = sTextGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(sText);
-        sText.fontSize = 11;
+        sText.fontSize = 9.5f;
         sText.enableAutoSizing = true;
-        sText.fontSizeMin = 8.5f;
+        sText.fontSizeMin = 7.5f;
+        sText.fontSizeMax = 9.5f;
         sText.fontStyle = FontStyles.Bold;
         sText.alignment = TextAlignmentOptions.Center;
-        sText.text = "READY";
+        sText.text = "SAN SANG";
         sText.color = Color.white;
 
         FloorCardUI cardUI = new FloorCardUI

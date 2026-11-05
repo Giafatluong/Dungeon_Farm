@@ -112,6 +112,7 @@ public class TutorialManager : MonoBehaviour
     public const string CombatTutorialDoneKey = "HarvestHollow_CombatTutorial_Completed";
 
     private Vector3 lastPlayerPos;
+    private bool hasTrackedFirstPos = false;
     private float distanceTraveled = 0f;
     private float lastReportedProgress = -1f;
     private int cropsHarvestedInTutorial = 0;
@@ -196,23 +197,19 @@ public class TutorialManager : MonoBehaviour
         {
             EnsureTutorialCropsReady();
 
-            // When returning to Base, re-bind active tutorial step to new scene's live transforms and targets
-            if (currentStep > TutorialStep.None && currentStep < TutorialStep.Combat && currentStep != TutorialStep.IntroCutscene)
+            if (IsTutorialCompleted || currentStep == TutorialStep.Completed)
             {
-                SetStep(currentStep);
+                TutorialDialogueUI.Instance?.HideDialogue();
+                return;
             }
-            else if (currentStep == TutorialStep.Combat)
+
+            // If Main Menu is currently open in Base, wait until it closes
+            if (MainMenuUI.Instance != null && MainMenuUI.Instance.IsOpen)
             {
-                if (PlayerPrefs.GetInt(TutorialDoneKey, 0) == 1)
-                {
-                    currentStep = TutorialStep.Completed;
-                }
-                else
-                {
-                    // Returned before completing combat (e.g. retreated) -> guide player back to Dungeon Gate
-                    SetStep(TutorialStep.DungeonGate);
-                }
+                return;
             }
+
+            StartTutorialFlow();
         }
     }
 
@@ -226,26 +223,65 @@ public class TutorialManager : MonoBehaviour
             return;
         }
 
-        // If Main Menu is currently open, wait until player chooses New Game or Continue
+        // If Main Menu is currently open, wait until player closes it or chooses New Game/Continue
         if (MainMenuUI.Instance != null && MainMenuUI.Instance.IsOpen)
         {
             return;
         }
 
-        int savedStep = PlayerPrefs.GetInt(TutorialStepKey, (int)TutorialStep.IntroCutscene);
-        currentStep = (TutorialStep)savedStep;
+        StartTutorialFlow();
+    }
+
+    /// <summary>
+    /// Called when MainMenuUI closes so the tutorial can resume or start.
+    /// </summary>
+    public void OnMainMenuClosed()
+    {
+        if (IsTutorialCompleted || currentStep == TutorialStep.Completed)
+        {
+            TutorialDialogueUI.Instance?.HideDialogue();
+            return;
+        }
+
+        StartTutorialFlow();
+    }
+
+    public void StartTutorialFlow()
+    {
+        if (IsTutorialCompleted || currentStep == TutorialStep.Completed)
+        {
+            TutorialDialogueUI.Instance?.HideDialogue();
+            return;
+        }
 
         EnsureTutorialCropsReady();
 
-        if (currentStep == TutorialStep.IntroCutscene)
+        int savedStep = PlayerPrefs.GetInt(TutorialStepKey, (int)TutorialStep.IntroCutscene);
+        currentStep = (TutorialStep)savedStep;
+
+        if (currentStep == TutorialStep.None || currentStep == TutorialStep.IntroCutscene)
         {
-            if (IntroCutsceneController.Instance != null)
+            bool cutscenePlayed = PlayerPrefs.GetInt("HarvestHollow_IntroCutscene_Played", 0) == 1;
+            if (!cutscenePlayed && IntroCutsceneController.Instance != null)
             {
+                currentStep = TutorialStep.IntroCutscene;
                 IntroCutsceneController.Instance.PlayIntroCutscene();
             }
             else
             {
                 OnIntroCutsceneFinished();
+            }
+        }
+        else if (currentStep == TutorialStep.Combat)
+        {
+            if (PlayerPrefs.GetInt(TutorialDoneKey, 0) == 1)
+            {
+                currentStep = TutorialStep.Completed;
+            }
+            else
+            {
+                // Returned before completing combat (e.g. retreated) -> guide player back to Dungeon Gate
+                SetStep(TutorialStep.DungeonGate);
             }
         }
         else
@@ -432,37 +468,80 @@ public class TutorialManager : MonoBehaviour
 
     private void Update()
     {
-        if (currentStep == TutorialStep.Completed || currentStep == TutorialStep.None) return;
+        if (currentStep == TutorialStep.Completed || currentStep == TutorialStep.None || currentStep == TutorialStep.IntroCutscene) return;
 
         // Step 1: Track movement
         if (currentStep == TutorialStep.Movement)
         {
-            PlayerMovement pm = PlayerMovement.Instance;
+            PlayerMovement pm = PlayerMovement.Instance != null ? PlayerMovement.Instance : Object.FindFirstObjectByType<PlayerMovement>();
             if (pm != null)
             {
-                if (lastPlayerPos != Vector3.zero)
+                if (!hasTrackedFirstPos)
                 {
-                    const float requiredDistance = 2.0f;
-                    distanceTraveled += Vector3.Distance(pm.transform.position, lastPlayerPos);
-                    if (Mathf.Abs(distanceTraveled - lastReportedProgress) >= 0.1f || distanceTraveled >= requiredDistance)
+                    lastPlayerPos = pm.transform.position;
+                    hasTrackedFirstPos = true;
+                }
+                else
+                {
+                    float delta = Vector3.Distance(pm.transform.position, lastPlayerPos);
+                    if (delta > 0.001f)
                     {
-                        lastReportedProgress = distanceTraveled;
-                        TutorialDialogueUI.Instance?.UpdateDynamicProgress(
-                            $"Tiến độ di chuyển: <color=#FFD700><b>{Mathf.Min(requiredDistance, distanceTraveled):F1}m / {requiredDistance:F1}m</b></color>"
-                        );
-                    }
-                    if (distanceTraveled >= requiredDistance)
-                    {
-                        AdvanceToNextStep();
+                        distanceTraveled += delta;
+                        lastPlayerPos = pm.transform.position;
                     }
                 }
-                lastPlayerPos = pm.transform.position;
+
+                const float requiredDistance = 2.0f;
+                if (Mathf.Abs(distanceTraveled - lastReportedProgress) >= 0.1f || distanceTraveled >= requiredDistance)
+                {
+                    lastReportedProgress = distanceTraveled;
+                    TutorialDialogueUI.Instance?.UpdateDynamicProgress(
+                        $"Tiến độ di chuyển: <color=#FFD700><b>{Mathf.Min(requiredDistance, distanceTraveled):F1}m / {requiredDistance:F1}m</b></color>"
+                    );
+                }
+                if (distanceTraveled >= requiredDistance)
+                {
+                    AdvanceToNextStep();
+                }
             }
         }
         // Step 2: Track opening inventory
         else if (currentStep == TutorialStep.OpenInventory)
         {
             if (InventoryController.Instance != null && InventoryController.Instance.IsInventoryOpen)
+            {
+                AdvanceToNextStep();
+            }
+        }
+        // Step 3: Harvest crop fail-safe
+        else if (currentStep == TutorialStep.HarvestCrop)
+        {
+            if (cropsHarvestedInTutorial >= RequiredHarvestCount)
+            {
+                AdvanceToNextStep();
+            }
+        }
+        // Step 5: Cooking fail-safe
+        else if (currentStep == TutorialStep.Cooking)
+        {
+            PlayerStats ps = PlayerStats.Instance != null ? PlayerStats.Instance : Object.FindFirstObjectByType<PlayerStats>();
+            if (ps != null && ps.itemContainer != null)
+            {
+                for (int i = 0; i < ps.itemContainer.itemSlots.Length; i++)
+                {
+                    var slot = ps.itemContainer.itemSlots[i];
+                    if (slot != null && slot.itemData != null && slot.itemData.name.ToLower().Contains("soup") && slot.amount > 0)
+                    {
+                        AdvanceToNextStep();
+                        break;
+                    }
+                }
+            }
+        }
+        // Step 7: Goddess Statue fail-safe
+        else if (currentStep == TutorialStep.GoddessStatue)
+        {
+            if (ProgressionManager.Instance != null && ProgressionManager.Instance.permanentATK > 0)
             {
                 AdvanceToNextStep();
             }
@@ -490,8 +569,15 @@ public class TutorialManager : MonoBehaviour
 
         switch (currentStep)
         {
+            case TutorialStep.None:
+            case TutorialStep.IntroCutscene:
+                TutorialDialogueUI.Instance?.HideDialogue();
+                break;
+
             case TutorialStep.Movement:
                 distanceTraveled = 0f;
+                lastReportedProgress = -1f;
+                hasTrackedFirstPos = false;
                 lastPlayerPos = PlayerMovement.Instance != null ? PlayerMovement.Instance.transform.position : Vector3.zero;
                 TutorialDialogueUI.Instance?.ShowStep(new TutorialStepInfo
                 {
@@ -897,7 +983,14 @@ public class TutorialManager : MonoBehaviour
         PlayerPrefs.DeleteKey("Tut_Event_Intro_Seen");
         PlayerPrefs.DeleteKey("Tut_Merchant_Intro_Seen");
         PlayerPrefs.DeleteKey("Tut_Camp_Intro_Seen");
+        PlayerPrefs.DeleteKey("Tutorial_StarterCropsPrepared");
         PlayerPrefs.Save();
-        SetStep(TutorialStep.IntroCutscene);
+
+        isAdvancingStep = false;
+        cropsHarvestedInTutorial = 0;
+        distanceTraveled = 0f;
+        lastReportedProgress = -1f;
+        hasTrackedFirstPos = false;
+        currentStep = TutorialStep.IntroCutscene;
     }
 }

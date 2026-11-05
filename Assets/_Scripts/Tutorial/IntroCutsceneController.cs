@@ -5,27 +5,26 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Cinematic Intro Cutscene Controller.
-/// Plays a sweeping cinematic camera glide with letterbox black bars and poetic narration
-/// upon starting a new game, then smoothly transitions into the player tutorial.
-/// Supports clicking (or Space / Enter) to instantly skip to the next sentence, or ESC to skip entirely.
+/// Dedicated World Intro Screen Controller.
+/// Plays an atmospheric, standalone dark intro screen with storytelling narration lines
+/// appearing purely in the center upon starting a new game, before seamlessly fading into gameplay.
+/// Supports clicking (or Space / Enter) to advance sentences, or ESC to skip entirely.
 /// </summary>
 public class IntroCutsceneController : MonoBehaviour
 {
     public static IntroCutsceneController Instance { get; private set; }
 
-    [Header("Cinematic Settings")]
+    [Header("Intro Settings")]
     [SerializeField] private bool playOnStart = true;
-    [SerializeField] private float panSpeed = 7.0f;
 
     private Camera mainCam;
     private CameraController camController;
     private PlayerMovement playerMovement;
 
     private GameObject cutsceneCanvasGO;
-    private RectTransform topBar;
-    private RectTransform bottomBar;
-    private TextMeshProUGUI subtitleText;
+    private CanvasGroup canvasGroup;
+    private Image fullscreenOverlay;
+    private TextMeshProUGUI centerNarrationText;
     private TextMeshProUGUI skipPromptText;
 
     private bool isCutscenePlaying = false;
@@ -68,6 +67,12 @@ public class IntroCutsceneController : MonoBehaviour
         else
         {
             isCutscenePlaying = false;
+            if (isMenuOpen)
+            {
+                // MainMenu is open: wait for player to close menu or choose New Game/Continue
+                return;
+            }
+
             if (isTutorialDone && TutorialManager.Instance != null)
             {
                 TutorialManager.Instance.SkipOrCompleteTutorial();
@@ -105,7 +110,7 @@ public class IntroCutsceneController : MonoBehaviour
     }
 
     /// <summary>
-    /// Starts the cinematic intro cutscene sequence.
+    /// Starts the standalone world intro screen sequence.
     /// </summary>
     public void PlayIntroCutscene()
     {
@@ -127,7 +132,7 @@ public class IntroCutsceneController : MonoBehaviour
             activeCutsceneRoutine = null;
         }
 
-        EndCutscene();
+        EndCutscene(immediate: true);
     }
 
     private IEnumerator CutsceneSequenceRoutine()
@@ -137,135 +142,166 @@ public class IntroCutsceneController : MonoBehaviour
         PlayerPrefs.SetInt(CutscenePrefKey, 1);
         PlayerPrefs.Save();
 
-        // Lock player controls
+        // Lock player controls during intro
         if (playerMovement != null)
         {
             playerMovement.enabled = false;
         }
 
-        // Take over camera
+        // Snap camera over player bed in the house so world is ready behind the black screen
+        Vector3 playerPos = playerMovement != null 
+            ? playerMovement.transform.position + new Vector3(0, 1.2f, -10f) 
+            : new Vector3(12.0f, 0.5f, -10f);
+        if (mainCam != null) mainCam.transform.position = playerPos;
+
         if (camController != null)
         {
             camController.isCinematicOverride = true;
         }
 
-        // 1. Slide in Cinematic Letterbox Bars
+        // Show dedicated Intro screen
         if (cutsceneCanvasGO != null) cutsceneCanvasGO.SetActive(true);
-        yield return StartCoroutine(AnimateBars(0f, 85f, 0.35f));
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 1f;
+            canvasGroup.blocksRaycasts = true;
+        }
 
         if (skipPromptText != null)
         {
-            skipPromptText.text = "[ Click / Space: Câu tiếp  |  ESC: Bỏ qua ]";
+            skipPromptText.text = "[ Nhấp chuột / Space: Tiếp tục   |   ESC: Bỏ qua ]";
             skipPromptText.gameObject.SetActive(true);
         }
 
-        // Camera Waypoints:
-        // Waypoint 1: Goddess Statue
-        Vector3 statuePos = new Vector3(40.5f, 10.9f, -10f);
-        Statue statue = Statue.Instance != null ? Statue.Instance : FindFirstObjectByType<Statue>();
-        if (statue != null) statuePos = statue.GetStatueCenter() + new Vector3(0, 0, -10f);
+        // Sentence 1
+        yield return StartCoroutine(PlaySentenceRoutine("Nơi hầm ngục và nông trại đan xen...", 2.8f));
 
-        // Waypoint 2: Base Farm Plots & Ripe Crops
-        Vector3 farmCenter = new Vector3(2.5f, 0.5f, -10f);
+        // Sentence 2
+        yield return StartCoroutine(PlaySentenceRoutine("Ở thế giới này... Nông sản chính là sinh mệnh và vũ khí duy nhất.", 3.2f));
 
-        // Waypoint 3: Player Bed
-        Vector3 playerPos = playerMovement != null ? playerMovement.transform.position + new Vector3(0, 1.2f, -10f) : new Vector3(12.0f, 0.5f, -10f);
+        // Sentence 3
+        yield return StartCoroutine(PlaySentenceRoutine("Hãy thức tỉnh, người lữ hành...", 2.8f));
 
-        // SHOT 1: Goddess Statue
-        if (mainCam != null) mainCam.transform.position = statuePos;
-        yield return StartCoroutine(PlayShotRoutine(statuePos, "Nơi hầm ngục và nông trại đan xen...", 2.2f));
-
-        // SHOT 2: Glide to Farm Plots
-        yield return StartCoroutine(PlayShotRoutine(farmCenter, "Ở thế giới này... Nông sản chính là sinh mệnh và vũ khí duy nhất.", 2.5f));
-
-        // SHOT 3: Glide to Player Bed
-        yield return StartCoroutine(PlayShotRoutine(playerPos, "Hãy thức tỉnh, người lữ hành...", 2.0f));
-
-        // Finish Cutscene smoothly
-        EndCutscene();
+        // End Intro smoothly with fade-out into game world
+        EndCutscene(immediate: false);
     }
 
-    private IEnumerator PlayShotRoutine(Vector3 targetCamPos, string text, float autoHoldDuration)
+    private IEnumerator PlaySentenceRoutine(string text, float autoHoldDuration)
     {
         advanceRequested = false;
 
-        Vector3 startCamPos = mainCam != null ? mainCam.transform.position : targetCamPos;
-        float distance = Vector3.Distance(startCamPos, targetCamPos);
-        // Snappy smooth glide: capped between 0.3s and 1.1s
-        float glideDuration = distance > 0.1f ? Mathf.Clamp(distance / Mathf.Max(1f, panSpeed), 0.35f, 1.1f) : 0f;
-        float glideElapsed = 0f;
-
-        // Subtitle text fade-in
-        if (subtitleText != null)
+        if (centerNarrationText != null)
         {
-            subtitleText.text = text;
-            subtitleText.color = new Color(1f, 1f, 1f, 0f);
+            centerNarrationText.text = text;
+            centerNarrationText.color = new Color(0.96f, 0.96f, 0.98f, 0f);
         }
 
-        float textFadeTime = 0.18f;
-        float textElapsed = 0f;
-        float holdElapsed = 0f;
-
-        // Run glide and text reveal concurrently, allowing click to advance immediately
-        while (!advanceRequested)
+        // 1. Smooth Fade-in text (0.35f)
+        float elapsed = 0f;
+        float fadeTime = 0.35f;
+        while (elapsed < fadeTime && !advanceRequested)
         {
-            float dt = Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime;
+            float a = Mathf.Clamp01(elapsed / fadeTime);
+            if (centerNarrationText != null)
+            {
+                centerNarrationText.color = new Color(0.96f, 0.96f, 0.98f, a);
+            }
+            yield return null;
+        }
+        if (centerNarrationText != null) centerNarrationText.color = new Color(0.96f, 0.96f, 0.98f, 1f);
 
-            // Camera movement
-            if (glideDuration > 0f && glideElapsed < glideDuration)
-            {
-                glideElapsed += dt;
-                float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(glideElapsed / glideDuration));
-                if (mainCam != null) mainCam.transform.position = Vector3.Lerp(startCamPos, targetCamPos, t);
-            }
-            else
-            {
-                if (mainCam != null) mainCam.transform.position = targetCamPos;
-            }
-
-            // Subtitle fade
-            if (textElapsed < textFadeTime)
-            {
-                textElapsed += dt;
-                float alpha = Mathf.Clamp01(textElapsed / textFadeTime);
-                if (subtitleText != null) subtitleText.color = new Color(1f, 1f, 1f, alpha);
-            }
-            else
-            {
-                if (subtitleText != null) subtitleText.color = Color.white;
-                holdElapsed += dt;
-                if (holdElapsed >= autoHoldDuration)
-                {
-                    break; // Time-based auto advance
-                }
-            }
-
+        // 2. Hold on screen until duration expires or player clicks to advance
+        float holdElapsed = 0f;
+        while (holdElapsed < autoHoldDuration && !advanceRequested)
+        {
+            holdElapsed += Time.unscaledDeltaTime;
             yield return null;
         }
 
-        // Snap camera to target waypoint on advance
-        if (mainCam != null) mainCam.transform.position = targetCamPos;
-        if (subtitleText != null) subtitleText.color = Color.white;
+        // 3. Smooth Fade-out text (0.25f)
+        elapsed = 0f;
+        float fadeOutTime = 0.25f;
+        while (elapsed < fadeOutTime && !advanceRequested)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float a = 1f - Mathf.Clamp01(elapsed / fadeOutTime);
+            if (centerNarrationText != null)
+            {
+                centerNarrationText.color = new Color(0.96f, 0.96f, 0.98f, a);
+            }
+            yield return null;
+        }
+
+        if (centerNarrationText != null)
+        {
+            centerNarrationText.color = new Color(0.96f, 0.96f, 0.98f, 0f);
+            centerNarrationText.text = "";
+        }
+
+        // Brief dramatic pause between sentences (0.15f)
+        if (!advanceRequested)
+        {
+            yield return new WaitForSecondsRealtime(0.15f);
+        }
 
         advanceRequested = false;
     }
 
-    private void EndCutscene()
+    private void EndCutscene(bool immediate = false)
     {
         isCutscenePlaying = false;
         advanceRequested = false;
         activeCutsceneRoutine = null;
 
-        // Hide subtitles and skip prompt
-        if (subtitleText != null) subtitleText.text = "";
+        if (centerNarrationText != null) centerNarrationText.text = "";
         if (skipPromptText != null) skipPromptText.gameObject.SetActive(false);
 
-        // Retract cinematic letterbox bars quickly (0.3s)
-        StartCoroutine(AnimateBars(85f, 0f, 0.3f, () =>
+        if (immediate || canvasGroup == null)
         {
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 0f;
+                canvasGroup.blocksRaycasts = false;
+            }
             if (cutsceneCanvasGO != null) cutsceneCanvasGO.SetActive(false);
-        }));
+            FinishCutsceneCleanup();
+        }
+        else
+        {
+            // Smooth cinematic fade-out of the dark screen revealing the player waking up at farm
+            StartCoroutine(FadeOutScreenRoutine(0.75f, () =>
+            {
+                if (cutsceneCanvasGO != null) cutsceneCanvasGO.SetActive(false);
+                FinishCutsceneCleanup();
+            }));
+        }
+    }
 
+    private IEnumerator FadeOutScreenRoutine(float duration, System.Action onComplete)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 1f - Mathf.Clamp01(elapsed / duration);
+            }
+            yield return null;
+        }
+
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 0f;
+            canvasGroup.blocksRaycasts = false;
+        }
+
+        onComplete?.Invoke();
+    }
+
+    private void FinishCutsceneCleanup()
+    {
         // Restore Camera
         if (camController != null)
         {
@@ -278,32 +314,11 @@ public class IntroCutsceneController : MonoBehaviour
             playerMovement.enabled = true;
         }
 
-        // Notify Tutorial Manager to kick off Step 1
+        // Notify Tutorial Manager to begin Step 1 (Movement)
         if (TutorialManager.Instance != null)
         {
             TutorialManager.Instance.OnIntroCutsceneFinished();
         }
-    }
-
-    private IEnumerator AnimateBars(float fromHeight, float toHeight, float duration, System.Action onComplete = null)
-    {
-        float elapsed = 0f;
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
-            float h = Mathf.Lerp(fromHeight, toHeight, t);
-
-            if (topBar != null) topBar.sizeDelta = new Vector2(0, h);
-            if (bottomBar != null) bottomBar.sizeDelta = new Vector2(0, h);
-
-            yield return null;
-        }
-
-        if (topBar != null) topBar.sizeDelta = new Vector2(0, toHeight);
-        if (bottomBar != null) bottomBar.sizeDelta = new Vector2(0, toHeight);
-
-        onComplete?.Invoke();
     }
 
     private void EnsureUIConstructed()
@@ -315,67 +330,60 @@ public class IntroCutsceneController : MonoBehaviour
 
         Canvas c = cutsceneCanvasGO.AddComponent<Canvas>();
         c.renderMode = RenderMode.ScreenSpaceOverlay;
-        c.sortingOrder = 9998; // Just below topmost tooltips
+        c.sortingOrder = 9998;
 
         CanvasScaler cs = cutsceneCanvasGO.AddComponent<CanvasScaler>();
         cs.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         cs.referenceResolution = new Vector2(1920, 1080);
         cs.matchWidthOrHeight = 0.5f;
 
-        CanvasGroup cg = cutsceneCanvasGO.AddComponent<CanvasGroup>();
-        cg.blocksRaycasts = false;
+        canvasGroup = cutsceneCanvasGO.AddComponent<CanvasGroup>();
+        canvasGroup.alpha = 0f;
+        canvasGroup.blocksRaycasts = false;
 
-        // 1. Top Cinematic Bar
-        GameObject topBarGO = new GameObject("TopLetterbox", typeof(RectTransform), typeof(Image));
-        topBarGO.transform.SetParent(cutsceneCanvasGO.transform, false);
-        topBar = topBarGO.GetComponent<RectTransform>();
-        topBar.anchorMin = new Vector2(0, 1);
-        topBar.anchorMax = new Vector2(1, 1);
-        topBar.pivot = new Vector2(0.5f, 1f);
-        topBar.sizeDelta = new Vector2(0, 0);
-        topBarGO.GetComponent<Image>().color = new Color(0.04f, 0.04f, 0.05f, 1f);
+        // 1. Dedicated Fullscreen Dark Background
+        GameObject bgGO = new GameObject("FullscreenOverlay", typeof(RectTransform), typeof(Image));
+        bgGO.transform.SetParent(cutsceneCanvasGO.transform, false);
+        RectTransform bgRT = bgGO.GetComponent<RectTransform>();
+        bgRT.anchorMin = Vector2.zero;
+        bgRT.anchorMax = Vector2.one;
+        bgRT.sizeDelta = Vector2.zero;
+        fullscreenOverlay = bgGO.GetComponent<Image>();
+        fullscreenOverlay.color = new Color(0.03f, 0.035f, 0.05f, 1f); // Deep Atmospheric Obsidian Black
+        fullscreenOverlay.raycastTarget = true;
 
-        // 2. Bottom Cinematic Bar
-        GameObject bottomBarGO = new GameObject("BottomLetterbox", typeof(RectTransform), typeof(Image));
-        bottomBarGO.transform.SetParent(cutsceneCanvasGO.transform, false);
-        bottomBar = bottomBarGO.GetComponent<RectTransform>();
-        bottomBar.anchorMin = new Vector2(0, 0);
-        bottomBar.anchorMax = new Vector2(1, 0);
-        bottomBar.pivot = new Vector2(0.5f, 0f);
-        bottomBar.sizeDelta = new Vector2(0, 0);
-        bottomBarGO.GetComponent<Image>().color = new Color(0.04f, 0.04f, 0.05f, 1f);
+        // 2. Center Narration Text (Exactly in the middle of the screen)
+        GameObject centerTextGO = new GameObject("CenterNarrationText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        centerTextGO.transform.SetParent(cutsceneCanvasGO.transform, false);
+        RectTransform textRT = centerTextGO.GetComponent<RectTransform>();
+        textRT.anchorMin = new Vector2(0.5f, 0.5f);
+        textRT.anchorMax = new Vector2(0.5f, 0.5f);
+        textRT.pivot = new Vector2(0.5f, 0.5f);
+        textRT.anchoredPosition = Vector2.zero;
+        textRT.sizeDelta = new Vector2(1200f, 240f);
 
-        // 3. Subtitle Text
-        GameObject subGO = new GameObject("SubtitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        subGO.transform.SetParent(bottomBarGO.transform, false);
-        RectTransform subRT = subGO.GetComponent<RectTransform>();
-        subRT.anchorMin = Vector2.zero;
-        subRT.anchorMax = Vector2.one;
-        subRT.offsetMin = new Vector2(40, 10);
-        subRT.offsetMax = new Vector2(-40, -10);
+        centerNarrationText = centerTextGO.GetComponent<TextMeshProUGUI>();
+        centerNarrationText.fontSize = 32;
+        centerNarrationText.alignment = TextAlignmentOptions.Center;
+        centerNarrationText.fontStyle = FontStyles.Bold;
+        centerNarrationText.color = new Color(0.96f, 0.96f, 0.98f, 1f);
+        DungeonUIAssetHelper.ApplyFont(centerNarrationText);
 
-        subtitleText = subGO.GetComponent<TextMeshProUGUI>();
-        subtitleText.fontSize = 22;
-        subtitleText.alignment = TextAlignmentOptions.Center;
-        subtitleText.fontStyle = FontStyles.Bold;
-        subtitleText.color = Color.white;
-        TMP_FontAsset font = DungeonUIAssetHelper.GetFontAsset();
-        if (font != null) subtitleText.font = font;
-
-        // 4. Skip Prompt Text
+        // 3. Skip Prompt Text (At the bottom of the screen)
         GameObject skipGO = new GameObject("SkipPrompt", typeof(RectTransform), typeof(TextMeshProUGUI));
-        skipGO.transform.SetParent(topBarGO.transform, false);
+        skipGO.transform.SetParent(cutsceneCanvasGO.transform, false);
         RectTransform skipRT = skipGO.GetComponent<RectTransform>();
-        skipRT.anchorMin = new Vector2(1, 0.5f);
-        skipRT.anchorMax = new Vector2(1, 0.5f);
-        skipRT.pivot = new Vector2(1, 0.5f);
-        skipRT.anchoredPosition = new Vector2(-25, 0);
+        skipRT.anchorMin = new Vector2(0.5f, 0.06f);
+        skipRT.anchorMax = new Vector2(0.5f, 0.06f);
+        skipRT.pivot = new Vector2(0.5f, 0.5f);
+        skipRT.anchoredPosition = Vector2.zero;
+        skipRT.sizeDelta = new Vector2(800f, 32f);
 
         skipPromptText = skipGO.GetComponent<TextMeshProUGUI>();
-        skipPromptText.fontSize = 13;
-        skipPromptText.color = new Color(0.7f, 0.7f, 0.75f, 0.8f);
-        skipPromptText.alignment = TextAlignmentOptions.Right;
-        if (font != null) skipPromptText.font = font;
+        skipPromptText.fontSize = 15;
+        skipPromptText.color = new Color(0.6f, 0.65f, 0.75f, 0.7f);
+        skipPromptText.alignment = TextAlignmentOptions.Center;
+        DungeonUIAssetHelper.ApplyFont(skipPromptText);
 
         cutsceneCanvasGO.SetActive(false);
     }

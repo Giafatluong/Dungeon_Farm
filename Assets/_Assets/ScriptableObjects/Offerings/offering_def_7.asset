@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -19,11 +19,11 @@ MonoBehaviour:
   prerequisiteOfferingKey: 'offering_def_6'
   requiredItems:
   - item: {fileID: 11400000, guid: 5aac5a38adcb69d4d8122b9760c16186, type: 2}
-    amount: 16
-  - item: {fileID: 11400000, guid: 7b235b7cc0dbff740ad1722db4b69233, type: 2}
-    amount: 4
+    amount: 14
+  - item: {fileID: 11400000, guid: c1100003417244a47895e7b4112e4f03, type: 2}
+    amount: 3
   - item: {fileID: 11400000, guid: 6f0551175f3de074a948a8c67a7e7dce, type: 2}
-    amount: 8
+    amount: 6
   rewardStat: 1
   rewardAmount: 1
   completed: 0

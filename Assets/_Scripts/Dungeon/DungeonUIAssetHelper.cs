@@ -128,6 +128,22 @@ public static class DungeonUIAssetHelper
     public static Sprite GetChestSprite()
     {
         if (_chestSprite != null) return _chestSprite;
+
+#if UNITY_EDITOR
+        Object[] sub = UnityEditor.AssetDatabase.LoadAllAssetRepresentationsAtPath("Assets/Kenmi/Cute Fantasy RPG - 16x16 top down pixel art asset pack/Sprites/House/Objects/Golden_Chest_Anim.png");
+        if (sub != null && sub.Length > 0)
+        {
+            for (int i = 0; i < sub.Length; i++)
+            {
+                if (sub[i] is Sprite s && (s.name == "Golden_Chest_Anim_0" || s.name == "Golden_Chest_Anim_4"))
+                {
+                    _chestSprite = s;
+                    return _chestSprite;
+                }
+            }
+        }
+#endif
+
         _chestSprite = FindSprite("Golden_Chest_Anim_0") 
                     ?? FindSprite("Golden_Chest_Anim_4") 
                     ?? FindSprite("TX Props Chest Opened")
@@ -511,19 +527,34 @@ public static class DungeonUIAssetHelper
 
         Sprite found = null;
 
-        // 1. Direct memory scan pass for loaded sprites
-        Sprite[] sprites = Resources.FindObjectsOfTypeAll<Sprite>();
-        for (int i = 0; i < sprites.Length; i++)
+#if UNITY_EDITOR
+        // 1. Direct path lookup for primary UI and environment assets (instant 0ms resolution)
+        if (spriteName.StartsWith("UI_", System.StringComparison.OrdinalIgnoreCase))
         {
-            if (sprites[i] != null && sprites[i].name.Equals(spriteName, System.StringComparison.OrdinalIgnoreCase))
+            found = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>($"Assets/_Assets/Ui_Inventory/{spriteName}.png");
+        }
+        else if (spriteName.StartsWith("E1_") || spriteName.StartsWith("E2_") || spriteName.StartsWith("E3_") || spriteName.StartsWith("DungeonGround_"))
+        {
+            found = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>($"Assets/Fantasy Adventure Pack/Sprites/Environment Sprites/{spriteName}.png");
+        }
+#endif
+
+        // 2. Direct memory scan pass for loaded sprites
+        if (found == null)
+        {
+            Sprite[] sprites = Resources.FindObjectsOfTypeAll<Sprite>();
+            for (int i = 0; i < sprites.Length; i++)
             {
-                found = sprites[i];
-                break;
+                if (sprites[i] != null && sprites[i].name.Equals(spriteName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    found = sprites[i];
+                    break;
+                }
             }
         }
 
 #if UNITY_EDITOR
-        // 2. Editor AssetDatabase pass (finds sprites on disk if not preloaded)
+        // 3. Editor AssetDatabase pass (finds sprites on disk if not preloaded)
         if (found == null)
         {
             string[] guids = UnityEditor.AssetDatabase.FindAssets($"{spriteName} t:Sprite");
@@ -540,9 +571,10 @@ public static class DungeonUIAssetHelper
         }
 #endif
 
-        // 3. Fallback contains match
+        // 4. Fallback contains match
         if (found == null)
         {
+            Sprite[] sprites = Resources.FindObjectsOfTypeAll<Sprite>();
             for (int i = 0; i < sprites.Length; i++)
             {
                 if (sprites[i] != null && sprites[i].name.IndexOf(spriteName, System.StringComparison.OrdinalIgnoreCase) >= 0)

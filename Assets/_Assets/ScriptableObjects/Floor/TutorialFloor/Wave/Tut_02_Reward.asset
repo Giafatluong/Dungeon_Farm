@@ -23,8 +23,8 @@ MonoBehaviour:
   maxRandomEnemies: 3
   customRewardLoot:
   - itemData: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
-    count: 3
+    amount: 3
   - itemData: {fileID: 11400000, guid: 96b10b9a95c45c84484c4737865e12cb, type: 2}
-    count: 2
+    amount: 2
   transitionDelay: 1.5
 

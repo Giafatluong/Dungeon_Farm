@@ -236,6 +236,12 @@ public class MainMenuUI : MonoBehaviour
 
         isMenuOpen = false;
         Time.timeScale = 1f; // Restore game time
+
+        // Resume/Start tutorial flow if tutorial is active
+        if (TutorialManager.Instance != null)
+        {
+            TutorialManager.Instance.OnMainMenuClosed();
+        }
     }
 
     private void ShowSubPanel(GameObject activePanel)
@@ -325,38 +331,29 @@ public class MainMenuUI : MonoBehaviour
     #region Button Actions
     public void OnContinueClicked()
     {
-        // When continuing the game, complete/dismiss all tutorials so tutor never appears!
-        if (TutorialManager.Instance != null)
-        {
-            TutorialManager.Instance.SkipOrCompleteTutorial();
-        }
-        else
-        {
-            PlayerPrefs.SetInt(TutorialManager.TutorialDoneKey, 1);
-            PlayerPrefs.SetInt(TutorialManager.TutorialStepKey, (int)TutorialManager.TutorialStep.Completed);
-            PlayerPrefs.SetInt(TutorialManager.DungeonTutorialDoneKey, 1);
-            PlayerPrefs.SetInt(TutorialManager.CombatTutorialDoneKey, 1);
-            PlayerPrefs.SetInt("HarvestHollow_IntroCutscene_Played", 1);
-            PlayerPrefs.SetInt("Tut_Reward_Intro_Seen", 1);
-            PlayerPrefs.SetInt("Tut_Event_Intro_Seen", 1);
-            PlayerPrefs.SetInt("Tut_Merchant_Intro_Seen", 1);
-            PlayerPrefs.SetInt("Tut_Camp_Intro_Seen", 1);
-            PlayerPrefs.Save();
-        }
+        // If the player already finished the tutorial in this save or has advanced days/floors, keep tutorial dismissed
+        bool isTutorialAlreadyDone = PlayerPrefs.GetInt(TutorialManager.TutorialDoneKey, 0) == 1
+                                  || PlayerPrefs.GetInt("Farm_CurrentDay", 1) > 1
+                                  || PlayerPrefs.GetInt("Dungeon_HighestUnlockedFloor", 1) > 1;
 
-        if (IntroCutsceneController.Instance != null && IntroCutsceneController.Instance.IsPlaying)
+        if (isTutorialAlreadyDone)
         {
-            IntroCutsceneController.Instance.SkipCutscene();
-        }
-
-        if (TutorialDialogueUI.Instance != null)
-        {
-            TutorialDialogueUI.Instance.HideDialogue();
-        }
-
-        if (CombatTutorialGuide.Instance != null)
-        {
-            CombatTutorialGuide.Instance.SkipTutorial();
+            if (TutorialManager.Instance != null)
+            {
+                TutorialManager.Instance.SkipOrCompleteTutorial();
+            }
+            if (IntroCutsceneController.Instance != null && IntroCutsceneController.Instance.IsPlaying)
+            {
+                IntroCutsceneController.Instance.SkipCutscene();
+            }
+            if (TutorialDialogueUI.Instance != null)
+            {
+                TutorialDialogueUI.Instance.HideDialogue();
+            }
+            if (CombatTutorialGuide.Instance != null)
+            {
+                CombatTutorialGuide.Instance.SkipTutorial();
+            }
         }
 
         Close();
@@ -474,7 +471,14 @@ public class MainMenuUI : MonoBehaviour
         ShowSubPanel(mainButtonsPanel);
         Time.timeScale = 1f;
         _hasShownInitialMenu = true;
-        SceneManager.LoadScene("Base");
+        if (SceneTransitionManager.Instance != null)
+        {
+            SceneTransitionManager.Instance.LoadScene("Base");
+        }
+        else
+        {
+            SceneManager.LoadScene("Base");
+        }
     }
 
     public void OnConfirmNewGameNo()

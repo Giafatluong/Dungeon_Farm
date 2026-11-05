@@ -35,6 +35,11 @@ MonoBehaviour:
     minAmount: 1
     maxAmount: 1
     requireUnlock: 0
+  - item: {fileID: 11400000, guid: c1100006417244a47895e7b4112e4f06, type: 2}
+    dropChance: 1
+    minAmount: 3
+    maxAmount: 5
+    requireUnlock: 0
   - item: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
     dropChance: 1
     minAmount: 4

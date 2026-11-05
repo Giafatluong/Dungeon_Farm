@@ -57,6 +57,8 @@ public class Camp : MonoBehaviour
     public void CloseCamp()
     {
         isCampOpen = false;
+        DungeonTutorialController.Instance?.HideBanner();
+        DungeonTutorialController.Instance?.HidePointer();
         OnCampClosed?.Invoke();
     }
 

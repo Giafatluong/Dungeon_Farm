@@ -331,7 +331,7 @@ public class ItemTooltipUI : MonoBehaviour
                 ItemData.ItemType.Produce => "NÔNG SẢN",
                 ItemData.ItemType.Food => "MÓN ĂN",
                 ItemData.ItemType.Seed => "HẠT GIỐNG",
-                _ => (rarity == ItemData.ItemRarity.Epic ? "BẢO VẬT" : "VẬT PHẨM")
+                _ => (rarity == ItemData.ItemRarity.Epic ? "BẢO VẬT" : (item.name.Contains("Monster") || item.name.Contains("Slime") || item.name.Contains("Bone") || item.name.Contains("Wing") || item.name.Contains("Spore") || item.name.Contains("Talon") ? "NGUYÊN LIỆU QUÁI" : "VẬT PHẨM"))
             };
         }
 

@@ -23,9 +23,9 @@ MonoBehaviour:
   bossName: "\u1EA2i H\u01B0\u1EDBng D\u1EABn"
   clearRewardItems:
   - itemData: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
-    count: 5
+    amount: 5
   - itemData: {fileID: 11400000, guid: 96b10b9a95c45c84484c4737865e12cb, type: 2}
-    count: 5
+    amount: 5
   bonusPermanentATK: 0
   bonusPermanentDEF: 0
   bonusPermanentMaxHP: 0

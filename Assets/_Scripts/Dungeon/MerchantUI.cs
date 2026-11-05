@@ -229,6 +229,9 @@ public class MerchantUI : MonoBehaviour
             merchantPanel.SetActive(false);
         }
 
+        DungeonTutorialController.Instance?.HideBanner();
+        DungeonTutorialController.Instance?.HidePointer();
+
         UIEscapeManager.NotifyModalClosed("Merchant");
         CurrentItemPanel.RefreshHotbar();
 

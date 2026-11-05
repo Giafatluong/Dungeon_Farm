@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d1715c0574daa742a21d66538d09e89, type: 3}
+  m_Name: Item_Monster_SpicySpore
+  m_EditorClassIdentifier: Assembly-CSharp::ItemData
+  itemName: "B\xE0o T\u1EED N\u1EA5m Cay"
+  itemIcon: {fileID: -1425242021, guid: 9e09ab71c71153c4fac153d51e8d76ec, type: 3}
+  dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
+  itemType: 3
+  isStackable: 1
+  isRare: 0
+  description: "T\xFAi b\xE0o t\u1EED cay n\u1ED3ng k\xEDch th\xEDch t\u1EEB N\u1EA5m N\u1ED5. Gia v\u1ECB tr\u1EE9 danh l\xE0m b\xF9ng n\u1ED5 s\u1EE9c c\xF4ng ph\xE1 cho m\xF3n B\xEDt T\u1EBFt Qu\xE1i V\u1EADt S\u1ED1t Cay."
+  rarity: 1

@@ -26,13 +26,18 @@ MonoBehaviour:
     duration: 2
     durationType: 0
   lootDrops:
+  - item: {fileID: 11400000, guid: c1100003417244a47895e7b4112e4f03, type: 2}
+    dropChance: 0.65
+    minAmount: 1
+    maxAmount: 2
+    requireUnlock: 0
   - item: {fileID: 11400000, guid: 42b4889df87d85948a0ccdcad13f6420, type: 2}
-    dropChance: 0.6
+    dropChance: 0.5
     minAmount: 1
     maxAmount: 2
     requireUnlock: 0
   - item: {fileID: 11400000, guid: 7051582e83d39b94f9bb70c1a5bb259d, type: 2}
-    dropChance: 0.5
+    dropChance: 0.45
     minAmount: 1
     maxAmount: 2
     requireUnlock: 0

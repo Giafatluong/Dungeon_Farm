@@ -37,6 +37,7 @@ public class DungeonTutorialController : MonoBehaviour
     private int lastObservedWave = -999;
     private bool isTutorialFloor = false;
     private bool hasShownEntranceGuide = false;
+    private Coroutine activeStageGuideRoutine;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics()
@@ -88,6 +89,7 @@ public class DungeonTutorialController : MonoBehaviour
         // Listen to WaveManager entrance state
         if (waveManager != null && waveManager.isAtEntrance)
         {
+            lastObservedWave = -1;
             if (isTutorialFloor && PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0)
             {
                 ShowEntranceRoomGuide();
@@ -111,11 +113,21 @@ public class DungeonTutorialController : MonoBehaviour
         {
             waveManager = WaveManager.Instance != null ? WaveManager.Instance : FindFirstObjectByType<WaveManager>();
             if (waveManager == null) return;
+            RefreshTutorialFloorState();
         }
 
-        RefreshTutorialFloorState();
+        // 1. If currently in stage walking transition, immediately hide any lingering banner/pointer
+        if (waveManager.IsTransitioning)
+        {
+            if (bannerGO != null && bannerGO.activeSelf)
+            {
+                HideBanner();
+                HidePointer();
+            }
+            return;
+        }
 
-        // Safe entrance guide auto-trigger & tracking
+        // 2. Safe entrance guide auto-trigger & tracking
         if (waveManager.isAtEntrance)
         {
             if (!hasShownEntranceGuide && isTutorialFloor && PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0)
@@ -128,7 +140,7 @@ public class DungeonTutorialController : MonoBehaviour
             hasShownEntranceGuide = false;
         }
 
-        // Track wave changes
+        // 3. Track wave changes
         int currentWaveIdx = waveManager.GetCurrentWaveIndex();
         if (currentWaveIdx != lastObservedWave)
         {
@@ -136,13 +148,15 @@ public class DungeonTutorialController : MonoBehaviour
             OnWaveChanged(currentWaveIdx);
         }
 
-        // Update bouncing pointer if any target is set
+        // 4. Update bouncing pointer if any target is set
         UpdatePointerPosition();
     }
 
     private void OnWaveChanged(int waveIndex)
     {
         RefreshTutorialFloorState();
+        HideBanner();
+        HidePointer();
 
         if (waveIndex < 0)
         {
@@ -159,7 +173,8 @@ public class DungeonTutorialController : MonoBehaviour
         switch (wave.waveType)
         {
             case WaveData.WaveType.Combat:
-                // Combat guidance is handled by CombatTutorialGuide
+            case WaveData.WaveType.Boss:
+                // Combat guidance is handled by CombatTutorialGuide exclusively
                 HideBanner();
                 HidePointer();
                 break;
@@ -167,28 +182,28 @@ public class DungeonTutorialController : MonoBehaviour
             case WaveData.WaveType.Reward:
                 if (isTutorialFloor || PlayerPrefs.GetInt(RewardIntroSeenKey, 0) == 0)
                 {
-                    StartCoroutine(ShowRewardStageGuideDelayed());
+                    activeStageGuideRoutine = StartCoroutine(ShowRewardStageGuideDelayed());
                 }
                 break;
 
             case WaveData.WaveType.Event:
                 if (isTutorialFloor || PlayerPrefs.GetInt(EventIntroSeenKey, 0) == 0)
                 {
-                    StartCoroutine(ShowEventStageGuideDelayed());
+                    activeStageGuideRoutine = StartCoroutine(ShowEventStageGuideDelayed());
                 }
                 break;
 
             case WaveData.WaveType.Merchant:
                 if (isTutorialFloor || PlayerPrefs.GetInt(MerchantIntroSeenKey, 0) == 0)
                 {
-                    StartCoroutine(ShowMerchantStageGuideDelayed());
+                    activeStageGuideRoutine = StartCoroutine(ShowMerchantStageGuideDelayed());
                 }
                 break;
 
             case WaveData.WaveType.Camp:
                 if (isTutorialFloor || PlayerPrefs.GetInt(CampIntroSeenKey, 0) == 0)
                 {
-                    StartCoroutine(ShowCampStageGuideDelayed());
+                    activeStageGuideRoutine = StartCoroutine(ShowCampStageGuideDelayed());
                 }
                 break;
 
@@ -209,6 +224,12 @@ public class DungeonTutorialController : MonoBehaviour
         }
 
         hasShownEntranceGuide = true;
+
+        // Ensure CombatTutorialGuide is completely hidden while at Entrance
+        if (CombatTutorialGuide.Instance != null && CombatTutorialGuide.Instance.IsTutorialActive)
+        {
+            return;
+        }
 
         int totalStages = waveManager != null ? waveManager.GetTotalStages() : 5;
         ShowBanner(
@@ -456,6 +477,11 @@ public class DungeonTutorialController : MonoBehaviour
 
     public void HideBanner()
     {
+        if (activeStageGuideRoutine != null)
+        {
+            StopCoroutine(activeStageGuideRoutine);
+            activeStageGuideRoutine = null;
+        }
         if (bannerGO != null) bannerGO.SetActive(false);
     }
     #endregion

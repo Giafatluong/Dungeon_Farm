@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 284236d205486aa4c8e049821338417f, type: 3}
+  m_Name: Food_BoneBrothSoup
+  m_EditorClassIdentifier: Assembly-CSharp::FoodData
+  itemName: "S\xFAp H\u1EA7m X\u01B0\u01A1ng C\u1EE7 Qu\u1EA3"
+  itemIcon: {fileID: 1547767104, guid: 8280fb0419376c24c976a2cbf27ac05d, type: 3}
+  dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
+  itemType: 2
+  isStackable: 1
+  isRare: 0
+  description: "N\u1ED3i s\xFAp ninh t\u1EEB M\u1EA3nh X\u01B0\u01A1ng Tr\u1EAFng k\u1EBFt h\u1EE3p b\u1EAFp c\u1EA3i v\xE0 c\xE0 r\u1ED1t. N\u01B0\u1EDBc d\xF9ng ng\u1ECDt \u0111\u1EADm \u0111\xE0 gi\xFAp x\u01B0\u01A1ng kh\u1EDBp c\u1EE9ng c\xE1p t\u0103ng ph\xF2ng ng\u1EF1 v\u01B0\u1EE3t tr\u1ED9i."
+  rarity: 1
+  hungerValue: 30
+  healthValue: 25
+  foodBuff:
+  - buffs: {fileID: 11400000, guid: 2c54625ab304a2649b5fcfa7060c0828, type: 2}
+    buffDurationType: 1
+    buffDuration: 3
+    buffValue: 3

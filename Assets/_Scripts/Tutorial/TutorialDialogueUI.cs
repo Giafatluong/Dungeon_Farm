@@ -269,7 +269,7 @@ public class TutorialDialogueUI : MonoBehaviour
             trackerStatusText.text = "<color=#50FA7B><b>HOÀN THÀNH MỤC TIÊU!</b></color>";
         }
 
-        yield return new WaitForSeconds(0.45f);
+        yield return new WaitForSecondsRealtime(0.45f);
         onComplete?.Invoke();
     }
 

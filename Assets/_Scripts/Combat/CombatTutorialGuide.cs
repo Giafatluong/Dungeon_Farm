@@ -167,12 +167,11 @@ public class CombatTutorialGuide : MonoBehaviour
 
         ConstructUI();
 
-        // If tutorial is required, pre-activate OverviewAndEat immediately so player cannot perform unintended actions early
-        if (PlayerPrefs.GetInt(CombatTutorialDoneKey, 0) == 0)
-        {
-            EnsureEnemyAttackIntent(lockIntent: true);
-            SetPhase(CombatPhase.OverviewAndEat);
-        }
+        // Start dormant; tutorial only begins when combat actually starts via HandleCombatStarted
+        currentPhase = CombatPhase.None;
+        if (overlayRootGO != null) overlayRootGO.SetActive(false);
+        if (pointerGO != null) pointerGO.SetActive(false);
+        if (enemyIntentPillGO != null) enemyIntentPillGO.SetActive(false);
     }
 
     private void OnDestroy()
@@ -305,6 +304,23 @@ public class CombatTutorialGuide : MonoBehaviour
     private void HandleCombatStarted()
     {
         if (PlayerPrefs.GetInt(CombatTutorialDoneKey, 0) == 1) return;
+
+        // Ensure combat tutorial only runs on Floor 0 (the dedicated tutorial floor)
+        int currentFloor = 1;
+        if (WaveManager.Instance != null)
+        {
+            currentFloor = WaveManager.Instance.CurrentFloorNumber;
+        }
+        else if (ProgressionManager.Instance != null)
+        {
+            currentFloor = ProgressionManager.Instance.currentFloor;
+        }
+        if (currentFloor != 0) return;
+
+        // Ensure DungeonTutorialController hides any entrance or stage banners
+        DungeonTutorialController.Instance?.HideBanner();
+        DungeonTutorialController.Instance?.HidePointer();
+
         EnsureEnemyAttackIntent(lockIntent: true);
         if (currentPhase == CombatPhase.None)
         {
@@ -353,17 +369,23 @@ public class CombatTutorialGuide : MonoBehaviour
         }
 
         // If no food in bag, grant Carrot Soup
-        FoodData[] allFoods = GameAssetHelper.LoadAll<FoodData>();
         FoodData soup = null;
-        for (int i = 0; i < allFoods.Length; i++)
+#if UNITY_EDITOR
+        soup = UnityEditor.AssetDatabase.LoadAssetAtPath<FoodData>("Assets/_Assets/ScriptableObjects/Food/Data/Combo/Carrot soup.asset");
+#endif
+        if (soup == null)
         {
-            if (allFoods[i] != null && allFoods[i].name.ToLower().Contains("carrot"))
+            FoodData[] allFoods = GameAssetHelper.LoadAll<FoodData>();
+            for (int i = 0; i < allFoods.Length; i++)
             {
-                soup = allFoods[i];
-                break;
+                if (allFoods[i] != null && allFoods[i].name.ToLower().Contains("carrot"))
+                {
+                    soup = allFoods[i];
+                    break;
+                }
             }
+            if (soup == null && allFoods.Length > 0) soup = allFoods[0];
         }
-        if (soup == null && allFoods.Length > 0) soup = allFoods[0];
 
         if (soup != null)
         {

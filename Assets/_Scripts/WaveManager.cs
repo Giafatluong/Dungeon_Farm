@@ -57,6 +57,15 @@ public class WaveManager : MonoBehaviour
                 return cachedActiveFloor;
             }
 
+#if UNITY_EDITOR
+            tutorialFloorData = UnityEditor.AssetDatabase.LoadAssetAtPath<FloorData>("Assets/_Assets/ScriptableObjects/Floor/TutorialFloor/Floor_00_Tutorial.asset");
+            if (tutorialFloorData != null)
+            {
+                cachedActiveFloor = tutorialFloorData;
+                return cachedActiveFloor;
+            }
+#endif
+
             if (allFloors != null)
             {
                 for (int i = 0; i < allFloors.Length; i++)

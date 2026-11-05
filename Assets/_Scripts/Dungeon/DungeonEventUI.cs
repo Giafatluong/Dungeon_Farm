@@ -304,6 +304,9 @@ public class DungeonEventUI : MonoBehaviour
             eventPanel.SetActive(false);
         }
 
+        DungeonTutorialController.Instance?.HideBanner();
+        DungeonTutorialController.Instance?.HidePointer();
+
         onCompleteCallback?.Invoke();
         onCompleteCallback = null;
     }

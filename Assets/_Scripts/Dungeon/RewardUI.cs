@@ -191,6 +191,9 @@ public class RewardUI : MonoBehaviour
             rewardPanel.SetActive(false);
         }
 
+        DungeonTutorialController.Instance?.HideBanner();
+        DungeonTutorialController.Instance?.HidePointer();
+
         UIEscapeManager.NotifyModalClosed("Reward");
         CurrentItemPanel.RefreshHotbar();
 

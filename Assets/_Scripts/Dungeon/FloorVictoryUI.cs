@@ -800,9 +800,10 @@ public class FloorVictoryUI : MonoBehaviour
             for (int i = 0; i < currentFloor.clearRewardItems.Length; i++)
             {
                 ItemSlot s = currentFloor.clearRewardItems[i];
-                if (s != null && s.itemData != null && s.amount > 0)
+                if (s != null && s.itemData != null)
                 {
-                    currentRewardLoot.Add(new ItemSlot { itemData = s.itemData, amount = s.amount });
+                    int amt = s.amount > 0 ? s.amount : 1;
+                    currentRewardLoot.Add(new ItemSlot { itemData = s.itemData, amount = amt });
                 }
             }
         }

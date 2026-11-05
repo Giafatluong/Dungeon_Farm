@@ -158,7 +158,7 @@ public class DungeonBackgroundController : MonoBehaviour
         SetupLayersList();
 
         int initialFloor = 1;
-        if (ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor > 0)
+        if (ProgressionManager.Instance != null && ProgressionManager.Instance.currentFloor >= 0)
         {
             initialFloor = ProgressionManager.Instance.currentFloor;
         }
@@ -166,6 +166,12 @@ public class DungeonBackgroundController : MonoBehaviour
 
         // Subscribe to transition state events
         PlayerCombatVisual.OnMoveTransitionStateChanged += HandlePlayerMoveTransitionChanged;
+    }
+
+    private void Start()
+    {
+        // Ensure seamless coverage after Camera aspect ratio and resolution are established
+        RebuildAllLayers();
     }
 
     private void OnDestroy()
@@ -188,34 +194,67 @@ public class DungeonBackgroundController : MonoBehaviour
         allLayers.Add(groundLayer);
     }
 
+    private static readonly Dictionary<string, Sprite> _envSpriteCache = new(System.StringComparer.OrdinalIgnoreCase);
+
+    private static Sprite LoadEnvironmentSprite(string spriteName)
+    {
+        if (string.IsNullOrEmpty(spriteName)) return null;
+        if (_envSpriteCache.TryGetValue(spriteName, out Sprite cached)) return cached;
+
+        Sprite found = null;
+#if UNITY_EDITOR
+        string path = $"Assets/Fantasy Adventure Pack/Sprites/Environment Sprites/{spriteName}.png";
+        found = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
+#endif
+        if (found == null)
+        {
+            Sprite[] loaded = Resources.FindObjectsOfTypeAll<Sprite>();
+            for (int i = 0; i < loaded.Length; i++)
+            {
+                if (loaded[i] != null && loaded[i].name.Equals(spriteName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    found = loaded[i];
+                    break;
+                }
+            }
+        }
+
+        _envSpriteCache[spriteName] = found;
+        return found;
+    }
+
     private void InitializeDefaultThemesIfEmpty()
     {
         if (themes != null && themes.Count > 0) return;
 
         themes = new List<BackgroundTheme>();
 
-        Sprite[] allSprites = GameAssetHelper.LoadAll<Sprite>();
-        Dictionary<string, Sprite> spriteMap = new Dictionary<string, Sprite>(System.StringComparer.OrdinalIgnoreCase);
-        if (allSprites != null)
+        // Floor 0 Theme: Dedicated Tutorial Catacombs
+        themes.Add(new BackgroundTheme
         {
-            for (int i = 0; i < allSprites.Length; i++)
-            {
-                if (allSprites[i] != null && !spriteMap.ContainsKey(allSprites[i].name))
-                {
-                    spriteMap[allSprites[i].name] = allSprites[i];
-                }
-            }
-        }
+            floorNumber = 0,
+            themeName = "Tutorial Catacombs",
+            backgroundSprite = LoadEnvironmentSprite("E1_BackgroundLayer"),
+            midgroundSprite = LoadEnvironmentSprite("E1_MidLayer"),
+            foregroundSprite = LoadEnvironmentSprite("E1_FrontLayer"),
+            customGroundSprite = LoadEnvironmentSprite("DungeonGround_Floor1"),
+            backgroundColor = new Color(0.85f, 0.88f, 0.95f, 1f),
+            midgroundColor = Color.white,
+            foregroundColor = Color.white,
+            groundHighlightColor = new Color(0.62f, 0.68f, 0.80f, 1f),
+            groundBaseColor = new Color(0.22f, 0.24f, 0.32f, 1f),
+            groundShadowColor = new Color(0.09f, 0.09f, 0.13f, 1f)
+        });
 
         // Floor 1 Theme: Ancient Dungeon (E1 - Catacombs & Ancient Stone)
         themes.Add(new BackgroundTheme
         {
             floorNumber = 1,
             themeName = "Ancient Dungeon",
-            backgroundSprite = spriteMap.GetValueOrDefault("E1_BackgroundLayer"),
-            midgroundSprite = spriteMap.GetValueOrDefault("E1_MidLayer"),
-            foregroundSprite = spriteMap.GetValueOrDefault("E1_FrontLayer"),
-            customGroundSprite = spriteMap.GetValueOrDefault("DungeonGround_Floor1"),
+            backgroundSprite = LoadEnvironmentSprite("E1_BackgroundLayer"),
+            midgroundSprite = LoadEnvironmentSprite("E1_MidLayer"),
+            foregroundSprite = LoadEnvironmentSprite("E1_FrontLayer"),
+            customGroundSprite = LoadEnvironmentSprite("DungeonGround_Floor1"),
             backgroundColor = new Color(0.85f, 0.88f, 0.95f, 1f),
             midgroundColor = Color.white,
             foregroundColor = Color.white,
@@ -229,10 +268,10 @@ public class DungeonBackgroundController : MonoBehaviour
         {
             floorNumber = 2,
             themeName = "Monster Swamp",
-            backgroundSprite = spriteMap.GetValueOrDefault("E2_BackgroundLayer"),
-            midgroundSprite = spriteMap.GetValueOrDefault("E2_MidLayer"),
-            foregroundSprite = spriteMap.GetValueOrDefault("E2_FrontLayer"),
-            customGroundSprite = spriteMap.GetValueOrDefault("DungeonGround_Floor2"),
+            backgroundSprite = LoadEnvironmentSprite("E2_BackgroundLayer"),
+            midgroundSprite = LoadEnvironmentSprite("E2_MidLayer"),
+            foregroundSprite = LoadEnvironmentSprite("E2_FrontLayer"),
+            customGroundSprite = LoadEnvironmentSprite("DungeonGround_Floor2"),
             backgroundColor = new Color(0.82f, 0.95f, 0.85f, 1f),
             midgroundColor = Color.white,
             foregroundColor = Color.white,
@@ -246,10 +285,10 @@ public class DungeonBackgroundController : MonoBehaviour
         {
             floorNumber = 3,
             themeName = "Demon Citadel",
-            backgroundSprite = spriteMap.GetValueOrDefault("E3_BackgroundLayer"),
-            midgroundSprite = spriteMap.GetValueOrDefault("E3_MidLayer"),
-            foregroundSprite = spriteMap.GetValueOrDefault("E3_FrontLayer"),
-            customGroundSprite = spriteMap.GetValueOrDefault("DungeonGround_Floor3"),
+            backgroundSprite = LoadEnvironmentSprite("E3_BackgroundLayer"),
+            midgroundSprite = LoadEnvironmentSprite("E3_MidLayer"),
+            foregroundSprite = LoadEnvironmentSprite("E3_FrontLayer"),
+            customGroundSprite = LoadEnvironmentSprite("DungeonGround_Floor3"),
             backgroundColor = new Color(0.95f, 0.85f, 0.85f, 1f),
             midgroundColor = Color.white,
             foregroundColor = Color.white,
@@ -263,9 +302,9 @@ public class DungeonBackgroundController : MonoBehaviour
         {
             floorNumber = 4,
             themeName = "Magma Caverns",
-            backgroundSprite = spriteMap.GetValueOrDefault("E3_BackgroundLayer"),
-            midgroundSprite = spriteMap.GetValueOrDefault("E3_MidLayer"),
-            foregroundSprite = spriteMap.GetValueOrDefault("E3_FrontLayer"),
+            backgroundSprite = LoadEnvironmentSprite("E3_BackgroundLayer"),
+            midgroundSprite = LoadEnvironmentSprite("E3_MidLayer"),
+            foregroundSprite = LoadEnvironmentSprite("E3_FrontLayer"),
             backgroundColor = new Color(1.0f, 0.65f, 0.45f, 1f),
             midgroundColor = new Color(1.0f, 0.80f, 0.60f, 1f),
             foregroundColor = new Color(1.0f, 0.70f, 0.50f, 1f),
@@ -279,9 +318,9 @@ public class DungeonBackgroundController : MonoBehaviour
         {
             floorNumber = 5,
             themeName = "Frost Catacombs",
-            backgroundSprite = spriteMap.GetValueOrDefault("E1_BackgroundLayer"),
-            midgroundSprite = spriteMap.GetValueOrDefault("E1_MidLayer"),
-            foregroundSprite = spriteMap.GetValueOrDefault("E1_FrontLayer"),
+            backgroundSprite = LoadEnvironmentSprite("E1_BackgroundLayer"),
+            midgroundSprite = LoadEnvironmentSprite("E1_MidLayer"),
+            foregroundSprite = LoadEnvironmentSprite("E1_FrontLayer"),
             backgroundColor = new Color(0.65f, 0.88f, 1.0f, 1f),
             midgroundColor = new Color(0.78f, 0.92f, 1.0f, 1f),
             foregroundColor = new Color(0.85f, 0.95f, 1.0f, 1f),
@@ -295,9 +334,9 @@ public class DungeonBackgroundController : MonoBehaviour
         {
             floorNumber = 6,
             themeName = "Toxic Spore Hollow",
-            backgroundSprite = spriteMap.GetValueOrDefault("E2_BackgroundLayer"),
-            midgroundSprite = spriteMap.GetValueOrDefault("E2_MidLayer"),
-            foregroundSprite = spriteMap.GetValueOrDefault("E2_FrontLayer"),
+            backgroundSprite = LoadEnvironmentSprite("E2_BackgroundLayer"),
+            midgroundSprite = LoadEnvironmentSprite("E2_MidLayer"),
+            foregroundSprite = LoadEnvironmentSprite("E2_FrontLayer"),
             backgroundColor = new Color(0.55f, 0.95f, 0.65f, 1f),
             midgroundColor = new Color(0.75f, 1.0f, 0.75f, 1f),
             foregroundColor = new Color(0.70f, 0.95f, 0.70f, 1f),
@@ -311,9 +350,9 @@ public class DungeonBackgroundController : MonoBehaviour
         {
             floorNumber = 7,
             themeName = "Bloodfang Lair",
-            backgroundSprite = spriteMap.GetValueOrDefault("E3_BackgroundLayer"),
-            midgroundSprite = spriteMap.GetValueOrDefault("E3_MidLayer"),
-            foregroundSprite = spriteMap.GetValueOrDefault("E3_FrontLayer"),
+            backgroundSprite = LoadEnvironmentSprite("E3_BackgroundLayer"),
+            midgroundSprite = LoadEnvironmentSprite("E3_MidLayer"),
+            foregroundSprite = LoadEnvironmentSprite("E3_FrontLayer"),
             backgroundColor = new Color(0.95f, 0.45f, 0.45f, 1f),
             midgroundColor = new Color(1.0f, 0.60f, 0.60f, 1f),
             foregroundColor = new Color(1.0f, 0.50f, 0.50f, 1f),
@@ -327,9 +366,9 @@ public class DungeonBackgroundController : MonoBehaviour
         {
             floorNumber = 8,
             themeName = "Ruins of the Void",
-            backgroundSprite = spriteMap.GetValueOrDefault("E1_BackgroundLayer"),
-            midgroundSprite = spriteMap.GetValueOrDefault("E1_MidLayer"),
-            foregroundSprite = spriteMap.GetValueOrDefault("E1_FrontLayer"),
+            backgroundSprite = LoadEnvironmentSprite("E1_BackgroundLayer"),
+            midgroundSprite = LoadEnvironmentSprite("E1_MidLayer"),
+            foregroundSprite = LoadEnvironmentSprite("E1_FrontLayer"),
             backgroundColor = new Color(0.75f, 0.60f, 0.95f, 1f),
             midgroundColor = new Color(0.85f, 0.75f, 1.0f, 1f),
             foregroundColor = new Color(0.80f, 0.70f, 0.95f, 1f),
@@ -343,9 +382,9 @@ public class DungeonBackgroundController : MonoBehaviour
         {
             floorNumber = 9,
             themeName = "Abyssal Depths",
-            backgroundSprite = spriteMap.GetValueOrDefault("E2_BackgroundLayer"),
-            midgroundSprite = spriteMap.GetValueOrDefault("E2_MidLayer"),
-            foregroundSprite = spriteMap.GetValueOrDefault("E2_FrontLayer"),
+            backgroundSprite = LoadEnvironmentSprite("E2_BackgroundLayer"),
+            midgroundSprite = LoadEnvironmentSprite("E2_MidLayer"),
+            foregroundSprite = LoadEnvironmentSprite("E2_FrontLayer"),
             backgroundColor = new Color(0.40f, 0.60f, 0.85f, 1f),
             midgroundColor = new Color(0.50f, 0.75f, 0.95f, 1f),
             foregroundColor = new Color(0.45f, 0.65f, 0.85f, 1f),
@@ -359,9 +398,9 @@ public class DungeonBackgroundController : MonoBehaviour
         {
             floorNumber = 10,
             themeName = "The Eternal Throne",
-            backgroundSprite = spriteMap.GetValueOrDefault("E3_BackgroundLayer"),
-            midgroundSprite = spriteMap.GetValueOrDefault("E3_MidLayer"),
-            foregroundSprite = spriteMap.GetValueOrDefault("E3_FrontLayer"),
+            backgroundSprite = LoadEnvironmentSprite("E3_BackgroundLayer"),
+            midgroundSprite = LoadEnvironmentSprite("E3_MidLayer"),
+            foregroundSprite = LoadEnvironmentSprite("E3_FrontLayer"),
             backgroundColor = new Color(1.0f, 0.88f, 0.45f, 1f),
             midgroundColor = new Color(1.0f, 0.92f, 0.65f, 1f),
             foregroundColor = new Color(1.0f, 0.85f, 0.55f, 1f),
@@ -390,19 +429,7 @@ public class DungeonBackgroundController : MonoBehaviour
         Sprite groundSpr = selectedTheme.customGroundSprite;
         if (groundSpr == null)
         {
-            Sprite[] allGrounds = GameAssetHelper.LoadAll<Sprite>();
-            if (allGrounds != null)
-            {
-                string targetName = $"DungeonGround_Floor{floorNum}";
-                for (int i = 0; i < allGrounds.Length; i++)
-                {
-                    if (allGrounds[i] != null && allGrounds[i].name.Equals(targetName, System.StringComparison.OrdinalIgnoreCase))
-                    {
-                        groundSpr = allGrounds[i];
-                        break;
-                    }
-                }
-            }
+            groundSpr = LoadEnvironmentSprite($"DungeonGround_Floor{floorNum}");
 
             if (groundSpr == null)
             {
@@ -562,70 +589,29 @@ public class DungeonBackgroundController : MonoBehaviour
 
         // Ground layer uses scale 1.0 (since it's already 4.8 units tall), others use baseScale
         float scale = (layer == groundLayer) ? 1.0f : baseScale;
-        float nativeWidth = (layer.sprite != null) ? layer.sprite.bounds.size.x : 1.6f;
+        float nativeWidth = (layer.sprite != null) ? layer.sprite.bounds.size.x : 0f;
 
-        // Check if container already has segments present in the scene
-        if (layer.segments.Count == 0)
+        // If native width is not ready from sprite, try to inspect existing child
+        if (nativeWidth <= 0.01f)
         {
-            List<SpriteRenderer> existingRenderers = new List<SpriteRenderer>();
-            foreach (Transform child in layer.container.transform)
+            SpriteRenderer firstChildSr = layer.container.GetComponentInChildren<SpriteRenderer>();
+            if (firstChildSr != null && firstChildSr.sprite != null)
             {
-                SpriteRenderer sr = child.GetComponent<SpriteRenderer>();
-                if (sr != null) existingRenderers.Add(sr);
-            }
-
-            if (existingRenderers.Count > 0)
-            {
-                layer.segments.AddRange(existingRenderers);
-                layer.segments.Sort((a, b) => a.transform.localPosition.x.CompareTo(b.transform.localPosition.x));
-
-                if (layer.sprite == null && existingRenderers[0].sprite != null)
-                {
-                    nativeWidth = existingRenderers[0].sprite.bounds.size.x;
-                }
-                layer.segmentWidth = nativeWidth * scale;
-                layer.segmentCount = layer.segments.Count;
-
-                // Sync sprites & materials & tints
-                for (int i = 0; i < layer.segments.Count; i++)
-                {
-                    if (layer.sprite != null) layer.segments[i].sprite = layer.sprite;
-                    layer.segments[i].color = layer.tint;
-                    layer.segments[i].sortingOrder = layer.sortingOrder;
-                }
-                return;
+                nativeWidth = firstChildSr.sprite.bounds.size.x;
+                if (layer.sprite == null) layer.sprite = firstChildSr.sprite;
             }
         }
-        else
-        {
-            // Update existing segment visuals
-            layer.segmentWidth = nativeWidth * scale;
 
-            for (int i = 0; i < layer.segments.Count; i++)
-            {
-                if (layer.segments[i] != null)
-                {
-                    if (layer.sprite != null) layer.segments[i].sprite = layer.sprite;
-                    layer.segments[i].color = layer.tint;
-                    layer.segments[i].sortingOrder = layer.sortingOrder;
-                }
-            }
-            return;
+        if (nativeWidth <= 0.01f)
+        {
+            nativeWidth = (layer == groundLayer) ? 2.56f : 1.6f;
         }
 
-        // Destroy old segment GameObjects if any
-        for (int i = 0; i < layer.segments.Count; i++)
-        {
-            if (layer.segments[i] != null)
-            {
-                Destroy(layer.segments[i].gameObject);
-            }
-        }
-        layer.segments.Clear();
-
-        if (layer.sprite == null) return;
         float pieceWidth = nativeWidth * scale;
-        if (pieceWidth < 0.2f) pieceWidth = 4.32f;
+        if (pieceWidth < 0.2f)
+        {
+            pieceWidth = (layer == groundLayer) ? 2.56f : (1.6f * baseScale);
+        }
         layer.segmentWidth = pieceWidth;
 
         // Step distance with micro-overlap to eliminate any subpixel gap
@@ -633,29 +619,65 @@ public class DungeonBackgroundController : MonoBehaviour
 
         // Required span: covers entire camera view plus large safety buffer on both sides
         float spanNeeded = camWidth * 2.8f;
-        int count = Mathf.CeilToInt(spanNeeded / stepX);
-        if (count < 6) count = 6;
+        int count = Mathf.Max(7, Mathf.CeilToInt(spanNeeded / stepX));
         if (count % 2 == 0) count++;
         layer.segmentCount = count;
 
         int half = count / 2;
         float startX = -half * stepX;
 
+        // Collect existing child transforms under layer.container
+        List<Transform> existingChildren = new List<Transform>();
+        foreach (Transform child in layer.container.transform)
+        {
+            existingChildren.Add(child);
+        }
+
+        layer.segments.Clear();
+
         for (int i = 0; i < count; i++)
         {
-            GameObject segGo = new GameObject($"{layer.name}_Seg_{i}");
-            segGo.transform.SetParent(layer.container.transform, false);
+            Transform segTrans;
+            SpriteRenderer sr;
 
-            float posX = startX + i * stepX;
-            segGo.transform.localPosition = new Vector3(posX, 0f, 0f);
-            segGo.transform.localScale = new Vector3(scale, scale, 1f);
+            if (i < existingChildren.Count)
+            {
+                segTrans = existingChildren[i];
+                sr = segTrans.GetComponent<SpriteRenderer>();
+                if (sr == null) sr = segTrans.gameObject.AddComponent<SpriteRenderer>();
+            }
+            else
+            {
+                GameObject segGo = new GameObject($"{layer.name}_Seg_{i}");
+                segGo.transform.SetParent(layer.container.transform, false);
+                segTrans = segGo.transform;
+                sr = segGo.AddComponent<SpriteRenderer>();
+            }
 
-            SpriteRenderer sr = segGo.AddComponent<SpriteRenderer>();
-            sr.sprite = layer.sprite;
+            segTrans.localPosition = new Vector3(startX + i * stepX, 0f, 0f);
+            segTrans.localScale = new Vector3(scale, scale, 1f);
+
+            if (layer.sprite != null) sr.sprite = layer.sprite;
             sr.color = layer.tint;
             sr.sortingOrder = layer.sortingOrder;
 
             layer.segments.Add(sr);
+        }
+
+        // Clean up any surplus children
+        for (int i = count; i < existingChildren.Count; i++)
+        {
+            if (existingChildren[i] != null)
+            {
+                if (Application.isPlaying)
+                {
+                    Destroy(existingChildren[i].gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(existingChildren[i].gameObject);
+                }
+            }
         }
     }
 
@@ -702,11 +724,11 @@ public class DungeonBackgroundController : MonoBehaviour
 
     private void ScrollLayers(float distance)
     {
-        float camLeft = -9f;
+        float camLeftWorld = -9f;
         if (targetCamera != null)
         {
             float camHalfWidth = targetCamera.orthographicSize * targetCamera.aspect;
-            camLeft = targetCamera.transform.position.x - camHalfWidth;
+            camLeftWorld = targetCamera.transform.position.x - camHalfWidth;
         }
 
         foreach (ParallaxLayer layer in allLayers)
@@ -727,9 +749,17 @@ public class DungeonBackgroundController : MonoBehaviour
                 sr.transform.localPosition = pos;
             }
 
-            // 2. Wrap leftmost segments to the right
-            float leftThreshold = camLeft - (layer.segmentWidth * 0.6f);
+            // Determine left threshold in layer.container's local coordinate space
+            float camLeftInLayer = camLeftWorld;
+            if (layer.container != null)
+            {
+                camLeftInLayer = layer.container.transform.InverseTransformPoint(new Vector3(camLeftWorld, 0f, 0f)).x;
+            }
 
+            // Left threshold: when segment right edge has completely cleared camera view with safety margin
+            float leftThreshold = camLeftInLayer - 1.0f;
+
+            // 2. Wrap leftmost segments to the right
             while (layer.segments.Count > 1 && layer.segments[0] != null &&
                    (layer.segments[0].transform.localPosition.x + layer.segmentWidth * 0.5f) < leftThreshold)
             {

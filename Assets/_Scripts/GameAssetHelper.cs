@@ -19,6 +19,13 @@ public static class GameAssetHelper
     {
         System.Type type = typeof(T);
 
+        // Disallow bulk loading of heavy textures/sprites across thousands of project files
+        if (type == typeof(Sprite) || type == typeof(Texture2D))
+        {
+            Debug.LogWarning($"[GameAssetHelper] Bulk loading all assets of type {type.Name} across the entire project is disallowed for performance reasons. Load required sprites directly by path or specific Resources folder.");
+            return System.Array.Empty<T>();
+        }
+
         // Check valid cache
         if (_cache.TryGetValue(type, out object cachedObj) && cachedObj is T[] cachedArray && cachedArray.Length > 0)
         {
