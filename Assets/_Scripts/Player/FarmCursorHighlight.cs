@@ -1,6 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 
 /// <summary>
 /// World-class farming UX enhancement:
@@ -9,7 +7,7 @@ using TMPro;
 ///    - Emerald green for valid Planting spots (when a seed is selected)
 ///    - Sky cyan for growing crops
 ///    - Soft rose/red when plot is out of reach
-/// 2. Crop Inspect Tooltip: Shows crop name, growth progress dots [● ● ○], and days remaining on hover.
+/// 2. Crop Inspect Tooltip: Triggers ItemTooltipUI when hovering crops.
 /// </summary>
 [DisallowMultipleComponent]
 public class FarmCursorHighlight : MonoBehaviour
@@ -24,19 +22,9 @@ public class FarmCursorHighlight : MonoBehaviour
     private SpriteRenderer highlightRenderer;
     private static Sprite cachedBracketSprite;
 
-    // Crop Hover Tooltip UI (ScreenSpaceOverlay)
-    private GameObject tooltipCanvasGO;
-    private RectTransform tooltipPanelRT;
-    private CanvasGroup tooltipCanvasGroup;
-    private TextMeshProUGUI titleText;
-    private TextMeshProUGUI statusText;
-    private Image panelBorder;
-
     private FarmPlot currentHoveredPlot;
-    private bool isPlotNear;
     private float hoverTimer;
     private float currentHighlightAlpha;
-    private float currentTooltipAlpha;
 
     private void Awake()
     {
@@ -52,21 +40,18 @@ public class FarmCursorHighlight : MonoBehaviour
         mainCam = Camera.main;
 
         BuildHighlightObject();
-        BuildTooltipUI();
     }
 
     private void OnDisable()
     {
         DismissHighlights();
         if (highlightGO != null) highlightGO.SetActive(false);
-        if (tooltipCanvasGO != null) tooltipCanvasGO.SetActive(false);
     }
 
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
         if (highlightGO != null) Destroy(highlightGO);
-        if (tooltipCanvasGO != null) Destroy(tooltipCanvasGO);
     }
 
     #region Procedural Sprite & Highlight Setup
@@ -150,84 +135,6 @@ public class FarmCursorHighlight : MonoBehaviour
     }
     #endregion
 
-    #region Tooltip UI Construction
-    private void BuildTooltipUI()
-    {
-        tooltipCanvasGO = new GameObject("[CropInspectTooltipCanvas]");
-        tooltipCanvasGO.transform.SetParent(null);
-
-        Canvas canvas = tooltipCanvasGO.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 9990;
-
-        CanvasScaler scaler = tooltipCanvasGO.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.matchWidthOrHeight = 0.5f;
-
-        GameObject panelGO = new GameObject("TooltipPanel", typeof(RectTransform));
-        panelGO.transform.SetParent(tooltipCanvasGO.transform, false);
-        tooltipPanelRT = panelGO.GetComponent<RectTransform>();
-        tooltipPanelRT.sizeDelta = new Vector2(240f, 64f);
-        tooltipPanelRT.pivot = new Vector2(0.5f, 0f); // Anchor bottom-center
-
-        tooltipCanvasGroup = panelGO.AddComponent<CanvasGroup>();
-        tooltipCanvasGroup.alpha = 0f;
-        tooltipCanvasGroup.blocksRaycasts = false;
-        tooltipCanvasGroup.interactable = false;
-
-        // Dark background
-        Image bg = panelGO.AddComponent<Image>();
-        bg.color = new Color(0.09f, 0.08f, 0.07f, 0.94f);
-
-        // Gold border outline
-        Outline outline = panelGO.AddComponent<Outline>();
-        outline.effectColor = new Color(0.85f, 0.72f, 0.32f, 0.85f);
-        outline.effectDistance = new Vector2(1.5f, -1.5f);
-        panelBorder = bg;
-
-        // Vertical Layout
-        VerticalLayoutGroup vlg = panelGO.AddComponent<VerticalLayoutGroup>();
-        vlg.padding = new RectOffset(12, 12, 8, 8);
-        vlg.spacing = 3f;
-        vlg.childAlignment = TextAnchor.MiddleCenter;
-        vlg.childControlWidth = true;
-        vlg.childControlHeight = true;
-        vlg.childForceExpandWidth = true;
-        vlg.childForceExpandHeight = false;
-
-        ContentSizeFitter csf = panelGO.AddComponent<ContentSizeFitter>();
-        csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        // Title text
-        GameObject titleGO = new GameObject("TitleText", typeof(RectTransform));
-        titleGO.transform.SetParent(panelGO.transform, false);
-        titleText = titleGO.AddComponent<TextMeshProUGUI>();
-        titleText.fontSize = 14;
-        titleText.fontStyle = FontStyles.Bold;
-        titleText.alignment = TextAlignmentOptions.Center;
-        titleText.color = new Color(1f, 0.92f, 0.45f);
-
-        // Status text
-        GameObject statusGO = new GameObject("StatusText", typeof(RectTransform));
-        statusGO.transform.SetParent(panelGO.transform, false);
-        statusText = statusGO.AddComponent<TextMeshProUGUI>();
-        statusText.fontSize = 12;
-        statusText.alignment = TextAlignmentOptions.Center;
-        statusText.color = new Color(0.9f, 0.9f, 0.95f);
-
-        TMP_FontAsset font = DungeonUIAssetHelper.GetFontAsset();
-        if (font != null)
-        {
-            titleText.font = font;
-            statusText.font = font;
-        }
-
-        tooltipCanvasGO.SetActive(false);
-    }
-    #endregion
-
     private void Update()
     {
         if (mainCam == null) mainCam = Camera.main;
@@ -254,7 +161,6 @@ public class FarmCursorHighlight : MonoBehaviour
                 currentHoveredPlot = hovered;
                 hoverTimer = 0f;
             }
-            isPlotNear = isNear;
             hoverTimer += Time.deltaTime;
 
             UpdateBracketVisual(hovered, isNear);
@@ -354,16 +260,6 @@ public class FarmCursorHighlight : MonoBehaviour
         if (ItemTooltipUI.Instance != null && ItemTooltipUI.Instance.IsShowingCrop)
         {
             ItemTooltipUI.Instance.Hide();
-        }
-
-        if (tooltipCanvasGroup != null)
-        {
-            currentTooltipAlpha = Mathf.MoveTowards(currentTooltipAlpha, 0f, Time.deltaTime * 18f);
-            tooltipCanvasGroup.alpha = currentTooltipAlpha;
-            if (currentTooltipAlpha <= 0.01f && tooltipCanvasGO != null && tooltipCanvasGO.activeSelf)
-            {
-                tooltipCanvasGO.SetActive(false);
-            }
         }
     }
 }

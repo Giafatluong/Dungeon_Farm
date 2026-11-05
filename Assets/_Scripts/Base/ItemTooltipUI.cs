@@ -40,6 +40,10 @@ public class ItemTooltipUI : MonoBehaviour
     private Canvas parentCanvas;
     private RectTransform canvasRT;
     private ItemData currentItem;
+    private FarmPlot currentPlot;
+    private int currentPlotStage = -1;
+    private FarmPlot.State currentPlotState;
+    private int currentPlotDaysInStage = -1;
     private bool isVisible = false;
 
     // Smooth animation & gliding state
@@ -251,6 +255,16 @@ public class ItemTooltipUI : MonoBehaviour
             return;
         }
 
+        // Optimization: If already displaying this item, skip redundant layout rebuilds
+        if (isVisible && !isShowingCrop && currentItem == item && tooltipRoot != null && tooltipRoot.activeSelf)
+        {
+            return;
+        }
+
+        currentPlot = null;
+        currentPlotStage = -1;
+        currentPlotDaysInStage = -1;
+
         EnsureUIReady();
 
         bool wasHidden = !isVisible || tooltipRoot == null || !tooltipRoot.activeSelf || currentAlpha <= 0.05f;
@@ -296,6 +310,21 @@ public class ItemTooltipUI : MonoBehaviour
             return;
         }
 
+        // Optimization: If already displaying this plot with identical stage/growth, skip heavy rebuild
+        if (isVisible && isShowingCrop && currentPlot == plot &&
+            currentPlotStage == plot.currentStage &&
+            currentPlotState == plot.currentState &&
+            currentPlotDaysInStage == plot.daysInCurrentStage &&
+            tooltipRoot != null && tooltipRoot.activeSelf)
+        {
+            return;
+        }
+
+        currentPlot = plot;
+        currentPlotStage = plot.currentStage;
+        currentPlotState = plot.currentState;
+        currentPlotDaysInStage = plot.daysInCurrentStage;
+
         EnsureUIReady();
 
         bool wasHidden = !isVisible || tooltipRoot == null || !tooltipRoot.activeSelf || currentAlpha <= 0.05f;
@@ -336,6 +365,9 @@ public class ItemTooltipUI : MonoBehaviour
         isVisible = false;
         currentItem = null;
         isShowingCrop = false;
+        currentPlot = null;
+        currentPlotStage = -1;
+        currentPlotDaysInStage = -1;
 
         if (immediate)
         {

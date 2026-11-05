@@ -39,6 +39,9 @@ public class PlayerInteraction : MonoBehaviour
     }
 
     private Camera mainCam;
+    private int _lastHoveredFrame = -1;
+    private FarmPlot _cachedHoveredPlot;
+    private bool _cachedIsNear;
 
     private void Awake()
     {
@@ -174,9 +177,21 @@ public class PlayerInteraction : MonoBehaviour
 
     public FarmPlot GetHoveredFarmPlot(out bool isNear)
     {
+        if (Time.frameCount == _lastHoveredFrame)
+        {
+            isNear = _cachedIsNear;
+            return _cachedHoveredPlot;
+        }
+
+        _lastHoveredFrame = Time.frameCount;
         isNear = false;
         if (mainCam == null) mainCam = Camera.main;
-        if (mainCam == null) return null;
+        if (mainCam == null)
+        {
+            _cachedHoveredPlot = null;
+            _cachedIsNear = false;
+            return null;
+        }
         Vector2 mousePosition = mainCam.ScreenToWorldPoint(Input.mousePosition);
 
         ContactFilter2D filter = ContactFilter2D.noFilter;
@@ -187,7 +202,12 @@ public class PlayerInteraction : MonoBehaviour
         }
 
         int hitCount = Physics2D.OverlapPoint(mousePosition, filter, overlapBuffer);
-        if (hitCount <= 0) return null;
+        if (hitCount <= 0)
+        {
+            _cachedHoveredPlot = null;
+            _cachedIsNear = false;
+            return null;
+        }
 
         FarmPlot farmPlot = null;
         for (int i = 0; i < hitCount; i++)
@@ -198,7 +218,12 @@ public class PlayerInteraction : MonoBehaviour
             }
         }
 
-        if (farmPlot == null) return null;
+        if (farmPlot == null)
+        {
+            _cachedHoveredPlot = null;
+            _cachedIsNear = false;
+            return null;
+        }
 
         for (int i = currentFarmPlots.Count - 1; i >= 0; i--)
         {
@@ -206,6 +231,8 @@ public class PlayerInteraction : MonoBehaviour
         }
 
         isNear = currentFarmPlots.Contains(farmPlot) || Vector2.Distance(transform.position, farmPlot.transform.position) <= 2.5f;
+        _cachedHoveredPlot = farmPlot;
+        _cachedIsNear = isNear;
         return farmPlot;
     }
 

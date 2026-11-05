@@ -12,8 +12,6 @@ public class KitchenStation : MonoBehaviour, IInteractable
     [Header("Interaction Settings")]
     public float interactDistance = 1.6f;
     public bool playerInRange = false;
-    [Tooltip("Show the legacy prompt above the station (the player-side InteractionPromptUI replaces it)")]
-    public bool showWorldPrompt = false;
     public bool isOpen
     {
         get => KitchenUI.Instance != null && KitchenUI.Instance.IsOpen;
@@ -36,8 +34,6 @@ public class KitchenStation : MonoBehaviour, IInteractable
     private Transform playerTransform;
     private Collider2D col;
     private SpriteRenderer spriteRenderer;
-    private GameObject promptObject;
-    private TextMeshPro promptText;
     private static Sprite cachedCampfireSprite;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -69,7 +65,6 @@ public class KitchenStation : MonoBehaviour, IInteractable
     {
         SetupVisuals();
         SetupCollider();
-        SetupPrompt();
         FindPlayer();
         FindContainers();
     }
@@ -114,30 +109,6 @@ public class KitchenStation : MonoBehaviour, IInteractable
             box.isTrigger = true;
             col = box;
         }
-    }
-
-    private void SetupPrompt()
-    {
-        if (!showWorldPrompt || promptObject != null) return;
-
-        promptObject = new GameObject("KitchenPrompt");
-        promptObject.transform.SetParent(transform, false);
-        promptObject.transform.localPosition = new Vector3(0, 1.15f, 0);
-
-        promptText = promptObject.AddComponent<TextMeshPro>();
-        promptText.text = "<color=#FFD700>[E]</color> Nau An (Cooking)";
-        promptText.fontSize = 3.6f;
-        promptText.alignment = TextAlignmentOptions.Center;
-        promptText.fontStyle = FontStyles.Bold;
-        promptText.color = Color.white;
-
-        TMP_FontAsset font = DungeonUIAssetHelper.GetFontAsset();
-        if (font != null)
-        {
-            promptText.font = font;
-        }
-
-        promptObject.SetActive(false);
     }
 
     private void FindPlayer()
@@ -225,16 +196,6 @@ public class KitchenStation : MonoBehaviour, IInteractable
             bool wasInRange = playerInRange;
             playerInRange = (dist <= interactDistance);
 
-            if (promptObject != null)
-            {
-                promptObject.SetActive(showWorldPrompt && playerInRange && !isOpen);
-                if (playerInRange)
-                {
-                    float bob = Mathf.Sin(Time.time * 4f) * 0.06f;
-                    promptObject.transform.localPosition = new Vector3(0, 1.35f + bob, 0);
-                }
-            }
-
             if (wasInRange && !playerInRange && isOpen)
             {
                 CloseKitchen();
@@ -305,11 +266,6 @@ public class KitchenStation : MonoBehaviour, IInteractable
         }
 
         FindContainers();
-
-        if (promptObject != null)
-        {
-            promptObject.SetActive(false);
-        }
 
         KitchenUI ui = KitchenUI.EnsureInstance();
         if (ui != null)

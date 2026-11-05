@@ -714,23 +714,7 @@ public class DungeonEntranceUI : MonoBehaviour
 
         if (enterDungeonPanel == null)
         {
-            Canvas canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
-            if (canvas != null)
-            {
-                enterDungeonPanel = new GameObject("EnterDungeonPanel", typeof(RectTransform), typeof(Image));
-                enterDungeonPanel.transform.SetParent(canvas.transform, false);
-                RectTransform rt = enterDungeonPanel.GetComponent<RectTransform>();
-                rt.anchorMin = Vector2.zero;
-                rt.anchorMax = Vector2.one;
-                rt.sizeDelta = Vector2.zero;
-                Image bg = enterDungeonPanel.GetComponent<Image>();
-                bg.color = new Color(0, 0, 0, 0.65f);
-                enterDungeonPanel.SetActive(false);
-            }
-            else
-            {
-                return;
-            }
+            return;
         }
 
         Transform existingModal = enterDungeonPanel.transform.Find("FloorSelectionModal");
