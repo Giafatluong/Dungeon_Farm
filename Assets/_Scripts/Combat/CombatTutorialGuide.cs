@@ -86,7 +86,7 @@ public class CombatTutorialGuide : MonoBehaviour
     private CombatManager combatManager;
     private CombatPhase currentPhase = CombatPhase.None;
 
-    private const string CombatTutorialDoneKey = "HarvestHollow_CombatTutorial_Completed";
+    public const string CombatTutorialDoneKey = "HarvestHollow_CombatTutorial_Completed";
 
     [Header("Runtime State")]
     private bool hasPlayerDefendedInTutorial = false;
@@ -114,6 +114,18 @@ public class CombatTutorialGuide : MonoBehaviour
 
         // Only run if not yet completed
         if (PlayerPrefs.GetInt(CombatTutorialDoneKey, 0) == 1) return;
+
+        // Ensure combat tutorial only runs on Floor 0 (the dedicated tutorial floor)
+        int currentFloor = 1;
+        if (WaveManager.Instance != null)
+        {
+            currentFloor = WaveManager.Instance.CurrentFloorNumber;
+        }
+        else if (ProgressionManager.Instance != null)
+        {
+            currentFloor = ProgressionManager.Instance.currentFloor;
+        }
+        if (currentFloor != 0) return;
 
         if (Instance == null)
         {

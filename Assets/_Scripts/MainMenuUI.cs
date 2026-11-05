@@ -325,6 +325,40 @@ public class MainMenuUI : MonoBehaviour
     #region Button Actions
     public void OnContinueClicked()
     {
+        // When continuing the game, complete/dismiss all tutorials so tutor never appears!
+        if (TutorialManager.Instance != null)
+        {
+            TutorialManager.Instance.SkipOrCompleteTutorial();
+        }
+        else
+        {
+            PlayerPrefs.SetInt(TutorialManager.TutorialDoneKey, 1);
+            PlayerPrefs.SetInt(TutorialManager.TutorialStepKey, (int)TutorialManager.TutorialStep.Completed);
+            PlayerPrefs.SetInt(TutorialManager.DungeonTutorialDoneKey, 1);
+            PlayerPrefs.SetInt(TutorialManager.CombatTutorialDoneKey, 1);
+            PlayerPrefs.SetInt("HarvestHollow_IntroCutscene_Played", 1);
+            PlayerPrefs.SetInt("Tut_Reward_Intro_Seen", 1);
+            PlayerPrefs.SetInt("Tut_Event_Intro_Seen", 1);
+            PlayerPrefs.SetInt("Tut_Merchant_Intro_Seen", 1);
+            PlayerPrefs.SetInt("Tut_Camp_Intro_Seen", 1);
+            PlayerPrefs.Save();
+        }
+
+        if (IntroCutsceneController.Instance != null && IntroCutsceneController.Instance.IsPlaying)
+        {
+            IntroCutsceneController.Instance.SkipCutscene();
+        }
+
+        if (TutorialDialogueUI.Instance != null)
+        {
+            TutorialDialogueUI.Instance.HideDialogue();
+        }
+
+        if (CombatTutorialGuide.Instance != null)
+        {
+            CombatTutorialGuide.Instance.SkipTutorial();
+        }
+
         Close();
     }
 

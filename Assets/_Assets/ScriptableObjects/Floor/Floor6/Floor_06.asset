@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b361ef3d9b53cdd41b30d69a54936c4a, type: 3}
+  m_Name: Floor_06
+  m_EditorClassIdentifier: Assembly-CSharp::FloorData
+  floorName: "R\u1EEBng N\u1EA5m \u0110\u1ED9c (Floor 6)"
+  floorNumber: 6
+  waves:
+  - {fileID: 11400000, guid: e147946eb6121b866ecc20d8c984ca59, type: 2}
+  - {fileID: 11400000, guid: a30a0288f826a4881688162c08b7d563, type: 2}
+  - {fileID: 11400000, guid: e2b40a40dc2c80d79dd51cad081bf744, type: 2}
+  - {fileID: 11400000, guid: 54419f0d2255fc67baa2233317e017a8, type: 2}
+  - {fileID: 11400000, guid: a5b743713a6a3bf8eac4151bc298b324, type: 2}
+  - {fileID: 11400000, guid: f999bacd61c01a8c7637956279182736, type: 2}
+  - {fileID: 11400000, guid: 005ff27af64799098a1544a746f5505e, type: 2}
+  - {fileID: 11400000, guid: 58bc2d80ff9260652647297157fbded5, type: 2}
+  - {fileID: 11400000, guid: 59551921bcdc91bc363bfb30f74d48ec, type: 2}
+  - {fileID: 11400000, guid: baf98db6ba5405b63a53b90b9df0ad72, type: 2}
+  - {fileID: 11400000, guid: 201a21e4b1af2b44c425be0764e7d8f9, type: 2}
+  - {fileID: 11400000, guid: a2cdfb7fb372ad8c08f41756b114956b, type: 2}
+  - {fileID: 11400000, guid: 97bf56d0f2272b1e4e2d08a794ae10a9, type: 2}
+  - {fileID: 11400000, guid: fe3328b379b6bf7616b89118a797cb34, type: 2}
+  bossName: "N\u1EA5m Ma \u0110\u1ED9c C\u1ED5 Th\u1EE5"
+  clearRewardItems:
+  - itemData: {fileID: 11400000, guid: 7fbf6b6fc33a6a24aa6ccfb21298e0fd, type: 2}
+    amount: 5
+  - itemData: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
+    amount: 5
+  - itemData: {fileID: 11400000, guid: 44e0ea967df46ab40801462a3092738b, type: 2}
+    amount: 2
+  bonusPermanentATK: 2
+  bonusPermanentDEF: 1
+  bonusPermanentMaxHP: 10
+  bonusPermanentSpeed: 1
+  victoryTitle: "THANH T\u1EA8Y R\u1EEANG N\u1EA4M \u0110\u1ED8C!"
+  victoryDescription: "B\u00E0o t\u1EED \u0111\u1ED9c h\u1EA1i \u0111\u00E3 tan bi\u1EBFn, m\u1EDF \u0111\u01B0\u1EDDng cho nh\u1EEFng m\u1EA7m s\u1ED1ng thanh khi\u1EBFt tr\u1ED7i d\u1EADy!"

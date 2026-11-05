@@ -829,6 +829,42 @@ public class FloorVictoryUI : MonoBehaviour
                     AddItemIfExists(allItems, "CucumberSeed", 8);
                     AddItemIfExists(allItems, "Spicy tomato cabbage carrot", 3);
                     break;
+                case 4:
+                    AddItemIfExists(allItems, "ChilliSeed", 8);
+                    AddItemIfExists(allItems, "Corn butter", 3);
+                    AddItemIfExists(allItems, "Item_Boss_SlimeCore", 2);
+                    break;
+                case 5:
+                    AddItemIfExists(allItems, "CucumberSeed", 10);
+                    AddItemIfExists(allItems, "Spicy tomato cabbage carrot", 3);
+                    AddItemIfExists(allItems, "Item_Boss_SlimeCore", 3);
+                    break;
+                case 6:
+                    AddItemIfExists(allItems, "Corn Spicy", 4);
+                    AddItemIfExists(allItems, "Cucumber salad", 4);
+                    AddItemIfExists(allItems, "Item_Boss_AncientCrown", 1);
+                    break;
+                case 7:
+                    AddItemIfExists(allItems, "Spicy tomato cabbage carrot", 4);
+                    AddItemIfExists(allItems, "Tomato Soup", 5);
+                    AddItemIfExists(allItems, "Item_Boss_AncientCrown", 2);
+                    break;
+                case 8:
+                    AddItemIfExists(allItems, "Corn butter", 5);
+                    AddItemIfExists(allItems, "Cucumber salad", 5);
+                    AddItemIfExists(allItems, "Item_Boss_DarkEssence", 1);
+                    AddItemIfExists(allItems, "Item_Boss_AncientCrown", 2);
+                    break;
+                case 9:
+                    AddItemIfExists(allItems, "Spicy tomato cabbage carrot", 5);
+                    AddItemIfExists(allItems, "Item_Boss_DarkEssence", 2);
+                    AddItemIfExists(allItems, "Item_Boss_AncientCrown", 3);
+                    break;
+                case 10:
+                    AddItemIfExists(allItems, "Item_Boss_DarkEssence", 5);
+                    AddItemIfExists(allItems, "Item_Boss_AncientCrown", 5);
+                    AddItemIfExists(allItems, "Spicy tomato cabbage carrot", 10);
+                    break;
                 default:
                     AddItemIfExists(allItems, "CarrotSeed", 6);
                     AddItemIfExists(allItems, "TomatoSeed", 6);

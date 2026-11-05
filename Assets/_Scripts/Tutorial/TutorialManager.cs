@@ -109,6 +109,7 @@ public class TutorialManager : MonoBehaviour
     public const string TutorialDoneKey = "HarvestHollow_Tutorial_Completed";
     public const string TutorialStepKey = "HarvestHollow_Tutorial_CurrentStep";
     public const string DungeonTutorialDoneKey = "HarvestHollow_DungeonTutorial_Completed";
+    public const string CombatTutorialDoneKey = "HarvestHollow_CombatTutorial_Completed";
 
     private Vector3 lastPlayerPos;
     private float distanceTraveled = 0f;
@@ -152,9 +153,20 @@ public class TutorialManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        if (PlayerPrefs.GetInt(TutorialDoneKey, 0) == 1)
+        // If player already marked tutorial completed OR has ongoing game progression, complete tutorial immediately
+        bool isAlreadyCompleted = PlayerPrefs.GetInt(TutorialDoneKey, 0) == 1
+                               || PlayerPrefs.GetInt("Farm_CurrentDay", 1) > 1
+                               || PlayerPrefs.GetInt("Dungeon_HighestUnlockedFloor", 1) > 1;
+
+        if (isAlreadyCompleted)
         {
             currentStep = TutorialStep.Completed;
+            PlayerPrefs.SetInt(TutorialDoneKey, 1);
+            PlayerPrefs.SetInt(TutorialStepKey, (int)TutorialStep.Completed);
+            PlayerPrefs.SetInt(DungeonTutorialDoneKey, 1);
+            PlayerPrefs.SetInt(CombatTutorialDoneKey, 1);
+            PlayerPrefs.SetInt("HarvestHollow_IntroCutscene_Played", 1);
+            PlayerPrefs.Save();
         }
         else
         {
@@ -162,7 +174,10 @@ public class TutorialManager : MonoBehaviour
             currentStep = (TutorialStep)savedStep;
         }
 
-        EnsureTutorialCropsReady();
+        if (currentStep != TutorialStep.Completed)
+        {
+            EnsureTutorialCropsReady();
+        }
     }
 
     private void OnEnable()
@@ -204,9 +219,16 @@ public class TutorialManager : MonoBehaviour
     private void Start()
     {
         // Check if tutorial is already finished
-        if (PlayerPrefs.GetInt(TutorialDoneKey, 0) == 1)
+        if (IsTutorialCompleted || currentStep == TutorialStep.Completed)
         {
             currentStep = TutorialStep.Completed;
+            TutorialDialogueUI.Instance?.HideDialogue();
+            return;
+        }
+
+        // If Main Menu is currently open, wait until player chooses New Game or Continue
+        if (MainMenuUI.Instance != null && MainMenuUI.Instance.IsOpen)
+        {
             return;
         }
 
@@ -830,6 +852,34 @@ public class TutorialManager : MonoBehaviour
         if (currentStep == TutorialStep.Combat)
         {
             AdvanceToNextStep();
+        }
+    }
+
+    /// <summary>
+    /// Skips or marks the tutorial as completed when the player chooses Continue or already has saved progress.
+    /// </summary>
+    public void SkipOrCompleteTutorial()
+    {
+        currentStep = TutorialStep.Completed;
+        PlayerPrefs.SetInt(TutorialDoneKey, 1);
+        PlayerPrefs.SetInt(TutorialStepKey, (int)TutorialStep.Completed);
+        PlayerPrefs.SetInt(DungeonTutorialDoneKey, 1);
+        PlayerPrefs.SetInt(CombatTutorialDoneKey, 1);
+        PlayerPrefs.SetInt("HarvestHollow_IntroCutscene_Played", 1);
+        PlayerPrefs.SetInt("Tut_Reward_Intro_Seen", 1);
+        PlayerPrefs.SetInt("Tut_Event_Intro_Seen", 1);
+        PlayerPrefs.SetInt("Tut_Merchant_Intro_Seen", 1);
+        PlayerPrefs.SetInt("Tut_Camp_Intro_Seen", 1);
+        PlayerPrefs.Save();
+
+        if (IntroCutsceneController.Instance != null && IntroCutsceneController.Instance.IsPlaying)
+        {
+            IntroCutsceneController.Instance.SkipCutscene();
+        }
+
+        if (TutorialDialogueUI.Instance != null)
+        {
+            TutorialDialogueUI.Instance.HideDialogue();
         }
     }
 

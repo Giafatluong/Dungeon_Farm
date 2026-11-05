@@ -340,12 +340,12 @@ public class DungeonSummaryUI : MonoBehaviour
             {
                 if (hasKeepLoot || isStarter)
                 {
-                    string reason = isStarter ? "Divine Novice Protection" : "Divine Protection Blessing";
-                    specialNoticeText.text = $"<color=#66FF88>[{reason} ACTIVATED!]</color>\nThough defeated, divine protection shields you: <b>100% of backpack items were preserved</b> and brought home!";
+                    string reason = isStarter ? "Bảo Hộ Tân Thủ" : "Phước Lành Bảo Hộ Thần Thánh";
+                    specialNoticeText.text = $"<color=#66FF88>[KÍCH HOẠT {reason.ToUpper()}!]</color>\nDù gục ngã, phước lành đã che chở cho bạn: <b>Bảo toàn 100% vật phẩm ba lô</b> mang về nhà!";
                 }
                 else
                 {
-                    specialNoticeText.text = "<color=#FF6666>[YOU WERE DEFEATED IN THE DUNGEON!]</color>\nYou collapsed before the monsters. Prepare more food and blessings before your next expedition.";
+                    specialNoticeText.text = "<color=#FF5252>[BẠN ĐÃ GỤC NGÃ TRONG HẦM NGỤC!]</color>\nKhông có Phước Lành bảo hộ, bạn đã <b>MẤT 100% TOÀN BỘ VẬT PHẨM</b> trong ba lô!\nHãy đến Tượng Nữ Thần nhận Phước Lành trước khi bắt đầu chuyến đi tiếp theo.";
                 }
             }
         }
@@ -425,6 +425,43 @@ public class DungeonSummaryUI : MonoBehaviour
 
         if (itemsGridContainer == null) return;
 
+        ProgressionManager pm = ProgressionManager.Instance;
+        bool hasProtection = pm != null && (pm.HasBlessing(BlessingType.KeepLootOnDefeat) || pm.IsStarterProtectionActive());
+        bool isUnprotectedDefeat = currentResult == ExpeditionResult.Defeat && !hasProtection;
+
+        if (isUnprotectedDefeat)
+        {
+            List<ItemSlot> lostSlots = ProgressionManager.LastLostItems;
+            int lostCount = (lostSlots != null) ? lostSlots.Count : 0;
+
+            if (lootHeaderTitle != null)
+            {
+                lootHeaderTitle.text = $"<color=#FF5252>VẬT PHẨM ĐÃ MẤT HẾT (MẤT 100%) - {lostCount} MÓN ĐÁNH RƠI</color>";
+            }
+
+            if (lostSlots == null || lostSlots.Count == 0)
+            {
+                ShowEmptyNotice("<i>Không có vật phẩm nào trong ba lô khi gục ngã.</i>");
+                return;
+            }
+
+            if (emptyLootNoticeGO != null)
+            {
+                emptyLootNoticeGO.SetActive(false);
+            }
+
+            for (int i = 0; i < lostSlots.Count; i++)
+            {
+                ItemSlot slot = lostSlots[i];
+                GameObject card = CreateLootCard(slot.itemData, slot.amount, isLost: true);
+                if (card != null)
+                {
+                    activeItemCards.Add(card);
+                }
+            }
+            return;
+        }
+
         List<ItemSlot> validSlots = new();
         if (container != null && container.itemSlots != null)
         {
@@ -440,26 +477,12 @@ public class DungeonSummaryUI : MonoBehaviour
 
         if (lootHeaderTitle != null)
         {
-            lootHeaderTitle.text = $"EXPEDITION LOOT SECURED ({validSlots.Count} ITEMS)";
+            lootHeaderTitle.text = $"CHIẾN LỢI PHẨM THU ĐƯỢC ({validSlots.Count} VẬT PHẨM)";
         }
 
         if (validSlots.Count == 0)
         {
-            if (emptyLootNoticeGO == null)
-            {
-                emptyLootNoticeGO = new GameObject("EmptyLootNotice", typeof(RectTransform), typeof(TextMeshProUGUI));
-                emptyLootNoticeGO.transform.SetParent(itemsGridContainer, false);
-                RectTransform emptyRT = emptyLootNoticeGO.GetComponent<RectTransform>();
-                emptyRT.sizeDelta = new Vector2(440, 60);
-
-                TextMeshProUGUI tmp = emptyLootNoticeGO.GetComponent<TextMeshProUGUI>();
-                DungeonUIAssetHelper.ApplyFont(tmp);
-                tmp.fontSize = 13.5f;
-                tmp.color = new Color(0.7f, 0.75f, 0.85f);
-                tmp.alignment = TextAlignmentOptions.Center;
-                tmp.text = "<i>No items in your backpack this run.</i>";
-            }
-            emptyLootNoticeGO.SetActive(true);
+            ShowEmptyNotice("<i>Không có vật phẩm nào trong ba lô chuyến đi này.</i>");
             return;
         }
 
@@ -471,7 +494,7 @@ public class DungeonSummaryUI : MonoBehaviour
         for (int i = 0; i < validSlots.Count; i++)
         {
             ItemSlot slot = validSlots[i];
-            GameObject card = CreateLootCard(slot.itemData, slot.amount);
+            GameObject card = CreateLootCard(slot.itemData, slot.amount, isLost: false);
             if (card != null)
             {
                 activeItemCards.Add(card);
@@ -479,7 +502,31 @@ public class DungeonSummaryUI : MonoBehaviour
         }
     }
 
-    private GameObject CreateLootCard(ItemData item, int amount)
+    private void ShowEmptyNotice(string message)
+    {
+        if (emptyLootNoticeGO == null)
+        {
+            emptyLootNoticeGO = new GameObject("EmptyLootNotice", typeof(RectTransform), typeof(TextMeshProUGUI));
+            emptyLootNoticeGO.transform.SetParent(itemsGridContainer, false);
+            RectTransform emptyRT = emptyLootNoticeGO.GetComponent<RectTransform>();
+            emptyRT.sizeDelta = new Vector2(440, 60);
+
+            TextMeshProUGUI tmp = emptyLootNoticeGO.GetComponent<TextMeshProUGUI>();
+            DungeonUIAssetHelper.ApplyFont(tmp);
+            tmp.fontSize = 13.5f;
+            tmp.color = new Color(0.7f, 0.75f, 0.85f);
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.text = message;
+        }
+        else
+        {
+            TextMeshProUGUI tmp = emptyLootNoticeGO.GetComponent<TextMeshProUGUI>();
+            if (tmp != null) tmp.text = message;
+        }
+        emptyLootNoticeGO.SetActive(true);
+    }
+
+    private GameObject CreateLootCard(ItemData item, int amount, bool isLost = false)
     {
         if (item == null || itemsGridContainer == null) return null;
 
@@ -490,7 +537,11 @@ public class DungeonSummaryUI : MonoBehaviour
         rt.sizeDelta = new Vector2(210, 52);
 
         Image bg = cardGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedPanel(bg, DungeonUIAssetHelper.PanelStyle.Wood);
+        DungeonUIAssetHelper.StyleSlicedPanel(bg, isLost ? DungeonUIAssetHelper.PanelStyle.Slate : DungeonUIAssetHelper.PanelStyle.Wood);
+        if (isLost)
+        {
+            bg.color = new Color(0.40f, 0.12f, 0.12f, 0.95f); // Crimson lost indicator
+        }
 
         // Slot Frame for Icon
         GameObject slotFrameGO = new("IconSlot", typeof(RectTransform), typeof(Image));
@@ -503,6 +554,7 @@ public class DungeonSummaryUI : MonoBehaviour
         sfRT.sizeDelta = new Vector2(38, 38);
         Image sfImg = slotFrameGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlotImage(sfImg, false);
+        if (isLost) sfImg.color = new Color(0.55f, 0.25f, 0.25f, 1f);
 
         // Icon Graphic
         if (item.itemIcon != null)
@@ -516,6 +568,7 @@ public class DungeonSummaryUI : MonoBehaviour
             Image iconImg = iconGO.GetComponent<Image>();
             iconImg.sprite = item.itemIcon;
             iconImg.preserveAspect = true;
+            if (isLost) iconImg.color = new Color(0.95f, 0.55f, 0.55f, 0.85f);
         }
 
         // Title and Amount
@@ -532,15 +585,21 @@ public class DungeonSummaryUI : MonoBehaviour
         labelTMP.fontSize = 11.5f;
         labelTMP.alignment = TextAlignmentOptions.MidlineLeft;
 
-        string tag = item.itemType switch
+        if (isLost)
         {
-            ItemData.ItemType.Produce => "<color=#88CCFF>[Crop]</color>",
-            ItemData.ItemType.Seed => "<color=#88FF88>[Seed]</color>",
-            ItemData.ItemType.Food => "<color=#FFAA44>[Food]</color>",
-            _ => "<color=#E0E0E0>[Item]</color>"
-        };
-
-        labelTMP.text = $"<b>{item.itemName}</b>\n{tag} <color=#FFDD44>x{amount}</color>";
+            labelTMP.text = $"<s><color=#FFAAAA>{item.itemName}</color></s>\n<color=#FF5555>[ĐÃ MẤT]</color> <color=#FF8888>x{amount}</color>";
+        }
+        else
+        {
+            string tag = item.itemType switch
+            {
+                ItemData.ItemType.Produce => "<color=#88CCFF>[Nông Sản]</color>",
+                ItemData.ItemType.Seed => "<color=#88FF88>[Hạt Giống]</color>",
+                ItemData.ItemType.Food => "<color=#FFAA44>[Món Ăn]</color>",
+                _ => "<color=#E0E0E0>[Vật Phẩm]</color>"
+            };
+            labelTMP.text = $"<b>{item.itemName}</b>\n{tag} <color=#FFDD44>x{amount}</color>";
+        }
 
         return cardGO;
     }

@@ -356,20 +356,6 @@ public class StatueUI : MonoBehaviour
                 deposit += backpackDeposit;
             }
 
-            // Fallback: If backpack doesn't have enough, check HomeChest!
-            if (deposit < needed && HomeChest.Instance != null && HomeChest.Instance.chestContainer != null)
-            {
-                int chestAvail = GetTotalItemCount(HomeChest.Instance.chestContainer, req.item);
-                if (chestAvail > 0)
-                {
-                    int chestDeposit = Mathf.Min(chestAvail, needed - deposit);
-                    HomeChest.Instance.chestContainer.RemoveItem(req.item, chestDeposit);
-                    HomeChest.Instance.chestContainer.NotifyChange();
-                    HomeChest.Instance.SaveChestData();
-                    deposit += chestDeposit;
-                }
-            }
-
             if (deposit <= 0) continue;
 
             if (ProgressionManager.Instance != null)
@@ -1011,11 +997,11 @@ public class StatueUI : MonoBehaviour
         {
             if (activeTargetOffering.tier == 5)
             {
-                subTMP.text = $"<color=#FFD700><b>👑 CỘT MỐC ĐỘT PHÁ BOSS 1: BẬC 5 (+{activeTargetOffering.rewardAmount} {statStr})</b></color> <color=#FFAA55><i>— Cần Vương Miện Cổ Đại từ Boss Tầng 1!</i></color>";
+                subTMP.text = $"<color=#FFD700><b>🌹 CỘT MỐC ĐỘT PHÁ BOSS 1: BẬC 5 (+{activeTargetOffering.rewardAmount} {statStr})</b></color> <color=#FFAA55><i>— Cần Hoa Hồng Cổ Đại từ Boss Tầng 1!</i></color>";
             }
             else if (activeTargetOffering.tier == 10)
             {
-                subTMP.text = $"<color=#FF77FF><b>💎 CỘT MỐC ĐỈNH CAO BOSS TỐI THƯỢNG: BẬC 10 (+{activeTargetOffering.rewardAmount} {statStr})</b></color> <color=#FFAAEE><i>— Cần Vật phẩm Boss Tầng 2/3!</i></color>";
+                subTMP.text = $"<color=#FF77FF><b>👑 CỘT MỐC ĐỈNH CAO BOSS TỐI THƯỢNG: BẬC 10 (+{activeTargetOffering.rewardAmount} {statStr})</b></color> <color=#FFAAEE><i>— Cần Vương Miện Slime hoặc Tinh Thể từ Boss Tầng 2/3!</i></color>";
             }
             else
             {

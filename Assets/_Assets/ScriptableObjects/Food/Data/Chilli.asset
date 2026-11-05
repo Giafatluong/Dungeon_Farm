@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 284236d205486aa4c8e049821338417f, type: 3}
   m_Name: Chilli
   m_EditorClassIdentifier: Assembly-CSharp::FoodData
-  itemName: Chilli
+  itemName: "\u1EDA t"
   itemIcon: {fileID: -1026108827, guid: 338eb9325b511bf4dbf0184fff5f5d9c, type: 3}
   dropPrefab: {fileID: 5267890429968547255, guid: ae3bff0b13ad01a4ea48ca3d6d8d1dd0, type: 3}
   itemType: 2

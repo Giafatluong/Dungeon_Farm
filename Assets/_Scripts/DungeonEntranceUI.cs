@@ -13,7 +13,7 @@ public class DungeonEntranceUI : MonoBehaviour
     [SerializeField] private GameObject enterDungeonPanel;
 
     [Header("Floors Configuration")]
-    [SerializeField] private int totalFloors = 5;
+    [SerializeField] private int totalFloors = 10;
     [SerializeField] private FloorDisplayData[] customFloors;
 
     [System.Serializable]
@@ -41,6 +41,7 @@ public class DungeonEntranceUI : MonoBehaviour
     [SerializeField] private Button closeButton;
     private readonly Dictionary<int, FloorCardUI> floorCards = new Dictionary<int, FloorCardUI>();
     private Coroutine feedbackFlashCoroutine;
+    private GameObject blessingWarningModalGO;
 
     private class FloorCardUI
     {
@@ -88,6 +89,16 @@ public class DungeonEntranceUI : MonoBehaviour
 
     private void Update()
     {
+        if (blessingWarningModalGO != null)
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                UIEscapeManager.ConsumeEscape();
+                CloseBlessingWarningModal();
+            }
+            return;
+        }
+
         if (enterDungeonPanel != null && enterDungeonPanel.activeSelf)
         {
             if (Input.GetKeyDown(KeyCode.Escape))
@@ -99,6 +110,13 @@ public class DungeonEntranceUI : MonoBehaviour
             {
                 EnterSelectedFloor();
             }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            else if (Input.GetKeyDown(KeyCode.F10))
+            {
+                ProgressionManager.Instance?.UnlockAllFloors();
+                RefreshUI();
+            }
+#endif
         }
     }
 
@@ -137,33 +155,78 @@ public class DungeonEntranceUI : MonoBehaviour
             floorName = "TẦNG 3: THÀNH CỔ QUỶ DỮ",
             bossName = "Kỵ Sĩ Bầu Trời Hắc Ám (Dark Flying Rider)",
             subTitle = "18 Phòng Tối Thượng — Sát Thương Bùng Nổ & Ớt Hiểm (Chilli)",
-            description = "Mục đích: Tử địa khắc nghiệt nhất. Quái vật thiết giáp hạng nặng cực trâu (4 DEF, 14-17 ATK). Chỉ có thể vượt qua khi chuẩn bị các món ăn đại tiệc cao cấp (Ngô Cay, Đại Tiệc Hoàng Gia) và kết hợp phước lành thần thánh!"
+            description = "Mục đích: Tử địa khắc nghiệt trước đây. Quái vật thiết giáp hạng nặng cực trâu (4 DEF, 14-17 ATK). Chỉ có thể vượt qua khi chuẩn bị các món ăn đại tiệc cao cấp (Ngô Cay, Canh Thập Cẩm Cay) và kết hợp phước lành thần thánh!"
         });
 
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 4,
-            floorName = "FLOOR 4",
-            bossName = "Abyssal Fire Dragon",
-            subTitle = "",
-            description = ""
+            floorName = "TẦNG 4: HANG ĐỘNG NHAM THẠCH",
+            bossName = "Hỏa Dơi Ma Vương (Elder Magma Bat)",
+            subTitle = "12 Phòng Rực Lửa — Sát Thương Tốc Độ & Nham Thạch",
+            description = "Mục đích: Hang động dung nham ngầm rực lửa. Đàn dơi lửa sở hữu Tốc độ vượt trội, luôn chiếm thế thượng phong ra đòn trước. Hãy ăn Súp Cà Rốt hoặc kích hoạt Chúc Phúc Tốc Độ để không bị dồn sát thương!"
         });
 
         floorList.Add(new FloorDisplayData
         {
             floorNumber = 5,
-            floorName = "FLOOR 5",
-            bossName = "Lord of Darkness",
-            subTitle = "",
-            description = ""
+            floorName = "TẦNG 5: HẦM MỘ BĂNG GIÁ",
+            bossName = "Tướng Băng Xương (Frost Skeleton General)",
+            subTitle = "14 Phòng Hàn Băng — Giáp Băng Kiên Cố & Cung Thủ Bắn Tỉa",
+            description = "Mục đích: Khí lạnh thấu xương làm giảm nhuệ khí. Quân đoàn hộ vệ mang khiên băng cực dày kết hợp cùng Cung thủ bóng đêm rỉa máu từ xa. Cần chuẩn bị Canh Thập Cẩm Cay hoặc Súp Cà Chua để phá tan lớp giáp băng!"
+        });
+
+        floorList.Add(new FloorDisplayData
+        {
+            floorNumber = 6,
+            floorName = "TẦNG 6: RỪNG NẤM ĐỘC",
+            bossName = "Nấm Ma Độc Cổ Thụ (Elder Bombschroom)",
+            subTitle = "14 Phòng U Ám — Bào Tử Độc Tố & Nổ Cảm Tử",
+            description = "Mục đích: Khu rừng nấm ngầm ngập tràn khí độc. Quái vật nấm có khả năng phát nổ cảm tử gây sát thương diện rộng. Hãy phân bổ 3 AP khéo léo để tiêu diệt chúng chớp nhoáng trước khi chúng phát nổ!"
+        });
+
+        floorList.Add(new FloorDisplayData
+        {
+            floorNumber = 7,
+            floorName = "TẦNG 7: CẤM ĐỊA HUYẾT QUÁI",
+            bossName = "Huyết Thử Vương (Bloodfang Rat Sovereign)",
+            subTitle = "16 Phòng Đẫm Máu — Bầy Đàn Cắn Xé & Cấu Rỉa Liên Hoàn",
+            description = "Mục đích: Ổ chuột quỷ biến dị khổng lồ với nanh vuốt tẩm độc. Chúng tấn công theo bầy đàn đông đảo và liên tục. Hãy chuẩn bị các món gia cố Giáp (Ngô Nướng Bơ, Salad Bắp Cải) để phòng thủ vững vàng!"
+        });
+
+        floorList.Add(new FloorDisplayData
+        {
+            floorNumber = 8,
+            floorName = "TẦNG 8: TÀN TÍCH HƯ VÔ",
+            bossName = "Thiện Xạ Hư Vô Cổ Đại (Ancient Void Marksman)",
+            subTitle = "16 Phòng Cổ Đại — Bắn Tỉa Chí Mạng & Sát Thủ Bóng Đêm",
+            description = "Mục đích: Đền thờ hư vô nơi các xạ thủ cổ đại canh gác. Những mũi tên bóng tối có tỉ lệ chí mạng cực cao. Người chơi cần kết hợp Giáp phòng ngự và Chúc phúc Thần Thánh để chống chịu những đòn đánh tử thần!"
+        });
+
+        floorList.Add(new FloorDisplayData
+        {
+            floorNumber = 9,
+            floorName = "TẦNG 9: VỰC SÂU HẮC ÁM",
+            bossName = "Tà Ma Hắc Thần (Archdemon Overlord)",
+            subTitle = "18 Phòng Vực Thẳm — Thiết Giáp Hủy Diệt & Tiêu Hao Cơn Đói",
+            description = "Mục đích: Vực thẳm sâu nhất trước thềm Ngai Vàng. Quái vật mang sức mạnh hắc ám hung hãn, lượng máu khổng lồ. Hành trình dài 18 phòng tiêu tốn rất nhiều Độ No, bắt buộc phải mang theo nhiều lương thực dự trữ!"
+        });
+
+        floorList.Add(new FloorDisplayData
+        {
+            floorNumber = 10,
+            floorName = "TẦNG 10: NGAI VÀNG VĨNH CỬU",
+            bossName = "Chúa Tể Bóng Tối (Lord of Darkness)",
+            subTitle = "20 Phòng Quyết Đấu — Đỉnh Cao Hầm Ngục & Hắc Huyết Tinh Thể",
+            description = "Mục đích: Đại thử thách tối thượng của Hầm Ngục. Quân đoàn tinh nhuệ thiện chiến nhất bảo vệ Ngai Vàng. Đánh bại Chúa Tể Bóng Tối để đoạt lấy Hắc Huyết Tinh Thể, hoàn thành đại nghiệp và nhận vinh quang vĩnh cửu!"
         });
     }
 
     public void Open()
     {
-        // In tutorial: bypass floor selection UI and directly enter Floor 0
-        bool isTutorialActive = (TutorialManager.Instance != null && !TutorialManager.Instance.IsTutorialCompleted)
-                             || PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0;
+        // In tutorial: bypass floor selection UI and directly enter Floor 0 ONLY if tutorial is actively at Dungeon Gate
+        bool isTutorialActive = (TutorialManager.Instance != null && !TutorialManager.Instance.IsTutorialCompleted && TutorialManager.Instance.CurrentStep == TutorialManager.TutorialStep.DungeonGate)
+                             && PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0;
         if (isTutorialActive)
         {
             EnterFloorDirectly(0);
@@ -201,6 +264,8 @@ public class DungeonEntranceUI : MonoBehaviour
 
     public void Close()
     {
+        CloseBlessingWarningModal();
+
         if (enterDungeonPanel != null)
         {
             enterDungeonPanel.SetActive(false);
@@ -281,7 +346,178 @@ public class DungeonEntranceUI : MonoBehaviour
             return;
         }
 
+        // Warning when player enters Floor >= 2 (or after clearing Floor 1) without a chosen blessing
+        ProgressionManager pm = ProgressionManager.Instance;
+        bool isAfterFloor1 = floorToEnter >= 2 || (pm != null && pm.IsBossDefeated(1));
+        bool noBlessing = pm == null || pm.activeBlessing == BlessingType.None;
+
+        if (isAfterFloor1 && noBlessing)
+        {
+            ShowBlessingWarningModal(floorToEnter);
+            return;
+        }
+
         EnterFloorDirectly(floorToEnter);
+    }
+
+    private void ShowBlessingWarningModal(int floorToEnter)
+    {
+        CloseBlessingWarningModal();
+
+        Canvas canvas = DungeonUIAssetHelper.GetMainScreenCanvas();
+        Transform parentTransform = enterDungeonPanel != null ? enterDungeonPanel.transform : (canvas != null ? canvas.transform : transform);
+
+        blessingWarningModalGO = new GameObject("BlessingWarningModal", typeof(RectTransform), typeof(Image));
+        blessingWarningModalGO.transform.SetParent(parentTransform, false);
+        blessingWarningModalGO.transform.SetAsLastSibling();
+
+        RectTransform modalRT = blessingWarningModalGO.GetComponent<RectTransform>();
+        modalRT.anchorMin = Vector2.zero;
+        modalRT.anchorMax = Vector2.one;
+        modalRT.sizeDelta = Vector2.zero;
+
+        Image modalBg = blessingWarningModalGO.GetComponent<Image>();
+        modalBg.color = new Color(0.02f, 0.03f, 0.06f, 0.88f);
+
+        // Center Box
+        GameObject boxGO = new GameObject("DialogBox", typeof(RectTransform), typeof(Image));
+        boxGO.transform.SetParent(blessingWarningModalGO.transform, false);
+        RectTransform boxRT = boxGO.GetComponent<RectTransform>();
+        boxRT.anchorMin = new Vector2(0.5f, 0.5f);
+        boxRT.anchorMax = new Vector2(0.5f, 0.5f);
+        boxRT.pivot = new Vector2(0.5f, 0.5f);
+        boxRT.sizeDelta = new Vector2(530, 310);
+
+        Image boxBg = boxGO.GetComponent<Image>();
+        DungeonUIAssetHelper.StyleSlicedFrame(boxBg, new Color(0.14f, 0.09f, 0.10f, 0.98f));
+
+        // Header Title
+        GameObject titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
+        titleGO.transform.SetParent(boxGO.transform, false);
+        RectTransform titleRT = titleGO.GetComponent<RectTransform>();
+        titleRT.anchorMin = new Vector2(0.5f, 1);
+        titleRT.anchorMax = new Vector2(0.5f, 1);
+        titleRT.pivot = new Vector2(0.5f, 1);
+        titleRT.anchoredPosition = new Vector2(0, -18);
+        titleRT.sizeDelta = new Vector2(490, 32);
+
+        TextMeshProUGUI titleTMP = titleGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(titleTMP);
+        titleTMP.fontSize = 17;
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.alignment = TextAlignmentOptions.Center;
+        titleTMP.text = "<color=#FF5555>[!] CẢNH BÁO: CHƯA CÓ PHƯỚC LÀNH</color>";
+
+        // Message
+        GameObject msgGO = new GameObject("Message", typeof(RectTransform), typeof(TextMeshProUGUI));
+        msgGO.transform.SetParent(boxGO.transform, false);
+        RectTransform msgRT = msgGO.GetComponent<RectTransform>();
+        msgRT.anchorMin = new Vector2(0.5f, 0.5f);
+        msgRT.anchorMax = new Vector2(0.5f, 0.5f);
+        msgRT.pivot = new Vector2(0.5f, 0.5f);
+        msgRT.anchoredPosition = new Vector2(0, 15);
+        msgRT.sizeDelta = new Vector2(470, 160);
+
+        TextMeshProUGUI msgTMP = msgGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(msgTMP);
+        msgTMP.fontSize = 13;
+        msgTMP.alignment = TextAlignmentOptions.Center;
+        msgTMP.text = "Bạn chưa chọn bất kỳ <b>Phước Lành</b> nào tại <b>Tượng Nữ Thần</b>!\n\n"
+                    + "<color=#FF8888>• Từ Tầng 2 trở đi, <b>Bảo Hộ Tân Thủ đã hết hạn</b>.</color>\n"
+                    + "<color=#FF5555>• Nếu gục ngã, bạn sẽ <b>MẤT TOÀN BỘ 100% VẬT PHẨM</b> trong ba lô!</color>\n\n"
+                    + "Hãy đến Tượng Nữ Thần để nhận Phước Lành (như <i>Bảo Hộ Thần Thánh</i>) trước khi vào hầm ngục.";
+
+        // Buttons Container
+        GameObject btnContainer = new GameObject("Buttons", typeof(RectTransform));
+        btnContainer.transform.SetParent(boxGO.transform, false);
+        RectTransform btnRT = btnContainer.GetComponent<RectTransform>();
+        btnRT.anchorMin = new Vector2(0.5f, 0);
+        btnRT.anchorMax = new Vector2(0.5f, 0);
+        btnRT.pivot = new Vector2(0.5f, 0);
+        btnRT.anchoredPosition = new Vector2(0, 18);
+        btnRT.sizeDelta = new Vector2(490, 44);
+
+        // 1. Button "ĐẾN TƯỢNG NỮ THẦN"
+        GameObject chooseBtnGO = new GameObject("BtnChooseBlessing", typeof(RectTransform), typeof(Image), typeof(Button));
+        chooseBtnGO.transform.SetParent(btnContainer.transform, false);
+        RectTransform cbRT = chooseBtnGO.GetComponent<RectTransform>();
+        cbRT.anchorMin = new Vector2(0, 0.5f);
+        cbRT.anchorMax = new Vector2(0, 0.5f);
+        cbRT.pivot = new Vector2(0, 0.5f);
+        cbRT.anchoredPosition = new Vector2(10, 0);
+        cbRT.sizeDelta = new Vector2(225, 40);
+
+        Image cbImg = chooseBtnGO.GetComponent<Image>();
+        Button cbBtn = chooseBtnGO.GetComponent<Button>();
+        DungeonUIAssetHelper.StyleButton(cbBtn, cbImg, new Color(0.20f, 0.45f, 0.70f, 1f), new Color(0.28f, 0.55f, 0.85f, 1f));
+        cbBtn.onClick.AddListener(() =>
+        {
+            CloseBlessingWarningModal();
+            Close();
+
+            StatueUI statueUI = StatueUI.Instance != null ? StatueUI.Instance : FindFirstObjectByType<StatueUI>(FindObjectsInactive.Include);
+            if (statueUI != null)
+            {
+                statueUI.ShowBlessingSelectionModal();
+            }
+            DamagePopupManager.ShowText(Vector3.zero, "Hãy chọn Phước Lành tại Tượng Nữ Thần!", Color.yellow, 2.5f);
+        });
+
+        GameObject cbTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        cbTextGO.transform.SetParent(chooseBtnGO.transform, false);
+        RectTransform cbtRT = cbTextGO.GetComponent<RectTransform>();
+        cbtRT.anchorMin = Vector2.zero;
+        cbtRT.anchorMax = Vector2.one;
+        cbtRT.sizeDelta = Vector2.zero;
+        TextMeshProUGUI cbTMP = cbTextGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(cbTMP);
+        cbTMP.fontSize = 12.5f;
+        cbTMP.fontStyle = FontStyles.Bold;
+        cbTMP.alignment = TextAlignmentOptions.Center;
+        cbTMP.text = "ĐẾN TƯỢNG NỮ THẦN";
+        cbTMP.color = Color.white;
+
+        // 2. Button "VẪN TIẾN VÀO (RỦI RO)"
+        GameObject enterAnywayGO = new GameObject("BtnEnterAnyway", typeof(RectTransform), typeof(Image), typeof(Button));
+        enterAnywayGO.transform.SetParent(btnContainer.transform, false);
+        RectTransform eaRT = enterAnywayGO.GetComponent<RectTransform>();
+        eaRT.anchorMin = new Vector2(1, 0.5f);
+        eaRT.anchorMax = new Vector2(1, 0.5f);
+        eaRT.pivot = new Vector2(1, 0.5f);
+        eaRT.anchoredPosition = new Vector2(-10, 0);
+        eaRT.sizeDelta = new Vector2(225, 40);
+
+        Image eaImg = enterAnywayGO.GetComponent<Image>();
+        Button eaBtn = enterAnywayGO.GetComponent<Button>();
+        DungeonUIAssetHelper.StyleButton(eaBtn, eaImg, new Color(0.38f, 0.18f, 0.18f, 1f), new Color(0.50f, 0.24f, 0.24f, 1f));
+        eaBtn.onClick.AddListener(() =>
+        {
+            CloseBlessingWarningModal();
+            EnterFloorDirectly(floorToEnter);
+        });
+
+        GameObject eaTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        eaTextGO.transform.SetParent(enterAnywayGO.transform, false);
+        RectTransform eatRT = eaTextGO.GetComponent<RectTransform>();
+        eatRT.anchorMin = Vector2.zero;
+        eatRT.anchorMax = Vector2.one;
+        eatRT.sizeDelta = Vector2.zero;
+        TextMeshProUGUI eaTMP = eaTextGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(eaTMP);
+        eaTMP.fontSize = 12.5f;
+        eaTMP.fontStyle = FontStyles.Bold;
+        eaTMP.alignment = TextAlignmentOptions.Center;
+        eaTMP.text = "VẪN TIẾN VÀO (RỦI RO)";
+        eaTMP.color = new Color(1f, 0.85f, 0.85f);
+    }
+
+    public void CloseBlessingWarningModal()
+    {
+        if (blessingWarningModalGO != null)
+        {
+            Destroy(blessingWarningModalGO);
+            blessingWarningModalGO = null;
+        }
     }
 
     public void SelectFloor(int floor)

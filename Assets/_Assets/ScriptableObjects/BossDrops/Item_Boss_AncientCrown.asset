@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d1715c0574daa742a21d66538d09e89, type: 3}
   m_Name: Item_Boss_AncientCrown
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemName: "V\u01B0\u01A1ng Mi\u1EC7n C\u1ED5 \u0110\u1EA1i"
+  itemName: "Hoa H\u1ED3ng C\u1ED5 \u0110\u1EA1i"
   itemIcon: {fileID: 947203319, guid: 9e09ab71c71153c4fac153d51e8d76ec, type: 3}
   dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
   itemType: 3
   isStackable: 1
   isRare: 1
+  description: "\u0110\u00F3a hoa h\u1ED3ng ng\u00E0n n\u0103m n\u1EDF tr\u00EAn h\u00E0i c\u1ED1t Vua X\u01B0\u01A1ng (Boss T\u1EA7ng 1). Ch\u1EE9a \u0111\u1EF1ng sinh m\u1EC7nh c\u1ED5 x\u01B0a d\u00F9ng \u0111\u1EC3 d\u00E2ng l\u1EC5 ph\u00E1 phong \u1EA5n T\u01B0\u1EE3ng N\u1EEF Th\u1EA7n."
 

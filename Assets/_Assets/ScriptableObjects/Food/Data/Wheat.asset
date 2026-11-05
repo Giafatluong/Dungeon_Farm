@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d1715c0574daa742a21d66538d09e89, type: 3}
   m_Name: Wheat
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemName: Wheat
+  itemName: "L\xFAa M\xEC"
   itemIcon: {fileID: -1139562571, guid: 338eb9325b511bf4dbf0184fff5f5d9c, type: 3}
   dropPrefab: {fileID: 232368190180929092, guid: 240111efe2c0900448fd241c6d74c776, type: 3}
   itemType: 1

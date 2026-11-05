@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b361ef3d9b53cdd41b30d69a54936c4a, type: 3}
+  m_Name: Floor_04
+  m_EditorClassIdentifier: Assembly-CSharp::FloorData
+  floorName: "Hang \u0110\u1ED9ng Nham Th\u1EA1ch (Floor 4)"
+  floorNumber: 4
+  waves:
+  - {fileID: 11400000, guid: 820be4affc7f6ff6f9dd94f9e41368d3, type: 2}
+  - {fileID: 11400000, guid: a9d60a4f23647c9903a8532e81e3ba6f, type: 2}
+  - {fileID: 11400000, guid: c62f66be7416322fee98c4d2c6bbb29d, type: 2}
+  - {fileID: 11400000, guid: 707113ece1d067ab72673e3b73972690, type: 2}
+  - {fileID: 11400000, guid: 92d26888911198ef43b904b5e4a84deb, type: 2}
+  - {fileID: 11400000, guid: ca55a458464d97aa750fcd04f5d7bb3b, type: 2}
+  - {fileID: 11400000, guid: 831ee5b59adea2497a5d90f20dd47c94, type: 2}
+  - {fileID: 11400000, guid: a52b73f71f3c9297cc7ccf08e7728e7f, type: 2}
+  - {fileID: 11400000, guid: fa0bc1a4de0fe5091451aeddb792a87a, type: 2}
+  - {fileID: 11400000, guid: 213086d8b64f790fe9bc12151a6f6b78, type: 2}
+  - {fileID: 11400000, guid: 3f749c1a3822f7a79d30befab4088c84, type: 2}
+  - {fileID: 11400000, guid: dc19e1f1b93a40c36a6aac8b59e084e0, type: 2}
+  bossName: "H\u1ECFa D\u01A1i Ma V\u01B0\u01A1ng"
+  clearRewardItems:
+  - itemData: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
+    amount: 4
+  - itemData: {fileID: 11400000, guid: 1e020026f91a85541b11bd8e9a9d5221, type: 2}
+    amount: 6
+  - itemData: {fileID: 11400000, guid: dc74547fa89c38848bb7b0475edefbcf, type: 2}
+    amount: 2
+  bonusPermanentATK: 1
+  bonusPermanentDEF: 0
+  bonusPermanentMaxHP: 10
+  bonusPermanentSpeed: 2
+  victoryTitle: "CHINH PH\u1EE4C HANG \u0110\u1ED8NG NHAM TH\u1EA0CH!"
+  victoryDescription: "B\u1EA1n \u0111\u00E3 d\u1EADp t\u1EAFt c\u01A1n gi\u1EADn d\u1EEF c\u1EE7a H\u1ECFa D\u01A1i Ma V\u01B0\u01A1ng v\u00E0 l\u00E0m ch\u1EE7 ngu\u1ED3n \u0111\u1ECBa nhi\u1EC7t ng\u1EA7m!"

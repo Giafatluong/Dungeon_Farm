@@ -437,14 +437,13 @@ public class ProgressionManager : MonoBehaviour
 
     #region Blessing System (Divine Blessings & Build Paths)
     /// <summary>
-    /// On initial floors (Floor 1-2, highestUnlockedFloor <= 2), player has novice protection
-    /// and the Divine Statue grants "Divine Protection" (KeepLootOnDefeat) to avoid dropping loot upon defeat.
-    /// After unlocking Floor 3 (highestUnlockedFloor > 2), novice protection ends.
-    /// Players can then choose Blessings at the Divine Statue.
+    /// Starter protection applies during tutorial and Floor 1 attempts.
+    /// The moment Floor 1 Boss is defeated (phá đảo tầng 1), starter protection immediately ends.
+    /// From Floor 2 onwards, players must choose a Blessing at the Divine Statue to protect loot or empower their run.
     /// </summary>
     public bool IsStarterProtectionActive()
     {
-        return highestUnlockedFloor <= 2;
+        return highestUnlockedFloor <= 1 && !IsBossDefeated(1);
     }
 
     /// <summary>
@@ -667,6 +666,7 @@ public class ProgressionManager : MonoBehaviour
         DungeonEntrance.SetReturnToEntranceFlag();
         Debug.Log("Dungeon Run completed successfully!");
         runActive = false;
+        LastLostItems.Clear();
         RecordBossDefeated(currentFloor);
 
         // On dungeon completion, clear temporary buffs
@@ -856,6 +856,13 @@ public class ProgressionManager : MonoBehaviour
         OnProgressionChanged?.Invoke();
     }
 
+    [ContextMenu("Unlock All 10 Floors")]
+    public void UnlockAllFloors()
+    {
+        UnlockFloor(10);
+        Debug.Log("[ProgressionManager] DEBUG: All 10 Floors unlocked!");
+    }
+
     public void UnlockFloor(int floor)
     {
         if (floor > highestUnlockedFloor)
@@ -901,13 +908,21 @@ public class ProgressionManager : MonoBehaviour
 
     #endregion
 
+    public static readonly List<ItemSlot> LastLostItems = new List<ItemSlot>();
+
     private void ClearRunLoot(ItemContainer inventory)
     {
+        LastLostItems.Clear();
         if (inventory == null || inventory.itemSlots == null) return;
         for (int i = 0; i < inventory.itemSlots.Length; i++)
         {
-            if (inventory.itemSlots[i] != null)
+            if (inventory.itemSlots[i] != null && inventory.itemSlots[i].itemData != null && inventory.itemSlots[i].amount > 0)
             {
+                LastLostItems.Add(new ItemSlot
+                {
+                    itemData = inventory.itemSlots[i].itemData,
+                    amount = inventory.itemSlots[i].amount
+                });
                 inventory.itemSlots[i].itemData = null;
                 inventory.itemSlots[i].amount = 0;
             }

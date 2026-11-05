@@ -257,6 +257,118 @@ public class DungeonBackgroundController : MonoBehaviour
             groundBaseColor = new Color(0.26f, 0.17f, 0.20f, 1f),
             groundShadowColor = new Color(0.11f, 0.06f, 0.08f, 1f)
         });
+
+        // Floor 4 Theme: Magma Caverns (E3 - Fiery Molten Glow)
+        themes.Add(new BackgroundTheme
+        {
+            floorNumber = 4,
+            themeName = "Magma Caverns",
+            backgroundSprite = spriteMap.GetValueOrDefault("E3_BackgroundLayer"),
+            midgroundSprite = spriteMap.GetValueOrDefault("E3_MidLayer"),
+            foregroundSprite = spriteMap.GetValueOrDefault("E3_FrontLayer"),
+            backgroundColor = new Color(1.0f, 0.65f, 0.45f, 1f),
+            midgroundColor = new Color(1.0f, 0.80f, 0.60f, 1f),
+            foregroundColor = new Color(1.0f, 0.70f, 0.50f, 1f),
+            groundHighlightColor = new Color(0.92f, 0.52f, 0.22f, 1f),
+            groundBaseColor = new Color(0.32f, 0.16f, 0.12f, 1f),
+            groundShadowColor = new Color(0.14f, 0.06f, 0.05f, 1f)
+        });
+
+        // Floor 5 Theme: Frost Catacombs (E1 - Frozen Glacial Stone)
+        themes.Add(new BackgroundTheme
+        {
+            floorNumber = 5,
+            themeName = "Frost Catacombs",
+            backgroundSprite = spriteMap.GetValueOrDefault("E1_BackgroundLayer"),
+            midgroundSprite = spriteMap.GetValueOrDefault("E1_MidLayer"),
+            foregroundSprite = spriteMap.GetValueOrDefault("E1_FrontLayer"),
+            backgroundColor = new Color(0.65f, 0.88f, 1.0f, 1f),
+            midgroundColor = new Color(0.78f, 0.92f, 1.0f, 1f),
+            foregroundColor = new Color(0.85f, 0.95f, 1.0f, 1f),
+            groundHighlightColor = new Color(0.60f, 0.85f, 0.98f, 1f),
+            groundBaseColor = new Color(0.18f, 0.28f, 0.38f, 1f),
+            groundShadowColor = new Color(0.08f, 0.12f, 0.18f, 1f)
+        });
+
+        // Floor 6 Theme: Toxic Spore Hollow (E2 - Toxic Emerald Gloom)
+        themes.Add(new BackgroundTheme
+        {
+            floorNumber = 6,
+            themeName = "Toxic Spore Hollow",
+            backgroundSprite = spriteMap.GetValueOrDefault("E2_BackgroundLayer"),
+            midgroundSprite = spriteMap.GetValueOrDefault("E2_MidLayer"),
+            foregroundSprite = spriteMap.GetValueOrDefault("E2_FrontLayer"),
+            backgroundColor = new Color(0.55f, 0.95f, 0.65f, 1f),
+            midgroundColor = new Color(0.75f, 1.0f, 0.75f, 1f),
+            foregroundColor = new Color(0.70f, 0.95f, 0.70f, 1f),
+            groundHighlightColor = new Color(0.40f, 0.85f, 0.45f, 1f),
+            groundBaseColor = new Color(0.14f, 0.30f, 0.16f, 1f),
+            groundShadowColor = new Color(0.06f, 0.14f, 0.07f, 1f)
+        });
+
+        // Floor 7 Theme: Bloodfang Lair (E3 - Crimson Bloodstone)
+        themes.Add(new BackgroundTheme
+        {
+            floorNumber = 7,
+            themeName = "Bloodfang Lair",
+            backgroundSprite = spriteMap.GetValueOrDefault("E3_BackgroundLayer"),
+            midgroundSprite = spriteMap.GetValueOrDefault("E3_MidLayer"),
+            foregroundSprite = spriteMap.GetValueOrDefault("E3_FrontLayer"),
+            backgroundColor = new Color(0.95f, 0.45f, 0.45f, 1f),
+            midgroundColor = new Color(1.0f, 0.60f, 0.60f, 1f),
+            foregroundColor = new Color(1.0f, 0.50f, 0.50f, 1f),
+            groundHighlightColor = new Color(0.85f, 0.30f, 0.30f, 1f),
+            groundBaseColor = new Color(0.32f, 0.10f, 0.12f, 1f),
+            groundShadowColor = new Color(0.14f, 0.04f, 0.05f, 1f)
+        });
+
+        // Floor 8 Theme: Ruins of the Void (E1 - Twilight Violet Marble)
+        themes.Add(new BackgroundTheme
+        {
+            floorNumber = 8,
+            themeName = "Ruins of the Void",
+            backgroundSprite = spriteMap.GetValueOrDefault("E1_BackgroundLayer"),
+            midgroundSprite = spriteMap.GetValueOrDefault("E1_MidLayer"),
+            foregroundSprite = spriteMap.GetValueOrDefault("E1_FrontLayer"),
+            backgroundColor = new Color(0.75f, 0.60f, 0.95f, 1f),
+            midgroundColor = new Color(0.85f, 0.75f, 1.0f, 1f),
+            foregroundColor = new Color(0.80f, 0.70f, 0.95f, 1f),
+            groundHighlightColor = new Color(0.68f, 0.48f, 0.90f, 1f),
+            groundBaseColor = new Color(0.24f, 0.16f, 0.34f, 1f),
+            groundShadowColor = new Color(0.10f, 0.06f, 0.15f, 1f)
+        });
+
+        // Floor 9 Theme: Abyssal Depths (E2 - Deep Subterranean Trench)
+        themes.Add(new BackgroundTheme
+        {
+            floorNumber = 9,
+            themeName = "Abyssal Depths",
+            backgroundSprite = spriteMap.GetValueOrDefault("E2_BackgroundLayer"),
+            midgroundSprite = spriteMap.GetValueOrDefault("E2_MidLayer"),
+            foregroundSprite = spriteMap.GetValueOrDefault("E2_FrontLayer"),
+            backgroundColor = new Color(0.40f, 0.60f, 0.85f, 1f),
+            midgroundColor = new Color(0.50f, 0.75f, 0.95f, 1f),
+            foregroundColor = new Color(0.45f, 0.65f, 0.85f, 1f),
+            groundHighlightColor = new Color(0.35f, 0.60f, 0.80f, 1f),
+            groundBaseColor = new Color(0.12f, 0.20f, 0.30f, 1f),
+            groundShadowColor = new Color(0.05f, 0.08f, 0.14f, 1f)
+        });
+
+        // Floor 10 Theme: The Eternal Throne (E3 - Royal Obsidian & Radiant Gold)
+        themes.Add(new BackgroundTheme
+        {
+            floorNumber = 10,
+            themeName = "The Eternal Throne",
+            backgroundSprite = spriteMap.GetValueOrDefault("E3_BackgroundLayer"),
+            midgroundSprite = spriteMap.GetValueOrDefault("E3_MidLayer"),
+            foregroundSprite = spriteMap.GetValueOrDefault("E3_FrontLayer"),
+            backgroundColor = new Color(1.0f, 0.88f, 0.45f, 1f),
+            midgroundColor = new Color(1.0f, 0.92f, 0.65f, 1f),
+            foregroundColor = new Color(1.0f, 0.85f, 0.55f, 1f),
+            groundHighlightColor = new Color(1.0f, 0.82f, 0.30f, 1f),
+            groundBaseColor = new Color(0.28f, 0.22f, 0.14f, 1f),
+            groundShadowColor = new Color(0.12f, 0.09f, 0.05f, 1f)
+        });
     }
 
     public void SetFloorTheme(int floorNum)

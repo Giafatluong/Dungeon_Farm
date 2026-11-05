@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b361ef3d9b53cdd41b30d69a54936c4a, type: 3}
+  m_Name: Floor_09
+  m_EditorClassIdentifier: Assembly-CSharp::FloorData
+  floorName: "V\u1EF1c S\u00E2u H\u1EAFc \u00C1m (Floor 9)"
+  floorNumber: 9
+  waves:
+  - {fileID: 11400000, guid: 1b4052f76584d6cf11c611ab8577bc93, type: 2}
+  - {fileID: 11400000, guid: c3c67d6db139acaabeb4902fdb849cfa, type: 2}
+  - {fileID: 11400000, guid: 3f56fd2782ed6fe6189e52615f551780, type: 2}
+  - {fileID: 11400000, guid: 41bbb66b6b2d3305e2771c8d32764a4e, type: 2}
+  - {fileID: 11400000, guid: 76c64ba7b57d835b6a3fa1635fe979dd, type: 2}
+  - {fileID: 11400000, guid: 625c5f896e8b0afe2589fefc883455ab, type: 2}
+  - {fileID: 11400000, guid: ea6575939f53941f0f292a7795fe4d5a, type: 2}
+  - {fileID: 11400000, guid: fbb950af3cde4520498dcbb48efc084d, type: 2}
+  - {fileID: 11400000, guid: b5b6d54c90e4567dd83672986a07e51b, type: 2}
+  - {fileID: 11400000, guid: 9ec3e8d2b2447b4bb2d5bc89ed33a4fb, type: 2}
+  - {fileID: 11400000, guid: 49318f4887c254d2187f9cea975e2bc2, type: 2}
+  - {fileID: 11400000, guid: 8de6e275f3d5729df2786f32db50f0ae, type: 2}
+  - {fileID: 11400000, guid: 1530dc0ecdbb59d23c849d7644aa1512, type: 2}
+  - {fileID: 11400000, guid: f2c6bc1b4db02c7f369aaceccd369095, type: 2}
+  - {fileID: 11400000, guid: 9d31cad27f4da2f33f1dce6fe52f48f8, type: 2}
+  - {fileID: 11400000, guid: 14ac25c3861540636f11d94b6b20f351, type: 2}
+  - {fileID: 11400000, guid: 33ff099d4c96f82299eb26041f94f2b2, type: 2}
+  - {fileID: 11400000, guid: 17690ab741a6879996adcefbe33935c6, type: 2}
+  bossName: "T\u00E0 Ma H\u1EAFc Th\u1EA7n"
+  clearRewardItems:
+  - itemData: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
+    amount: 8
+  - itemData: {fileID: 11400000, guid: 44e0ea967df46ab40801462a3092738b, type: 2}
+    amount: 4
+  - itemData: {fileID: 11400000, guid: 201e1a44e5f1a8f4fbd2ca66d074144b, type: 2}
+    amount: 4
+  bonusPermanentATK: 3
+  bonusPermanentDEF: 3
+  bonusPermanentMaxHP: 20
+  bonusPermanentSpeed: 2
+  victoryTitle: "V\u01AF\u1EE2T QUA V\u1EF0C S\u00C2U H\u1EAEC \u00C1M!"
+  victoryDescription: "B\u1EA1n \u0111\u00E3 v\u01B0\u1EE3t qua ranh gi\u1EDBi t\u1EED th\u1EA7n, ti\u1EBFn s\u00E1t Ngai V\u00E0ng V\u0129nh C\u1EEDu c\u1EE7a Ch\u00FAa T\u1EC3 B\u00F3ng T\u1ED1i!"

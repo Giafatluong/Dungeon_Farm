@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 284236d205486aa4c8e049821338417f, type: 3}
   m_Name: Corn Spicy'
   m_EditorClassIdentifier: Assembly-CSharp::FoodData
-  itemName: Corn Spicy
+  itemName: "B\u1EAFp N\u01B0\u1EDBng Cay"
   itemIcon: {fileID: 861891953541306178, guid: fa6aa9365abe8d247a0c9aa105989091, type: 3}
   dropPrefab: {fileID: 2057610660503313724, guid: 88129ee62d65a5244b72ce733e8dfec5, type: 3}
   itemType: 2

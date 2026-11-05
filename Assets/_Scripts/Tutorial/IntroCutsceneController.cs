@@ -53,7 +53,13 @@ public class IntroCutsceneController : MonoBehaviour
         // Check if cutscene should play on new game (only in Base scene)
         string activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
         bool isBase = string.IsNullOrEmpty(activeScene) || activeScene == "Base";
-        bool shouldPlay = playOnStart && isBase && (PlayerPrefs.GetInt(CutscenePrefKey, 0) == 0 || (TutorialManager.Instance != null && TutorialManager.Instance.CurrentStep == TutorialManager.TutorialStep.IntroCutscene));
+        bool isTutorialDone = (TutorialManager.Instance != null && TutorialManager.Instance.IsTutorialCompleted)
+                           || PlayerPrefs.GetInt(TutorialManager.TutorialDoneKey, 0) == 1
+                           || PlayerPrefs.GetInt("Farm_CurrentDay", 1) > 1
+                           || PlayerPrefs.GetInt("Dungeon_HighestUnlockedFloor", 1) > 1;
+
+        bool isMenuOpen = MainMenuUI.Instance != null && MainMenuUI.Instance.IsOpen;
+        bool shouldPlay = playOnStart && isBase && !isTutorialDone && !isMenuOpen && PlayerPrefs.GetInt(CutscenePrefKey, 0) == 0;
 
         if (shouldPlay)
         {
@@ -62,7 +68,11 @@ public class IntroCutsceneController : MonoBehaviour
         else
         {
             isCutscenePlaying = false;
-            if (TutorialManager.Instance != null && TutorialManager.Instance.CurrentStep == TutorialManager.TutorialStep.IntroCutscene)
+            if (isTutorialDone && TutorialManager.Instance != null)
+            {
+                TutorialManager.Instance.SkipOrCompleteTutorial();
+            }
+            else if (TutorialManager.Instance != null && TutorialManager.Instance.CurrentStep == TutorialManager.TutorialStep.IntroCutscene)
             {
                 TutorialManager.Instance.OnIntroCutsceneFinished();
             }

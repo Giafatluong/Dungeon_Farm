@@ -133,9 +133,9 @@ public class DungeonEntrance : MonoBehaviour
 
         if (UIEscapeManager.IsAnyModalUIOpen()) return;
 
-        // In tutorial: bypass floor selection UI and directly enter Floor 0
-        bool isTutorialActive = (TutorialManager.Instance != null && !TutorialManager.Instance.IsTutorialCompleted)
-                             || PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0;
+        // In tutorial: bypass floor selection UI and directly enter Floor 0 ONLY if tutorial is actively at Dungeon Gate
+        bool isTutorialActive = (TutorialManager.Instance != null && !TutorialManager.Instance.IsTutorialCompleted && TutorialManager.Instance.CurrentStep == TutorialManager.TutorialStep.DungeonGate)
+                             && PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0;
 
         if (isTutorialActive)
         {

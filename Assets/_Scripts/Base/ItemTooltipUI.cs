@@ -377,9 +377,9 @@ public class ItemTooltipUI : MonoBehaviour
         }
         else if (rarity == ItemData.ItemRarity.Epic)
         {
-            string bossSource = displayName.Contains("Vương Miện") ? "Vua Xương Cổ Đại (Boss T1)" :
-                                displayName.Contains("Slime") ? "Slime Chúa (Boss T2)" :
-                                displayName.Contains("Hắc Huyết") ? "Kỵ Sĩ Bay Hắc Ám (Boss T3)" : "Trùm Hầm Ngục";
+            string bossSource = (displayName.Contains("Vương Miện") || displayName.Contains("Slime")) ? "Slime Chúa (Boss T2)" :
+                                (displayName.Contains("Hoa Hồng") || displayName.Contains("Xương")) ? "Vua Xương Cổ Đại (Boss T1)" :
+                                (displayName.Contains("Hắc Huyết") || displayName.Contains("Tinh Thể")) ? "Kỵ Sĩ Bay Hắc Ám (Boss T3)" : "Trùm Hầm Ngục";
             sb.AppendLine($"<color=#CBD5E1>Nguồn gốc rơi:</color>  <color=#F87171><b>{bossSource}</b></color>");
             sb.AppendLine("<color=#CBD5E1>Tỉ lệ rơi:</color>  <color=#4ADE80><b>100% Chắc Chắn</b></color>");
             sb.AppendLine("<color=#CBD5E1>Công dụng cốt lõi:</color>  <color=#FDE047><b>Chặn Cổng Bậc 5/10 Tượng</b></color>");

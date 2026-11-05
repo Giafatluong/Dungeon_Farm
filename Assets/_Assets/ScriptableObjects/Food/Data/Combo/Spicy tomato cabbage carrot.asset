@@ -12,12 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 284236d205486aa4c8e049821338417f, type: 3}
   m_Name: Spicy tomato cabbage carrot
   m_EditorClassIdentifier: Assembly-CSharp::FoodData
-  itemName: Spicy tomato cabbage carrot
+  itemName: "Canh Th\u1EADp C\u1EA9m Cay"
   itemIcon: {fileID: -5554786960014384064, guid: 00265faf68382894ca8c291679a564b2, type: 3}
   dropPrefab: {fileID: 7185413650348089892, guid: b7c4b98c72c616c478923c2847efde73, type: 3}
   itemType: 2
   isStackable: 1
   isRare: 0
+  description: "M\u00F3n canh cay h\u1EA7m t\u1EEB c\u00E0 chua, b\u1EAFp c\u1EA3i v\u00E0 c\u00E0 r\u1ED1t th\u01A1m n\u1ED3ng. T\u0103ng m\u1EA1nh ATK, DEF v\u00E0 T\u1ED1c \u0110\u1ED9."
   hungerValue: 50
   healthValue: 18
   foodBuff:

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d1715c0574daa742a21d66538d09e89, type: 3}
   m_Name: CabbageSeed
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemName: CabbageSeed
+  itemName: "H\u1EA1t Gi\u1ED1ng B\u1EAFp C\u1EA3i"
   itemIcon: {fileID: 1536948201, guid: 19de471ec8e70ba418cdc18ac63ae945, type: 3}
   dropPrefab: {fileID: 5369061979834583190, guid: c083d0937e21c584e84713871adb93d1, type: 3}
   itemType: 0

@@ -36,11 +36,11 @@ public class ItemData : ScriptableObject
         if (rarity != ItemRarity.Common) return rarity;
         if (isRare) return ItemRarity.Epic;
         string n = !string.IsNullOrEmpty(itemName) ? itemName : name;
-        if (n.Contains("Boss") || n.Contains("Vương Miện") || n.Contains("Lõi Slime") || n.Contains("Hắc Huyết") ||
-            n.Contains("Crown") || n.Contains("Core") || n.Contains("Essence") || n.Contains("Royal") || n.Contains("Spicy tomato"))
+        if (n.Contains("Boss") || n.Contains("Vương Miện") || n.Contains("Hoa Hồng") || n.Contains("Lõi Slime") || n.Contains("Hắc Huyết") || n.Contains("Tinh Thể") ||
+            n.Contains("Crown") || n.Contains("Rose") || n.Contains("Core") || n.Contains("Essence") || n.Contains("Royal") || n.Contains("Spicy tomato") || n.Contains("Canh Thập Cẩm"))
             return ItemRarity.Epic;
-        if (itemType == ItemType.Food || n.Contains("Salad") || n.Contains("Butter") || n.Contains("Spicy") ||
-            n.Contains("Chilli") || n.Contains("Cucumber") || n.Contains("Cabbage") || n.Contains("Corn"))
+        if (itemType == ItemType.Food || n.Contains("Salad") || n.Contains("Butter") || n.Contains("Spicy") || n.Contains("Súp") || n.Contains("Nướng") ||
+            n.Contains("Chilli") || n.Contains("Cucumber") || n.Contains("Cabbage") || n.Contains("Corn") || n.Contains("Bắp") || n.Contains("Dưa"))
             return ItemRarity.Rare;
         return ItemRarity.Common;
     }

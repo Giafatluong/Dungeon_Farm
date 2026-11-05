@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 284236d205486aa4c8e049821338417f, type: 3}
   m_Name: Corn butter
   m_EditorClassIdentifier: Assembly-CSharp::FoodData
-  itemName: Corn butter
+  itemName: "B\u1EAFp N\u01B0\u1EDBng B\u01A1"
   itemIcon: {fileID: 2548399553569121515, guid: 73527ef1ba7f6744996c8280da076732, type: 3}
   dropPrefab: {fileID: 6516087164860254160, guid: fa9ec4a5718feb94b8af5cd473ab9e65, type: 3}
   itemType: 2

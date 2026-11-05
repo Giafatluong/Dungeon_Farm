@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b361ef3d9b53cdd41b30d69a54936c4a, type: 3}
+  m_Name: Floor_10
+  m_EditorClassIdentifier: Assembly-CSharp::FloorData
+  floorName: "Ngai V\u00E0ng V\u0129nh C\u1EEDu (Floor 10)"
+  floorNumber: 10
+  waves:
+  - {fileID: 11400000, guid: 6dc286a2c1b606495bda5bd6ac180477, type: 2}
+  - {fileID: 11400000, guid: cf1735fb03b31433fe25fc97cc213f1c, type: 2}
+  - {fileID: 11400000, guid: 54a7058a7b16b093199c9a1d7599d220, type: 2}
+  - {fileID: 11400000, guid: ca17bf5a60e5530d53d3656be197e7c6, type: 2}
+  - {fileID: 11400000, guid: e577f73bfa96a06f08d39c437bbc3885, type: 2}
+  - {fileID: 11400000, guid: 9b948ca932e5738aa01689764a37d246, type: 2}
+  - {fileID: 11400000, guid: d43aef5fb8330b3aa589bea34bdd0389, type: 2}
+  - {fileID: 11400000, guid: f336af64ea0502dbd945a116cc398782, type: 2}
+  - {fileID: 11400000, guid: f5b9ad25eda71e97237e9d30a2925137, type: 2}
+  - {fileID: 11400000, guid: 71261f0be6e14d1349ade569b8ad86c8, type: 2}
+  - {fileID: 11400000, guid: 1a9816c561185e50a136780237df19de, type: 2}
+  - {fileID: 11400000, guid: 67771243d939f543707e7b5f3260a672, type: 2}
+  - {fileID: 11400000, guid: 4647c58ced0dbc6ee55cc40e539c67d9, type: 2}
+  - {fileID: 11400000, guid: f2e706681840e3f5503b5a42f7f6bbcf, type: 2}
+  - {fileID: 11400000, guid: 2386dd9a6ba8506940d3e96390e248a5, type: 2}
+  - {fileID: 11400000, guid: b6a38dc2a4e84a529a1b9476257b7e5a, type: 2}
+  - {fileID: 11400000, guid: b26e8a5121f0f913ee08ab856206c678, type: 2}
+  - {fileID: 11400000, guid: 43ca425e1bf906ff72f72c681ac0ee37, type: 2}
+  - {fileID: 11400000, guid: 628b8755e7676d1e5130504be76c67ee, type: 2}
+  - {fileID: 11400000, guid: 0dcc0fc2bddd81161de82a697d9737ae, type: 2}
+  bossName: "Ch\u00FAa T\u1EC3 B\u00F3ng T\u1ED1i"
+  clearRewardItems:
+  - itemData: {fileID: 11400000, guid: b0550003417244a47895e7b4112e4f03, type: 2}
+    amount: 2
+  - itemData: {fileID: 11400000, guid: 41793996d132dee4f8836e96838a9ecc, type: 2}
+    amount: 10
+  - itemData: {fileID: 11400000, guid: 44e0ea967df46ab40801462a3092738b, type: 2}
+    amount: 5
+  bonusPermanentATK: 5
+  bonusPermanentDEF: 5
+  bonusPermanentMaxHP: 30
+  bonusPermanentSpeed: 3
+  victoryTitle: "\u0110\u1EA0I TH\u1EAENG NGAI V\u00C0NG V\u0128NH C\u1EECU!"
+  victoryDescription: "H\u1EAFc \u00E1m tan r\u00E3! B\u1EA1n \u0111\u00E3 \u0111\u00E1nh b\u1EA1i Ch\u00FAa T\u1EC3 B\u00F3ng T\u1ED1i, \u0111o\u1EA1t l\u1EA5y H\u1EAFc Huy\u1EBFt Tinh Th\u1EC3 v\u00E0 ho\u00E0n th\u00E0nh huy\u1EC1n tho\u1EA1i H\u1EA7m Ng\u1EE5c!"

@@ -88,7 +88,7 @@ public class DungeonTutorialController : MonoBehaviour
         // Listen to WaveManager entrance state
         if (waveManager != null && waveManager.isAtEntrance)
         {
-            if (isTutorialFloor || PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0)
+            if (isTutorialFloor && PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0)
             {
                 ShowEntranceRoomGuide();
             }
@@ -101,7 +101,8 @@ public class DungeonTutorialController : MonoBehaviour
         FloorData activeFloor = waveManager != null ? waveManager.GetActiveFloor() : null;
         int activeFloorNum = activeFloor != null ? activeFloor.floorNumber : currentFloor;
 
-        isTutorialFloor = (currentFloor == 0 || activeFloorNum == 0 || PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0);
+        // Tutorial floor is strictly Floor 0
+        isTutorialFloor = (currentFloor == 0 || activeFloorNum == 0);
     }
 
     private void Update()
@@ -117,7 +118,7 @@ public class DungeonTutorialController : MonoBehaviour
         // Safe entrance guide auto-trigger & tracking
         if (waveManager.isAtEntrance)
         {
-            if (!hasShownEntranceGuide && (isTutorialFloor || PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0))
+            if (!hasShownEntranceGuide && isTutorialFloor && PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0)
             {
                 ShowEntranceRoomGuide();
             }
@@ -145,7 +146,7 @@ public class DungeonTutorialController : MonoBehaviour
 
         if (waveIndex < 0)
         {
-            if (waveManager != null && waveManager.isAtEntrance && (isTutorialFloor || PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0))
+            if (waveManager != null && waveManager.isAtEntrance && isTutorialFloor && PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 0)
             {
                 ShowEntranceRoomGuide();
             }
@@ -202,7 +203,7 @@ public class DungeonTutorialController : MonoBehaviour
     public void ShowEntranceRoomGuide()
     {
         RefreshTutorialFloorState();
-        if (!isTutorialFloor && PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 1)
+        if (!isTutorialFloor || PlayerPrefs.GetInt(TutorialManager.DungeonTutorialDoneKey, 0) == 1)
         {
             return;
         }

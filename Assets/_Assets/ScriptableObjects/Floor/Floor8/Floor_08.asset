@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b361ef3d9b53cdd41b30d69a54936c4a, type: 3}
+  m_Name: Floor_08
+  m_EditorClassIdentifier: Assembly-CSharp::FloorData
+  floorName: "T\u00E0n T\u00EDch H\u01B0 V\u00F4 (Floor 8)"
+  floorNumber: 8
+  waves:
+  - {fileID: 11400000, guid: abcee73815dfdb6b1ca0577da8fd2ac1, type: 2}
+  - {fileID: 11400000, guid: 93ce3c7b69b1ce11bf88b56e430452a1, type: 2}
+  - {fileID: 11400000, guid: 54eb489e9d055e514195a2ac97600e3c, type: 2}
+  - {fileID: 11400000, guid: 44db51b68cef367340eb0e8530dda698, type: 2}
+  - {fileID: 11400000, guid: edacf048ded5b62701522b34e103831c, type: 2}
+  - {fileID: 11400000, guid: e2855eb8d853aa6f71baf7e67b170b47, type: 2}
+  - {fileID: 11400000, guid: 5ed823deb06fccbee3e4acbef537f87e, type: 2}
+  - {fileID: 11400000, guid: ff40a6f2f45b7246b625a036e318f94d, type: 2}
+  - {fileID: 11400000, guid: eee243ac5b1bc13bfce1569c270df0a0, type: 2}
+  - {fileID: 11400000, guid: 0c1f0da3dac3f5a88c8110c8bd77f381, type: 2}
+  - {fileID: 11400000, guid: ab75d9ccd557dd5e8fdb3cac938c848b, type: 2}
+  - {fileID: 11400000, guid: 2df79a005e0af244912609467d26591a, type: 2}
+  - {fileID: 11400000, guid: 6171fbcf2d6dd4d993cb67f6525008ad, type: 2}
+  - {fileID: 11400000, guid: 4b54b25359fd1b08ff7ab7938ed7d8d4, type: 2}
+  - {fileID: 11400000, guid: 5e67550577d2eb2dca475f7382aded22, type: 2}
+  - {fileID: 11400000, guid: 4602520483829ab0ccbf37304040ad2a, type: 2}
+  bossName: "Thi\u1EC7n X\u1EA1 H\u01B0 V\u00F4 C\u1ED5 \u0110\u1EA1i"
+  clearRewardItems:
+  - itemData: {fileID: 11400000, guid: b07ecb6fb3c79964e84b9f894a2372d9, type: 2}
+    amount: 6
+  - itemData: {fileID: 11400000, guid: f60f6a8d1006791458c801e045769b06, type: 2}
+    amount: 8
+  - itemData: {fileID: 11400000, guid: 44e0ea967df46ab40801462a3092738b, type: 2}
+    amount: 3
+  bonusPermanentATK: 3
+  bonusPermanentDEF: 1
+  bonusPermanentMaxHP: 15
+  bonusPermanentSpeed: 2
+  victoryTitle: "KHU\u1EA4T PH\u1EE4C T\u00C0N T\u00CDCH H\u01AF V\u00D4!"
+  victoryDescription: "M\u0169i t\u00EAn b\u00F3ng t\u1ED1i g\u00E3y v\u1EE5n, \u00E1nh s\u00E1ng th\u1EA7n th\u00E1nh soi r\u1ECDi kh\u1EAFp t\u00E0n t\u00EDch ng\u00E0n n\u0103m!"

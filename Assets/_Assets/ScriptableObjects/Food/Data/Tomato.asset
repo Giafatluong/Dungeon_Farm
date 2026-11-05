@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 284236d205486aa4c8e049821338417f, type: 3}
   m_Name: Tomato
   m_EditorClassIdentifier: Assembly-CSharp::FoodData
-  itemName: Tomato
+  itemName: "C\xE0 Chua"
   itemIcon: {fileID: 2138196466, guid: 338eb9325b511bf4dbf0184fff5f5d9c, type: 3}
   dropPrefab: {fileID: 849597214606494811, guid: 0c6dbccaaebd0134fa11d6af905577da, type: 3}
   itemType: 2

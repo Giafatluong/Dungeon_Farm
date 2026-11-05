@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d1715c0574daa742a21d66538d09e89, type: 3}
   m_Name: Item_Boss_SlimeCore
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemName: "L\u00F5i Slime Ch\u00FAa"
+  itemName: "V\u01B0\u01A1ng Mi\u1EC7n Slime"
   itemIcon: {fileID: -949073377, guid: 357b5a702fa0c1041af8504a4bf52131, type: 3}
   dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
   itemType: 3
   isStackable: 1
   isRare: 1
+  description: "V\u01B0\u01A1ng mi\u1EC7n ho\u00E0ng gia r\u01A1i ra t\u1EEB Slime Ch\u00FAa (Boss T\u1EA7ng 2). T\u00EDn v\u1EADt quy\u1EC1n l\u1EF1c d\u00F9ng \u0111\u1EC3 d\u00E2ng l\u1EC5 ph\u00E1 phong \u1EA5n T\u01B0\u1EE3ng N\u1EEF Th\u1EA7n."
 

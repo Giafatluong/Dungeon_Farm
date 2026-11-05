@@ -90,18 +90,6 @@ public class WaveManager : MonoBehaviour
                     return cachedActiveFloor;
                 }
             }
-            int floorIndex = Mathf.Clamp(currentFloorNum - 1, 0, allFloors.Length - 1);
-            if (allFloors[floorIndex] != null)
-            {
-                cachedActiveFloor = allFloors[floorIndex];
-                return cachedActiveFloor;
-            }
-        }
-
-        if (floorData != null)
-        {
-            cachedActiveFloor = floorData;
-            return cachedActiveFloor;
         }
 
         FloorData[] loadedFloors = GameAssetHelper.LoadAll<FloorData>();
@@ -110,6 +98,23 @@ public class WaveManager : MonoBehaviour
             if (loadedFloors[i] != null && loadedFloors[i].floorNumber == currentFloorNum)
             {
                 cachedActiveFloor = loadedFloors[i];
+                return cachedActiveFloor;
+            }
+        }
+
+        if (floorData != null && floorData.floorNumber == currentFloorNum)
+        {
+            cachedActiveFloor = floorData;
+            return cachedActiveFloor;
+        }
+
+        // Fallback: If not found, clamp to available configured floor
+        if (allFloors != null && allFloors.Length > 0)
+        {
+            int floorIndex = Mathf.Clamp(currentFloorNum - 1, 0, allFloors.Length - 1);
+            if (allFloors[floorIndex] != null)
+            {
+                cachedActiveFloor = allFloors[floorIndex];
                 return cachedActiveFloor;
             }
         }
