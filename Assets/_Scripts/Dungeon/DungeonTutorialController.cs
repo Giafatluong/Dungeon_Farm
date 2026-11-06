@@ -405,10 +405,16 @@ public class DungeonTutorialController : MonoBehaviour
         PlayerPrefs.SetInt(CampIntroSeenKey, 1);
         PlayerPrefs.Save();
 
-        // Unlock Floor 1 permanently
+        // Unlock Floor 1 permanently (and ensure Floor 2 is NOT unlocked by tutorial completion)
         if (ProgressionManager.Instance != null)
         {
+            if (!ProgressionManager.Instance.HasClaimedFirstClearStats(1))
+            {
+                ProgressionManager.Instance.defeatedBossFloors?.Remove(1);
+                ProgressionManager.Instance.highestUnlockedFloor = 1;
+            }
             ProgressionManager.Instance.UnlockFloor(1);
+            ProgressionManager.Instance.SaveFloorProgression();
         }
 
         HideBanner();

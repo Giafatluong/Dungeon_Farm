@@ -12,13 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c63989b7d70655d4eb98239d5836f0e2, type: 3}
   m_Name: Recipe_SlimeFruitJelly
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
-  recipeName: "Th\u1EA1ch Slime Tr\xE1i C\xE2y"
+  recipeName: "Thạch Slime Trái Cây"
   ingredients:
   - item: {fileID: 11400000, guid: c1100001417244a47895e7b4112e4f01, type: 2}
     amount: 2
   - item: {fileID: 11400000, guid: 87d1b2164c734434682f1fc6e72fba3a, type: 2}
-    amount: 2
-  - item: {fileID: 11400000, guid: bebc2ac43f68ce44d89cca458fd002c8, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: aaf3001eed98e2443b500d28635dfb36, type: 2}
     amount: 1
   resultFood: {fileID: 11400000, guid: d1100001417244a47895e7b4112e4f01, type: 2}
   resultAmount: 1
+  isDefaultUnlocked: 0

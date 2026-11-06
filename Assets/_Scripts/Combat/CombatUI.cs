@@ -1003,7 +1003,7 @@ public class CombatUI : MonoBehaviour
             if (turnBannerText != null)
             {
                 turnBannerText.text = combatManager.isAmbushCurrent
-                    ? "KẺ ĐỊCH MAI PHỤC!"
+                    ? $"KẺ ĐỊCH MAI PHỤC! ({secs}s)"
                     : $"CHUẨN BỊ CHIẾN ĐẤU ({secs}s)";
                 turnBannerText.color = combatManager.isAmbushCurrent
                     ? new Color(1f, 0.45f, 0.25f)

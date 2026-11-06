@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Item_Boss_DarkEssence
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   itemName: "H\u1EAFc Huy\u1EBFt Tinh Th\u1EC3"
-  itemIcon: {fileID: -739518123, guid: 357b5a702fa0c1041af8504a4bf52131, type: 3}
+  itemIcon: {fileID: -192042698, guid: 357b5a702fa0c1041af8504a4bf52131, type: 3}
   dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
   itemType: 3
   isStackable: 1

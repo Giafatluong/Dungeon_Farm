@@ -408,13 +408,6 @@ public class MainMenuUI : MonoBehaviour
 
         InventoryButton.selectedItem = null;
 
-        // Reset Tutorial progress and prepare tutorial crops and seeds immediately after clearing containers
-        if (TutorialManager.Instance != null)
-        {
-            TutorialManager.Instance.ResetTutorial();
-            TutorialManager.Instance.EnsureTutorialCropsReady();
-        }
-
         // 5. Reset all Statue Offerings
         try
         {
@@ -455,7 +448,14 @@ public class MainMenuUI : MonoBehaviour
             Debug.LogWarning($"[MainMenuUI] Error resetting FarmPlots: {ex.Message}");
         }
 
-        // 7. Reset player stats in PlayerStats
+        // 7. Reset Tutorial progress and prepare tutorial crops and seeds (AFTER plots are defaulted)
+        if (TutorialManager.Instance != null)
+        {
+            TutorialManager.Instance.ResetTutorial();
+            TutorialManager.Instance.EnsureTutorialCropsReady(force: true);
+        }
+
+        // 8. Reset player stats in PlayerStats
         if (PlayerStats.Instance != null)
         {
             PlayerStats.Instance.ClearTemporaryBuffs();

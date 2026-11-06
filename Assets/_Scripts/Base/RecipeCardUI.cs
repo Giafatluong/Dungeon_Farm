@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
@@ -38,6 +39,63 @@ public class RecipeCardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
             Destroy(rowTMP);
         }
 
+        // Check unlocked state
+        bool isUnlocked = ProgressionManager.Instance != null
+            ? ProgressionManager.Instance.IsRecipeUnlocked(recipe)
+            : recipe.isDefaultUnlocked;
+
+        if (!isUnlocked)
+        {
+            if (titleText != null)
+            {
+                titleText.text = "<color=#888888>??? [CHƯA MỞ KHÓA]</color>";
+            }
+
+            if (starsText != null)
+            {
+                starsText.gameObject.SetActive(false);
+            }
+
+            if (dishIcon != null)
+            {
+                dishIcon.sprite = null;
+                dishIcon.gameObject.SetActive(false);
+            }
+
+            if (detailText != null)
+            {
+                detailText.text = "<color=#888888>Chưa rõ công thức — Hãy tự kết hợp 4 nguyên liệu và nấu trên bếp để mở khóa!</color>";
+            }
+
+            if (lockIcon != null)
+            {
+                lockIcon.SetActive(true);
+            }
+
+            if (actionButton != null)
+            {
+                actionButton.onClick.RemoveAllListeners();
+                if (actionButtonText != null)
+                {
+                    actionButtonText.text = "KHÓA";
+                    actionButtonText.color = new Color(0.65f, 0.65f, 0.70f, 0.85f);
+                }
+                if (actionButtonBackground != null) actionButtonBackground.color = new Color(0.18f, 0.20f, 0.25f, 0.85f);
+                actionButton.interactable = false;
+            }
+            return;
+        }
+
+        if (dishIcon != null)
+        {
+            dishIcon.color = Color.white;
+        }
+
+        if (lockIcon != null)
+        {
+            lockIcon.SetActive(false);
+        }
+
         if (titleText != null) titleText.text = recipe.DisplayName;
         if (starsText != null) starsText.gameObject.SetActive(false);
 
@@ -60,16 +118,27 @@ public class RecipeCardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
                     sb.Append($"{recipe.resultFood.hungerValue} Độ No");
                 }
             }
-            sb.Append(" | Cần: ");
-            if (recipe.ingredients != null)
+            if (recipe.isCategoryRecipe)
             {
-                for (int i = 0; i < recipe.ingredients.Length; i++)
+                sb.Append(" | Cần: ");
+                List<string> reqs = new List<string>();
+                if (recipe.requiredVeggieCount > 0) reqs.Add($"{recipe.requiredVeggieCount} Rau củ bất kỳ");
+                if (recipe.requiredMeatCount > 0) reqs.Add($"{recipe.requiredMeatCount} Thịt bất kỳ");
+                sb.Append(string.Join(" + ", reqs));
+            }
+            else
+            {
+                sb.Append(" | Cần: ");
+                if (recipe.ingredients != null)
                 {
-                    var req = recipe.ingredients[i];
-                    if (req != null && req.item != null)
+                    for (int i = 0; i < recipe.ingredients.Length; i++)
                     {
-                        if (i > 0) sb.Append(" + ");
-                        sb.Append($"{req.item.itemName}x{req.amount}");
+                        var req = recipe.ingredients[i];
+                        if (req != null && req.item != null)
+                        {
+                            if (i > 0) sb.Append(" + ");
+                            sb.Append($"{req.item.itemName}x{req.amount}");
+                        }
                     }
                 }
             }
@@ -115,19 +184,17 @@ public class RecipeCardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
                 actionButton.interactable = false;
             }
         }
-
-        if (lockIcon != null)
-        {
-            lockIcon.SetActive(false);
-        }
     }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (currentRecipe != null && currentRecipe.resultFood != null)
-        {
-            ItemTooltipUI.EnsureInstance()?.Show(currentRecipe.resultFood, transform.position);
-        }
+        if (currentRecipe == null || currentRecipe.resultFood == null) return;
+        bool isUnlocked = ProgressionManager.Instance != null
+            ? ProgressionManager.Instance.IsRecipeUnlocked(currentRecipe)
+            : currentRecipe.isDefaultUnlocked;
+        if (!isUnlocked) return;
+
+        ItemTooltipUI.EnsureInstance()?.Show(currentRecipe.resultFood, transform.position);
     }
 
     public void OnPointerExit(PointerEventData eventData)

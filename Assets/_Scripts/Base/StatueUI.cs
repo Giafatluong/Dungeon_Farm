@@ -742,10 +742,14 @@ public class StatueUI : MonoBehaviour
             return a.tier.CompareTo(b.tier);
         });
 
-        // 1. Navigation Category Tabs (ATK, DEF, SPD, HP)
-        BuildCategoryTabs(offeringsContainer);
+        // 1. Navigation Category Tabs (Tấn Công (ATK), Phòng Thủ (DEF), Tốc Độ (SPD), Sinh Mệnh (HP))
+        // Place sticky category tabs in OfferingsColumn (outside ScrollRect content) so they stay fixed when scrolling
+        ScrollRect sr = offeringsContainer.GetComponentInParent<ScrollRect>();
+        Transform columnTransform = sr != null && sr.transform.parent != null ? sr.transform.parent : offeringsContainer.parent;
+        EnsureStickyHeaderAndScrollLayout(columnTransform, sr);
+        BuildCategoryTabs(columnTransform);
 
-        // 2. Render Offering Cards for the selected Category
+        // 2. Render View filtered by selected category tab
         Offering.RewardStat filterStat = currentViewCategory switch
         {
             OfferingViewCategory.Might => Offering.RewardStat.ATK,
@@ -761,20 +765,65 @@ public class StatueUI : MonoBehaviour
             CreateOfferingCard(filtered[i], offeringsContainer);
         }
 
-        if (resetScroll)
+        if (resetScroll && sr != null)
         {
-            ScrollRect sr = offeringsContainer.GetComponentInParent<ScrollRect>();
-            if (sr != null)
+            Canvas.ForceUpdateCanvases();
+            sr.verticalNormalizedPosition = 1f;
+        }
+    }
+
+    private void EnsureStickyHeaderAndScrollLayout(Transform columnTransform, ScrollRect sr)
+    {
+        if (columnTransform == null) return;
+
+        Transform headerTrans = columnTransform.Find("Header");
+        if (headerTrans is RectTransform headerRT)
+        {
+            headerRT.anchorMin = new Vector2(0f, 1f);
+            headerRT.anchorMax = new Vector2(1f, 1f);
+            headerRT.pivot = new Vector2(0.5f, 1f);
+            headerRT.anchoredPosition = new Vector2(0f, -6f);
+            headerRT.sizeDelta = new Vector2(-20f, 22f);
+        }
+
+        if (sr != null && sr.transform is RectTransform srRT)
+        {
+            srRT.anchorMin = new Vector2(0f, 0f);
+            srRT.anchorMax = new Vector2(1f, 1f);
+            srRT.pivot = new Vector2(0.5f, 0.5f);
+            srRT.offsetMin = new Vector2(8f, 8f);
+            srRT.offsetMax = new Vector2(-8f, -64f);
+
+            if (sr.viewport != null)
             {
-                sr.verticalNormalizedPosition = 1f;
+                sr.viewport.anchorMin = new Vector2(0.015f, 0.01f);
+                sr.viewport.anchorMax = new Vector2(0.955f, 1f);
+                sr.viewport.offsetMin = Vector2.zero;
+                sr.viewport.offsetMax = Vector2.zero;
             }
         }
     }
 
-    private void BuildCategoryTabs(Transform parent)
+    private void BuildCategoryTabs(Transform columnParent)
     {
+        if (columnParent == null) return;
+
+        Transform existingTabs = columnParent.Find("CategoryTabsRow");
+        if (existingTabs != null)
+        {
+            existingTabs.SetParent(null);
+            Destroy(existingTabs.gameObject);
+        }
+
         GameObject tabsGO = new GameObject("CategoryTabsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
-        tabsGO.transform.SetParent(parent, false);
+        tabsGO.transform.SetParent(columnParent, false);
+
+        RectTransform tabsRT = tabsGO.GetComponent<RectTransform>();
+        tabsRT.anchorMin = new Vector2(0f, 1f);
+        tabsRT.anchorMax = new Vector2(1f, 1f);
+        tabsRT.pivot = new Vector2(0.5f, 1f);
+        tabsRT.anchoredPosition = new Vector2(0f, -30f);
+        tabsRT.sizeDelta = new Vector2(-24f, 28f);
 
         LayoutElement le = tabsGO.GetComponent<LayoutElement>();
         le.minHeight = 28f;
@@ -798,18 +847,20 @@ public class StatueUI : MonoBehaviour
     {
         GameObject btnGO = new GameObject($"Tab_{category}", typeof(RectTransform), typeof(Image), typeof(Button));
         btnGO.transform.SetParent(parent, false);
+        btnGO.GetComponent<RectTransform>().sizeDelta = new Vector2(0f, 28f);
 
         bool isSelected = currentViewCategory == category;
         Image img = btnGO.GetComponent<Image>();
         if (isSelected)
         {
-            DungeonUIAssetHelper.StyleSlicedFrame(img, new Color(0.85f, 0.7f, 0.2f, 0.95f));
+            DungeonUIAssetHelper.StyleSlicedFrame(img, new Color(0.85f, 0.65f, 0.16f, 1f));
         }
         else
         {
             DungeonUIAssetHelper.StyleSlicedPanel(img, DungeonUIAssetHelper.PanelStyle.Slate);
             img.color = new Color(0.18f, 0.2f, 0.26f, 0.95f);
         }
+        img.pixelsPerUnitMultiplier = 2.6f;
 
         Button btn = btnGO.GetComponent<Button>();
         btn.onClick.AddListener(() =>
@@ -826,12 +877,13 @@ public class StatueUI : MonoBehaviour
         txtRT.sizeDelta = Vector2.zero;
 
         TextMeshProUGUI tmp = txtGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(tmp);
-        tmp.fontSize = 10;
+        DungeonUIAssetHelper.ApplyFont(tmp, withOutline: isSelected);
+        tmp.fontSize = 10.5f;
         tmp.fontStyle = FontStyles.Bold;
+        tmp.textWrappingMode = TextWrappingModes.NoWrap;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.text = label;
-        tmp.color = isSelected ? new Color(1f, 0.9f, 0.4f) : new Color(0.8f, 0.85f, 0.9f);
+        tmp.color = isSelected ? Color.white : new Color(0.82f, 0.86f, 0.92f);
     }
 
     private void CreateOfferingCard(Offering off, Transform parent)
@@ -841,12 +893,15 @@ public class StatueUI : MonoBehaviour
         bool isUnlocked = off.IsUnlocked();
 
         // Card Root
-        GameObject cardGO = new GameObject($"Card_{off.offeringKey}", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(LayoutElement));
+        GameObject cardGO = new GameObject($"Card_{off.offeringKey}", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
         cardGO.transform.SetParent(parent, false);
 
-        LayoutElement cardLE = cardGO.GetComponent<LayoutElement>();
-        cardLE.minHeight = 92f;
-        cardLE.preferredHeight = 92f;
+        RectTransform cardRT = cardGO.GetComponent<RectTransform>();
+        cardRT.sizeDelta = new Vector2(0, 86);
+
+        LayoutElement cardLE = cardGO.AddComponent<LayoutElement>();
+        cardLE.minHeight = 86f;
+        cardLE.preferredHeight = 86f;
         cardLE.flexibleHeight = 0;
 
         Image cardBg = cardGO.GetComponent<Image>();
@@ -863,6 +918,7 @@ public class StatueUI : MonoBehaviour
         {
             DungeonUIAssetHelper.StyleSlicedPanel(cardBg, DungeonUIAssetHelper.PanelStyle.Slate);
         }
+        cardBg.pixelsPerUnitMultiplier = 1.6f;
 
         Outline outline = cardGO.AddComponent<Outline>();
         if (isDone)
@@ -888,8 +944,8 @@ public class StatueUI : MonoBehaviour
         outline.effectDistance = new Vector2(1, -1);
 
         VerticalLayoutGroup vlg = cardGO.GetComponent<VerticalLayoutGroup>();
-        vlg.padding = new RectOffset(10, 10, 6, 6);
-        vlg.spacing = 6;
+        vlg.padding = new RectOffset(12, 12, 8, 6);
+        vlg.spacing = 4;
         vlg.childControlWidth = true;
         vlg.childControlHeight = false;
         vlg.childForceExpandWidth = true;
@@ -898,10 +954,12 @@ public class StatueUI : MonoBehaviour
         // Header Row (Name + Reward Badge + Completed Badge + Quick Offer Button)
         GameObject headerGO = new GameObject("Header", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
         headerGO.transform.SetParent(cardGO.transform, false);
+        RectTransform headerRT = headerGO.GetComponent<RectTransform>();
+        headerRT.sizeDelta = new Vector2(0, 20);
 
         LayoutElement headerLE = headerGO.GetComponent<LayoutElement>();
-        headerLE.minHeight = 22f;
-        headerLE.preferredHeight = 22f;
+        headerLE.minHeight = 20f;
+        headerLE.preferredHeight = 20f;
 
         HorizontalLayoutGroup hlg = headerGO.GetComponent<HorizontalLayoutGroup>();
         hlg.spacing = 8;
@@ -917,8 +975,6 @@ public class StatueUI : MonoBehaviour
         DungeonUIAssetHelper.ApplyFont(titleTMP);
         titleTMP.fontSize = 11.5f;
         titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.textWrappingMode = TextWrappingModes.NoWrap;
-        titleTMP.overflowMode = TextOverflowModes.Ellipsis;
         titleTMP.text = GetOfferingDisplayName(off);
         if (isDone)
             titleTMP.color = new Color(0.4f, 1f, 0.6f);
@@ -926,20 +982,15 @@ public class StatueUI : MonoBehaviour
             titleTMP.color = new Color(0.65f, 0.65f, 0.7f);
         else
             titleTMP.color = new Color(1f, 0.88f, 0.4f);
-        nameGO.GetComponent<RectTransform>().sizeDelta = new Vector2(250, 22);
+        nameGO.GetComponent<RectTransform>().sizeDelta = new Vector2(250, 20);
 
         // Reward Badge
         GameObject badgeGO = new GameObject("RewardBadge", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
         badgeGO.transform.SetParent(headerGO.transform, false);
         Image badgeImg = badgeGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(badgeImg, GetStatBadgeColor(off.rewardStat));
+        badgeImg.pixelsPerUnitMultiplier = 2.6f;
         badgeGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
-
-        HorizontalLayoutGroup badgeHLG = badgeGO.GetComponent<HorizontalLayoutGroup>();
-        badgeHLG.childControlWidth = true;
-        badgeHLG.childControlHeight = true;
-        badgeHLG.childForceExpandWidth = true;
-        badgeHLG.childForceExpandHeight = true;
 
         GameObject badgeTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         badgeTextGO.transform.SetParent(badgeGO.transform, false);
@@ -951,6 +1002,7 @@ public class StatueUI : MonoBehaviour
         string statLabel = off.rewardStat == Offering.RewardStat.MaxHP ? "HP" : off.rewardStat.ToString();
         badgeTMP.text = $"+{off.rewardAmount} {statLabel}";
         badgeTMP.color = Color.white;
+        badgeTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
 
         // Status or Quick Offer Button
         if (isDone)
@@ -963,7 +1015,7 @@ public class StatueUI : MonoBehaviour
             doneTMP.fontStyle = FontStyles.Bold;
             doneTMP.text = "[ĐÃ HOÀN THÀNH]";
             doneTMP.color = new Color(0.35f, 1f, 0.5f);
-            doneGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 22);
+            doneGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 20);
         }
         else if (!isUnlocked)
         {
@@ -971,13 +1023,8 @@ public class StatueUI : MonoBehaviour
             lockBadgeGO.transform.SetParent(headerGO.transform, false);
             Image lockBg = lockBadgeGO.GetComponent<Image>();
             DungeonUIAssetHelper.StyleSlicedFrame(lockBg, new Color(0.35f, 0.15f, 0.15f, 0.95f));
-            lockBadgeGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 22);
-
-            HorizontalLayoutGroup lockHLG = lockBadgeGO.GetComponent<HorizontalLayoutGroup>();
-            lockHLG.childControlWidth = true;
-            lockHLG.childControlHeight = true;
-            lockHLG.childForceExpandWidth = true;
-            lockHLG.childForceExpandHeight = true;
+            lockBg.pixelsPerUnitMultiplier = 2.6f;
+            lockBadgeGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 20);
 
             GameObject lockTxtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
             lockTxtGO.transform.SetParent(lockBadgeGO.transform, false);
@@ -988,22 +1035,18 @@ public class StatueUI : MonoBehaviour
             lockTMP.alignment = TextAlignmentOptions.Center;
             lockTMP.text = off.tier == 5 ? "[CẦN BOSS 1]" : (off.tier == 10 ? "[CẦN BOSS TỐI THƯỢNG]" : "[CHƯA MỞ KHÓA]");
             lockTMP.color = new Color(1f, 0.65f, 0.65f);
+            lockTxtGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 20);
         }
         else
         {
-            GameObject btnGO = new GameObject("BtnQuickOffer", typeof(RectTransform), typeof(Image), typeof(Button), typeof(HorizontalLayoutGroup));
+            GameObject btnGO = new GameObject("BtnQuickOffer", typeof(RectTransform), typeof(Image), typeof(Button));
             btnGO.transform.SetParent(headerGO.transform, false);
             Image btnBg = btnGO.GetComponent<Image>();
-            btnGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 22);
-
-            HorizontalLayoutGroup btnHLG = btnGO.GetComponent<HorizontalLayoutGroup>();
-            btnHLG.childControlWidth = true;
-            btnHLG.childControlHeight = true;
-            btnHLG.childForceExpandWidth = true;
-            btnHLG.childForceExpandHeight = true;
+            btnGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
 
             Button btn = btnGO.GetComponent<Button>();
             DungeonUIAssetHelper.StyleTactileButton(btn, btnBg, DungeonUIAssetHelper.ButtonStyle.Victory);
+            btnBg.pixelsPerUnitMultiplier = 2.6f;
             Offering offRef = off;
             btn.onClick.AddListener(() => QuickOffer(offRef));
 
@@ -1016,11 +1059,14 @@ public class StatueUI : MonoBehaviour
             btnTMP.alignment = TextAlignmentOptions.Center;
             btnTMP.text = "Quick Offer";
             btnTMP.color = Color.white;
+            btnTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
         }
 
         // Requirements Row
         GameObject reqsRowGO = new GameObject("RequirementsRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
         reqsRowGO.transform.SetParent(cardGO.transform, false);
+        RectTransform reqsRowRT = reqsRowGO.GetComponent<RectTransform>();
+        reqsRowRT.sizeDelta = new Vector2(0, 52);
 
         LayoutElement reqsLE = reqsRowGO.GetComponent<LayoutElement>();
         reqsLE.minHeight = 52f;

@@ -12,9 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c63989b7d70655d4eb98239d5836f0e2, type: 3}
   m_Name: Recipe_FreshSalad
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
-  recipeName: "Salad B\u1EAFp C\u1EA3i T\u01B0\u01A1i (Fresh Salad)"
+  recipeName: "Salad Bắp Cải"
   ingredients:
   - item: {fileID: 11400000, guid: 5aac5a38adcb69d4d8122b9760c16186, type: 2}
     amount: 2
+  - item: {fileID: 11400000, guid: 87d1b2164c734434682f1fc6e72fba3a, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: bebc2ac43f68ce44d89cca458fd002c8, type: 2}
+    amount: 1
   resultFood: {fileID: 11400000, guid: 7b235b7cc0dbff740ad1722db4b69233, type: 2}
   resultAmount: 1
+  isDefaultUnlocked: 0

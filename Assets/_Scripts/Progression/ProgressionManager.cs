@@ -95,6 +95,7 @@ public class ProgressionManager : MonoBehaviour
 
         LoadFloorProgression();
         LoadDiscoveredRecipes();
+        LoadUnlockedRecipes();
         LoadUnlockedBlessings();
         LoadPermanentStats();
         InitializeDefaultUnlocks();
@@ -124,16 +125,18 @@ public class ProgressionManager : MonoBehaviour
             }
         }
 
-        // 2. Automatically unlock all recipes in the system
+        // 2. Only unlock the 2 starter recipes by default; all other recipes are only unlocked after being cooked
+        unlockedRecipes.RemoveAll(r => r == null || (!r.isDefaultUnlocked && !IsRecipeDiscovered(r)));
         RecipeData[] allRecipes = GameAssetHelper.LoadAll<RecipeData>();
         for (int i = 0; i < allRecipes.Length; i++)
         {
             RecipeData r = allRecipes[i];
-            if (r != null && !unlockedRecipes.Contains(r))
+            if (r != null && (r.isDefaultUnlocked || IsRecipeDiscovered(r)) && !unlockedRecipes.Contains(r))
             {
                 unlockedRecipes.Add(r);
             }
         }
+        SaveUnlockedRecipes();
     }
 
     /// <summary>
@@ -163,12 +166,24 @@ public class ProgressionManager : MonoBehaviour
         if (unlockedItems != null) unlockedItems.Clear();
         if (unlockedRecipes != null) unlockedRecipes.Clear();
 
+        PlayerPrefs.DeleteKey("Unlocked_Recipes");
+        PlayerPrefs.DeleteKey("Discovered_Recipes");
+        PlayerPrefs.DeleteKey("Dungeon_HighestUnlockedFloor");
+        PlayerPrefs.DeleteKey("Dungeon_DefeatedBossFloors");
+        for (int f = 0; f <= 10; f++)
+        {
+            PlayerPrefs.DeleteKey($"Floor_{f}_FirstClearStatsClaimed");
+            PlayerPrefs.DeleteKey($"Boss_Floor_{f}_DefeatedDay");
+            PlayerPrefs.DeleteKey($"Boss_Floor_{f}_NextAvailableDay");
+        }
+
         InitializeDefaultUnlocks();
         CheckAllBlessingUnlocks();
 
         SavePermanentStats();
         SaveFloorProgression();
         SaveDiscoveredRecipes();
+        SaveUnlockedRecipes();
         SaveUnlockedBlessings();
 
         OnProgressionChanged?.Invoke();
@@ -370,14 +385,67 @@ public class ProgressionManager : MonoBehaviour
         }
     }
 
+    public bool IsRecipeUnlocked(RecipeData recipe)
+    {
+        if (recipe == null) return false;
+        if (recipe.isDefaultUnlocked) return true;
+
+        // A non-default recipe is unlocked strictly when the player has cooked/discovered it
+        return IsRecipeDiscovered(recipe);
+    }
+
     public void UnlockRecipe(RecipeData recipe)
     {
         if (recipe == null) return;
+        bool wasUnlocked = IsRecipeUnlocked(recipe);
+        DiscoverRecipe(recipe);
+        if (unlockedRecipes == null) unlockedRecipes = new List<RecipeData>();
         if (!unlockedRecipes.Contains(recipe))
         {
             unlockedRecipes.Add(recipe);
-            Debug.Log("Unlocked new recipe: " + recipe.recipeName);
+            SaveUnlockedRecipes();
+        }
+        if (!wasUnlocked)
+        {
+            Debug.Log("[ProgressionManager] Unlocked new recipe: " + recipe.DisplayName);
             OnProgressionChanged?.Invoke();
+        }
+    }
+
+    public void SaveUnlockedRecipes()
+    {
+        if (unlockedRecipes == null) return;
+        List<string> keys = new List<string>();
+        for (int i = 0; i < unlockedRecipes.Count; i++)
+        {
+            RecipeData r = unlockedRecipes[i];
+            if (r != null && (r.isDefaultUnlocked || IsRecipeDiscovered(r)))
+            {
+                if (!string.IsNullOrEmpty(r.name) && !keys.Contains(r.name)) keys.Add(r.name);
+                if (!string.IsNullOrEmpty(r.DisplayName) && !keys.Contains(r.DisplayName)) keys.Add(r.DisplayName);
+            }
+        }
+        PlayerPrefs.SetString("Unlocked_Recipes", string.Join(";", keys));
+        PlayerPrefs.Save();
+    }
+
+    public void LoadUnlockedRecipes()
+    {
+        if (unlockedRecipes == null) unlockedRecipes = new List<RecipeData>();
+        unlockedRecipes.Clear();
+
+        RecipeData[] all = GameAssetHelper.LoadAll<RecipeData>();
+        for (int i = 0; i < all.Length; i++)
+        {
+            RecipeData r = all[i];
+            if (r == null) continue;
+            if (r.isDefaultUnlocked || IsRecipeDiscovered(r))
+            {
+                if (!unlockedRecipes.Contains(r))
+                {
+                    unlockedRecipes.Add(r);
+                }
+            }
         }
     }
 
@@ -667,7 +735,20 @@ public class ProgressionManager : MonoBehaviour
         Debug.Log("Dungeon Run completed successfully!");
         runActive = false;
         LastLostItems.Clear();
-        RecordBossDefeated(currentFloor);
+
+        if (currentFloor > 0)
+        {
+            RecordBossDefeated(currentFloor);
+        }
+        else
+        {
+            // Tutorial Floor (Floor 0) completed: only unlock Floor 1, do NOT unlock Floor 2
+            if (highestUnlockedFloor < 1) highestUnlockedFloor = 1;
+            currentFloor = 1;
+            selectedFloor = 1;
+            SaveFloorProgression();
+            OnProgressionChanged?.Invoke();
+        }
 
         // On dungeon completion, clear temporary buffs
         ClearRunBlessing();
@@ -710,6 +791,14 @@ public class ProgressionManager : MonoBehaviour
         DungeonEntrance.SetReturnToEntranceFlag();
         Debug.Log("Player retreated safely from the dungeon! Keeping all loot.");
         runActive = false;
+
+        if (currentFloor <= 0)
+        {
+            if (highestUnlockedFloor < 1) highestUnlockedFloor = 1;
+            currentFloor = 1;
+            selectedFloor = 1;
+            SaveFloorProgression();
+        }
 
         // On safe retreat: preserve 100% of loot in inventory
         // Clear temporary run blessings
@@ -801,7 +890,17 @@ public class ProgressionManager : MonoBehaviour
 
     public bool RecordBossDefeated(int floor)
     {
-        if (floor < 1) floor = 1;
+        if (floor <= 0)
+        {
+            // Tutorial Floor (Floor 0): only ensure Floor 1 is unlocked, never unlock Floor 2 or mark Floor 1 boss defeated!
+            if (highestUnlockedFloor < 1) highestUnlockedFloor = 1;
+            if (currentFloor <= 0) currentFloor = 1;
+            selectedFloor = 1;
+            SaveFloorProgression();
+            OnProgressionChanged?.Invoke();
+            return !HasClaimedFirstClearStats(0);
+        }
+
         if (defeatedBossFloors == null) defeatedBossFloors = new List<int>();
 
         bool isFirstTime = !defeatedBossFloors.Contains(floor);
@@ -898,10 +997,32 @@ public class ProgressionManager : MonoBehaviour
             string[] parts = savedBosses.Split(',');
             for (int i = 0; i < parts.Length; i++)
             {
-                if (int.TryParse(parts[i].Trim(), out int f) && !defeatedBossFloors.Contains(f))
+                if (int.TryParse(parts[i].Trim(), out int f) && f >= 1 && !defeatedBossFloors.Contains(f))
                 {
                     defeatedBossFloors.Add(f);
                 }
+            }
+        }
+
+        // Repair any save state where Tutorial Floor (Floor 0) mistakenly marked Floor 1 cleared and unlocked Floor 2
+        if (!HasClaimedFirstClearStats(1))
+        {
+            bool repaired = false;
+            if (defeatedBossFloors.Contains(1))
+            {
+                defeatedBossFloors.Remove(1);
+                PlayerPrefs.DeleteKey("Boss_Floor_1_DefeatedDay");
+                PlayerPrefs.DeleteKey("Boss_Floor_1_NextAvailableDay");
+                repaired = true;
+            }
+            if (highestUnlockedFloor == 2)
+            {
+                highestUnlockedFloor = 1;
+                repaired = true;
+            }
+            if (repaired)
+            {
+                SaveFloorProgression();
             }
         }
     }

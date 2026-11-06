@@ -168,9 +168,9 @@ public class ItemContainer : ScriptableObject
 
         if (changed)
         {
-            if (!HasItem(itemData) && InventoryButton.selectedItem == itemData)
+            if (!HasItem(itemData) && IsItemMatch(InventoryButton.selectedItem, itemData))
             {
-                InventoryButton.selectedItem = null;
+                InventoryButton.ClearSelection();
             }
             TriggerChange();
         }

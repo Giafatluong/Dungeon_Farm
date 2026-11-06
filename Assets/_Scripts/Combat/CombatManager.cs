@@ -188,7 +188,7 @@ public class CombatManager : MonoBehaviour
         isAmbushCurrent = isAmbush;
         isPreparingCombat = true;
         isCombatActive = false;
-        preparationTimeRemaining = preparationTime;
+        preparationTimeRemaining = isAmbush ? Mathf.Min(preparationTime, 1.0f) : preparationTime;
         currentWaveLoot.Clear();
 
         if (playerStats != null)
@@ -780,11 +780,14 @@ public class CombatManager : MonoBehaviour
                 }
             }
 
+            bool wasAmbush = isAmbushCurrent;
+            isAmbushCurrent = false;
+
             System.Action onLootFinished = () =>
             {
                 if (currentWaveLoot != null) currentWaveLoot.Clear();
 
-                if (waveManager != null && isAmbushCurrent)
+                if (waveManager != null && wasAmbush)
                 {
                     waveManager.HandlePostAmbushCamp();
                 }
@@ -811,7 +814,7 @@ public class CombatManager : MonoBehaviour
             {
                 if (currentWaveLoot != null) currentWaveLoot.Clear();
 
-                if (waveManager != null && isAmbushCurrent)
+                if (waveManager != null && wasAmbush)
                 {
                     waveManager.HandlePostAmbushCamp();
                 }

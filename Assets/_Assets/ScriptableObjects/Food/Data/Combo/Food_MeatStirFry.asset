@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 284236d205486aa4c8e049821338417f, type: 3}
+  m_Name: Food_MeatStirFry
+  m_EditorClassIdentifier: Assembly-CSharp::FoodData
+  itemName: "Thịt Bò Hầm Cà Chua"
+  itemIcon: {fileID: -8235272632762676055, guid: f1758fac16ab5b449936bd3d87c0e510, type: 3}
+  dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
+  itemType: 2
+  isStackable: 1
+  isRare: 0
+  description: "Bát thịt hầm rau củ cà chua cân bằng với 2 phần thịt và 2 phần rau tươi. Đầy đủ dưỡng chất giúp tăng cường sức khỏe và độ no."
+  rarity: 1
+  hungerValue: 40
+  healthValue: 30
+  foodBuff: []
+

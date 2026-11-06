@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 284236d205486aa4c8e049821338417f, type: 3}
   m_Name: Food_BoneBrothSoup
   m_EditorClassIdentifier: Assembly-CSharp::FoodData
-  itemName: "S\xFAp H\u1EA7m X\u01B0\u01A1ng C\u1EE7 Qu\u1EA3"
-  itemIcon: {fileID: 1547767104, guid: 8280fb0419376c24c976a2cbf27ac05d, type: 3}
+  itemName: "Sườn Hầm Xương Củ Quả"
+  itemIcon: {fileID: -2047714317, guid: 8280fb0419376c24c976a2cbf27ac05d, type: 3}
   dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
   itemType: 2
   isStackable: 1

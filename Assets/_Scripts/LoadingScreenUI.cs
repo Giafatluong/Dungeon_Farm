@@ -145,7 +145,8 @@ public class LoadingScreenUI : MonoBehaviour
 
             if (emblemText != null)
             {
-                emblemText.text = "⚔";
+                emblemText.text = "[ COMBAT ]";
+                emblemText.fontSize = 28;
                 emblemText.color = new Color(0.98f, 0.78f, 0.20f, 1f);
             }
 
@@ -174,7 +175,8 @@ public class LoadingScreenUI : MonoBehaviour
 
             if (emblemText != null)
             {
-                emblemText.text = "🌱";
+                emblemText.text = "[ FARM ]";
+                emblemText.fontSize = 28;
                 emblemText.color = new Color(0.48f, 0.88f, 0.60f, 1f);
             }
 
@@ -378,7 +380,7 @@ public class LoadingScreenUI : MonoBehaviour
         decoRT.sizeDelta = new Vector2(400f, 30f);
         TextMeshProUGUI decoTmp = decoGo.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(decoTmp);
-        decoTmp.text = "<color=#F59E0B>◆   ◆   ◆</color>";
+        decoTmp.text = "<color=#F59E0B>~   *   ~</color>";
         decoTmp.fontSize = 20;
         decoTmp.alignment = TextAlignmentOptions.Center;
 
@@ -424,8 +426,8 @@ public class LoadingScreenUI : MonoBehaviour
         emblemRT.sizeDelta = new Vector2(100f, 80f);
         emblemText = emblemGo.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(emblemText);
-        emblemText.text = "⚔";
-        emblemText.fontSize = 58;
+        emblemText.text = "[ DUNGEON ]";
+        emblemText.fontSize = 28;
         emblemText.alignment = TextAlignmentOptions.Center;
 
         GameObject statusGo = new GameObject("StatusText", typeof(RectTransform), typeof(TextMeshProUGUI));

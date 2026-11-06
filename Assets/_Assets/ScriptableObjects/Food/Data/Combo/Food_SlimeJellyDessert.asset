@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: Food_SlimeJellyDessert
   m_EditorClassIdentifier: Assembly-CSharp::FoodData
   itemName: "Th\u1EA1ch Slime Tr\xE1i C\xE2y"
-  itemIcon: {fileID: 1144971019, guid: 8280fb0419376c24c976a2cbf27ac05d, type: 3}
+  itemIcon: {fileID: -370673874, guid: 8280fb0419376c24c976a2cbf27ac05d, type: 3}
   dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
   itemType: 2
   isStackable: 1
   isRare: 0
-  description: "M\xF3n th\u1EA1ch thanh m\xE1t n\u1EA5u t\u1EEB Th\u1EA1ch Slime v\xE0 c\xE0 chua t\u01B0\u01A1i. Gi\u1EA3i kh\xE1t, ph\u1EE5c h\u1ED3i th\u1EC3 l\u1EF1c v\xE0 l\xE0m d\xE0y l\u1EDBp gi\xE1p ph\xF2ng th\u1EE7."
+  description: "M\xF3n th\u1EA1ch thanh m\xE1t n\u1EA5u t\u1EEB Hoa Th\u1EA1ch Slime v\xE0 c\xE0 chua t\u01B0\u01A1i. Gi\u1EA3i kh\xE1t, ph\u1EE5c h\u1ED3i th\u1EC3 l\u1EF1c v\xE0 l\xE0m d\xE0y l\u1EDBp gi\xE1p ph\xF2ng th\u1EE7."
   rarity: 1
   hungerValue: 20
   healthValue: 20

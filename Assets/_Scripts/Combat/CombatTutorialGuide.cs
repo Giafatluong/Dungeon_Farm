@@ -304,6 +304,7 @@ public class CombatTutorialGuide : MonoBehaviour
     private void HandleCombatStarted()
     {
         if (PlayerPrefs.GetInt(CombatTutorialDoneKey, 0) == 1) return;
+        if (combatManager != null && combatManager.isAmbushCurrent) return;
 
         // Ensure combat tutorial only runs on Floor 0 (the dedicated tutorial floor)
         int currentFloor = 1;

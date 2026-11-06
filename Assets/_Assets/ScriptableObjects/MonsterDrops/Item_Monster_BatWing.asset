@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d1715c0574daa742a21d66538d09e89, type: 3}
   m_Name: Item_Monster_BatWing
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemName: "C\xE1nh D\u01A1i H\u1EA7m Ng\u1EE5c"
+  itemName: "Hoa D\u1EA1 Lan T\xEDm"
   itemIcon: {fileID: 1766909733, guid: 9e09ab71c71153c4fac153d51e8d76ec, type: 3}
   dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
   itemType: 3
   isStackable: 1
   isRare: 0
-  description: "M\xE0ng c\xE1nh d\u1EBBo dai thu th\u1EADp t\u1EEB d\u01A1i b\xF3ng \u0111\xEA m trong h\u1EA7m ng\u1EE5c. Ch\u1EE9a d\u01B0\u1EE1ng ch\u1EA5t \u0111\u1EA1i b\u1ED5, d\xF9ng n\u1EA5u Cao D\u01B0\u1EE3c Li\u1EC7u h\u1ED3i m\xE1u."
+  description: "\u0110\xF3a hoa m\xE0u t\xEDm n\u1EDF v\u1EC1 \u0111\xEAm trong b\xF3ng t\u1ED1i h\u1EA7m ng\u1EE5c do d\u01A1i gieo r\u1EAFc. Ch\u1EE9a d\u01B0\u1EE1ng ch\u1EA5t \u0111\u1EA1i b\u1ED5, d\xF9ng n\u1EA5u Cao D\u01B0\u1EE3c Li\u1EC7u h\u1ED3i m\xE1u."
   rarity: 0

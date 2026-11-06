@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Item_Monster_BoneFragment
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   itemName: "M\u1EA3nh X\u01B0\u01A1ng Tr\u1EAFng"
-  itemIcon: {fileID: -290385830, guid: 9e09ab71c71153c4fac153d51e8d76ec, type: 3}
+  itemIcon: {fileID: 1457115570, guid: 357b5a702fa0c1041af8504a4bf52131, type: 3}
   dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
   itemType: 3
   isStackable: 1

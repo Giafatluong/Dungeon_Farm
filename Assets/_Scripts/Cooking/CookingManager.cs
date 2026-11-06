@@ -152,6 +152,11 @@ public class CookingManager : MonoBehaviour
     public bool IsValidRecipe(RecipeData r)
     {
         if (r == null || r.resultFood == null) return false;
+        if (r.isCategoryRecipe)
+        {
+            return (r.requiredMeatCount + r.requiredVeggieCount) == 4;
+        }
+
         if (r.ingredients == null || r.ingredients.Length == 0) return false;
         for (int i = 0; i < r.ingredients.Length; i++)
         {
@@ -161,20 +166,98 @@ public class CookingManager : MonoBehaviour
         return false;
     }
 
+    public static bool IsMeatIngredient(ItemData item)
+    {
+        if (item == null) return false;
+        string n = item.name.ToLower();
+        string d = !string.IsNullOrEmpty(item.itemName) ? item.itemName.ToLower() : "";
+        return n.Contains("meat") || d.Contains("thịt") ||
+               n.Contains("bone") || d.Contains("xương") ||
+               n.Contains("batwing") || d.Contains("dạ lan") ||
+               n.Contains("imptalon") || d.Contains("dạ quỷ") ||
+               n.Contains("slime") || d.Contains("slime");
+    }
+
+    public static bool IsVeggieIngredient(ItemData item)
+    {
+        if (item == null) return false;
+        string n = item.name.ToLower();
+        string d = !string.IsNullOrEmpty(item.itemName) ? item.itemName.ToLower() : "";
+        return n.Contains("carrot") || d.Contains("cà rốt") ||
+               n.Contains("tomato") || d.Contains("cà chua") ||
+               n.Contains("cabbage") || d.Contains("bắp cải") ||
+               n.Contains("cucumber") || d.Contains("dưa chuột") ||
+               n.Contains("corn") || d.Contains("bắp") ||
+               n.Contains("wheat") || d.Contains("lúa mì") ||
+               n.Contains("chilli") || n.Contains("chili") || d.Contains("ớt") ||
+               n.Contains("spicyspore") || d.Contains("nấm") ||
+               item.itemType == ItemData.ItemType.Produce;
+    }
+
+    public static int GetTotalMeatCount(params ItemContainer[] containers)
+    {
+        int count = 0;
+        if (containers == null) return 0;
+        for (int c = 0; c < containers.Length; c++)
+        {
+            ItemContainer cont = containers[c];
+            if (cont == null || cont.itemSlots == null) continue;
+            for (int s = 0; s < cont.itemSlots.Length; s++)
+            {
+                ItemSlot slot = cont.itemSlots[s];
+                if (slot != null && slot.itemData != null && slot.amount > 0 && IsMeatIngredient(slot.itemData))
+                {
+                    count += slot.amount;
+                }
+            }
+        }
+        return count;
+    }
+
+    public static int GetTotalVeggieCount(params ItemContainer[] containers)
+    {
+        int count = 0;
+        if (containers == null) return 0;
+        for (int c = 0; c < containers.Length; c++)
+        {
+            ItemContainer cont = containers[c];
+            if (cont == null || cont.itemSlots == null) continue;
+            for (int s = 0; s < cont.itemSlots.Length; s++)
+            {
+                ItemSlot slot = cont.itemSlots[s];
+                if (slot != null && slot.itemData != null && slot.amount > 0 && IsVeggieIngredient(slot.itemData))
+                {
+                    count += slot.amount;
+                }
+            }
+        }
+        return count;
+    }
+
     public List<RecipeData> GetAllAvailableRecipes()
     {
         EnsureDefaultRecipes();
         List<RecipeData> list = new();
+        HashSet<FoodData> seenFoods = new();
+
+        void AddRecipeIfUnique(RecipeData r)
+        {
+            if (r == null || !IsValidRecipe(r)) return;
+            if (r.resultFood != null)
+            {
+                if (seenFoods.Contains(r.resultFood)) return;
+                seenFoods.Add(r.resultFood);
+            }
+            else if (list.Contains(r)) return;
+
+            list.Add(r);
+        }
 
         if (defaultRecipes != null)
         {
             for (int i = 0; i < defaultRecipes.Count; i++)
             {
-                RecipeData r = defaultRecipes[i];
-                if (r != null && IsValidRecipe(r) && !list.Contains(r))
-                {
-                    list.Add(r);
-                }
+                AddRecipeIfUnique(defaultRecipes[i]);
             }
         }
 
@@ -182,23 +265,48 @@ public class CookingManager : MonoBehaviour
         {
             for (int i = 0; i < ProgressionManager.Instance.unlockedRecipes.Count; i++)
             {
-                RecipeData r = ProgressionManager.Instance.unlockedRecipes[i];
-                if (r != null && IsValidRecipe(r) && !list.Contains(r))
-                {
-                    list.Add(r);
-                }
+                AddRecipeIfUnique(ProgressionManager.Instance.unlockedRecipes[i]);
             }
         }
         return list;
     }
 
+    public List<RecipeData> GetUnlockedRecipes()
+    {
+        List<RecipeData> all = GetAllAvailableRecipes();
+        List<RecipeData> unlocked = new List<RecipeData>();
+        for (int i = 0; i < all.Count; i++)
+        {
+            RecipeData r = all[i];
+            if (r == null) continue;
+            bool isUnlocked = ProgressionManager.Instance != null
+                ? ProgressionManager.Instance.IsRecipeUnlocked(r)
+                : r.isDefaultUnlocked;
+            if (isUnlocked)
+            {
+                unlocked.Add(r);
+            }
+        }
+        return unlocked;
+    }
+
     /// <summary>
     /// Matches ingredients in the pot with all existing recipes.
+    /// Every recipe strictly requires exactly 4 pot slots filled (total ingredients = 4).
     /// Freeform discovery mechanism: When types and quantities match a recipe exactly, the dish is cooked!
     /// </summary>
     public RecipeData MatchRecipe(List<ItemSlot> potItems)
     {
-        if (potItems == null || potItems.Count == 0) return null;
+        // Enforce 4 slots filled rule
+        if (potItems == null || potItems.Count != 4) return null;
+
+        int totalAmount = 0;
+        for (int i = 0; i < potItems.Count; i++)
+        {
+            if (potItems[i] == null || potItems[i].itemData == null || potItems[i].amount <= 0) return null;
+            totalAmount += potItems[i].amount;
+        }
+        if (totalAmount != 4) return null;
 
         // 1. Group ingredients in pot by ItemData
         Dictionary<ItemData, int> potSummary = new Dictionary<ItemData, int>();
@@ -229,12 +337,12 @@ public class CookingManager : MonoBehaviour
 
         if (potSummary.Count == 0) return null;
 
-        // 2. Match against each available recipe
+        // 2. PRIORITY 1: Match against specific recipes first
         List<RecipeData> allRecipes = GetAllAvailableRecipes();
         for (int r = 0; r < allRecipes.Count; r++)
         {
             RecipeData recipe = allRecipes[r];
-            if (!IsValidRecipe(recipe)) continue;
+            if (!IsValidRecipe(recipe) || recipe.isCategoryRecipe) continue;
 
             // Number of ingredient types must match
             int validReqCount = 0;
@@ -279,6 +387,39 @@ public class CookingManager : MonoBehaviour
             }
         }
 
+        // 3. PRIORITY 2: Match against Don't Starve-style Category Recipes!
+        // (E.g. 3 Veggies + 1 Meat -> Meatballs, 4 Veggies -> Ratatouille, 2 Meat + 2 Veggies -> Stir-fry, 3 Meat + 1 Veggie -> Meaty Stew)
+        int potMeatCount = 0;
+        int potVeggieCount = 0;
+
+        foreach (var kvp in potSummary)
+        {
+            ItemData item = kvp.Key;
+            int count = kvp.Value;
+            if (IsMeatIngredient(item))
+            {
+                potMeatCount += count;
+            }
+            else if (IsVeggieIngredient(item))
+            {
+                potVeggieCount += count;
+            }
+        }
+
+        if (potMeatCount + potVeggieCount == 4)
+        {
+            for (int r = 0; r < allRecipes.Count; r++)
+            {
+                RecipeData recipe = allRecipes[r];
+                if (!IsValidRecipe(recipe) || !recipe.isCategoryRecipe) continue;
+
+                if (recipe.requiredMeatCount == potMeatCount && recipe.requiredVeggieCount == potVeggieCount)
+                {
+                    return recipe;
+                }
+            }
+        }
+
         return null; // No matching recipe found
     }
 
@@ -312,6 +453,7 @@ public class CookingManager : MonoBehaviour
             if (ProgressionManager.Instance != null)
             {
                 isNewDiscovery = ProgressionManager.Instance.DiscoverRecipe(matchedRecipe);
+                ProgressionManager.Instance.UnlockRecipe(matchedRecipe);
             }
 
             OnCookSuccess?.Invoke(matchedRecipe);
@@ -341,8 +483,16 @@ public class CookingManager : MonoBehaviour
     public bool CanCook(RecipeData recipe, params ItemContainer[] containers)
     {
         if (recipe == null || containers == null || containers.Length == 0) return false;
-        if (recipe.ingredients == null || recipe.ingredients.Length == 0) return false;
         if (recipe.resultFood == null) return false;
+
+        if (recipe.isCategoryRecipe)
+        {
+            int totalMeat = GetTotalMeatCount(containers);
+            int totalVeggie = GetTotalVeggieCount(containers);
+            return totalMeat >= recipe.requiredMeatCount && totalVeggie >= recipe.requiredVeggieCount;
+        }
+
+        if (recipe.ingredients == null || recipe.ingredients.Length == 0) return false;
 
         bool hasValidIngredient = false;
         for (int i = 0; i < recipe.ingredients.Length; i++)
@@ -481,6 +631,7 @@ public class CookingManager : MonoBehaviour
         if (ProgressionManager.Instance != null)
         {
             ProgressionManager.Instance.DiscoverRecipe(recipe);
+            ProgressionManager.Instance.UnlockRecipe(recipe);
         }
 
         Debug.Log($"Successfully cooked: {recipe.DisplayName} x{recipe.resultAmount}");

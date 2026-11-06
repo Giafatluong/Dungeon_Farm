@@ -12,13 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 284236d205486aa4c8e049821338417f, type: 3}
   m_Name: Food_BatWingElixir
   m_EditorClassIdentifier: Assembly-CSharp::FoodData
-  itemName: "Cao D\u01B0\u1EE3c Li\u1EC7u C\xE1nh D\u01A1i"
-  itemIcon: {fileID: -1101380952, guid: 8280fb0419376c24c976a2cbf27ac05d, type: 3}
+  itemName: "Cao D\u01B0\u1EE3c Li\u1EC7u D\u1EA1 Lan"
+  itemIcon: {fileID: -1912846513, guid: 8280fb0419376c24c976a2cbf27ac05d, type: 3}
   dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
   itemType: 2
   isStackable: 1
   isRare: 0
-  description: "B\xE1t cao ch\u01B0ng c\u1EA5t t\u1EEB C\xE1nh D\u01A1i v\xE0 d\u01B0a chu\u1ED9t, c\xE0 r\u1ED1t. Gi\xE0u ho\u1EA1t ch\u1EA5t sinh h\u1ECDc gi\xFAp t\u0103ng sinh l\u1EF1c m\xE1u c\u1EF1c m\u1EA1nh v\xE0 n\xE2ng cao ph\u1EA3n x\u1EA1 t\u1ED1c \u0111\u1ED9."
+  description: "B\xE1t cao ch\u01B0ng c\u1EA5t t\u1EEB Hoa D\u1EA1 Lan T\xEDm v\xE0 d\u01B0a chu\u1ED9t, c\xE0 r\u1ED1t. Gi\xE0u ho\u1EA1t ch\u1EA5t sinh h\u1ECDc gi\xFAp t\u0103ng sinh l\u1EF1c m\xE1u c\u1EF1c m\u1EA1nh v\xE0 n\xE2ng cao ph\u1EA3n x\u1EA1 t\u1ED1c \u0111\u1ED9."
   rarity: 1
   hungerValue: 16
   healthValue: 40

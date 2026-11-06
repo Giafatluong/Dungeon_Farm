@@ -37,7 +37,7 @@ public class EnemyStats : MonoBehaviour
 
     public EnemyTargetSelector targetSelector;
     public Collider2D CachedCollider { get; private set; }
-    public EnemyCombatVisual CombatVisual { get; private set; }
+    public EnemyCombatVisual CombatVisual { get; set; }
 
     public event System.Action<EnemyStats> OnEnemyDeath;
     public event System.Action<EnemyStats, EnemyData.EnemyIntent> OnIntentChanged;
@@ -357,17 +357,17 @@ public class EnemyStats : MonoBehaviour
                 DamagePopupManager.ShowText(transform.position + Vector3.up * 1.2f, $"+{defVal} DEF", new Color(0.4f, 0.75f, 1f), 4.6f);
                 Debug.Log($"[EnemyStats] {enemyData?.enemyName} defends (+{defVal} DEF this turn).");
 
-                if (visual != null) StartCoroutine(visual.PlayDefendRoutine(null));
+                if (visual != null) visual.PlayDefendAnimation();
                 break;
 
             case EnemyData.EnemyIntent.Buff:
                 ApplyIntentEffect(this, playerStats, EnemyData.EnemyIntent.Buff);
-                if (visual != null) StartCoroutine(visual.PlayBuffRoutine(null));
+                if (visual != null) visual.PlayBuffAnimation();
                 break;
 
             case EnemyData.EnemyIntent.Debuff:
                 ApplyIntentEffect(this, playerStats, EnemyData.EnemyIntent.Debuff);
-                if (visual != null) StartCoroutine(visual.PlayDebuffRoutine(playerStats.transform, null));
+                if (visual != null) visual.PlayDebuffAnimation(playerStats.transform);
                 break;
         }
 

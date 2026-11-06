@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: Food_SpicyMonsterSteak
   m_EditorClassIdentifier: Assembly-CSharp::FoodData
   itemName: "B\xEDt T\u1EBFt Qu\xE1i V\u1EADt S\u1ED1t Cay"
-  itemIcon: {fileID: -442320129, guid: 8280fb0419376c24c976a2cbf27ac05d, type: 3}
+  itemIcon: {fileID: 711295253, guid: 8280fb0419376c24c976a2cbf27ac05d, type: 3}
   dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
   itemType: 2
   isStackable: 1
   isRare: 0
-  description: "Mi\u1EBFng th\u1ECBt qu\xE1i \xE1p ch\u1EA3o ch\xEDn t\u1EDBi quy\u1EC7n c\xF9ng B\xE0o T\u1EED N\u1EA5m Cay v\xE0 \u1EDBt t\u01B0\u01A1i. N\u0103ng l\u01B0\u1EE3ng kh\u1ED5ng l\u1ED3 k\xEDch ph\xE1t s\u1EE9c m\u1EA1nh c\xF4ng k\xEDch b\u1EA5t ph\xE0."
+  description: "Mi\u1EBFng th\u1ECBt qu\xE1i \xE1p ch\u1EA3o ch\xEDn t\u1EDBi quy\u1EC7n c\xF9ng N\u1EA5m \u0110\u1ECF Cay N\u1ED3ng v\xE0 \u1EDBt t\u01B0\u01A1i. N\u0103ng l\u01B0\u1EE3ng kh\u1ED5ng l\u1ED3 k\xEDch ph\xE1t s\u1EE9c m\u1EA1nh c\xF4ng k\xEDch b\xF9ng n\u1ED5."
   rarity: 1
   hungerValue: 38
   healthValue: 18

@@ -391,11 +391,6 @@ public class CampUI : MonoBehaviour
 
     private void HandleCampClosed()
     {
-        if (ambushAlertBanner != null && ambushAlertBanner.activeSelf)
-        {
-            return;
-        }
-
         HideCampScreen();
     }
 
@@ -432,12 +427,13 @@ public class CampUI : MonoBehaviour
         }
 
         UpdateAmbushRiskUI(1f);
+        StopAllCoroutines();
         StartCoroutine(CloseCampAfterAmbushDelay());
     }
 
     private System.Collections.IEnumerator CloseCampAfterAmbushDelay()
     {
-        yield return new WaitForSeconds(1.2f);
+        yield return new WaitForSecondsRealtime(1.0f);
         HideCampScreen();
     }
 
@@ -843,7 +839,7 @@ public class CampUI : MonoBehaviour
         activeRecipeCards.Clear();
 
         List<RecipeData> recipes = CookingManager.Instance != null
-            ? CookingManager.Instance.GetAllAvailableRecipes()
+            ? CookingManager.Instance.GetUnlockedRecipes()
             : new List<RecipeData>();
 
         if (recipes.Count == 0)

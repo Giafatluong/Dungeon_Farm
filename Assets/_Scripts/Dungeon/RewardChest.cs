@@ -101,7 +101,7 @@ public class RewardChest : MonoBehaviour
             n.Contains("ancientcrown") || iname.Contains("hoa hồng cổ") ||
             n.Contains("darkessence") || iname.Contains("tinh thể") ||
             n.Contains("offering") || iname.Contains("hiến tế") ||
-            n.Contains("item_monster") || iname.Contains("quái") || iname.Contains("mảnh xương") || iname.Contains("cánh dơi") || iname.Contains("vuốt quỷ"))
+            n.Contains("item_monster") || iname.Contains("quái") || iname.Contains("mảnh xương") || iname.Contains("cánh dơi") || iname.Contains("vuốt quỷ") || iname.Contains("thỏi vàng") || iname.Contains("hoa") || iname.Contains("thạch") || iname.Contains("nấm"))
         {
             return true;
         }

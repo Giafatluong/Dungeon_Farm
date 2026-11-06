@@ -53,32 +53,6 @@ public class FarmPlot : MonoBehaviour
         ItemData selectedItem = InventoryButton.selectedItem;
         if (selectedItem == null)
         {
-            // Auto-fallback: check inventory for a valid seed so player is not stuck
-            if (itemContainer == null)
-            {
-                PlayerStats ps = GetCachedPlayerStats();
-                if (ps != null) itemContainer = ps.itemContainer;
-            }
-            if (itemContainer != null)
-            {
-                EnsureAvailableCrops();
-                if (availableCrops != null)
-                {
-                    for (int i = 0; i < availableCrops.Count; i++)
-                    {
-                        if (availableCrops[i] != null && availableCrops[i].seedItem != null && itemContainer.HasItem(availableCrops[i].seedItem))
-                        {
-                            selectedItem = availableCrops[i].seedItem;
-                            InventoryButton.selectedItem = selectedItem;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (selectedItem == null)
-        {
             DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, "Select a seed first!", Color.yellow, 3.5f);
             return false;
         }

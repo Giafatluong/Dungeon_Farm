@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d1715c0574daa742a21d66538d09e89, type: 3}
   m_Name: Item_Monster_SlimeJelly
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemName: "Th\u1EA1ch Slime"
+  itemName: "Hoa Th\u1EA1ch Slime"
   itemIcon: {fileID: 145018245, guid: 9e09ab71c71153c4fac153d51e8d76ec, type: 3}
   dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
   itemType: 3
   isStackable: 1
   isRare: 0
-  description: "Ch\u1EA5t nh\u1EDDn d\u1EBBo m\xE1t thu th\u1EADp t\u1EEB qu\xE1i Slime. D\xF9ng n\u1EA5u Th\u1EA1ch Tr\xE1i C\xE2y gi\u1EA3i nhi\u1EC7t ho\u1EB7c ch\u1EBF bi\u1EBFn thu\u1ED1c d\u1B00ng t\u1EBF."
+  description: "\u0110\xF3a hoa m\xE0u h\u1ED3ng d\u1EBBo m\xE1t n\u1EDF tr\xEAn ch\u1EA5t nh\u1EDDn qu\xE1i Slime. D\xF9ng n\u1EA5u Th\u1EA1ch Tr\xE1i C\xE2y gi\u1EA3i nhi\u1EC7t ho\u1EB7c d\u00E2ng l\u1EC5 T\u01B0\u1EE3ng N\u1EEF Th\u1EA7n."
   rarity: 0

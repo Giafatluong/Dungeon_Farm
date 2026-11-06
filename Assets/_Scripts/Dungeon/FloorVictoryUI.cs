@@ -140,7 +140,7 @@ public class FloorVictoryUI : MonoBehaviour
     #region Open & Flow
     public void Open(FloorData floorData, int floorNumber, ItemContainer backpack, System.Action onReturnToBase, System.Action onNextFloor)
     {
-        bool isFirst = ProgressionManager.Instance != null && !ProgressionManager.Instance.HasClaimedFirstClearStats(floorNumber > 0 ? floorNumber : 1);
+        bool isFirst = ProgressionManager.Instance != null && !ProgressionManager.Instance.HasClaimedFirstClearStats(floorNumber >= 0 ? floorNumber : 1);
         Open(floorData, floorNumber, backpack, isFirst, onReturnToBase, onNextFloor);
     }
 
@@ -716,6 +716,9 @@ public class FloorVictoryUI : MonoBehaviour
         {
             switch (currentFloorNum)
             {
+                case 0:
+                    bonusHP = 5;
+                    break;
                 case 1:
                     bonusATK = 1;
                     bonusHP = 5;
@@ -773,6 +776,9 @@ public class FloorVictoryUI : MonoBehaviour
         string blessingLine = "";
         switch (currentFloorNum)
         {
+            case 0:
+                blessingLine = "• <color=#55CCFF><b>[PROTECTION] Hộ Mệnh Khởi Đầu:</b></color>\n   Bảo vệ toàn bộ vật phẩm trong túi khi thất bại ở Tầng 1-2.\n\n• <color=#FFD700><b>[MỞ KHÓA] Tầng 1 Chính Thức:</b></color>\n   Tầng 1 Hầm Ngục đã sẵn sàng để bạn chinh phục!";
+                break;
             case 1:
                 blessingLine = "• <color=#FFD700><b>[BASTION] Pháo Đài Vững Chắc:</b></color>\n   Cộng DEF vào ATK; Phòng thủ hồi +1 AP.\n\n• <color=#55FF88><b>[SWIFT] Động Lực Nhanh Nhẹn:</b></color>\n   +4 SPD, tăng sát thương khi di chuyển nhanh.";
                 break;

@@ -139,7 +139,7 @@ public class TutorialManager : MonoBehaviour
         string activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
         if (string.IsNullOrEmpty(activeScene) || activeScene == "Base" || activeScene.Contains("Base"))
         {
-            Instance.EnsureTutorialCropsReady();
+            Instance.EnsureTutorialCropsReady(force: true);
         }
     }
 
@@ -176,7 +176,7 @@ public class TutorialManager : MonoBehaviour
 
         if (currentStep != TutorialStep.Completed)
         {
-            EnsureTutorialCropsReady();
+            EnsureTutorialCropsReady(force: true);
         }
     }
 
@@ -194,7 +194,7 @@ public class TutorialManager : MonoBehaviour
     {
         if (scene.name == "Base" || scene.name.Contains("Base"))
         {
-            EnsureTutorialCropsReady();
+            EnsureTutorialCropsReady(force: true);
 
             if (IsTutorialCompleted || currentStep == TutorialStep.Completed)
             {
@@ -253,7 +253,7 @@ public class TutorialManager : MonoBehaviour
             return;
         }
 
-        EnsureTutorialCropsReady();
+        EnsureTutorialCropsReady(force: true);
 
         int savedStep = PlayerPrefs.GetInt(TutorialStepKey, (int)TutorialStep.IntroCutscene);
         currentStep = (TutorialStep)savedStep;
@@ -295,17 +295,14 @@ public class TutorialManager : MonoBehaviour
     /// Ensures 6 closest farm plots to the player have ripe, mature carrots ready for harvesting,
     /// and grants 3 carrot seeds so the player has enough resources for cooking, planting, and statue offerings.
     /// </summary>
-    public void EnsureTutorialCropsReady()
+    public void EnsureTutorialCropsReady(bool force = false)
     {
-        // Prevent duplicate scene-wide scans within the same fraction of a second
-        if (Time.realtimeSinceStartup - _lastEnsureTutorialCropsTime < 0.25f) return;
-        _lastEnsureTutorialCropsTime = Time.realtimeSinceStartup;
-
         // If tutorial has already completed, do not tamper with user's farm
         if (PlayerPrefs.GetInt(TutorialDoneKey, 0) == 1) return;
 
-        // If starter crops are already prepared once, never do expensive scene scans again
-        if (PlayerPrefs.GetInt("Tutorial_StarterCropsPrepared", 0) == 1) return;
+        // Prevent duplicate scene-wide scans within the same fraction of a second unless forced
+        if (!force && Time.realtimeSinceStartup - _lastEnsureTutorialCropsTime < 0.25f) return;
+        _lastEnsureTutorialCropsTime = Time.realtimeSinceStartup;
 
         FarmPlot[] allPlots = Object.FindObjectsByType<FarmPlot>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         if (allPlots == null || allPlots.Length == 0) return;
@@ -319,7 +316,7 @@ public class TutorialManager : MonoBehaviour
             }
         }
 
-        // Prepare 6 plots closest to the house/bed with ripe Carrots
+        // Prepare 6 plots closest to the house/bed with ripe Carrots if fewer than 4 ready crops exist
         if (readyCount < 4)
         {
             CropData carrot = null;
@@ -379,8 +376,6 @@ public class TutorialManager : MonoBehaviour
                         p.SavePlotData(true);
                     }
                 }
-                PlayerPrefs.SetInt("Tutorial_StarterCropsPrepared", 1);
-                PlayerPrefs.Save();
 
                 // Grant 3 Carrot Seeds to player's inventory so they can practice planting
                 PlayerStats ps = PlayerStats.Instance != null ? PlayerStats.Instance : Object.FindFirstObjectByType<PlayerStats>();
@@ -548,7 +543,7 @@ public class TutorialManager : MonoBehaviour
 
     public void OnIntroCutsceneFinished()
     {
-        EnsureTutorialCropsReady();
+        EnsureTutorialCropsReady(force: true);
         SetStep(TutorialStep.Movement);
     }
 
@@ -561,7 +556,7 @@ public class TutorialManager : MonoBehaviour
         // Always ensure tutorial crops are visible on all early steps
         if (currentStep <= TutorialStep.HarvestCrop)
         {
-            EnsureTutorialCropsReady();
+            EnsureTutorialCropsReady(force: true);
         }
 
         switch (currentStep)
@@ -665,7 +660,7 @@ public class TutorialManager : MonoBehaviour
                 CropData cCropCook = GetCarrotCropData();
                 if (cCropCook != null && cCropCook.producedItem != null)
                 {
-                    EnsureItemInInventory(cCropCook.producedItem, 3);
+                    EnsureItemInInventory(cCropCook.producedItem, 8);
                 }
 
                 CookingManager.Instance?.EnsureKitchenStationInBase();
@@ -679,9 +674,9 @@ public class TutorialManager : MonoBehaviour
                     objectiveTitle = "Nấu Ăn: Tìm Hiểu Độ No & Tốc Độ",
                     targetLabel = "Bếp Lửa Trại (Kitchen)",
                     actionKeyPrompt = "[E] MỞ BẾP -> [Nấu Ăn]",
-                    actionInstruction = "Đến Bếp Lửa trại, nhấn <color=#FFEA30><b>[E]</b></color>, chọn Súp Cà Rốt (tốn 3 Cà Rốt) và bấm <color=#FFA726><b>[Nấu Ăn]</b></color>.",
+                    actionInstruction = "Đến Bếp Lửa trại, nhấn <color=#FFEA30><b>[E]</b></color>, chọn Súp Cà Rốt (tốn 4 Cà Rốt) và bấm <color=#FFA726><b>[Nấu Ăn]</b></color>.",
                     fullDialogue = "Nấu ăn là chìa khóa sinh tồn để chi phối Tốc Độ và Độ No:\n" +
-                                   "- Nhấn <color=#FFEA30><b>[E]</b></color> mở Bếp, chọn <color=#FFA726><b>[Súp Cà Rốt]</b></color> (tốn 3 Cà Rốt) và bấm [Nấu Ăn].\n" +
+                                   "- Nhấn <color=#FFEA30><b>[E]</b></color> mở Bếp, chọn <color=#FFA726><b>[Súp Cà Rốt]</b></color> (tốn 4 Cà Rốt) và bấm [Nấu Ăn].\n" +
                                    "- <color=#50FA7B><b>Tốc Độ (SPD):</b></color> Ai có SPD cao hơn sẽ RA ĐÒN TRƯỚC! Ăn Súp (+2 SPD) giúp bạn đạt 11 SPD > 10 SPD của quái để giành quyền đi trước.\n" +
                                    "- <color=#FFD700><b>Độ No (Fullness):</b></color> Có 3 mốc (hiển thị bằng icon tròn dưới thanh máu):\n" +
                                    "  + <color=#50FA7B><b>No Nê (30-79%):</b></color> +2 ATK, +1 DEF, +2 SPD!  |  <color=#FF6B6B><b>Đói (<30%):</b></color> -2 ATK, -3 SPD.\n" +
@@ -989,5 +984,6 @@ public class TutorialManager : MonoBehaviour
         lastReportedProgress = -1f;
         hasTrackedFirstPos = false;
         currentStep = TutorialStep.IntroCutscene;
+        EnsureTutorialCropsReady(force: true);
     }
 }

@@ -12,9 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c63989b7d70655d4eb98239d5836f0e2, type: 3}
   m_Name: Cucumber salad
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
-  recipeName: Cucumber salad
+  recipeName: "Salad Dưa Chuột"
   ingredients:
   - item: {fileID: 11400000, guid: aaf3001eed98e2443b500d28635dfb36, type: 2}
     amount: 3
+  - item: {fileID: 11400000, guid: 87d1b2164c734434682f1fc6e72fba3a, type: 2}
+    amount: 1
   resultFood: {fileID: 11400000, guid: 897f49c0b58ef5d40a5806bd06765705, type: 2}
   resultAmount: 1
+  isDefaultUnlocked: 0

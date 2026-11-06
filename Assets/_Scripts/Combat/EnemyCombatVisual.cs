@@ -107,6 +107,7 @@ public class EnemyCombatVisual : MonoBehaviour
     }
 
     private Vector3 originalPosition;
+    private bool hasCustomOriginalPosition;
     private Vector3 originalScale = Vector3.one;
     private Color originalColor = Color.white;
     private Coroutine activeVisualRoutine;
@@ -144,8 +145,11 @@ public class EnemyCombatVisual : MonoBehaviour
 
     private void Start()
     {
-        // Re-record original position in case WaveManager repositioned the enemy on spawn
-        originalPosition = transform.position;
+        // Only record transform.position if WaveManager hasn't already assigned the final combat station position
+        if (!hasCustomOriginalPosition)
+        {
+            originalPosition = transform.position;
+        }
         originalScale = transform.localScale;
         isRanged = CheckIsRanged();
         EnsureProjectileSpriteLoaded();
@@ -156,10 +160,14 @@ public class EnemyCombatVisual : MonoBehaviour
     /// <summary>
     /// Updates the baseline position when the enemy is repositioned by wave formation.
     /// </summary>
-    public void SetOriginalPosition(Vector3 newPos)
+    public void SetOriginalPosition(Vector3 newPos, bool updateTransform = true)
     {
         originalPosition = newPos;
-        transform.position = newPos;
+        hasCustomOriginalPosition = true;
+        if (updateTransform)
+        {
+            transform.position = newPos;
+        }
         isRanged = CheckIsRanged();
         EnsureProjectileSpriteLoaded();
         FaceDirection(Vector3.left);
@@ -185,11 +193,6 @@ public class EnemyCombatVisual : MonoBehaviour
     /// </summary>
     public IEnumerator PlayAttackRoutine(Transform playerTarget, System.Action onImpact)
     {
-        if (activeVisualRoutine != null)
-        {
-            StopCoroutine(activeVisualRoutine);
-        }
-
         IsVisualActionActive = true;
         Vector3 basePos = originalPosition != Vector3.zero ? originalPosition : transform.position;
         originalPosition = basePos;
@@ -491,32 +494,38 @@ public class EnemyCombatVisual : MonoBehaviour
     /// </summary>
     public IEnumerator PlayDefendRoutine(System.Action onApply)
     {
-        if (activeVisualRoutine != null) StopCoroutine(activeVisualRoutine);
         IsVisualActionActive = true;
+        Vector3 basePos = originalPosition != Vector3.zero ? originalPosition : transform.position;
 
         float duration = 0.5f;
         float elapsed = 0f;
 
-        if (spriteRenderer != null)
+        try
         {
-            spriteRenderer.color = new Color(0.4f, 0.75f, 1f, 1f);
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = new Color(0.4f, 0.75f, 1f, 1f);
+            }
+
+            onApply?.Invoke();
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float pulse = Mathf.Sin((elapsed / duration) * Mathf.PI);
+                transform.localScale = originalScale * (1f + pulse * 0.12f);
+                yield return null;
+            }
         }
-
-        onApply?.Invoke();
-
-        while (elapsed < duration)
+        finally
         {
-            elapsed += Time.deltaTime;
-            float pulse = Mathf.Sin((elapsed / duration) * Mathf.PI);
-            transform.localScale = originalScale * (1f + pulse * 0.12f);
-            yield return null;
+            transform.position = basePos;
+            transform.localScale = originalScale;
+            if (spriteRenderer != null) spriteRenderer.color = originalColor;
+            TryPlayIdle();
+            activeVisualRoutine = null;
+            IsVisualActionActive = false;
         }
-
-        transform.localScale = originalScale;
-        if (spriteRenderer != null) spriteRenderer.color = originalColor;
-        TryPlayIdle();
-        activeVisualRoutine = null;
-        IsVisualActionActive = false;
     }
 
     /// <summary>
@@ -524,34 +533,39 @@ public class EnemyCombatVisual : MonoBehaviour
     /// </summary>
     public IEnumerator PlayBuffRoutine(System.Action onApply)
     {
-        if (activeVisualRoutine != null) StopCoroutine(activeVisualRoutine);
         IsVisualActionActive = true;
+        Vector3 basePos = originalPosition != Vector3.zero ? originalPosition : transform.position;
 
         float duration = 0.55f;
         float elapsed = 0f;
 
-        if (spriteRenderer != null)
+        try
         {
-            spriteRenderer.color = new Color(1f, 0.9f, 0.35f, 1f);
-        }
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = new Color(1f, 0.9f, 0.35f, 1f);
+            }
 
-        while (elapsed < duration)
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                float hop = Mathf.Sin(t * Mathf.PI) * 0.25f;
+                transform.position = basePos + new Vector3(0f, hop, 0f);
+                yield return null;
+            }
+
+            onApply?.Invoke();
+        }
+        finally
         {
-            elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-            float hop = Mathf.Sin(t * Mathf.PI) * 0.25f;
-            transform.position = originalPosition + new Vector3(0f, hop, 0f);
-            yield return null;
+            transform.position = basePos;
+            transform.localScale = originalScale;
+            if (spriteRenderer != null) spriteRenderer.color = originalColor;
+            TryPlayIdle();
+            activeVisualRoutine = null;
+            IsVisualActionActive = false;
         }
-
-        onApply?.Invoke();
-
-        transform.position = originalPosition;
-        transform.localScale = originalScale;
-        if (spriteRenderer != null) spriteRenderer.color = originalColor;
-        TryPlayIdle();
-        activeVisualRoutine = null;
-        IsVisualActionActive = false;
     }
 
     /// <summary>
@@ -559,34 +573,39 @@ public class EnemyCombatVisual : MonoBehaviour
     /// </summary>
     public IEnumerator PlayDebuffRoutine(Transform playerTarget, System.Action onApply)
     {
-        if (activeVisualRoutine != null) StopCoroutine(activeVisualRoutine);
         IsVisualActionActive = true;
+        Vector3 basePos = originalPosition != Vector3.zero ? originalPosition : transform.position;
 
         float duration = 0.55f;
         float elapsed = 0f;
 
-        if (spriteRenderer != null)
+        try
         {
-            spriteRenderer.color = new Color(0.85f, 0.35f, 0.95f, 1f);
-        }
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = new Color(0.85f, 0.35f, 0.95f, 1f);
+            }
 
-        while (elapsed < duration)
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float shakeX = Random.Range(-0.06f, 0.06f);
+                float shakeY = Random.Range(-0.04f, 0.04f);
+                transform.position = basePos + new Vector3(shakeX, shakeY, 0f);
+                yield return null;
+            }
+
+            onApply?.Invoke();
+        }
+        finally
         {
-            elapsed += Time.deltaTime;
-            float shakeX = Random.Range(-0.06f, 0.06f);
-            float shakeY = Random.Range(-0.04f, 0.04f);
-            transform.position = originalPosition + new Vector3(shakeX, shakeY, 0f);
-            yield return null;
+            transform.position = basePos;
+            transform.localScale = originalScale;
+            if (spriteRenderer != null) spriteRenderer.color = originalColor;
+            TryPlayIdle();
+            activeVisualRoutine = null;
+            IsVisualActionActive = false;
         }
-
-        onApply?.Invoke();
-
-        transform.position = originalPosition;
-        transform.localScale = originalScale;
-        if (spriteRenderer != null) spriteRenderer.color = originalColor;
-        TryPlayIdle();
-        activeVisualRoutine = null;
-        IsVisualActionActive = false;
     }
     #endregion
 
@@ -601,6 +620,20 @@ public class EnemyCombatVisual : MonoBehaviour
 
     private IEnumerator HurtFlashRoutine()
     {
+        if (IsVisualActionActive)
+        {
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = new Color(1f, 0.35f, 0.35f, 1f);
+            }
+            yield return new WaitForSeconds(0.12f);
+            if (spriteRenderer != null && !IsVisualActionActive)
+            {
+                spriteRenderer.color = originalColor;
+            }
+            yield break;
+        }
+
         // Trigger Hit animation if controller has a Hit state
         TryPlayHit();
 
@@ -709,17 +742,78 @@ public class EnemyCombatVisual : MonoBehaviour
 
     public void PlayDeathAnimation() => PlayDeathEffect();
 
+    private void StopActiveVisualRoutineCleanly()
+    {
+        if (activeVisualRoutine != null)
+        {
+            StopCoroutine(activeVisualRoutine);
+            activeVisualRoutine = null;
+        }
+        if (originalPosition != Vector3.zero)
+        {
+            transform.position = originalPosition;
+        }
+        if (originalScale != Vector3.zero)
+        {
+            transform.localScale = originalScale;
+        }
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = originalColor;
+        }
+        IsVisualActionActive = false;
+    }
+
     public void PlayAttackAnimation(PlayerStats player = null, System.Action onImpact = null)
     {
         if (gameObject.activeInHierarchy)
         {
             if (player == null) player = FindFirstObjectByType<PlayerStats>();
-            if (activeVisualRoutine != null) StopCoroutine(activeVisualRoutine);
+            StopActiveVisualRoutineCleanly();
             activeVisualRoutine = StartCoroutine(PlayAttackRoutine(player != null ? player.transform : null, onImpact));
         }
         else
         {
             onImpact?.Invoke();
+        }
+    }
+
+    public void PlayDefendAnimation(System.Action onApply = null)
+    {
+        if (gameObject.activeInHierarchy)
+        {
+            StopActiveVisualRoutineCleanly();
+            activeVisualRoutine = StartCoroutine(PlayDefendRoutine(onApply));
+        }
+        else
+        {
+            onApply?.Invoke();
+        }
+    }
+
+    public void PlayBuffAnimation(System.Action onApply = null)
+    {
+        if (gameObject.activeInHierarchy)
+        {
+            StopActiveVisualRoutineCleanly();
+            activeVisualRoutine = StartCoroutine(PlayBuffRoutine(onApply));
+        }
+        else
+        {
+            onApply?.Invoke();
+        }
+    }
+
+    public void PlayDebuffAnimation(Transform playerTarget = null, System.Action onApply = null)
+    {
+        if (gameObject.activeInHierarchy)
+        {
+            StopActiveVisualRoutineCleanly();
+            activeVisualRoutine = StartCoroutine(PlayDebuffRoutine(playerTarget, onApply));
+        }
+        else
+        {
+            onApply?.Invoke();
         }
     }
     #endregion

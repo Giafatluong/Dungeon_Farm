@@ -457,13 +457,13 @@ public class WaveManager : MonoBehaviour
         FloorData activeFloor = GetActiveFloor();
         int floorNum = activeFloor != null ? activeFloor.floorNumber : (ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1);
 
+        bool isFirstTime = false;
         if (floorNum == 0)
         {
             DungeonTutorialController.Instance?.OnTutorialFloorCompleted();
+            isFirstTime = ProgressionManager.Instance != null && !ProgressionManager.Instance.HasClaimedFirstClearStats(0);
         }
-
-        bool isFirstTime = false;
-        if (ProgressionManager.Instance != null)
+        else if (ProgressionManager.Instance != null)
         {
             isFirstTime = ProgressionManager.Instance.RecordBossDefeated(floorNum);
         }
@@ -952,64 +952,67 @@ public class WaveManager : MonoBehaviour
             CombatUI.Instance.LogMessage("WARNING: Ambushed! Enemies attack first!");
         }
 
-        WaveData wave = CurrentWave;
-        GameObject[] enemiesToSpawn = wave != null ? wave.GetEnemiesToSpawn() : null;
-
-        if (enemiesToSpawn == null || enemiesToSpawn.Length == 0)
-        {
-            wave = GetFallbackCombatWave();
-            if (wave != null)
-            {
-                enemiesToSpawn = wave.GetEnemiesToSpawn();
-            }
-        }
-
-        if (enemiesToSpawn != null && enemiesToSpawn.Length > 0)
-        {
-            SpawnEnemies(wave, isAmbush: true);
-        }
-        else
-        {
-            Debug.Log("[WaveManager] Ambush triggered but no enemies to spawn. Continuing...");
-            Continue();
-        }
+        SpawnEnemies(CurrentWave, isAmbush: true);
     }
 
     private WaveData GetFallbackCombatWave()
     {
+        WaveData nearest = FindNearestValidCombatWave(runtimeWaves, currentWaveIndex);
+        if (nearest != null) return nearest;
+
         if (floorGenerator != null && floorGenerator.combatWavePool != null && floorGenerator.combatWavePool.Length > 0)
         {
             return floorGenerator.combatWavePool[Random.Range(0, floorGenerator.combatWavePool.Length)];
         }
 
-        WaveData found = FindFirstValidCombatWave(runtimeWaves);
-        if (found != null) return found;
-
         FloorData floor = GetActiveFloor();
         if (floor != null)
         {
-            return FindFirstValidCombatWave(floor.waves);
+            return FindNearestValidCombatWave(floor.waves, currentWaveIndex);
         }
 
         return null;
     }
 
-    private WaveData FindFirstValidCombatWave(IEnumerable<WaveData> waves)
+    private WaveData FindNearestValidCombatWave(WaveData[] waves, int referenceIndex)
     {
-        if (waves == null) return null;
-        foreach (var w in waves)
+        if (waves == null || waves.Length == 0) return null;
+
+        int clampedRef = Mathf.Clamp(referenceIndex, 0, waves.Length - 1);
+        WaveData bestCombat = null;
+        int bestDist = int.MaxValue;
+        WaveData fallbackBoss = null;
+
+        for (int i = 0; i < waves.Length; i++)
         {
+            WaveData w = waves[i];
             if (w == null) continue;
-            if (w.waveType == WaveData.WaveType.Combat || w.waveType == WaveData.WaveType.Boss)
+
+            if (w.waveType == WaveData.WaveType.Combat)
             {
                 GameObject[] pool = w.GetEnemiesToSpawn();
                 if (pool != null && pool.Length > 0)
                 {
-                    return w;
+                    int dist = Mathf.Abs(i - clampedRef);
+                    // Prefer combat waves at or before the current camp stage on ties
+                    if (dist < bestDist || (dist == bestDist && i <= clampedRef))
+                    {
+                        bestDist = dist;
+                        bestCombat = w;
+                    }
+                }
+            }
+            else if (w.waveType == WaveData.WaveType.Boss && fallbackBoss == null)
+            {
+                GameObject[] pool = w.GetEnemiesToSpawn();
+                if (pool != null && pool.Length > 0)
+                {
+                    fallbackBoss = w;
                 }
             }
         }
-        return null;
+
+        return bestCombat != null ? bestCombat : fallbackBoss;
     }
 
     public void SpawnEnemies(WaveData wave, bool isAmbush = false)
@@ -1044,6 +1047,18 @@ public class WaveManager : MonoBehaviour
             return;
         }
 
+        // Clean up any lingering enemy objects from a previous wave before spawning new ones
+        if (combatManager != null && combatManager.enemies != null)
+        {
+            for (int i = 0; i < combatManager.enemies.Length; i++)
+            {
+                if (combatManager.enemies[i] != null && combatManager.enemies[i].gameObject != null)
+                {
+                    Destroy(combatManager.enemies[i].gameObject);
+                }
+            }
+        }
+
         int enemyCount = Mathf.Min(enemiesToSpawn.Length, combatPositions.Length);
         _cachedValidEnemies.Clear();
 
@@ -1059,8 +1074,6 @@ public class WaveManager : MonoBehaviour
             Vector3 startPos = finalPos + new Vector3(5.5f, 0f, 0f);
 
             GameObject enemyObject = Instantiate(enemiesToSpawn[i], startPos, Quaternion.identity);
-            StartCoroutine(AnimateEnemySlideIn(enemyObject, startPos, finalPos, 0.75f));
-
             EnemyStats stats = enemyObject.GetComponent<EnemyStats>();
             if (stats == null)
             {
@@ -1069,8 +1082,15 @@ public class WaveManager : MonoBehaviour
                 continue;
             }
 
+            EnemyCombatVisual visual = enemyObject.GetComponent<EnemyCombatVisual>();
+            if (visual == null) visual = enemyObject.AddComponent<EnemyCombatVisual>();
+            visual.SetOriginalPosition(finalPos, updateTransform: false);
+
+            stats.CombatVisual = visual;
             stats.targetSelector = targetSelector;
             _cachedValidEnemies.Add(stats);
+
+            StartCoroutine(AnimateEnemySlideIn(enemyObject, startPos, finalPos, 0.65f));
         }
 
         EnemyStats[] enemyArray = _cachedValidEnemies.ToArray();
@@ -1127,10 +1147,9 @@ public class WaveManager : MonoBehaviour
 
         if (enemyObj != null)
         {
-            enemyObj.transform.position = toPos;
             EnemyCombatVisual visual = enemyObj.GetComponent<EnemyCombatVisual>();
             if (visual == null) visual = enemyObj.AddComponent<EnemyCombatVisual>();
-            visual.SetOriginalPosition(toPos);
+            visual.SetOriginalPosition(toPos, updateTransform: !visual.IsVisualActionActive);
 
             if (enemyAnim != null && enemyAnim.isActiveAndEnabled)
             {

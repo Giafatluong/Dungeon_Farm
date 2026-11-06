@@ -223,6 +223,8 @@ public class Camp : MonoBehaviour
         }
     }
 
+    private Coroutine ambushTransitionCoroutine;
+
     private void TriggerAmbush()
     {
         Debug.Log("[Camp] WARNING: Ambushed at Camp!");
@@ -231,7 +233,23 @@ public class Camp : MonoBehaviour
         encounterChance = 0f;
         isCampOpen = false;
 
+        DungeonTutorialController.Instance?.HideBanner();
+        DungeonTutorialController.Instance?.HidePointer();
+
         OnAmbushTriggered?.Invoke();
+
+        if (ambushTransitionCoroutine != null)
+        {
+            StopCoroutine(ambushTransitionCoroutine);
+        }
+        ambushTransitionCoroutine = StartCoroutine(TriggerAmbushAfterAlertRoutine());
+    }
+
+    private System.Collections.IEnumerator TriggerAmbushAfterAlertRoutine()
+    {
+        yield return new WaitForSecondsRealtime(1.0f);
+        ambushTransitionCoroutine = null;
+        OnCampClosed?.Invoke();
 
         if (waveManager != null)
         {

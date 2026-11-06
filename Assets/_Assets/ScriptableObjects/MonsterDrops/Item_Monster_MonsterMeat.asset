@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Item_Monster_MonsterMeat
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   itemName: "Th\u1ECBt Qu\xE1i T\u01B0\u01A1i S\u1EA1ch"
-  itemIcon: {fileID: 1713505274, guid: 9e09ab71c71153c4fac153d51e8d76ec, type: 3}
+  itemIcon: {fileID: -767445592, guid: 8280fb0419376c24c976a2cbf27ac05d, type: 3}
   dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
   itemType: 3
   isStackable: 1

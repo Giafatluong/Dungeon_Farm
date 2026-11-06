@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d1715c0574daa742a21d66538d09e89, type: 3}
   m_Name: ChilliSeed
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemName: "H\u1EA1t Gi\u1ED1ng \u1EDA t"
+  itemName: "H\u1EA1t Gi\u1ED1ng \u1EDAt"
   itemIcon: {fileID: 909884169, guid: 19de471ec8e70ba418cdc18ac63ae945, type: 3}
   dropPrefab: {fileID: 8706594995651621616, guid: 906b38957d2be054890c4d7cf6db5995, type: 3}
   itemType: 0

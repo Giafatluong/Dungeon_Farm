@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d1715c0574daa742a21d66538d09e89, type: 3}
   m_Name: Item_Monster_ImpTalon
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemName: "Vu\u1ED1t Qu\u1EF7 D\u1EA1 Xoa"
+  itemName: "Hoa Ho\xE0ng Kim D\u1EA1 Qu\u1EF7"
   itemIcon: {fileID: -502186078, guid: 9e09ab71c71153c4fac153d51e8d76ec, type: 3}
   dropPrefab: {fileID: 6960915332365396876, guid: 949d1f81c689ac346946a30d7ca6c484, type: 3}
   itemType: 3
   isStackable: 1
   isRare: 0
-  description: "M\xF3ng vu\u1ED1t s\u1EAFc l\u1EB9m mang linh kh\xED gi\xF3 l\u1ED1c c\u1EE7a Qu\u1EF7 D\u1EA1 Xoa bay l\u01B0\u1EE3n. D\xF9ng \u0111\u1EC3 d\xE2ng l\u1EC5 gia t\u0103ng Th\u1EA7n T\u1ED1c ho\u1EB7c ch\u1EBF thu\u1ED1c."
+  description: "\u0110\xF3a hoa ho\xE0ng kim r\u1EF1c r\u1EE1 mang linh kh\xED gi\xF3 l\u1ED1c thu th\u1EADp t\u1EEB Qu\u1EF7 D\u1EA1 Xoa. D\xF9ng \u0111\u1EC3 d\xE2ng l\u1EC5 gia t\u0103ng Th\u1EA7n T\u1ED1c ho\u1EB7c ch\u1EBF thu\u1ED1c."
   rarity: 1

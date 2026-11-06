@@ -498,6 +498,88 @@ public class KitchenUI : MonoBehaviour
             return;
         }
 
+        if (recipe != null && ProgressionManager.Instance != null && !ProgressionManager.Instance.IsRecipeUnlocked(recipe))
+        {
+            ShowToast($"<color=#FF6666>Công thức {recipe.DisplayName} đang bị khóa! Hãy tự thử nghiệm nấu đủ 4 ô nguyên liệu trên bếp để khám phá.</color>");
+            return;
+        }
+
+        // Support Don't Starve-style Category Recipes (e.g. 3 Veggies + 1 Meat)
+        if (recipe != null && recipe.isCategoryRecipe)
+        {
+            ReturnAllPotItemsToBackpack();
+            bool usedChestForCategory = false;
+            isInternalUpdating = true;
+            try
+            {
+                int meatNeeded = recipe.requiredMeatCount;
+                int veggieNeeded = recipe.requiredVeggieCount;
+
+                ItemContainer[] sources = chestContainer != null
+                    ? new ItemContainer[] { backpackContainer, chestContainer }
+                    : new ItemContainer[] { backpackContainer };
+
+                // 1. Gather meat ingredients
+                for (int c = 0; c < sources.Length && meatNeeded > 0; c++)
+                {
+                    ItemContainer cont = sources[c];
+                    if (cont == null || cont.itemSlots == null) continue;
+
+                    for (int s = 0; s < cont.itemSlots.Length && meatNeeded > 0; s++)
+                    {
+                        ItemSlot slot = cont.itemSlots[s];
+                        if (slot != null && slot.itemData != null && slot.amount > 0 && CookingManager.IsMeatIngredient(slot.itemData))
+                        {
+                            int take = Mathf.Min(meatNeeded, slot.amount);
+                            for (int t = 0; t < take && potSlots.Count < MAX_POT_SLOTS; t++)
+                            {
+                                cont.RemoveItem(slot.itemData, 1);
+                                if (cont == chestContainer) usedChestForCategory = true;
+                                potSlots.Add(new ItemSlot { itemData = slot.itemData, amount = 1 });
+                                meatNeeded--;
+                            }
+                        }
+                    }
+                }
+
+                // 2. Gather veggie ingredients
+                for (int c = 0; c < sources.Length && veggieNeeded > 0; c++)
+                {
+                    ItemContainer cont = sources[c];
+                    if (cont == null || cont.itemSlots == null) continue;
+
+                    for (int s = 0; s < cont.itemSlots.Length && veggieNeeded > 0; s++)
+                    {
+                        ItemSlot slot = cont.itemSlots[s];
+                        if (slot != null && slot.itemData != null && slot.amount > 0 && CookingManager.IsVeggieIngredient(slot.itemData))
+                        {
+                            int take = Mathf.Min(veggieNeeded, slot.amount);
+                            for (int t = 0; t < take && potSlots.Count < MAX_POT_SLOTS; t++)
+                            {
+                                cont.RemoveItem(slot.itemData, 1);
+                                if (cont == chestContainer) usedChestForCategory = true;
+                                potSlots.Add(new ItemSlot { itemData = slot.itemData, amount = 1 });
+                                veggieNeeded--;
+                            }
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                isInternalUpdating = false;
+            }
+
+            if (usedChestForCategory && chestContainer != null)
+            {
+                HomeChest.SaveContainer(chestContainer);
+            }
+
+            ShowToast($"Đã tự điền nguyên liệu cho: <color=#88FF88>{recipe.DisplayName}</color>!");
+            RefreshUI();
+            return;
+        }
+
         // Calculate total items required across all ingredients
         int totalRequired = 0;
         for (int i = 0; i < recipe.ingredients.Length; i++)
@@ -580,10 +662,10 @@ public class KitchenUI : MonoBehaviour
             return;
         }
 
-        // 3. Pot empty check
-        if (potSlots.Count == 0)
+        // 3. Strict 4-slot ingredient check
+        if (potSlots.Count < MAX_POT_SLOTS)
         {
-            ShowToast("<color=#FFCC00>Nồi nấu đang trống! Vui lòng chọn nguyên liệu từ Balo hoặc Sổ Công Thức.</color>");
+            ShowToast($"<color=#FFCC00>Cần đặt đủ {MAX_POT_SLOTS} ô nguyên liệu vào nồi (hiện có: {potSlots.Count}/{MAX_POT_SLOTS} ô) mới có thể nấu!</color>");
             return;
         }
 
@@ -802,7 +884,12 @@ public class KitchenUI : MonoBehaviour
         if (currentStation != null && currentStation.isCooking)
         {
             previewCardGO.SetActive(true);
-            if (currentStation.cookingRecipe != null && currentStation.cookingRecipe.resultFood != null)
+            bool isCookingRecipeUnlocked = currentStation.cookingRecipe != null &&
+                (ProgressionManager.Instance != null
+                    ? ProgressionManager.Instance.IsRecipeUnlocked(currentStation.cookingRecipe)
+                    : currentStation.cookingRecipe.isDefaultUnlocked);
+
+            if (isCookingRecipeUnlocked && currentStation.cookingRecipe != null && currentStation.cookingRecipe.resultFood != null)
             {
                 if (previewFoodIcon != null)
                 {
@@ -815,17 +902,25 @@ public class KitchenUI : MonoBehaviour
             }
             else
             {
-                if (previewFoodIcon != null) previewFoodIcon.gameObject.SetActive(false);
+                if (previewFoodIcon != null)
+                {
+                    previewFoodIcon.sprite = null;
+                    previewFoodIcon.gameObject.SetActive(false);
+                }
                 if (previewHeaderLabel != null) previewHeaderLabel.text = "MÓN ĐANG NẤU TRÊN BẾP:";
-                if (previewFoodTitle != null) previewFoodTitle.text = "Món Thử Nghiệm (Đang sôi...)";
-                if (previewFoodStats != null) previewFoodStats.text = "<color=#FFAA00>Chờ nấu xong để kiểm tra kết quả...</color>";
+                if (previewFoodTitle != null) previewFoodTitle.text = "??? (Đang Nấu Thử Nghiệm...)";
+                if (previewFoodStats != null) previewFoodStats.text = "<color=#FFAA00>Chờ nấu xong để mở khóa công thức và xem kết quả...</color>";
             }
             return;
         }
 
         RecipeData matchedRecipe = CookingManager.Instance != null ? CookingManager.Instance.MatchRecipe(potSlots) : null;
+        bool isMatchedUnlocked = matchedRecipe != null &&
+            (ProgressionManager.Instance != null
+                ? ProgressionManager.Instance.IsRecipeUnlocked(matchedRecipe)
+                : matchedRecipe.isDefaultUnlocked);
 
-        if (matchedRecipe != null && matchedRecipe.resultFood != null)
+        if (matchedRecipe != null && matchedRecipe.resultFood != null && isMatchedUnlocked)
         {
             previewCardGO.SetActive(true);
             if (previewFoodIcon != null)
@@ -837,16 +932,29 @@ public class KitchenUI : MonoBehaviour
             if (previewFoodTitle != null) previewFoodTitle.text = matchedRecipe.DisplayName;
             if (previewFoodStats != null) previewFoodStats.text = GetFoodStatsDisplay(matchedRecipe.resultFood);
         }
-        else if (potSlots.Count > 0)
+        else if (potSlots.Count > 0 && potSlots.Count < MAX_POT_SLOTS)
         {
             previewCardGO.SetActive(true);
             if (previewFoodIcon != null)
             {
+                previewFoodIcon.sprite = null;
                 previewFoodIcon.gameObject.SetActive(false);
             }
             if (previewHeaderLabel != null) previewHeaderLabel.text = "MÓN THÀNH PHẨM DỰ KIẾN:";
-            if (previewFoodTitle != null) previewFoodTitle.text = "Món Thử Nghiệm (Ẩn số)";
-            if (previewFoodStats != null) previewFoodStats.text = "<color=#FFAA00>??? Thử nấu để khám phá công thức bí mật!</color>";
+            if (previewFoodTitle != null) previewFoodTitle.text = $"Đang chuẩn bị ({potSlots.Count}/{MAX_POT_SLOTS} ô)";
+            if (previewFoodStats != null) previewFoodStats.text = $"<color=#FFCC00>Cần thêm {MAX_POT_SLOTS - potSlots.Count} ô nguyên liệu nữa mới đủ điều kiện nấu!</color>";
+        }
+        else if (potSlots.Count >= MAX_POT_SLOTS)
+        {
+            previewCardGO.SetActive(true);
+            if (previewFoodIcon != null)
+            {
+                previewFoodIcon.sprite = null;
+                previewFoodIcon.gameObject.SetActive(false);
+            }
+            if (previewHeaderLabel != null) previewHeaderLabel.text = "MÓN THÀNH PHẨM DỰ KIẾN:";
+            if (previewFoodTitle != null) previewFoodTitle.text = "??? (Chưa Mở Khóa)";
+            if (previewFoodStats != null) previewFoodStats.text = "<color=#FFAA00>Tổ hợp 4 nguyên liệu này chưa được mở khóa. Bấm [Bắt Đầu Nấu] để nấu và khám phá công thức!</color>";
         }
         else
         {
@@ -854,7 +962,7 @@ public class KitchenUI : MonoBehaviour
             if (previewFoodIcon != null) previewFoodIcon.gameObject.SetActive(false);
             if (previewHeaderLabel != null) previewHeaderLabel.text = "MÓN THÀNH PHẨM DỰ KIẾN:";
             if (previewFoodTitle != null) previewFoodTitle.text = "(Chưa có nguyên liệu)";
-            if (previewFoodStats != null) previewFoodStats.text = "<color=#8D6E63>Bỏ nguyên liệu từ Balo hoặc chọn Sổ Công Thức để xem trước.</color>";
+            if (previewFoodStats != null) previewFoodStats.text = "<color=#8D6E63>Bỏ đủ 4 nguyên liệu từ Balo hoặc chọn Sổ Công Thức để xem trước.</color>";
         }
     }
 
@@ -866,12 +974,21 @@ public class KitchenUI : MonoBehaviour
             ? CookingManager.Instance.GetAllAvailableRecipes()
             : new List<RecipeData>();
 
-        // Filter recipes
+        // Filter recipes (locked recipes only show as mystery slots under All, never leaking their category in sub-tabs)
         List<RecipeData> filtered = new List<RecipeData>();
         for (int i = 0; i < allRecipes.Count; i++)
         {
             RecipeData r = allRecipes[i];
             if (r == null) continue;
+
+            bool isUnlocked = ProgressionManager.Instance != null
+                ? ProgressionManager.Instance.IsRecipeUnlocked(r)
+                : r.isDefaultUnlocked;
+
+            if (!isUnlocked && currentFilter != RecipeFilter.All)
+            {
+                continue;
+            }
 
             bool matches = currentFilter switch
             {
@@ -885,8 +1002,25 @@ public class KitchenUI : MonoBehaviour
             if (matches) filtered.Add(r);
         }
 
-        // Check if currently selected recipe matches pot slots
+        // Sort unlocked recipes to the top of the notebook so the 2 starter recipes and discovered recipes appear first
+        filtered.Sort((a, b) =>
+        {
+            bool aUnlocked = ProgressionManager.Instance != null ? ProgressionManager.Instance.IsRecipeUnlocked(a) : a.isDefaultUnlocked;
+            bool bUnlocked = ProgressionManager.Instance != null ? ProgressionManager.Instance.IsRecipeUnlocked(b) : b.isDefaultUnlocked;
+            if (aUnlocked != bUnlocked) return aUnlocked ? -1 : 1;
+            if (a.isDefaultUnlocked != b.isDefaultUnlocked) return a.isDefaultUnlocked ? -1 : 1;
+            return 0;
+        });
+
+        // Check if currently selected recipe matches pot slots (only highlight if unlocked)
         RecipeData currentPotRecipe = CookingManager.Instance != null ? CookingManager.Instance.MatchRecipe(potSlots) : null;
+        if (currentPotRecipe != null)
+        {
+            bool potRecipeUnlocked = ProgressionManager.Instance != null
+                ? ProgressionManager.Instance.IsRecipeUnlocked(currentPotRecipe)
+                : currentPotRecipe.isDefaultUnlocked;
+            if (!potRecipeUnlocked) currentPotRecipe = null;
+        }
 
         // Clean up any destroyed pooled instances
         activeRecipeCards.RemoveAll(go => go == null);
@@ -956,6 +1090,45 @@ public class KitchenUI : MonoBehaviour
         Button actionBtn = cardGO.transform.Find("ActionButton")?.GetComponent<Button>();
         Image actionBg = actionBtn != null ? actionBtn.GetComponent<Image>() : null;
         TextMeshProUGUI actionText = cardGO.transform.Find("ActionButton/ActionText")?.GetComponent<TextMeshProUGUI>();
+
+        bool isUnlocked = ProgressionManager.Instance != null
+            ? ProgressionManager.Instance.IsRecipeUnlocked(recipe)
+            : recipe.isDefaultUnlocked;
+
+        if (!isUnlocked)
+        {
+            if (dishIcon != null)
+            {
+                dishIcon.sprite = null;
+                dishIcon.gameObject.SetActive(false);
+            }
+            if (title != null)
+            {
+                title.text = "<color=#888888>??? [CHƯA MỞ KHÓA]</color>";
+                title.enableAutoSizing = true;
+                title.fontSizeMin = 10.5f;
+            }
+            if (stars != null)
+            {
+                stars.text = "";
+                stars.gameObject.SetActive(false);
+            }
+            if (detail != null)
+            {
+                DungeonUIAssetHelper.ApplyFont(detail, withOutline: true);
+                detail.enableAutoSizing = true;
+                detail.fontSizeMin = 8.5f;
+                detail.text = "<color=#888888>Chưa rõ công thức — Hãy tự kết hợp 4 nguyên liệu và nấu trên bếp để mở khóa!</color>";
+            }
+            if (actionBtn != null)
+            {
+                actionBtn.onClick.RemoveAllListeners();
+                if (actionText != null) actionText.text = "KHÓA";
+                if (actionBg != null) actionBg.color = new Color(0.24f, 0.26f, 0.32f, 0.85f);
+                actionBtn.interactable = false;
+            }
+            return;
+        }
 
         if (dishIcon != null && recipe.resultFood != null)
         {

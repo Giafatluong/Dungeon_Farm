@@ -225,6 +225,12 @@ public class InventoryButton : MonoBehaviour,
 
     private static float lastGlobalSelectTime = -1f;
 
+    public static void ClearSelection()
+    {
+        selectedItem = null;
+        OnItemSelected?.Invoke(null);
+    }
+
     public void SelectItem()
     {
         if (Time.unscaledTime - lastGlobalSelectTime < 0.08f)

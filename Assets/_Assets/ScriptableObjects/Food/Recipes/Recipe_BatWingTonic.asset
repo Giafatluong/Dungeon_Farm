@@ -11,13 +11,15 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c63989b7d70655d4eb98239d5836f0e2, type: 3}
   m_Name: Recipe_BatWingTonic
-  recipeName: "Cao D\u01B0\u1EE3c Li\u1EC7u C\xE1nh D\u01A1i"
+  m_EditorClassIdentifier: Assembly-CSharp::RecipeData
+  recipeName: "Cao Dược Liệu Dạ Lan"
   ingredients:
   - item: {fileID: 11400000, guid: c1100002417244a47895e7b4112e4f02, type: 2}
     amount: 2
-  - item: {fileID: 11400000, guid: aaf3001eed98e2443b500d28635dfb36, type: 2}
-    amount: 2
   - item: {fileID: 11400000, guid: bebc2ac43f68ce44d89cca458fd002c8, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: aaf3001eed98e2443b500d28635dfb36, type: 2}
     amount: 1
   resultFood: {fileID: 11400000, guid: d1100004417244a47895e7b4112e4f04, type: 2}
   resultAmount: 1
+  isDefaultUnlocked: 0

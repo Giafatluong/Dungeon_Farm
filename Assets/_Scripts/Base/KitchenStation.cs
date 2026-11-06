@@ -164,6 +164,13 @@ public class KitchenStation : MonoBehaviour, IInteractable
                 {
                     completedRecipe = cookingRecipe;
                     completedAmount = cookingRecipe.resultAmount > 0 ? cookingRecipe.resultAmount : 1;
+
+                    // Unlock and discover the recipe immediately when cooking completes
+                    if (ProgressionManager.Instance != null)
+                    {
+                        ProgressionManager.Instance.DiscoverRecipe(completedRecipe);
+                        ProgressionManager.Instance.UnlockRecipe(completedRecipe);
+                    }
                 }
                 cookingRecipe = null;
 
@@ -336,6 +343,7 @@ public class KitchenStation : MonoBehaviour, IInteractable
         if (ProgressionManager.Instance != null)
         {
             ProgressionManager.Instance.DiscoverRecipe(completedRecipe);
+            ProgressionManager.Instance.UnlockRecipe(completedRecipe);
         }
 
         if (VFXManager.Instance != null)
