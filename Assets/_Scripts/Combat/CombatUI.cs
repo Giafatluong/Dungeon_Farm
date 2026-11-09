@@ -153,17 +153,20 @@ public class CombatUI : MonoBehaviour
             Sprite hungerSprite = DungeonUIAssetHelper.GetHungerFillSprite();
             if (hungerSprite != null) { hungerFillImage.sprite = hungerSprite; hungerFillImage.type = Image.Type.Sliced; hungerFillImage.color = Color.white; }
         }
-        if (targetHpFill != null)
+        if (targetHpFill != null && targetHpFill.sprite == null)
         {
             Sprite hpSprite = DungeonUIAssetHelper.GetHpFillSprite();
             if (hpSprite != null) { targetHpFill.sprite = hpSprite; targetHpFill.type = Image.Type.Sliced; targetHpFill.color = Color.white; }
         }
 
-        // 4. Modals & Panels
+        // 4. Modals & Panels - Preserve existing user-assigned scene sprites!
         if (targetInfoPanel != null)
         {
             Image panelImg = targetInfoPanel.GetComponent<Image>();
-            if (panelImg != null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
+            if (panelImg != null && panelImg.sprite == null) 
+            {
+                DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
+            }
         }
         if (foodPanel != null)
         {
@@ -272,6 +275,81 @@ public class CombatUI : MonoBehaviour
         if (turnManager == null) turnManager = FindFirstObjectByType<TurnManager>();
         if (targetSelector == null) targetSelector = FindFirstObjectByType<EnemyTargetSelector>();
         if (waveManager == null) waveManager = FindFirstObjectByType<WaveManager>();
+
+        BindTargetInfoPanelFromScene();
+    }
+
+    private void BindTargetInfoPanelFromScene()
+    {
+        // 1. Check if user placed an explicit scene object named "targetinfor", "targetinfo", "TargetInfo", or "TargetInfor"
+        GameObject customTargetObj = GameObject.Find("targetinfor") 
+                                  ?? GameObject.Find("targetinfo") 
+                                  ?? GameObject.Find("TargetInfo") 
+                                  ?? GameObject.Find("TargetInfor");
+
+        if (customTargetObj == null && transform != null)
+        {
+            Transform t = transform.Find("targetinfor") 
+                       ?? transform.Find("targetinfo") 
+                       ?? transform.Find("TargetInfo") 
+                       ?? transform.Find("TargetInfor");
+            if (t != null) customTargetObj = t.gameObject;
+        }
+
+        // 2. If user created their own target info panel object in the scene, prioritize it over the default/template TargetInfoPanel
+        if (customTargetObj != null)
+        {
+            if (targetInfoPanel != null && targetInfoPanel != customTargetObj)
+            {
+                // Disable the old/duplicate panel so only the user's custom target info displays!
+                targetInfoPanel.SetActive(false);
+            }
+            targetInfoPanel = customTargetObj;
+        }
+        else if (targetInfoPanel == null)
+        {
+            // Fallback: look for TargetInfoPanel in scene
+            targetInfoPanel = GameObject.Find("TargetInfoPanel") ?? transform.Find("TargetInfoPanel")?.gameObject;
+        }
+
+        if (targetInfoPanel != null)
+        {
+            // Auto-bind child text and image components if not already bound or if they belonged to the old panel
+            if (targetNameText == null || !targetNameText.transform.IsChildOf(targetInfoPanel.transform))
+            {
+                targetNameText = targetInfoPanel.transform.Find("TargetNameText")?.GetComponent<TextMeshProUGUI>()
+                              ?? targetInfoPanel.transform.Find("Name")?.GetComponent<TextMeshProUGUI>()
+                              ?? targetInfoPanel.transform.Find("Title")?.GetComponent<TextMeshProUGUI>()
+                              ?? targetInfoPanel.GetComponentInChildren<TextMeshProUGUI>(true);
+            }
+
+            if (targetHpFill == null || !targetHpFill.transform.IsChildOf(targetInfoPanel.transform))
+            {
+                targetHpFill = targetInfoPanel.transform.Find("TargetHpBar/HpFill")?.GetComponent<Image>()
+                            ?? targetInfoPanel.transform.Find("HpBar/Fill")?.GetComponent<Image>()
+                            ?? targetInfoPanel.transform.Find("HpFill")?.GetComponent<Image>()
+                            ?? targetInfoPanel.transform.Find("Fill")?.GetComponent<Image>();
+            }
+
+            if (targetHpText == null || !targetHpText.transform.IsChildOf(targetInfoPanel.transform))
+            {
+                targetHpText = targetInfoPanel.transform.Find("TargetHpBar/HpText")?.GetComponent<TextMeshProUGUI>()
+                            ?? targetInfoPanel.transform.Find("HpBar/Text")?.GetComponent<TextMeshProUGUI>()
+                            ?? targetHpFill?.GetComponentInChildren<TextMeshProUGUI>(true);
+            }
+
+            if (targetIntentText == null || !targetIntentText.transform.IsChildOf(targetInfoPanel.transform))
+            {
+                targetIntentText = targetInfoPanel.transform.Find("TargetIntentText")?.GetComponent<TextMeshProUGUI>()
+                                ?? targetInfoPanel.transform.Find("Intent")?.GetComponent<TextMeshProUGUI>()
+                                ?? targetInfoPanel.transform.Find("IntentText")?.GetComponent<TextMeshProUGUI>();
+            }
+
+            if (targetBuffBar == null || !targetBuffBar.transform.IsChildOf(targetInfoPanel.transform))
+            {
+                targetBuffBar = targetInfoPanel.GetComponentInChildren<BuffBarUI>(true);
+            }
+        }
     }
 
     private void BindButtons()
@@ -750,11 +828,18 @@ public class CombatUI : MonoBehaviour
         Transform parent = buffsText != null ? buffsText.transform.parent : (hpFillImage != null ? hpFillImage.transform.parent : null);
         if (parent == null) return;
 
-        Transform existing = parent.Find("PlayerBuffBar");
+        Transform existing = parent.Find("PlayerBuffBar") ?? parent.Find("BuffBar");
         if (existing != null)
         {
             playerBuffBar = existing.GetComponent<BuffBarUI>();
             if (playerBuffBar != null) return;
+        }
+
+        BuffBarUI childBuff = parent.GetComponentInChildren<BuffBarUI>(true);
+        if (childBuff != null)
+        {
+            playerBuffBar = childBuff;
+            return;
         }
 
         GameObject go = new GameObject("PlayerBuffBar", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(BuffBarUI));
@@ -786,11 +871,18 @@ public class CombatUI : MonoBehaviour
         if (targetBuffBar != null) return;
         if (targetInfoPanel == null) return;
 
-        Transform existing = targetInfoPanel.transform.Find("TargetBuffBar");
+        Transform existing = targetInfoPanel.transform.Find("TargetBuffBar") ?? targetInfoPanel.transform.Find("BuffBar");
         if (existing != null)
         {
             targetBuffBar = existing.GetComponent<BuffBarUI>();
             if (targetBuffBar != null) return;
+        }
+
+        BuffBarUI childBuff = targetInfoPanel.GetComponentInChildren<BuffBarUI>(true);
+        if (childBuff != null)
+        {
+            targetBuffBar = childBuff;
+            return;
         }
 
         GameObject go = new GameObject("TargetBuffBar", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(BuffBarUI));
@@ -863,6 +955,26 @@ public class CombatUI : MonoBehaviour
     private void EnsureSpeedButtonConstructed()
     {
         if (speedButtonGO != null) return;
+
+        // Check if CombatSpeedButton already exists in scene
+        Transform existing = transform.Find("CombatSpeedButton") 
+                          ?? transform.Find("SpeedButton")
+                          ?? GameObject.Find("CombatSpeedButton")?.transform;
+
+        if (existing != null)
+        {
+            speedButtonGO = existing.gameObject;
+            speedButtonText = speedButtonGO.GetComponentInChildren<TextMeshProUGUI>(true);
+            Button existingBtn = speedButtonGO.GetComponent<Button>();
+            if (existingBtn != null)
+            {
+                existingBtn.onClick.RemoveListener(CycleBattleSpeed);
+                existingBtn.onClick.AddListener(CycleBattleSpeed);
+            }
+            UpdateSpeedButtonText();
+            return;
+        }
+
         Canvas c = DungeonUIAssetHelper.GetMainScreenCanvas();
         if (c == null) c = GetComponentInParent<Canvas>();
         if (c == null) return;

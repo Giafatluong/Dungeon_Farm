@@ -906,7 +906,7 @@ public class RewardUI : MonoBehaviour
     #endregion
 
     #region Procedural UI Building
-    private void EnsureUIBuilt()
+    public void EnsureUIBuilt()
     {
         if (rewardPanel != null) return;
 

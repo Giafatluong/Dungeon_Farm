@@ -1300,7 +1300,7 @@ public class FloorVictoryUI : MonoBehaviour
     #endregion
 
     #region Procedural UI Builder With Visible Vertical Scrollbar Sliders
-    private void EnsureUIBuilt()
+    public void EnsureUIBuilt()
     {
         if (victoryPanel != null) return;
 

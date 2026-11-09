@@ -527,7 +527,7 @@ public class DayTransitionUI : MonoBehaviour
                 GraphicRaycaster gr = canvasGO.GetComponent<GraphicRaycaster>();
                 gr.blockingObjects = GraphicRaycaster.BlockingObjects.None;
 
-                DontDestroyOnLoad(canvasGO);
+                if (Application.isPlaying) DontDestroyOnLoad(canvasGO);
             }
         }
 

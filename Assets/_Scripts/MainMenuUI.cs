@@ -95,9 +95,11 @@ public class MainMenuUI : MonoBehaviour
         isBaseScene = SceneManager.GetActiveScene().name.Equals("Base", System.StringComparison.OrdinalIgnoreCase);
         AutoBindReferences();
 
-        if (!isMenuOpen && menuRootGO != null)
+        if (!isMenuOpen)
         {
-            menuRootGO.SetActive(false);
+            if (menuRootGO != null) menuRootGO.SetActive(false);
+            if (Time.timeScale == 0f) Time.timeScale = 1f;
+            SetGameplayEntitiesVisible(true);
         }
     }
 
@@ -128,7 +130,15 @@ public class MainMenuUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (Instance == this) Instance = null;
+        if (Instance == this)
+        {
+            Instance = null;
+            if (isMenuOpen)
+            {
+                if (Time.timeScale == 0f) Time.timeScale = 1f;
+                SetGameplayEntitiesVisible(true);
+            }
+        }
     }
 
     private void Update()
@@ -314,6 +324,27 @@ public class MainMenuUI : MonoBehaviour
                 }
             }
             hiddenPlayerRenderers.Clear();
+
+            // Absolute guarantee: always force Player renderers to enabled when leaving Main Menu
+            PlayerMovement pm = PlayerMovement.Instance != null ? PlayerMovement.Instance : FindFirstObjectByType<PlayerMovement>(FindObjectsInactive.Include);
+            if (pm != null)
+            {
+                SpriteRenderer[] srs = pm.GetComponentsInChildren<SpriteRenderer>(true);
+                for (int i = 0; i < srs.Length; i++)
+                {
+                    if (srs[i] != null) srs[i].enabled = true;
+                }
+                pm.EnsurePlayerVisibility();
+            }
+            GameObject playerGO = GameObject.FindGameObjectWithTag("Player");
+            if (playerGO != null && playerGO != (pm != null ? pm.gameObject : null))
+            {
+                SpriteRenderer[] srs = playerGO.GetComponentsInChildren<SpriteRenderer>(true);
+                for (int i = 0; i < srs.Length; i++)
+                {
+                    if (srs[i] != null) srs[i].enabled = true;
+                }
+            }
 
             // Restore HUD elements
             for (int i = 0; i < hiddenHUDObjects.Count; i++)

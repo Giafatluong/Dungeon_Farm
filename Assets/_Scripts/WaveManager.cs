@@ -24,6 +24,7 @@ public class WaveManager : MonoBehaviour
     public Camp camp;
     [SerializeField] private MerchantEvent merchantEvent;
     [SerializeField] private RewardChest rewardChest;
+    [SerializeField] private DungeonEventInteractable eventInteractable;
     [SerializeField] private FloorGenerator floorGenerator;
     [SerializeField] private DungeonBackgroundController backgroundController;
     #endregion
@@ -172,6 +173,11 @@ public class WaveManager : MonoBehaviour
         {
             rewardChest = GetComponentInChildren<RewardChest>(true);
             if (rewardChest == null) rewardChest = FindFirstObjectByType<RewardChest>(FindObjectsInactive.Include);
+        }
+        if (eventInteractable == null)
+        {
+            eventInteractable = GetComponentInChildren<DungeonEventInteractable>(true);
+            if (eventInteractable == null) eventInteractable = FindFirstObjectByType<DungeonEventInteractable>(FindObjectsInactive.Include);
         }
     }
 
@@ -636,6 +642,11 @@ public class WaveManager : MonoBehaviour
         Debug.Log($"[WaveManager] Starting Stage: {currentWaveIndex + 1}/{runtimeWaves.Length} | Type: {effectiveType} | Score Delta: {scoreDelta} | Floor Score: {currentFloorScore}");
         UpdateProgressBar();
 
+        if (eventInteractable != null)
+        {
+            eventInteractable.Dismiss();
+        }
+
         switch (effectiveType)
         {
             case WaveData.WaveType.Combat:
@@ -775,7 +786,7 @@ public class WaveManager : MonoBehaviour
 
     private void HandleEventStage()
     {
-        Debug.Log("[WaveManager] Reached Event Stage!");
+        Debug.Log("[WaveManager] Reached Event Stage! Setting up interactive Event Altar.");
 
         DungeonEventManager eventMgr = DungeonEventManager.Instance != null ? DungeonEventManager.Instance : FindFirstObjectByType<DungeonEventManager>(FindObjectsInactive.Include);
         if (eventMgr == null)
@@ -802,10 +813,20 @@ public class WaveManager : MonoBehaviour
             : (PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>());
         ItemContainer backpack = ps != null ? ps.itemContainer : null;
 
-        DungeonEventUI eventUI = DungeonEventUI.EnsureInstance();
-        if (eventUI != null && evt != null)
+        if (eventInteractable == null)
         {
-            eventUI.OpenEvent(evt, ps, backpack, onComplete: () =>
+            eventInteractable = GetComponentInChildren<DungeonEventInteractable>(true);
+            if (eventInteractable == null) eventInteractable = FindFirstObjectByType<DungeonEventInteractable>(FindObjectsInactive.Include);
+            if (eventInteractable == null)
+            {
+                eventInteractable = DungeonEventInteractable.EnsureInstance();
+                eventInteractable.transform.SetParent(transform, false);
+            }
+        }
+
+        if (eventInteractable != null && evt != null)
+        {
+            eventInteractable.Setup(evt, ps, backpack, onComplete: () =>
             {
                 Continue();
             });

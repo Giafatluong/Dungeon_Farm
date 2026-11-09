@@ -24,7 +24,7 @@ public class LoadingScreenUI : MonoBehaviour
                 {
                     GameObject go = new GameObject("[LoadingScreenUI]");
                     _instance = go.AddComponent<LoadingScreenUI>();
-                    DontDestroyOnLoad(go);
+                    if (Application.isPlaying) DontDestroyOnLoad(go);
                 }
             }
             return _instance;
@@ -98,7 +98,8 @@ public class LoadingScreenUI : MonoBehaviour
         }
 
         _instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (Application.isPlaying) DontDestroyOnLoad(gameObject);
+        isTransitioning = false;
         EnsureUIConstructed();
         HideImmediate();
     }
@@ -195,8 +196,19 @@ public class LoadingScreenUI : MonoBehaviour
         if (progressFillImage != null) progressFillImage.fillAmount = 0f;
         if (percentText != null) percentText.text = "0%";
 
+        // Lock and dismiss all modals, HUD and input during transition
+        UIEscapeManager.CloseAllModals(includeInventory: true);
+        UIEscapeManager.SetHUDVisible(false);
+        ItemTooltipUI.Instance?.Hide(immediate: true);
+        DayTransitionUI.Instance?.ResetToHiddenState();
+        if (UnityEngine.EventSystems.EventSystem.current != null)
+        {
+            UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
+        }
+
         targetCanvas.gameObject.SetActive(true);
         canvasGroup.blocksRaycasts = true;
+        canvasGroup.interactable = true;
 
         // 2. Fade in screen (0.22s)
         float elapsed = 0f;
@@ -310,6 +322,8 @@ public class LoadingScreenUI : MonoBehaviour
 
         HideImmediate();
         isTransitioning = false;
+        UIEscapeManager.SetHUDVisible(true);
+        CurrentItemPanel.RefreshHotbar();
     }
 
     private void HideImmediate()
@@ -318,6 +332,7 @@ public class LoadingScreenUI : MonoBehaviour
         {
             canvasGroup.alpha = 0f;
             canvasGroup.blocksRaycasts = false;
+            canvasGroup.interactable = false;
         }
         if (targetCanvas != null)
         {
@@ -330,10 +345,33 @@ public class LoadingScreenUI : MonoBehaviour
     {
         if (targetCanvas != null && canvasGroup != null) return;
 
+        // Check if an existing [LoadingScreenCanvas] already exists in scene
+        Canvas[] existingCanvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < existingCanvases.Length; i++)
+        {
+            if (existingCanvases[i] != null && existingCanvases[i].name == "[LoadingScreenCanvas]")
+            {
+                if (targetCanvas == null)
+                {
+                    targetCanvas = existingCanvases[i];
+                    canvasGroup = targetCanvas.GetComponent<CanvasGroup>();
+                }
+                else if (Application.isPlaying && existingCanvases[i] != targetCanvas)
+                {
+                    Destroy(existingCanvases[i].gameObject);
+                }
+            }
+        }
+        if (targetCanvas != null && canvasGroup != null)
+        {
+            BindExistingUIElements();
+            return;
+        }
+
         // 1. Root Canvas
         GameObject canvasGo = new GameObject("[LoadingScreenCanvas]", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
         canvasGo.transform.SetParent(transform, false);
-        DontDestroyOnLoad(canvasGo);
+        if (Application.isPlaying) DontDestroyOnLoad(canvasGo);
 
         targetCanvas = canvasGo.GetComponent<Canvas>();
         targetCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -527,6 +565,25 @@ public class LoadingScreenUI : MonoBehaviour
         tipBodyText.fontSize = 16;
         tipBodyText.color = new Color(0.90f, 0.92f, 0.96f, 1f);
         tipBodyText.alignment = TextAlignmentOptions.Center;
+    }
+
+    public bool IsActuallyVisible() => isTransitioning && canvasGroup != null && canvasGroup.alpha > 0.05f;
+
+    private void BindExistingUIElements()
+    {
+        if (targetCanvas == null) return;
+        Transform root = targetCanvas.transform;
+
+        if (canvasGroup == null) canvasGroup = targetCanvas.GetComponent<CanvasGroup>();
+        if (bgImage == null) bgImage = root.Find("Background")?.GetComponent<Image>();
+        if (titleText == null) titleText = root.Find("HeaderGroup/Title")?.GetComponent<TextMeshProUGUI>();
+        if (subtitleText == null) subtitleText = root.Find("HeaderGroup/Subtitle")?.GetComponent<TextMeshProUGUI>();
+        if (emblemText == null) emblemText = root.Find("CenterEmblemGroup/EmblemText")?.GetComponent<TextMeshProUGUI>();
+        if (statusText == null) statusText = root.Find("CenterEmblemGroup/StatusText")?.GetComponent<TextMeshProUGUI>();
+        if (progressFillImage == null) progressFillImage = root.Find("ProgressBarGroup/BarFill")?.GetComponent<Image>();
+        if (percentText == null) percentText = root.Find("ProgressBarGroup/PercentText")?.GetComponent<TextMeshProUGUI>();
+        if (tipHeaderText == null) tipHeaderText = root.Find("TipBox/TipHeader")?.GetComponent<TextMeshProUGUI>();
+        if (tipBodyText == null) tipBodyText = root.Find("TipBox/TipBody")?.GetComponent<TextMeshProUGUI>();
     }
 
     private void CreateHorizontalLine(Transform parent, float anchorY, Vector2 anchoredPos, Color col, float height)

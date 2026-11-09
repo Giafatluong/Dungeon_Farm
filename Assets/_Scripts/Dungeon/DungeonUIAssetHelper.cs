@@ -169,6 +169,31 @@ public static class DungeonUIAssetHelper
                    ?? FindSprite("Campfire");
         return _tentSprite;
     }
+
+    public static Sprite GetAltarSprite()
+    {
+        Sprite altar = Resources.Load<Sprite>("DungeonEvents/TX Props Altar")
+                    ?? FindSprite("TX Props Altar")
+                    ?? FindSprite("TX Props Altar Rune 1")
+                    ?? FindSprite("TX Props Rune Pillar X3 Glow");
+        if (altar != null) return altar;
+
+#if UNITY_EDITOR
+        Object[] sub = UnityEditor.AssetDatabase.LoadAllAssetRepresentationsAtPath("Assets/Cainos/Pixel Art Top Down - Basic/Texture/TX Props.png");
+        if (sub != null && sub.Length > 0)
+        {
+            for (int i = 0; i < sub.Length; i++)
+            {
+                if (sub[i] is Sprite s && (s.name == "TX Props Altar" || s.name == "TX Props Altar Rune 1" || s.name.Contains("Altar")))
+                {
+                    _spriteCache["TX Props Altar"] = s;
+                    return s;
+                }
+            }
+        }
+#endif
+        return null;
+    }
     #endregion
 
     #region Prefabs & Fonts
@@ -557,16 +582,50 @@ public static class DungeonUIAssetHelper
         // 3. Editor AssetDatabase pass (finds sprites on disk if not preloaded)
         if (found == null)
         {
+            if (spriteName.StartsWith("TX Props", System.StringComparison.OrdinalIgnoreCase))
+            {
+                Object[] txSub = UnityEditor.AssetDatabase.LoadAllAssetRepresentationsAtPath("Assets/Cainos/Pixel Art Top Down - Basic/Texture/TX Props.png");
+                if (txSub != null)
+                {
+                    for (int s = 0; s < txSub.Length; s++)
+                    {
+                        if (txSub[s] is Sprite subSprite && subSprite.name.Equals(spriteName, System.StringComparison.OrdinalIgnoreCase))
+                        {
+                            found = subSprite;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (found == null)
+        {
             string[] guids = UnityEditor.AssetDatabase.FindAssets($"{spriteName} t:Sprite");
             for (int i = 0; i < guids.Length; i++)
             {
                 string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[i]);
-                Sprite edSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
-                if (edSprite != null && edSprite.name.Equals(spriteName, System.StringComparison.OrdinalIgnoreCase))
+                Object[] subAssets = UnityEditor.AssetDatabase.LoadAllAssetRepresentationsAtPath(path);
+                if (subAssets != null && subAssets.Length > 0)
                 {
-                    found = edSprite;
-                    break;
+                    for (int s = 0; s < subAssets.Length; s++)
+                    {
+                        if (subAssets[s] is Sprite subSprite && subSprite.name.Equals(spriteName, System.StringComparison.OrdinalIgnoreCase))
+                        {
+                            found = subSprite;
+                            break;
+                        }
+                    }
                 }
+                else
+                {
+                    Sprite edSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                    if (edSprite != null && edSprite.name.Equals(spriteName, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        found = edSprite;
+                    }
+                }
+                if (found != null) break;
             }
         }
 #endif

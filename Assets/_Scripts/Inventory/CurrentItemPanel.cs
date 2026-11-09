@@ -142,6 +142,9 @@ public class CurrentItemPanel : MonoBehaviour
 
     private void Update()
     {
+        if (LoadingScreenUI.Instance != null && LoadingScreenUI.Instance.IsTransitioning)
+            return;
+
         // Number keys 1-9 to select items on hotbar when outside combat and no modal/bag is open
         if (CombatManager.Instance != null && (CombatManager.Instance.isCombatActive || CombatManager.Instance.isPreparingCombat))
             return;

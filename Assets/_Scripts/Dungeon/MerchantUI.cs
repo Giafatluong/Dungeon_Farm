@@ -928,7 +928,7 @@ public class MerchantUI : MonoBehaviour
         return canvas;
     }
 
-    private void EnsureUIBuilt()
+    public void EnsureUIBuilt()
     {
         if (merchantPanel != null) return;
 

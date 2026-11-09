@@ -47,6 +47,9 @@ public class InventoryController : MonoBehaviour
 
     private void Update()
     {
+        if (LoadingScreenUI.Instance != null && LoadingScreenUI.Instance.IsTransitioning)
+            return;
+
         // Close inventory on Escape if it is open
         if (IsInventoryOpen && Input.GetKeyDown(KeyCode.Escape))
         {

@@ -70,6 +70,7 @@ public class PlayerInteraction : MonoBehaviour
     /// </summary>
     public bool CanInteractNow()
     {
+        if (LoadingScreenUI.Instance != null && LoadingScreenUI.Instance.IsActuallyVisible()) return false;
         if (IsAnyUIOpen()) return false;
         if (inventoryController != null && (!inventoryController.isInteractable || inventoryController.IsInventoryOpen)) return false;
         if (TutorialManager.Instance != null && TutorialManager.Instance.IsInputBlocked) return false;
@@ -81,6 +82,7 @@ public class PlayerInteraction : MonoBehaviour
 
     private void Update()
     {
+        if (LoadingScreenUI.Instance != null && LoadingScreenUI.Instance.IsActuallyVisible()) return;
         if (IsAnyUIOpen()) return;
         if (inventoryController != null && !inventoryController.isInteractable) return;
         if (TutorialManager.Instance != null && TutorialManager.Instance.IsInputBlocked) return;

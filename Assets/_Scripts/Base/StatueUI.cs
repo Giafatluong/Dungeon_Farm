@@ -45,7 +45,11 @@ public class StatueUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI blessingStatusText;
     [SerializeField] private Button blessingSelectButton;
     [SerializeField] private TextMeshProUGUI blessingButtonText;
-    private GameObject blessingModalGO;
+
+    [Header("Blessing Modal (Scene Objects)")]
+    [SerializeField] public GameObject blessingModalPanel;
+    [SerializeField] public Button modalCloseButton;
+    [SerializeField] public List<BlessingCardUI> blessingCards = new List<BlessingCardUI>();
 
     public enum OfferingViewCategory
     {
@@ -65,7 +69,8 @@ public class StatueUI : MonoBehaviour
     private readonly List<OfferingSlot> activeOfferingSlots = new List<OfferingSlot>();
 
     private bool isExplicitlyOpened = false;
-    public bool IsOpen => isExplicitlyOpened && statuePanel != null && statuePanel.activeSelf;
+    public bool IsOpen => (isExplicitlyOpened && statuePanel != null && statuePanel.activeSelf)
+                       || (blessingModalPanel != null && blessingModalPanel.activeSelf);
     public ItemContainer PlayerBackpack => backpackContainer;
 
     private void Awake()
@@ -101,6 +106,24 @@ public class StatueUI : MonoBehaviour
             canvas = GetComponentInParent<Canvas>();
             if (canvas == null) canvas = GetComponent<Canvas>();
         }
+        if (blessingModalPanel == null)
+        {
+            Transform t = transform.Find("BlessingModal");
+            if (t == null && statuePanel != null && statuePanel.transform.parent != null)
+            {
+                t = statuePanel.transform.parent.Find("BlessingModal");
+            }
+            if (t != null) blessingModalPanel = t.gameObject;
+        }
+        if (modalCloseButton == null && blessingModalPanel != null)
+        {
+            Transform t = blessingModalPanel.transform.Find("DialogBox/BtnCloseModal");
+            if (t != null) modalCloseButton = t.GetComponent<Button>();
+        }
+        if ((blessingCards == null || blessingCards.Count == 0) && blessingModalPanel != null)
+        {
+            blessingCards = new List<BlessingCardUI>(blessingModalPanel.GetComponentsInChildren<BlessingCardUI>(true));
+        }
     }
 
     private void Start()
@@ -110,10 +133,22 @@ public class StatueUI : MonoBehaviour
         {
             statuePanel.SetActive(false);
         }
+        if (modalCloseButton != null)
+        {
+            modalCloseButton.onClick.RemoveAllListeners();
+            modalCloseButton.onClick.AddListener(CloseBlessingSelectionModal);
+        }
     }
 
     private void Update()
     {
+        if (blessingModalPanel != null && blessingModalPanel.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+        {
+            UIEscapeManager.ConsumeEscape();
+            CloseBlessingSelectionModal();
+            return;
+        }
+
         if (IsOpen && Input.GetKeyDown(KeyCode.Escape))
         {
             UIEscapeManager.ConsumeEscape();
@@ -321,7 +356,7 @@ public class StatueUI : MonoBehaviour
 
         if (!offering.IsUnlocked())
         {
-            SetFeedback("<color=#FF6666>Cột mốc này đang bị khóa! Cần hoàn thành cột mốc trước đó.</color>");
+            SetFeedback("<color=#FF6666>Cá»™t má»‘c nÃ y Ä‘ang bá»‹ khÃ³a! Cáº§n hoÃ n thÃ nh cá»™t má»‘c trÆ°á»›c Ä‘Ã³.</color>");
             return;
         }
 
@@ -439,289 +474,244 @@ public class StatueUI : MonoBehaviour
 
     public void ShowBlessingSelectionModal()
     {
-        CloseBlessingSelectionModal();
+        if (blessingModalPanel == null) AutoBindReferences();
+        if (blessingModalPanel == null)
+        {
+            EnsureProceduralBlessingModal();
+        }
+
+        if (blessingModalPanel != null)
+        {
+            EnsureBlessingModalLayout();
+            blessingModalPanel.SetActive(true);
+            blessingModalPanel.transform.SetAsLastSibling();
+            RefreshBlessingCards();
+        }
+    }
+
+    private void EnsureBlessingModalLayout()
+    {
+        if (blessingModalPanel == null) return;
+
+        // Ensure DialogBox panel size is large and tall for 1080p
+        Transform dialogBox = blessingModalPanel.transform.Find("DialogBox");
+        if (dialogBox == null && blessingModalPanel.transform.childCount > 0)
+        {
+            dialogBox = blessingModalPanel.transform.GetChild(0);
+        }
+        if (dialogBox != null)
+        {
+            RectTransform dRT = dialogBox.GetComponent<RectTransform>();
+            if (dRT != null)
+            {
+                dRT.sizeDelta = new Vector2(1180f, 860f);
+            }
+        }
+
+        // Ensure CardsContainer has proper grid dimensions for tall 246 x 366 Figma GOTY cards
+        Transform containerTr = dialogBox != null ? dialogBox.Find("CardsContainer") : blessingModalPanel.transform.Find("CardsContainer");
+        if (containerTr != null)
+        {
+            RectTransform cRT = containerTr.GetComponent<RectTransform>();
+            if (cRT != null)
+            {
+                cRT.anchoredPosition = new Vector2(0, -32f);
+                cRT.sizeDelta = new Vector2(-48f, -96f);
+            }
+            GridLayoutGroup glg = containerTr.GetComponent<GridLayoutGroup>();
+            if (glg != null)
+            {
+                glg.cellSize = new Vector2(246f, 366f);
+                glg.spacing = new Vector2(16f, 14f);
+                glg.padding = new RectOffset(16, 16, 8, 8);
+                glg.childAlignment = TextAnchor.MiddleCenter;
+                glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                glg.constraintCount = 4;
+            }
+        }
+    }
+
+    public void EnsureProceduralBlessingModal()
+    {
+        if (blessingModalPanel != null) return;
 
         Canvas parentCanvas = GetCanvas();
         if (parentCanvas == null) return;
 
-        // Modal Overlay Container
-        blessingModalGO = new GameObject("BlessingModal", typeof(RectTransform), typeof(Image));
-        blessingModalGO.transform.SetParent(parentCanvas.transform, false);
-        blessingModalGO.transform.SetAsLastSibling();
+        // 1. Root Modal Overlay
+        blessingModalPanel = new GameObject("BlessingModal", typeof(RectTransform), typeof(Image));
+        blessingModalPanel.transform.SetParent(parentCanvas.transform, false);
+        blessingModalPanel.transform.SetAsLastSibling();
 
-        RectTransform modalRT = blessingModalGO.GetComponent<RectTransform>();
+        RectTransform modalRT = blessingModalPanel.GetComponent<RectTransform>();
         modalRT.anchorMin = Vector2.zero;
         modalRT.anchorMax = Vector2.one;
         modalRT.sizeDelta = Vector2.zero;
 
-        Image modalOverlay = blessingModalGO.GetComponent<Image>();
+        Image modalOverlay = blessingModalPanel.GetComponent<Image>();
         modalOverlay.color = new Color(0.02f, 0.03f, 0.05f, 0.85f);
 
-        // Center Dialog Box
+        // 2. DialogBox Window
         GameObject boxGO = new GameObject("DialogBox", typeof(RectTransform), typeof(Image));
-        boxGO.transform.SetParent(blessingModalGO.transform, false);
+        boxGO.transform.SetParent(blessingModalPanel.transform, false);
         RectTransform boxRT = boxGO.GetComponent<RectTransform>();
         boxRT.anchorMin = new Vector2(0.5f, 0.5f);
         boxRT.anchorMax = new Vector2(0.5f, 0.5f);
-        boxRT.sizeDelta = new Vector2(960, 560);
+        boxRT.pivot = new Vector2(0.5f, 0.5f);
+        boxRT.sizeDelta = new Vector2(1180f, 860f);
 
         Image boxBg = boxGO.GetComponent<Image>();
-        boxBg.color = new Color(0.09f, 0.11f, 0.15f, 0.98f);
+        DungeonUIAssetHelper.StyleSlicedFrame(boxBg, new Color(0.09f, 0.11f, 0.15f, 0.98f));
 
         Outline boxOutline = boxGO.AddComponent<Outline>();
         boxOutline.effectColor = new Color(0.85f, 0.72f, 0.35f, 0.95f);
         boxOutline.effectDistance = new Vector2(2, -2);
 
-        // Header
-        GameObject mTitleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
-        mTitleGO.transform.SetParent(boxGO.transform, false);
-        RectTransform mTitleRT = mTitleGO.GetComponent<RectTransform>();
-        mTitleRT.anchorMin = new Vector2(0, 1);
-        mTitleRT.anchorMax = new Vector2(1, 1);
-        mTitleRT.pivot = new Vector2(0.5f, 1);
-        mTitleRT.anchoredPosition = new Vector2(0, -16);
-        mTitleRT.sizeDelta = new Vector2(-60, 32);
+        // Header Title
+        GameObject titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
+        titleGO.transform.SetParent(boxGO.transform, false);
+        RectTransform titleRT = titleGO.GetComponent<RectTransform>();
+        titleRT.anchorMin = new Vector2(0, 1);
+        titleRT.anchorMax = new Vector2(1, 1);
+        titleRT.pivot = new Vector2(0.5f, 1);
+        titleRT.anchoredPosition = new Vector2(0, -18);
+        titleRT.sizeDelta = new Vector2(-60, 32);
 
-        TextMeshProUGUI mTitleTMP = mTitleGO.GetComponent<TextMeshProUGUI>();
-        mTitleTMP.fontSize = 21;
-        mTitleTMP.fontStyle = FontStyles.Bold;
-        mTitleTMP.alignment = TextAlignmentOptions.Center;
-        mTitleTMP.text = "DIVINE BLESSINGS (CHOOSE BUILD PATH)";
-        mTitleTMP.color = new Color(1f, 0.88f, 0.45f);
+        TextMeshProUGUI titleTMP = titleGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(titleTMP);
+        titleTMP.fontSize = 22;
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.alignment = TextAlignmentOptions.Center;
+        titleTMP.text = "DIVINE BLESSINGS (CHOOSE BUILD PATH)";
+        titleTMP.color = new Color(1f, 0.88f, 0.45f);
 
-        GameObject mSubGO = new GameObject("Subtitle", typeof(RectTransform), typeof(TextMeshProUGUI));
-        mSubGO.transform.SetParent(boxGO.transform, false);
-        RectTransform mSubRT = mSubGO.GetComponent<RectTransform>();
-        mSubRT.anchorMin = new Vector2(0, 1);
-        mSubRT.anchorMax = new Vector2(1, 1);
-        mSubRT.pivot = new Vector2(0.5f, 1);
-        mSubRT.anchoredPosition = new Vector2(0, -48);
-        mSubRT.sizeDelta = new Vector2(-60, 32);
+        // Subtitle
+        GameObject subGO = new GameObject("Subtitle", typeof(RectTransform), typeof(TextMeshProUGUI));
+        subGO.transform.SetParent(boxGO.transform, false);
+        RectTransform subRT = subGO.GetComponent<RectTransform>();
+        subRT.anchorMin = new Vector2(0, 1);
+        subRT.anchorMax = new Vector2(1, 1);
+        subRT.pivot = new Vector2(0.5f, 1);
+        subRT.anchoredPosition = new Vector2(0, -48);
+        subRT.sizeDelta = new Vector2(-60, 24);
 
-        TextMeshProUGUI mSubTMP = mSubGO.GetComponent<TextMeshProUGUI>();
-        mSubTMP.fontSize = 11;
-        mSubTMP.alignment = TextAlignmentOptions.Center;
-        mSubTMP.text = "Freely choose unlocked build paths to counter enemies on higher floors. Unlock more by clearing Dungeon floors or offering at the Statue!";
-        mSubTMP.color = new Color(0.75f, 0.85f, 0.95f);
+        TextMeshProUGUI subTMP = subGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(subTMP);
+        subTMP.fontSize = 11;
+        subTMP.alignment = TextAlignmentOptions.Center;
+        subTMP.text = "RÃª chuá»™t Ä‘á»ƒ phÃ³ng to & xem chi tiáº¿t â€¢ Click vÃ o tháº» bÃ i Ä‘á»ƒ kÃ­ch hoáº¡t hoáº·c chuyá»ƒn Ä‘á»•i PhÆ°á»›c LÃ nh";
+        subTMP.color = new Color(0.72f, 0.78f, 0.88f);
 
-        // Close Modal Button
-        GameObject mCloseBtnGO = new GameObject("BtnCloseModal", typeof(RectTransform), typeof(Image), typeof(Button));
-        mCloseBtnGO.transform.SetParent(boxGO.transform, false);
-        RectTransform mCloseRT = mCloseBtnGO.GetComponent<RectTransform>();
-        mCloseRT.anchorMin = new Vector2(1, 1);
-        mCloseRT.anchorMax = new Vector2(1, 1);
-        mCloseRT.pivot = new Vector2(1, 1);
-        mCloseRT.anchoredPosition = new Vector2(-14, -14);
-        mCloseRT.sizeDelta = new Vector2(30, 30);
+        // Close Button
+        GameObject closeBtnGO = new GameObject("BtnCloseModal", typeof(RectTransform), typeof(Image), typeof(Button));
+        closeBtnGO.transform.SetParent(boxGO.transform, false);
+        RectTransform closeBtnRT = closeBtnGO.GetComponent<RectTransform>();
+        closeBtnRT.anchorMin = new Vector2(1, 1);
+        closeBtnRT.anchorMax = new Vector2(1, 1);
+        closeBtnRT.pivot = new Vector2(1, 1);
+        closeBtnRT.anchoredPosition = new Vector2(-18, -16);
+        closeBtnRT.sizeDelta = new Vector2(36, 36);
 
-        Image mCloseBg = mCloseBtnGO.GetComponent<Image>();
-        mCloseBg.color = new Color(0.5f, 0.15f, 0.15f, 0.9f);
+        Image closeBtnBg = closeBtnGO.GetComponent<Image>();
+        modalCloseButton = closeBtnGO.GetComponent<Button>();
+        DungeonUIAssetHelper.StyleTactileButton(modalCloseButton, closeBtnBg, DungeonUIAssetHelper.ButtonStyle.WoodRustic);
+        closeBtnBg.color = new Color(0.65f, 0.20f, 0.20f, 0.95f);
+        modalCloseButton.onClick.AddListener(CloseBlessingSelectionModal);
 
-        Button mCloseBtn = mCloseBtnGO.GetComponent<Button>();
-        mCloseBtn.onClick.AddListener(CloseBlessingSelectionModal);
+        GameObject closeTxtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        closeTxtGO.transform.SetParent(closeBtnGO.transform, false);
+        TextMeshProUGUI closeTMP = closeTxtGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(closeTMP);
+        closeTMP.fontSize = 18;
+        closeTMP.fontStyle = FontStyles.Bold;
+        closeTMP.alignment = TextAlignmentOptions.Center;
+        closeTMP.text = "X";
+        closeTMP.color = Color.white;
+        closeTxtGO.GetComponent<RectTransform>().sizeDelta = new Vector2(36, 36);
 
-        GameObject mCloseTextGO = new GameObject("X", typeof(RectTransform), typeof(TextMeshProUGUI));
-        mCloseTextGO.transform.SetParent(mCloseBtnGO.transform, false);
-        TextMeshProUGUI mCloseTMP = mCloseTextGO.GetComponent<TextMeshProUGUI>();
-        mCloseTMP.fontSize = 16;
-        mCloseTMP.fontStyle = FontStyles.Bold;
-        mCloseTMP.alignment = TextAlignmentOptions.Center;
-        mCloseTMP.text = "X";
-        mCloseTMP.color = Color.white;
-        mCloseTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(30, 30);
-
-        // Cards Container Grid (2 rows x 4 columns)
-        GameObject cardsContainer = new GameObject("CardsContainer", typeof(RectTransform), typeof(GridLayoutGroup));
-        cardsContainer.transform.SetParent(boxGO.transform, false);
-        RectTransform cRT = cardsContainer.GetComponent<RectTransform>();
+        // 3. CardsContainer Grid
+        GameObject containerGO = new GameObject("CardsContainer", typeof(RectTransform), typeof(GridLayoutGroup));
+        containerGO.transform.SetParent(boxGO.transform, false);
+        RectTransform cRT = containerGO.GetComponent<RectTransform>();
         cRT.anchorMin = new Vector2(0, 0);
         cRT.anchorMax = new Vector2(1, 1);
-        cRT.anchoredPosition = new Vector2(0, -28);
-        cRT.sizeDelta = new Vector2(-40, -96);
+        cRT.pivot = new Vector2(0.5f, 0.5f);
+        cRT.anchoredPosition = new Vector2(0, -32f);
+        cRT.sizeDelta = new Vector2(-48f, -96f);
 
-        GridLayoutGroup glg = cardsContainer.GetComponent<GridLayoutGroup>();
-        glg.cellSize = new Vector2(215, 210);
-        glg.spacing = new Vector2(14, 12);
-        glg.padding = new RectOffset(16, 16, 6, 6);
+        GridLayoutGroup glg = containerGO.GetComponent<GridLayoutGroup>();
+        glg.cellSize = new Vector2(246f, 366f);
+        glg.spacing = new Vector2(16f, 14f);
+        glg.padding = new RectOffset(16, 16, 8, 8);
+        glg.childAlignment = TextAnchor.MiddleCenter;
         glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         glg.constraintCount = 4;
-        glg.childAlignment = TextAnchor.UpperCenter;
 
-        // Display all 8 blessings (7 build paths + protection)
-        List<BlessingInfo> allBlessings = BlessingDatabase.GetAllBlessings();
-        for (int i = 0; i < allBlessings.Count; i++)
+        // 4. Instantiate 8 Cards with BlessingCardUI
+        blessingCards.Clear();
+        BlessingType[] types = new BlessingType[]
         {
-            BlessingInfo info = allBlessings[i];
-            CreateBlessingCard(info, cardsContainer.transform);
-        }
-    }
+            BlessingType.KeepLootOnDefeat,
+            BlessingType.RawVitality,
+            BlessingType.SwiftMomentum,
+            BlessingType.BastionStrike,
+            BlessingType.BitterDecay,
+            BlessingType.StarvingFury,
+            BlessingType.GluttonousAegis,
+            BlessingType.EndlessFeast
+        };
 
-    private void CreateBlessingCard(BlessingInfo info, Transform parent)
-    {
-        if (info == null) return;
-
-        bool isUnlocked = ProgressionManager.Instance != null ? ProgressionManager.Instance.IsBlessingUnlocked(info.type) : true;
-        bool isCurrentActive = isUnlocked && ProgressionManager.Instance != null && ProgressionManager.Instance.activeBlessing == info.type;
-
-        GameObject cardGO = new GameObject($"Card_{info.type}", typeof(RectTransform), typeof(Image));
-        cardGO.transform.SetParent(parent, false);
-
-        Image cardBg = cardGO.GetComponent<Image>();
-        if (!isUnlocked)
+        for (int i = 0; i < types.Length; i++)
         {
-            cardBg.color = new Color(0.07f, 0.08f, 0.11f, 0.88f);
-        }
-        else
-        {
-            cardBg.color = isCurrentActive ? new Color(0.16f, 0.22f, 0.32f, 0.98f) : new Color(0.11f, 0.13f, 0.18f, 0.95f);
-        }
-
-        Outline cardBorder = cardGO.AddComponent<Outline>();
-        if (!isUnlocked)
-        {
-            cardBorder.effectColor = new Color(0.35f, 0.38f, 0.45f, 0.5f);
-            cardBorder.effectDistance = new Vector2(1.5f, -1.5f);
-        }
-        else
-        {
-            cardBorder.effectColor = isCurrentActive ? new Color(1f, 0.85f, 0.3f, 1f) : info.color;
-            cardBorder.effectDistance = isCurrentActive ? new Vector2(3, -3) : new Vector2(1.5f, -1.5f);
-        }
-
-        // Icon
-        GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(TextMeshProUGUI));
-        iconGO.transform.SetParent(cardGO.transform, false);
-        RectTransform iconRT = iconGO.GetComponent<RectTransform>();
-        iconRT.anchorMin = new Vector2(0.5f, 1);
-        iconRT.anchorMax = new Vector2(0.5f, 1);
-        iconRT.pivot = new Vector2(0.5f, 1);
-        iconRT.anchoredPosition = new Vector2(0, -10);
-        iconRT.sizeDelta = new Vector2(50, 36);
-
-        TextMeshProUGUI iconTMP = iconGO.GetComponent<TextMeshProUGUI>();
-        iconTMP.fontSize = 13;
-        iconTMP.fontStyle = FontStyles.Bold;
-        iconTMP.alignment = TextAlignmentOptions.Center;
-        iconTMP.text = isUnlocked ? info.iconSymbol : "[LOCKED]";
-
-        // Title
-        GameObject tGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
-        tGO.transform.SetParent(cardGO.transform, false);
-        RectTransform tRT = tGO.GetComponent<RectTransform>();
-        tRT.anchorMin = new Vector2(0, 1);
-        tRT.anchorMax = new Vector2(1, 1);
-        tRT.pivot = new Vector2(0.5f, 1);
-        tRT.anchoredPosition = new Vector2(0, -48);
-        tRT.sizeDelta = new Vector2(-12, 26);
-
-        TextMeshProUGUI tTMP = tGO.GetComponent<TextMeshProUGUI>();
-        tTMP.fontSize = 12.5f;
-        tTMP.fontStyle = FontStyles.Bold;
-        tTMP.alignment = TextAlignmentOptions.Center;
-        if (!isUnlocked)
-        {
-            tTMP.text = $"<color=#888888>{info.title}</color> <color=#FF6666>[LOCKED]</color>";
-            tTMP.color = new Color(0.6f, 0.62f, 0.68f);
-        }
-        else
-        {
-            tTMP.text = isCurrentActive ? $"{info.title} <color=#FFDD55>[SELECTED]</color>" : info.title;
-            tTMP.color = isCurrentActive ? new Color(1f, 0.85f, 0.4f) : info.color;
-        }
-
-        // Description
-        GameObject descGO = new GameObject("Desc", typeof(RectTransform), typeof(TextMeshProUGUI));
-        descGO.transform.SetParent(cardGO.transform, false);
-        RectTransform descRT = descGO.GetComponent<RectTransform>();
-        descRT.anchorMin = new Vector2(0, 0);
-        descRT.anchorMax = new Vector2(1, 1);
-        descRT.anchoredPosition = new Vector2(0, -4);
-        descRT.sizeDelta = new Vector2(-16, -120);
-
-        TextMeshProUGUI descTMP = descGO.GetComponent<TextMeshProUGUI>();
-        descTMP.fontSize = 9.5f;
-        descTMP.enableAutoSizing = true;
-        descTMP.fontSizeMin = 8f;
-        descTMP.fontSizeMax = 9.5f;
-        descTMP.lineSpacing = 1.0f;
-        descTMP.alignment = TextAlignmentOptions.TopLeft;
-
-        if (!isUnlocked)
-        {
-            descTMP.text = $"{info.description}\n\n<color=#FFB833><b>[!] Unlock Requirement:</b>\n{info.unlockRequirement}</color>";
-            descTMP.color = new Color(0.7f, 0.72f, 0.78f);
-        }
-        else
-        {
-            descTMP.text = info.description;
-            descTMP.color = new Color(0.85f, 0.9f, 0.98f);
-        }
-
-        // Select Button
-        GameObject btnGO = new GameObject("BtnSelect", typeof(RectTransform), typeof(Image), typeof(Button));
-        btnGO.transform.SetParent(cardGO.transform, false);
-        RectTransform btnRT = btnGO.GetComponent<RectTransform>();
-        btnRT.anchorMin = new Vector2(0, 0);
-        btnRT.anchorMax = new Vector2(1, 0);
-        btnRT.pivot = new Vector2(0.5f, 0);
-        btnRT.anchoredPosition = new Vector2(0, 8);
-        btnRT.sizeDelta = new Vector2(-18, 30);
-
-        Image btnBg = btnGO.GetComponent<Image>();
-        Button btn = btnGO.GetComponent<Button>();
-
-        if (!isUnlocked)
-        {
-            btnBg.color = new Color(0.2f, 0.22f, 0.26f, 0.7f);
-            btn.interactable = false;
-        }
-        else
-        {
-            btnBg.color = isCurrentActive ? new Color(0.2f, 0.5f, 0.7f, 0.95f) : new Color(0.22f, 0.55f, 0.35f, 0.95f);
-            btn.interactable = !isCurrentActive;
-            btn.onClick.AddListener(() =>
-            {
-                if (ProgressionManager.Instance != null)
-                {
-                    ProgressionManager.Instance.SetBlessing(info.type);
-                }
-                CloseBlessingSelectionModal();
-                UpdateBlessingDisplay();
-                SetFeedback($"Activated build path: {info.title}!");
-            });
-        }
-
-        GameObject btnTxtGO = new GameObject("BtnText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        btnTxtGO.transform.SetParent(btnGO.transform, false);
-        RectTransform btnTxtRT = btnTxtGO.GetComponent<RectTransform>();
-        btnTxtRT.anchorMin = Vector2.zero;
-        btnTxtRT.anchorMax = Vector2.one;
-        btnTxtRT.sizeDelta = Vector2.zero;
-
-        TextMeshProUGUI btnTxtTMP = btnTxtGO.GetComponent<TextMeshProUGUI>();
-        btnTxtTMP.fontSize = 11;
-        btnTxtTMP.fontStyle = FontStyles.Bold;
-        btnTxtTMP.alignment = TextAlignmentOptions.Center;
-
-        if (!isUnlocked)
-        {
-            btnTxtTMP.text = "[LOCKED] NOT UNLOCKED";
-            btnTxtTMP.color = new Color(0.7f, 0.7f, 0.7f);
-        }
-        else
-        {
-            btnTxtTMP.text = isCurrentActive ? "CURRENTLY ACTIVE" : "CHOOSE THIS BUILD";
-            btnTxtTMP.color = Color.white;
+            GameObject cardGO = new GameObject($"Card_{types[i]}", typeof(RectTransform), typeof(Image), typeof(BlessingCardUI));
+            cardGO.transform.SetParent(containerGO.transform, false);
+            BlessingCardUI cardUI = cardGO.GetComponent<BlessingCardUI>();
+            cardUI.blessingType = types[i];
+            cardUI.EnsureFigmaCardStructure();
+            blessingCards.Add(cardUI);
         }
     }
 
     public void CloseBlessingSelectionModal()
     {
-        if (blessingModalGO != null)
+        if (blessingModalPanel != null)
         {
-            Destroy(blessingModalGO);
-            blessingModalGO = null;
+            blessingModalPanel.SetActive(false);
         }
+    }
+
+    public void RefreshBlessingCards()
+    {
+        if (blessingCards == null || blessingCards.Count == 0)
+        {
+            if (blessingModalPanel != null)
+            {
+                blessingCards = new List<BlessingCardUI>(blessingModalPanel.GetComponentsInChildren<BlessingCardUI>(true));
+            }
+        }
+
+        if (blessingCards != null)
+        {
+            for (int i = 0; i < blessingCards.Count; i++)
+            {
+                if (blessingCards[i] != null)
+                {
+                    blessingCards[i].UpdateVisuals(OnBlessingCardSelected);
+                }
+            }
+        }
+    }
+
+    private void OnBlessingCardSelected(BlessingType type)
+    {
+        if (ProgressionManager.Instance != null)
+        {
+            ProgressionManager.Instance.SetBlessing(type);
+        }
+        UpdateBlessingDisplay();
+        RefreshBlessingCards(); // Instantly update active card gold border, keep modal open for free switching
+        BlessingInfo info = BlessingDatabase.GetBlessingInfo(type);
+        SetFeedback($"<color=#55FF88>[PHÆ¯á»šC LÃ€NH ÄÃƒ Äá»”I] KÃ­ch hoáº¡t nhÃ¡nh: {info?.title ?? type.ToString()}!</color>");
     }
     #endregion
 
@@ -742,7 +732,7 @@ public class StatueUI : MonoBehaviour
             return a.tier.CompareTo(b.tier);
         });
 
-        // 1. Navigation Category Tabs (Tấn Công (ATK), Phòng Thủ (DEF), Tốc Độ (SPD), Sinh Mệnh (HP))
+        // 1. Navigation Category Tabs (Táº¥n CÃ´ng (ATK), PhÃ²ng Thá»§ (DEF), Tá»‘c Äá»™ (SPD), Sinh Má»‡nh (HP))
         // Place sticky category tabs in OfferingsColumn (outside ScrollRect content) so they stay fixed when scrolling
         ScrollRect sr = offeringsContainer.GetComponentInParent<ScrollRect>();
         Transform columnTransform = sr != null && sr.transform.parent != null ? sr.transform.parent : offeringsContainer.parent;
@@ -837,10 +827,10 @@ public class StatueUI : MonoBehaviour
         hlg.childForceExpandWidth = true;
         hlg.childForceExpandHeight = true;
 
-        CreateTabButton("Tấn Công (ATK)", OfferingViewCategory.Might, tabsGO.transform);
-        CreateTabButton("Phòng Thủ (DEF)", OfferingViewCategory.Protection, tabsGO.transform);
-        CreateTabButton("Tốc Độ (SPD)", OfferingViewCategory.Swiftness, tabsGO.transform);
-        CreateTabButton("Sinh Mệnh (HP)", OfferingViewCategory.Vitality, tabsGO.transform);
+        CreateTabButton("Táº¥n CÃ´ng (ATK)", OfferingViewCategory.Might, tabsGO.transform);
+        CreateTabButton("PhÃ²ng Thá»§ (DEF)", OfferingViewCategory.Protection, tabsGO.transform);
+        CreateTabButton("Tá»‘c Äá»™ (SPD)", OfferingViewCategory.Swiftness, tabsGO.transform);
+        CreateTabButton("Sinh Má»‡nh (HP)", OfferingViewCategory.Vitality, tabsGO.transform);
     }
 
     private void CreateTabButton(string label, OfferingViewCategory category, Transform parent)
@@ -1013,7 +1003,7 @@ public class StatueUI : MonoBehaviour
             DungeonUIAssetHelper.ApplyFont(doneTMP);
             doneTMP.fontSize = 11;
             doneTMP.fontStyle = FontStyles.Bold;
-            doneTMP.text = "[ĐÃ HOÀN THÀNH]";
+            doneTMP.text = "[ÄÃƒ HOÃ€N THÃ€NH]";
             doneTMP.color = new Color(0.35f, 1f, 0.5f);
             doneGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 20);
         }
@@ -1033,7 +1023,7 @@ public class StatueUI : MonoBehaviour
             lockTMP.fontSize = 9;
             lockTMP.fontStyle = FontStyles.Bold;
             lockTMP.alignment = TextAlignmentOptions.Center;
-            lockTMP.text = off.tier == 5 ? "[CẦN BOSS 1]" : (off.tier == 10 ? "[CẦN BOSS TỐI THƯỢNG]" : "[CHƯA MỞ KHÓA]");
+            lockTMP.text = off.tier == 5 ? "[Cáº¦N BOSS 1]" : (off.tier == 10 ? "[Cáº¦N BOSS Tá»I THÆ¯á»¢NG]" : "[CHÆ¯A Má»ž KHÃ“A]");
             lockTMP.color = new Color(1f, 0.65f, 0.65f);
             lockTxtGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 20);
         }
@@ -1352,11 +1342,11 @@ public class StatueUI : MonoBehaviour
 
         return off.rewardStat switch
         {
-            Offering.RewardStat.ATK => $"Lễ Vật Chiến Binh {tierRoman} (+{off.rewardAmount} ATK)",
-            Offering.RewardStat.DEF => $"Lễ Vật Hộ Vệ {tierRoman} (+{off.rewardAmount} DEF)",
-            Offering.RewardStat.Speed => $"Lễ Vật Nhanh Nhẹn {tierRoman} (+{off.rewardAmount} Speed)",
-            Offering.RewardStat.MaxHP => $"Lễ Vật Sinh Mệnh {tierRoman} (+{off.rewardAmount} HP)",
-            _ => $"Lễ Vật {tierRoman} (+{off.rewardAmount})"
+            Offering.RewardStat.ATK => $"Lá»… Váº­t Chiáº¿n Binh {tierRoman} (+{off.rewardAmount} ATK)",
+            Offering.RewardStat.DEF => $"Lá»… Váº­t Há»™ Vá»‡ {tierRoman} (+{off.rewardAmount} DEF)",
+            Offering.RewardStat.Speed => $"Lá»… Váº­t Nhanh Nháº¹n {tierRoman} (+{off.rewardAmount} Speed)",
+            Offering.RewardStat.MaxHP => $"Lá»… Váº­t Sinh Má»‡nh {tierRoman} (+{off.rewardAmount} HP)",
+            _ => $"Lá»… Váº­t {tierRoman} (+{off.rewardAmount})"
         };
     }
 

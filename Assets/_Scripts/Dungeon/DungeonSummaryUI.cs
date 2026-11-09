@@ -694,7 +694,7 @@ public class DungeonSummaryUI : MonoBehaviour
     #endregion
 
     #region Procedural UI Building
-    private void EnsureUIBuilt()
+    public void EnsureUIBuilt()
     {
         if (summaryPanel != null) return;
 

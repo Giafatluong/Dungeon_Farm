@@ -45,10 +45,41 @@ public class PlayerMovement : MonoBehaviour
             spriteRenderer = GetComponent<SpriteRenderer>();
             if (spriteRenderer == null) spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         }
-        if (spriteRenderer != null) spriteRenderer.sortingOrder = 3;
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.sortingOrder = 10;
+            spriteRenderer.enabled = true;
+        }
 
         UpdateSceneCache();
         SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void Start()
+    {
+        EnsurePlayerVisibility();
+    }
+
+    private void OnEnable()
+    {
+        EnsurePlayerVisibility();
+    }
+
+    public void EnsurePlayerVisibility()
+    {
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+            if (spriteRenderer == null) spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        }
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.sortingOrder = 10;
+            if (MainMenuUI.Instance == null || !MainMenuUI.Instance.IsOpen)
+            {
+                spriteRenderer.enabled = true;
+            }
+        }
     }
 
     private void OnDestroy()
@@ -84,6 +115,7 @@ public class PlayerMovement : MonoBehaviour
 
     private bool IsAnyUIOpen()
     {
+        if (LoadingScreenUI.Instance != null && LoadingScreenUI.Instance.IsActuallyVisible()) return true;
         if (UIEscapeManager.IsAnyModalUIOpen(includeInventory: true, includeMainMenu: true)) return true;
 
         if (InventoryController.Instance == null)
@@ -169,8 +201,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (IsInCombat() || IsAnyUIOpen())
+        if (IsInCombat() || IsAnyUIOpen() || (LoadingScreenUI.Instance != null && LoadingScreenUI.Instance.IsActuallyVisible()))
         {
+            if (rb != null) rb.linearVelocity = Vector2.zero;
             return;
         }
 

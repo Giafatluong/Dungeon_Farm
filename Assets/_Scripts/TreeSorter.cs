@@ -1,7 +1,16 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Tilemaps;
 using System.Collections.Generic;
 
+/// <summary>
+/// Persistent World Sorting & Transparency Manager.
+/// Manages dynamic 2D sorting order and foliage transparency for trees, buildings, and decor props.
+/// When the player walks behind trees or foliage, the obstacles smoothly become semi-transparent
+/// (alpha ~0.45f) and render on top of the player so the player is never hidden blindly,
+/// and returns smoothly to opaque when stepping out.
+/// Survives scene reloads (DontDestroyOnLoad) so starting a New Game never breaks sorting.
+/// </summary>
 public class TreeSorter : MonoBehaviour
 {
     private struct ObstacleData
@@ -13,39 +22,94 @@ public class TreeSorter : MonoBehaviour
         public float topY;
     }
 
+    private static TreeSorter _instance;
+    public static TreeSorter Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                EnsureInstance();
+            }
+            return _instance;
+        }
+    }
+
     private static ObstacleData[] sceneObstacles;
     private static Transform playerTransform;
-    private static Vector3 lastPlayerPos = new Vector3(float.MinValue, float.MinValue, 0f);
     private static float nextPlayerSearchTime = 0f;
+    private static float nextCacheSearchTime = 0f;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics()
     {
+        _instance = null;
         sceneObstacles = null;
         playerTransform = null;
-        lastPlayerPos = new Vector3(float.MinValue, float.MinValue, 0f);
         nextPlayerSearchTime = 0f;
+        nextCacheSearchTime = 0f;
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void Init()
+    private static void AutoInitialize()
     {
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-        SceneManager.sceneLoaded += OnSceneLoaded;
-        FindAndCacheWorldObjects();
+        EnsureInstance();
     }
 
-    private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    public static void EnsureInstance()
     {
-        playerTransform = null;
-        lastPlayerPos = new Vector3(float.MinValue, float.MinValue, 0f);
-        nextPlayerSearchTime = 0f;
+        if (_instance != null) return;
+
+        _instance = FindFirstObjectByType<TreeSorter>();
+        if (_instance == null)
+        {
+            GameObject go = new GameObject("TreeSorter_Manager");
+            DontDestroyOnLoad(go);
+            _instance = go.AddComponent<TreeSorter>();
+        }
+        else
+        {
+            if (_instance.transform.parent != null)
+            {
+                _instance.transform.SetParent(null);
+            }
+            DontDestroyOnLoad(_instance.gameObject);
+        }
+    }
+
+    private void Awake()
+    {
+        if (_instance != null && _instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        _instance = this;
+        transform.SetParent(null);
+        DontDestroyOnLoad(gameObject);
+
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+
         FindAndCacheWorldObjects();
     }
 
     private void OnDestroy()
     {
-        SceneManager.sceneLoaded -= OnSceneLoaded;
+        if (_instance == this)
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            _instance = null;
+        }
+    }
+
+    private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        playerTransform = null;
+        nextPlayerSearchTime = 0f;
+        nextCacheSearchTime = 0f;
+        FindAndCacheWorldObjects();
     }
 
     // Kept for backward compatibility
@@ -56,6 +120,13 @@ public class TreeSorter : MonoBehaviour
 
     public static void FindAndCacheWorldObjects()
     {
+        string activeScene = SceneManager.GetActiveScene().name;
+        if (!string.IsNullOrEmpty(activeScene) && !activeScene.Equals("Base", System.StringComparison.OrdinalIgnoreCase))
+        {
+            sceneObstacles = System.Array.Empty<ObstacleData>();
+            return;
+        }
+
         List<ObstacleData> list = new List<ObstacleData>();
 
         // 1. Goddess Statue
@@ -65,8 +136,8 @@ public class TreeSorter : MonoBehaviour
             Renderer sr = statueObj.GetComponent<Renderer>();
             if (sr != null)
             {
-                // Statue base is at (40.5, 10.88), width ~2.2, height ~3.0
-                sr.sortingOrder = 2;
+                sr.sortingOrder = 4;
+                ResetVisual(sr);
                 list.Add(new ObstacleData
                 {
                     renderer = sr,
@@ -82,7 +153,6 @@ public class TreeSorter : MonoBehaviour
         GameObject wellObj = GameObject.Find("Well");
         if (wellObj != null)
         {
-            // Ensure collider
             if (wellObj.GetComponent<Collider2D>() == null)
             {
                 var col = wellObj.AddComponent<BoxCollider2D>();
@@ -93,7 +163,8 @@ public class TreeSorter : MonoBehaviour
             Renderer wr = wellObj.GetComponent<Renderer>();
             if (wr != null)
             {
-                wr.sortingOrder = 2;
+                wr.sortingOrder = 4;
+                ResetVisual(wr);
                 list.Add(new ObstacleData
                 {
                     renderer = wr,
@@ -120,7 +191,8 @@ public class TreeSorter : MonoBehaviour
             Renderer cr = campObj.GetComponent<Renderer>();
             if (cr != null)
             {
-                cr.sortingOrder = 2;
+                cr.sortingOrder = 4;
+                ResetVisual(cr);
                 list.Add(new ObstacleData
                 {
                     renderer = cr,
@@ -136,7 +208,6 @@ public class TreeSorter : MonoBehaviour
         GameObject houseObj = GameObject.Find("House");
         if (houseObj != null)
         {
-            // Ensure a solid blocking collider exists (in addition to the interaction trigger)
             Collider2D[] cols = houseObj.GetComponents<Collider2D>();
             bool hasSolidCollider = false;
             foreach (var c in cols)
@@ -154,7 +225,8 @@ public class TreeSorter : MonoBehaviour
             Renderer hr = houseObj.GetComponent<Renderer>();
             if (hr != null)
             {
-                hr.sortingOrder = 2;
+                hr.sortingOrder = 4;
+                ResetVisual(hr);
                 list.Add(new ObstacleData
                 {
                     renderer = hr,
@@ -173,7 +245,8 @@ public class TreeSorter : MonoBehaviour
             Renderer chr = chestObj.GetComponent<Renderer>();
             if (chr != null)
             {
-                chr.sortingOrder = 2;
+                chr.sortingOrder = 4;
+                ResetVisual(chr);
                 list.Add(new ObstacleData
                 {
                     renderer = chr,
@@ -195,19 +268,26 @@ public class TreeSorter : MonoBehaviour
                 if (r.gameObject == treeParent) continue;
                 if (ShouldSkipObject(r.gameObject.name)) continue;
 
-                r.sortingOrder = 2;
-                BoxCollider2D box = r.GetComponent<BoxCollider2D>();
-                if (box == null)
-                {
-                    box = r.gameObject.AddComponent<BoxCollider2D>();
-                    box.offset = new Vector2(0f, -0.2f);
-                    box.size = new Vector2(0.8f, 0.4f);
-                }
+                r.sortingOrder = 4;
+                ResetVisual(r);
 
-                float bx = r.transform.position.x + box.offset.x;
-                float by = r.transform.position.y + box.offset.y - (box.size.y * 0.5f);
-                float hw = Mathf.Max(box.size.x * 0.5f + 0.6f, r.bounds.extents.x * 0.9f);
-                float ty = r.bounds.max.y > by ? r.bounds.max.y : r.transform.position.y + 3.0f;
+                BoxCollider2D box = r.GetComponent<BoxCollider2D>();
+                float bx, by, hw, ty;
+
+                if (box != null)
+                {
+                    bx = r.transform.position.x + box.offset.x;
+                    by = r.transform.position.y + box.offset.y - (box.size.y * 0.5f);
+                    hw = Mathf.Max(box.size.x * 0.5f + 0.6f, r.bounds.extents.x * 0.9f);
+                    ty = r.bounds.max.y > by ? r.bounds.max.y : r.transform.position.y + 3.0f;
+                }
+                else
+                {
+                    bx = r.bounds.center.x;
+                    by = r.bounds.min.y;
+                    hw = Mathf.Max(r.bounds.extents.x * 0.9f, 0.8f);
+                    ty = r.bounds.max.y;
+                }
 
                 list.Add(new ObstacleData
                 {
@@ -217,11 +297,6 @@ public class TreeSorter : MonoBehaviour
                     halfWidth = hw,
                     topY = ty
                 });
-            }
-
-            if (treeParent.GetComponent<TreeSorter>() == null)
-            {
-                treeParent.AddComponent<TreeSorter>();
             }
         }
 
@@ -235,20 +310,26 @@ public class TreeSorter : MonoBehaviour
                 if (r.gameObject == decorParent) continue;
                 if (ShouldSkipObject(r.gameObject.name)) continue;
 
-                r.sortingOrder = 2;
-                Collider2D col = r.GetComponent<Collider2D>();
-                if (col == null)
-                {
-                    var box = r.gameObject.AddComponent<BoxCollider2D>();
-                    box.offset = new Vector2(0f, -0.2f);
-                    box.size = new Vector2(0.8f, 0.4f);
-                    col = box;
-                }
+                r.sortingOrder = 4;
+                ResetVisual(r);
 
-                float bx = col.bounds.center.x;
-                float by = col.bounds.min.y;
-                float hw = Mathf.Max(col.bounds.extents.x + 0.4f, r.bounds.extents.x * 0.85f);
-                float ty = r.bounds.max.y > by ? r.bounds.max.y : r.transform.position.y + 1.5f;
+                Collider2D col = r.GetComponent<Collider2D>();
+                float bx, by, hw, ty;
+
+                if (col != null)
+                {
+                    bx = col.bounds.center.x;
+                    by = col.bounds.min.y;
+                    hw = Mathf.Max(col.bounds.extents.x + 0.4f, r.bounds.extents.x * 0.85f);
+                    ty = r.bounds.max.y > by ? r.bounds.max.y : r.transform.position.y + 1.5f;
+                }
+                else
+                {
+                    bx = r.bounds.center.x;
+                    by = r.bounds.min.y;
+                    hw = Mathf.Max(r.bounds.extents.x * 0.85f, 0.6f);
+                    ty = r.bounds.max.y;
+                }
 
                 list.Add(new ObstacleData
                 {
@@ -259,14 +340,34 @@ public class TreeSorter : MonoBehaviour
                     topY = ty
                 });
             }
-
-            if (treeParent == null && decorParent.GetComponent<TreeSorter>() == null)
-            {
-                decorParent.AddComponent<TreeSorter>();
-            }
         }
 
         sceneObstacles = list.ToArray();
+    }
+
+    private static void ResetVisual(Renderer r)
+    {
+        if (r == null) return;
+        if (r is SpriteRenderer sr)
+        {
+            Color c = sr.color;
+            if (c.a != 1.0f)
+            {
+                sr.color = new Color(c.r, c.g, c.b, 1.0f);
+            }
+        }
+        else if (r is TilemapRenderer tmr)
+        {
+            Tilemap tm = tmr.GetComponent<Tilemap>();
+            if (tm != null)
+            {
+                Color c = tm.color;
+                if (c.a != 1.0f)
+                {
+                    tm.color = new Color(c.r, c.g, c.b, 1.0f);
+                }
+            }
+        }
     }
 
     private static bool ShouldSkipObject(string name)
@@ -292,7 +393,21 @@ public class TreeSorter : MonoBehaviour
 
     private void Update()
     {
-        if (sceneObstacles == null || sceneObstacles.Length == 0) return;
+        string activeScene = SceneManager.GetActiveScene().name;
+        if (!string.IsNullOrEmpty(activeScene) && !activeScene.Equals("Base", System.StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (sceneObstacles == null || sceneObstacles.Length == 0)
+        {
+            if (Time.time >= nextCacheSearchTime)
+            {
+                nextCacheSearchTime = Time.time + 1.0f;
+                FindAndCacheWorldObjects();
+            }
+            if (sceneObstacles == null || sceneObstacles.Length == 0) return;
+        }
 
         if (playerTransform == null)
         {
@@ -312,10 +427,6 @@ public class TreeSorter : MonoBehaviour
         }
 
         Vector3 pPos = playerTransform.position;
-        // Early exit if the player hasn't moved at all this frame (avoids looping 50+ obstacles while standing still)
-        if (pPos == lastPlayerPos) return;
-        lastPlayerPos = pPos;
-
         // Player feet position (visual ground contact point)
         float feetY = pPos.y - 0.42f;
 
@@ -325,21 +436,82 @@ public class TreeSorter : MonoBehaviour
             if (obs.renderer == null) continue;
 
             // Sorting logic:
-            // - Player is always sortingOrder = 3
-            // - When Player stands in front (lower Y / south of object base):
-            //   Object sortingOrder = 2 -> Player (3) renders ON TOP of the object.
-            // - When Player stands behind (higher Y / north of object base):
-            //   Object sortingOrder = 4 -> Object (4) renders ON TOP of Player (3), obscuring the player.
-            int targetOrder = 2;
-            if (Mathf.Abs(pPos.x - obs.baseX) <= obs.halfWidth && feetY >= obs.baseY && pPos.y <= obs.topY)
+            // - Player is baseline sortingOrder = 10
+            // - TilemapRenderers (House, Fence) stay at sortingOrder = 4 (under Player 10)
+            // - SpriteRenderers (Trees, Decor):
+            //   - When Player stands in front (south of object base):
+            //     Object sortingOrder = 4 (under Player 10), target alpha = 1.0f.
+            //   - When Player stands behind (north of object base and under canopy):
+            //     Object sortingOrder = 14 (on top of Player 10), target alpha = 0.45f
+            //     so the player is clearly visible through the foliage without disappearing!
+            int targetOrder = 4;
+            float targetAlpha = 1.0f;
+            bool isBehind = false;
+
+            if (obs.renderer is SpriteRenderer)
             {
-                targetOrder = 4;
+                if (Mathf.Abs(pPos.x - obs.baseX) <= obs.halfWidth && feetY >= obs.baseY && pPos.y <= obs.topY + 0.5f)
+                {
+                    isBehind = true;
+                    targetOrder = 14;
+                    targetAlpha = 0.45f;
+                }
             }
 
-            if (obs.renderer.sortingOrder != targetOrder)
+            SetObstacleVisual(obs.renderer, targetOrder, targetAlpha, isBehind);
+        }
+    }
+
+    private static void SetObstacleVisual(Renderer r, int targetOrder, float targetAlpha, bool isBehind)
+    {
+        if (r == null) return;
+
+        if (r is SpriteRenderer sr)
+        {
+            Color c = sr.color;
+            // Smoothly interpolate alpha towards target
+            if (Mathf.Abs(c.a - targetAlpha) > 0.01f)
             {
-                obs.renderer.sortingOrder = targetOrder;
+                float newA = Mathf.MoveTowards(c.a, targetAlpha, Time.deltaTime * 6f);
+                sr.color = new Color(c.r, c.g, c.b, newA);
+            }
+            else if (c.a != targetAlpha)
+            {
+                sr.color = new Color(c.r, c.g, c.b, targetAlpha);
+            }
+
+            // If behind, tree is in front (14) so foliage can be transparent over player.
+            // If in front, tree is behind player (4) immediately so player is never hidden.
+            // While fading out after being behind, keep at 14 until nearly fully opaque so it doesn't pop.
+            int desiredOrder = targetOrder;
+            if (!isBehind && sr.color.a < 0.95f)
+            {
+                // Only keep order 14 if player didn't walk south of the base
+                // If player is south (in front), desiredOrder is already 4.
+            }
+
+            if (r.sortingOrder != desiredOrder)
+            {
+                r.sortingOrder = desiredOrder;
+            }
+        }
+        else if (r is TilemapRenderer tmr)
+        {
+            if (r.sortingOrder != targetOrder)
+            {
+                r.sortingOrder = targetOrder;
+            }
+
+            Tilemap tm = tmr.GetComponent<Tilemap>();
+            if (tm != null)
+            {
+                Color c = tm.color;
+                if (Mathf.Abs(c.a - targetAlpha) > 0.02f)
+                {
+                    tm.color = new Color(c.r, c.g, c.b, targetAlpha);
+                }
             }
         }
     }
 }
+

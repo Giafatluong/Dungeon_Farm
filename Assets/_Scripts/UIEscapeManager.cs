@@ -39,6 +39,7 @@ public static class UIEscapeManager
     /// </summary>
     public static bool IsAnyModalUIOpen(bool includeInventory = true, bool includeMainMenu = true)
     {
+        if (LoadingScreenUI.Instance != null && LoadingScreenUI.Instance.IsActuallyVisible()) return true;
         if (includeMainMenu && MainMenuUI.Instance != null && MainMenuUI.Instance.IsOpen) return true;
 
         // Base & Farm Modals
@@ -151,6 +152,10 @@ public static class UIEscapeManager
     /// </summary>
     public static void SetHUDVisible(bool visible)
     {
+        // Don't show HUD while loading/transitioning scene!
+        if (visible && LoadingScreenUI.Instance != null && LoadingScreenUI.Instance.IsTransitioning)
+            return;
+
         // Don't show base HUD during combat!
         if (visible && CombatManager.Instance != null && (CombatManager.Instance.isCombatActive || CombatManager.Instance.isPreparingCombat))
             return;
