@@ -25,9 +25,16 @@ public class CampUI : MonoBehaviour
     [Header("Ambush Risk Gauge")]
     public TextMeshProUGUI ambushRiskPercentText;
     public TextMeshProUGUI ambushRiskStatusText;
+    public Image ambushRiskBgImage;
     public Image ambushRiskFillImage;
     public GameObject ambushAlertBanner;
     public TextMeshProUGUI ambushAlertText;
+
+    [Header("Ambush Risk Gauge Sprites")]
+    public Sprite riskBgSafeSprite;
+    public Sprite riskBgCautionSprite;
+    public Sprite riskBgDangerSprite;
+    public Sprite riskBgCompromisedSprite;
 
     [Header("Player Status UI")]
     public TextMeshProUGUI playerStatusText;
@@ -285,7 +292,7 @@ public class CampUI : MonoBehaviour
                 CombatUI.Instance.turnBannerText.text = "CAMPFIRE - REST & RECOVER";
                 CombatUI.Instance.turnBannerText.color = new Color(1f, 0.85f, 0.3f);
             }
-            if (CombatUI.Instance.turnBannerBg != null)
+            if (CombatUI.Instance.turnBannerBg != null && CombatUI.Instance.turnBannerBg.sprite == null)
             {
                 CombatUI.Instance.turnBannerBg.color = new Color(0.35f, 0.22f, 0.08f, 0.9f);
             }
@@ -327,10 +334,30 @@ public class CampUI : MonoBehaviour
             ambushRiskPercentText.color = new Color(1f, 0.4f, 0.3f);
         }
 
+        if (ambushRiskBgImage != null)
+        {
+            Sprite compBg = riskBgCompromisedSprite != null ? riskBgCompromisedSprite : DungeonUIAssetHelper.GetRiskGaugeBgSprite(3);
+            if (compBg != null)
+            {
+                ambushRiskBgImage.sprite = compBg;
+                ambushRiskBgImage.color = Color.white;
+            }
+        }
+
         if (ambushRiskFillImage != null)
         {
+            if (ambushRiskFillImage.sprite == null)
+            {
+                Sprite fillSpr = DungeonUIAssetHelper.GetRiskGaugeFillSprite();
+                if (fillSpr != null)
+                {
+                    ambushRiskFillImage.sprite = fillSpr;
+                    ambushRiskFillImage.type = Image.Type.Filled;
+                    ambushRiskFillImage.fillMethod = Image.FillMethod.Horizontal;
+                }
+            }
             ambushRiskFillImage.fillAmount = 1f;
-            ambushRiskFillImage.color = new Color(0.9f, 0.2f, 0.2f);
+            ambushRiskFillImage.color = new Color(0.95f, 0.25f, 0.25f);
         }
 
         if (ambushRiskStatusText != null)
@@ -365,7 +392,7 @@ public class CampUI : MonoBehaviour
                 CombatUI.Instance.turnBannerText.text = "AMBUSH DEFEATED - ADVANCE FORWARD";
                 CombatUI.Instance.turnBannerText.color = new Color(1f, 0.85f, 0.3f);
             }
-            if (CombatUI.Instance.turnBannerBg != null)
+            if (CombatUI.Instance.turnBannerBg != null && CombatUI.Instance.turnBannerBg.sprite == null)
             {
                 CombatUI.Instance.turnBannerBg.color = new Color(0.4f, 0.2f, 0.05f, 0.9f);
             }
@@ -545,8 +572,34 @@ public class CampUI : MonoBehaviour
             ambushRiskPercentText.text = $"Ambush Risk: <b>{percentInt}%</b>";
         }
 
+        if (ambushRiskBgImage != null)
+        {
+            int tier = percent < 0.35f ? 0 : (percent < 0.70f ? 1 : 2);
+            Sprite bgSpr = tier switch
+            {
+                1 => riskBgCautionSprite != null ? riskBgCautionSprite : DungeonUIAssetHelper.GetRiskGaugeBgSprite(1),
+                2 => riskBgDangerSprite != null ? riskBgDangerSprite : DungeonUIAssetHelper.GetRiskGaugeBgSprite(2),
+                _ => riskBgSafeSprite != null ? riskBgSafeSprite : DungeonUIAssetHelper.GetRiskGaugeBgSprite(0)
+            };
+            if (bgSpr != null)
+            {
+                ambushRiskBgImage.sprite = bgSpr;
+                ambushRiskBgImage.color = Color.white;
+            }
+        }
+
         if (ambushRiskFillImage != null)
         {
+            if (ambushRiskFillImage.sprite == null)
+            {
+                Sprite fillSpr = DungeonUIAssetHelper.GetRiskGaugeFillSprite();
+                if (fillSpr != null)
+                {
+                    ambushRiskFillImage.sprite = fillSpr;
+                    ambushRiskFillImage.type = Image.Type.Filled;
+                    ambushRiskFillImage.fillMethod = Image.FillMethod.Horizontal;
+                }
+            }
             ambushRiskFillImage.fillAmount = percent;
 
             if (percent < 0.25f)
@@ -744,7 +797,17 @@ public class CampUI : MonoBehaviour
         rt.sizeDelta = new Vector2(440, 56);
 
         Image bg = row.GetComponent<Image>();
-        bg.color = new Color(0.14f, 0.16f, 0.22f, 0.95f);
+        Sprite cardSprite = DungeonUIAssetHelper.GetFoodCardSprite();
+        if (cardSprite != null)
+        {
+            bg.sprite = cardSprite;
+            bg.type = Image.Type.Sliced;
+            bg.color = Color.white;
+        }
+        else
+        {
+            bg.color = new Color(0.14f, 0.16f, 0.22f, 0.95f);
+        }
 
         // Icon
         GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
@@ -877,7 +940,17 @@ public class CampUI : MonoBehaviour
         rt.sizeDelta = new Vector2(450, 68);
 
         Image bg = row.GetComponent<Image>();
-        bg.color = new Color(0.13f, 0.15f, 0.20f, 0.95f);
+        Sprite cardSprite = DungeonUIAssetHelper.GetFoodCardSprite();
+        if (cardSprite != null)
+        {
+            bg.sprite = cardSprite;
+            bg.type = Image.Type.Sliced;
+            bg.color = Color.white;
+        }
+        else
+        {
+            bg.color = new Color(0.13f, 0.15f, 0.20f, 0.95f);
+        }
 
         // Icon
         GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));

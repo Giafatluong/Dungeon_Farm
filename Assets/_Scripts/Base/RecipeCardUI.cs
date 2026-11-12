@@ -23,7 +23,49 @@ public class RecipeCardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
     public Image actionButtonBackground;
     public TextMeshProUGUI actionButtonText;
     public GameObject lockIcon;
+
+    [Header("Cozy Theme Sprites")]
+    public Sprite normalCardSprite;
+    public Sprite selectedCardSprite;
+    public Sprite lockedCardSprite;
+    public Sprite autoFillButtonSprite;
+    public Sprite missingButtonSprite;
+    public Sprite neutralButtonSprite;
+
+    private static readonly Color InkDark = new Color(0.23f, 0.14f, 0.08f, 1f);
+    private static readonly Color InkBody = new Color(0.32f, 0.22f, 0.14f, 1f);
+
     private RecipeData currentRecipe;
+
+    private void ApplyCardSprite(Sprite sprite, Color fallbackColor)
+    {
+        if (cardBackground == null) return;
+        if (sprite != null)
+        {
+            cardBackground.sprite = sprite;
+            cardBackground.type = Image.Type.Sliced;
+            cardBackground.color = Color.white;
+        }
+        else
+        {
+            cardBackground.color = fallbackColor;
+        }
+    }
+
+    private void ApplyActionButtonSprite(Sprite sprite, Color fallbackColor)
+    {
+        if (actionButtonBackground == null) return;
+        if (sprite != null)
+        {
+            actionButtonBackground.sprite = sprite;
+            actionButtonBackground.type = Image.Type.Sliced;
+            actionButtonBackground.color = Color.white;
+        }
+        else
+        {
+            actionButtonBackground.color = fallbackColor;
+        }
+    }
 
     public void Setup(RecipeData recipe, ItemContainer backpack, bool isCurrentlySelected, System.Action onAutoFill, ItemContainer chest = null)
     {
@@ -46,9 +88,13 @@ public class RecipeCardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
 
         if (!isUnlocked)
         {
+            Sprite lockedCard = lockedCardSprite != null ? lockedCardSprite : DungeonUIAssetHelper.FindSprite("Atom_Card_Missing");
+            ApplyCardSprite(lockedCard, new Color(0.92f, 0.88f, 0.83f, 1f));
+
             if (titleText != null)
             {
-                titleText.text = "<color=#888888>??? [CHƯA MỞ KHÓA]</color>";
+                titleText.color = InkDark;
+                titleText.text = "<color=#6B5B4D>??? [CHƯA MỞ KHÓA]</color>";
             }
 
             if (starsText != null)
@@ -64,7 +110,8 @@ public class RecipeCardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
 
             if (detailText != null)
             {
-                detailText.text = "<color=#888888>Chưa rõ công thức — Hãy tự kết hợp 4 nguyên liệu và nấu trên bếp để mở khóa!</color>";
+                detailText.color = InkBody;
+                detailText.text = "<color=#5C4B3E>Chưa rõ công thức — Hãy tự kết hợp 4 nguyên liệu và nấu trên bếp để mở khóa!</color>";
             }
 
             if (lockIcon != null)
@@ -78,9 +125,10 @@ public class RecipeCardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
                 if (actionButtonText != null)
                 {
                     actionButtonText.text = "KHÓA";
-                    actionButtonText.color = new Color(0.65f, 0.65f, 0.70f, 0.85f);
+                    actionButtonText.color = Color.white;
                 }
-                if (actionButtonBackground != null) actionButtonBackground.color = new Color(0.18f, 0.20f, 0.25f, 0.85f);
+                Sprite missBtn = missingButtonSprite != null ? missingButtonSprite : DungeonUIAssetHelper.FindSprite("Btn_Missing_Ingredients");
+                ApplyActionButtonSprite(missBtn, new Color(0.45f, 0.36f, 0.30f, 0.95f));
                 actionButton.interactable = false;
             }
             return;
@@ -96,8 +144,21 @@ public class RecipeCardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
             lockIcon.SetActive(false);
         }
 
-        if (titleText != null) titleText.text = recipe.DisplayName;
+        if (titleText != null)
+        {
+            titleText.color = InkDark;
+            titleText.text = recipe.DisplayName;
+        }
+        if (detailText != null)
+        {
+            detailText.color = InkBody;
+        }
         if (starsText != null) starsText.gameObject.SetActive(false);
+
+        Sprite cardSpr = isCurrentlySelected
+            ? (selectedCardSprite != null ? selectedCardSprite : DungeonUIAssetHelper.FindSprite("Món ăn dự kiến"))
+            : (normalCardSprite != null ? normalCardSprite : DungeonUIAssetHelper.FindSprite("Món ăn  (không chọn)"));
+        ApplyCardSprite(cardSpr, Color.white);
 
         if (dishIcon != null && recipe.resultFood != null)
         {
@@ -159,7 +220,9 @@ public class RecipeCardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
                     actionButtonText.text = "ĐANG CHỌN";
                     actionButtonText.color = Color.white;
                 }
-                if (actionButtonBackground != null) actionButtonBackground.color = new Color(0.85f, 0.50f, 0.05f, 1f); // Amber orange
+                Sprite selBtn = neutralButtonSprite != null ? neutralButtonSprite : DungeonUIAssetHelper.FindSprite("Btn");
+                ApplyActionButtonSprite(selBtn, new Color(0.85f, 0.50f, 0.05f, 1f));
+                if (actionButtonBackground != null && selBtn != null) actionButtonBackground.color = new Color(1f, 0.85f, 0.55f, 1f);
                 actionButton.interactable = false;
             }
             else if (canCook)
@@ -169,7 +232,8 @@ public class RecipeCardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
                     actionButtonText.text = "TỰ ĐIỀN";
                     actionButtonText.color = Color.white;
                 }
-                if (actionButtonBackground != null) actionButtonBackground.color = new Color(0.18f, 0.52f, 0.20f, 1f); // Emerald green
+                Sprite autoBtn = autoFillButtonSprite != null ? autoFillButtonSprite : DungeonUIAssetHelper.FindSprite("Btn_Auto_Fill");
+                ApplyActionButtonSprite(autoBtn, new Color(0.18f, 0.52f, 0.20f, 1f));
                 actionButton.interactable = true;
                 actionButton.onClick.AddListener(() => onAutoFill?.Invoke());
             }
@@ -178,9 +242,10 @@ public class RecipeCardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
                 if (actionButtonText != null)
                 {
                     actionButtonText.text = "THIẾU NL";
-                    actionButtonText.color = new Color(0.75f, 0.75f, 0.78f, 0.9f);
+                    actionButtonText.color = Color.white;
                 }
-                if (actionButtonBackground != null) actionButtonBackground.color = new Color(0.24f, 0.26f, 0.32f, 0.85f); // Dark slate
+                Sprite missBtn = missingButtonSprite != null ? missingButtonSprite : DungeonUIAssetHelper.FindSprite("Btn_Missing_Ingredients");
+                ApplyActionButtonSprite(missBtn, new Color(0.36f, 0.30f, 0.26f, 0.9f));
                 actionButton.interactable = false;
             }
         }

@@ -171,22 +171,22 @@ public class CombatUI : MonoBehaviour
         if (foodPanel != null)
         {
             Image panelImg = foodPanel.GetComponent<Image>();
-            if (panelImg != null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
+            if (panelImg != null && panelImg.sprite == null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
         }
         if (victoryPanel != null)
         {
             Image panelImg = victoryPanel.GetComponent<Image>();
-            if (panelImg != null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
+            if (panelImg != null && panelImg.sprite == null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
         }
         if (defeatPanel != null)
         {
             Image panelImg = defeatPanel.GetComponent<Image>();
-            if (panelImg != null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
+            if (panelImg != null && panelImg.sprite == null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
         }
         if (rewardPanel != null)
         {
             Image panelImg = rewardPanel.GetComponent<Image>();
-            if (panelImg != null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
+            if (panelImg != null && panelImg.sprite == null) DungeonUIAssetHelper.StyleSlicedPanel(panelImg, DungeonUIAssetHelper.PanelStyle.Wood);
         }
 
         // 5. High-Contrast Typography
@@ -1680,7 +1680,17 @@ public class CombatUI : MonoBehaviour
         le.flexibleWidth = 1;
 
         Image bg = row.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.14f, 0.17f, 0.24f, 0.95f));
+        Sprite cardSprite = DungeonUIAssetHelper.GetFoodCardSprite();
+        if (cardSprite != null)
+        {
+            bg.sprite = cardSprite;
+            bg.type = Image.Type.Sliced;
+            bg.color = Color.white;
+        }
+        else
+        {
+            DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.14f, 0.17f, 0.24f, 0.95f));
+        }
 
         // Icon
         if (food.itemIcon != null)

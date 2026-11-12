@@ -17,6 +17,12 @@ public class InventoryButton : MonoBehaviour,
     [SerializeField] private TextMeshProUGUI itemAmount;
     [SerializeField] private Image slotBackground;
 
+    [Header("Cozy Slot State Sprites")]
+    [SerializeField] private Sprite emptySlotSprite;
+    [SerializeField] private Sprite selectedSlotSprite;
+    [SerializeField] private Sprite hoverSlotSprite;
+    [SerializeField] private Sprite lockedSlotSprite;
+
     public ItemData currentItem;
     public static ItemData selectedItem;
 
@@ -24,6 +30,8 @@ public class InventoryButton : MonoBehaviour,
 
     private ItemContainer itemContainer;
     private int slotIndex;
+    private bool isHovered = false;
+    private bool isLocked = false;
 
     private GameObject dragIcon;
     private Canvas canvas;
@@ -94,14 +102,6 @@ public class InventoryButton : MonoBehaviour,
     {
         if (itemAmount != null)
         {
-            RectTransform rt = itemAmount.rectTransform;
-            rt.anchorMin = new Vector2(1f, 0f);
-            rt.anchorMax = new Vector2(1f, 0f);
-            rt.pivot = new Vector2(1f, 0f);
-            rt.anchoredPosition = new Vector2(-3f, 3f);
-            rt.sizeDelta = new Vector2(35f, 18f);
-            itemAmount.alignment = TextAlignmentOptions.BottomRight;
-            itemAmount.characterSpacing = 0f;
             itemAmount.transform.SetAsLastSibling();
         }
     }
@@ -132,6 +132,12 @@ public class InventoryButton : MonoBehaviour,
         UpdateHighlight();
     }
 
+    public void SetLocked(bool locked)
+    {
+        isLocked = locked;
+        UpdateHighlight();
+    }
+
     public void UpdateHighlight()
     {
         if (slotBackground == null) slotBackground = GetComponent<Image>();
@@ -143,11 +149,19 @@ public class InventoryButton : MonoBehaviour,
         }
 
         bool isSelected = (selectedItem != null && currentItem != null && ItemContainer.IsItemMatch(selectedItem, currentItem));
-        Sprite slotSprite = isSelected ? DungeonUIAssetHelper.GetSelectedSlotSprite() : DungeonUIAssetHelper.GetCozySlotSprite();
+        Sprite slotSprite = null;
+        if (isLocked)
+            slotSprite = lockedSlotSprite;
+        else if (isSelected)
+            slotSprite = selectedSlotSprite;
+        else if (isHovered)
+            slotSprite = hoverSlotSprite;
+        else
+            slotSprite = emptySlotSprite;
+
         if (slotSprite != null)
         {
             slotBackground.sprite = slotSprite;
-            slotBackground.type = Image.Type.Sliced;
             slotBackground.color = Color.white;
         }
         else
@@ -289,6 +303,8 @@ public class InventoryButton : MonoBehaviour,
 
     public void OnPointerEnter(PointerEventData eventData)
     {
+        isHovered = true;
+        UpdateHighlight();
         if (currentItem != null && dragIcon == null)
         {
             ItemTooltipUI.EnsureInstance()?.Show(currentItem, transform.position);
@@ -297,6 +313,8 @@ public class InventoryButton : MonoBehaviour,
 
     public void OnPointerExit(PointerEventData eventData)
     {
+        isHovered = false;
+        UpdateHighlight();
         ItemTooltipUI.Instance?.Hide();
     }
 

@@ -865,6 +865,10 @@ public class KitchenUI : MonoBehaviour
         if (previewCardGO == null) return;
         if (currentStation == null) currentStation = KitchenStation.Instance;
 
+        if (previewHeaderLabel != null) previewHeaderLabel.color = new Color(0.45f, 0.28f, 0.15f, 1f);
+        if (previewFoodTitle != null) previewFoodTitle.color = new Color(0.23f, 0.14f, 0.08f, 1f);
+        if (previewFoodStats != null) previewFoodStats.color = new Color(0.32f, 0.22f, 0.14f, 1f);
+
         // 1. If dish is finished and ready to be claimed
         if (currentStation != null && currentStation.hasCompletedFood && currentStation.completedRecipe != null)
         {
@@ -909,7 +913,7 @@ public class KitchenUI : MonoBehaviour
                 }
                 if (previewHeaderLabel != null) previewHeaderLabel.text = "MÓN ĐANG NẤU TRÊN BẾP:";
                 if (previewFoodTitle != null) previewFoodTitle.text = "??? (Đang Nấu Thử Nghiệm...)";
-                if (previewFoodStats != null) previewFoodStats.text = "<color=#FFAA00>Chờ nấu xong để mở khóa công thức và xem kết quả...</color>";
+                if (previewFoodStats != null) previewFoodStats.text = "<color=#8A4500>Chờ nấu xong để mở khóa công thức và xem kết quả...</color>";
             }
             return;
         }
@@ -942,7 +946,7 @@ public class KitchenUI : MonoBehaviour
             }
             if (previewHeaderLabel != null) previewHeaderLabel.text = "MÓN THÀNH PHẨM DỰ KIẾN:";
             if (previewFoodTitle != null) previewFoodTitle.text = $"Đang chuẩn bị ({potSlots.Count}/{MAX_POT_SLOTS} ô)";
-            if (previewFoodStats != null) previewFoodStats.text = $"<color=#FFCC00>Cần thêm {MAX_POT_SLOTS - potSlots.Count} ô nguyên liệu nữa mới đủ điều kiện nấu!</color>";
+            if (previewFoodStats != null) previewFoodStats.text = $"<color=#8A4500>Cần thêm {MAX_POT_SLOTS - potSlots.Count} ô nguyên liệu nữa mới đủ điều kiện nấu!</color>";
         }
         else if (potSlots.Count >= MAX_POT_SLOTS)
         {
@@ -954,7 +958,7 @@ public class KitchenUI : MonoBehaviour
             }
             if (previewHeaderLabel != null) previewHeaderLabel.text = "MÓN THÀNH PHẨM DỰ KIẾN:";
             if (previewFoodTitle != null) previewFoodTitle.text = "??? (Chưa Mở Khóa)";
-            if (previewFoodStats != null) previewFoodStats.text = "<color=#FFAA00>Tổ hợp 4 nguyên liệu này chưa được mở khóa. Bấm [Bắt Đầu Nấu] để nấu và khám phá công thức!</color>";
+            if (previewFoodStats != null) previewFoodStats.text = "<color=#8A4500>Tổ hợp 4 nguyên liệu này chưa được mở khóa. Bấm [Bắt Đầu Nấu] để nấu và khám phá công thức!</color>";
         }
         else
         {
@@ -962,7 +966,7 @@ public class KitchenUI : MonoBehaviour
             if (previewFoodIcon != null) previewFoodIcon.gameObject.SetActive(false);
             if (previewHeaderLabel != null) previewHeaderLabel.text = "MÓN THÀNH PHẨM DỰ KIẾN:";
             if (previewFoodTitle != null) previewFoodTitle.text = "(Chưa có nguyên liệu)";
-            if (previewFoodStats != null) previewFoodStats.text = "<color=#8D6E63>Bỏ đủ 4 nguyên liệu từ Balo hoặc chọn Sổ Công Thức để xem trước.</color>";
+            if (previewFoodStats != null) previewFoodStats.text = "<color=#5C4B3E>Bỏ đủ 4 nguyên liệu từ Balo hoặc chọn Sổ Công Thức để xem trước.</color>";
         }
     }
 
@@ -1095,8 +1099,17 @@ public class KitchenUI : MonoBehaviour
             ? ProgressionManager.Instance.IsRecipeUnlocked(recipe)
             : recipe.isDefaultUnlocked;
 
+        Image cardBg = cardGO.GetComponent<Image>();
+        Color inkDark = new Color(0.23f, 0.14f, 0.08f, 1f);
+        Color inkBody = new Color(0.32f, 0.22f, 0.14f, 1f);
+
         if (!isUnlocked)
         {
+            if (cardBg != null)
+            {
+                Sprite lockSpr = DungeonUIAssetHelper.FindSprite("Atom_Card_Missing");
+                if (lockSpr != null) { cardBg.sprite = lockSpr; cardBg.type = Image.Type.Sliced; cardBg.color = Color.white; }
+            }
             if (dishIcon != null)
             {
                 dishIcon.sprite = null;
@@ -1104,7 +1117,8 @@ public class KitchenUI : MonoBehaviour
             }
             if (title != null)
             {
-                title.text = "<color=#888888>??? [CHƯA MỞ KHÓA]</color>";
+                title.color = inkDark;
+                title.text = "<color=#6B5B4D>??? [CHƯA MỞ KHÓA]</color>";
                 title.enableAutoSizing = true;
                 title.fontSizeMin = 10.5f;
             }
@@ -1115,19 +1129,31 @@ public class KitchenUI : MonoBehaviour
             }
             if (detail != null)
             {
-                DungeonUIAssetHelper.ApplyFont(detail, withOutline: true);
+                DungeonUIAssetHelper.ApplyFont(detail, withOutline: false);
+                detail.color = inkBody;
                 detail.enableAutoSizing = true;
                 detail.fontSizeMin = 8.5f;
-                detail.text = "<color=#888888>Chưa rõ công thức — Hãy tự kết hợp 4 nguyên liệu và nấu trên bếp để mở khóa!</color>";
+                detail.text = "<color=#5C4B3E>Chưa rõ công thức — Hãy tự kết hợp 4 nguyên liệu và nấu trên bếp để mở khóa!</color>";
             }
             if (actionBtn != null)
             {
                 actionBtn.onClick.RemoveAllListeners();
-                if (actionText != null) actionText.text = "KHÓA";
-                if (actionBg != null) actionBg.color = new Color(0.24f, 0.26f, 0.32f, 0.85f);
+                if (actionText != null) { actionText.text = "KHÓA"; actionText.color = Color.white; }
+                if (actionBg != null)
+                {
+                    Sprite missSpr = DungeonUIAssetHelper.FindSprite("Btn_Missing_Ingredients");
+                    if (missSpr != null) { actionBg.sprite = missSpr; actionBg.type = Image.Type.Sliced; actionBg.color = Color.white; }
+                    else actionBg.color = new Color(0.36f, 0.30f, 0.26f, 0.9f);
+                }
                 actionBtn.interactable = false;
             }
             return;
+        }
+
+        if (cardBg != null)
+        {
+            Sprite cardSpr = DungeonUIAssetHelper.FindSprite(isCurrentlySelected ? "Món ăn dự kiến" : "Món ăn  (không chọn)");
+            if (cardSpr != null) { cardBg.sprite = cardSpr; cardBg.type = Image.Type.Sliced; cardBg.color = Color.white; }
         }
 
         if (dishIcon != null && recipe.resultFood != null)
@@ -1138,6 +1164,7 @@ public class KitchenUI : MonoBehaviour
 
         if (title != null)
         {
+            title.color = inkDark;
             title.text = recipe.DisplayName;
             title.enableAutoSizing = true;
             title.fontSizeMin = 10.5f;
@@ -1150,21 +1177,22 @@ public class KitchenUI : MonoBehaviour
 
         if (detail != null)
         {
-            DungeonUIAssetHelper.ApplyFont(detail, withOutline: true);
+            DungeonUIAssetHelper.ApplyFont(detail, withOutline: false);
+            detail.color = inkBody;
             detail.enableAutoSizing = true;
             detail.fontSizeMin = 8.5f;
             StringBuilder sb = new StringBuilder();
             if (recipe.resultFood != null)
             {
-                if (recipe.resultFood.healthValue > 0) sb.Append($"<color=#FF6B6B><b>+{recipe.resultFood.healthValue} HP</b></color>");
+                if (recipe.resultFood.healthValue > 0) sb.Append($"<color=#B71C1C><b>+{recipe.resultFood.healthValue} HP</b></color>");
                 if (recipe.resultFood.hungerValue > 0)
                 {
-                    if (sb.Length > 0) sb.Append(" <color=#CBD5E1>|</color> ");
-                    sb.Append($"<color=#FFD043><b>+{recipe.resultFood.hungerValue} Độ No</b></color>");
+                    if (sb.Length > 0) sb.Append(" <color=#7D6654>|</color> ");
+                    sb.Append($"<color=#8A5300><b>+{recipe.resultFood.hungerValue} Độ No</b></color>");
                 }
             }
-            if (sb.Length > 0) sb.Append(" <color=#94A3B8>|</color> ");
-            sb.Append("<color=#CBD5E1>Cần: </color>");
+            if (sb.Length > 0) sb.Append(" <color=#7D6654>|</color> ");
+            sb.Append("<color=#5C4B3E>Cần: </color>");
             if (recipe.ingredients != null)
             {
                 for (int ing = 0; ing < recipe.ingredients.Length; ing++)
@@ -1172,8 +1200,8 @@ public class KitchenUI : MonoBehaviour
                     var req = recipe.ingredients[ing];
                     if (req != null && req.item != null)
                     {
-                        if (ing > 0) sb.Append("<color=#94A3B8> + </color>");
-                        sb.Append($"<color=#F1F5F9><b>{req.item.itemName}x{req.amount}</b></color>");
+                        if (ing > 0) sb.Append("<color=#7D6654> + </color>");
+                        sb.Append($"<color=#3B2314><b>{req.item.itemName}x{req.amount}</b></color>");
                     }
                 }
             }
@@ -1184,25 +1212,40 @@ public class KitchenUI : MonoBehaviour
 
         if (actionBtn != null)
         {
-            if (actionText != null) { actionText.enableAutoSizing = true; actionText.fontSizeMin = 8f; }
+            if (actionText != null) { actionText.enableAutoSizing = true; actionText.fontSizeMin = 8f; actionText.color = Color.white; }
             actionBtn.onClick.RemoveAllListeners();
             if (isCurrentlySelected)
             {
                 if (actionText != null) actionText.text = "ĐANG CHỌN";
-                if (actionBg != null) actionBg.color = new Color(1f, 0.6f, 0f, 1f); // Orange
+                if (actionBg != null)
+                {
+                    Sprite btnSpr = DungeonUIAssetHelper.FindSprite("Btn");
+                    if (btnSpr != null) { actionBg.sprite = btnSpr; actionBg.type = Image.Type.Sliced; actionBg.color = new Color(1f, 0.85f, 0.55f, 1f); }
+                    else actionBg.color = new Color(1f, 0.6f, 0f, 1f);
+                }
                 actionBtn.interactable = false;
             }
             else if (canCook)
             {
                 if (actionText != null) actionText.text = "TỰ ĐIỀN";
-                if (actionBg != null) actionBg.color = new Color(0.48f, 0.32f, 0.22f, 1f); // Cocoa brown
+                if (actionBg != null)
+                {
+                    Sprite autoSpr = DungeonUIAssetHelper.FindSprite("Btn_Auto_Fill");
+                    if (autoSpr != null) { actionBg.sprite = autoSpr; actionBg.type = Image.Type.Sliced; actionBg.color = Color.white; }
+                    else actionBg.color = new Color(0.18f, 0.52f, 0.20f, 1f);
+                }
                 actionBtn.interactable = true;
                 actionBtn.onClick.AddListener(() => AutoFillRecipe(recipe));
             }
             else
             {
                 if (actionText != null) actionText.text = "THIẾU NL";
-                if (actionBg != null) actionBg.color = new Color(0.6f, 0.6f, 0.6f, 0.8f); // Grey
+                if (actionBg != null)
+                {
+                    Sprite missSpr = DungeonUIAssetHelper.FindSprite("Btn_Missing_Ingredients");
+                    if (missSpr != null) { actionBg.sprite = missSpr; actionBg.type = Image.Type.Sliced; actionBg.color = Color.white; }
+                    else actionBg.color = new Color(0.36f, 0.30f, 0.26f, 0.9f);
+                }
                 actionBtn.interactable = false;
             }
         }
@@ -1369,12 +1412,12 @@ public class KitchenUI : MonoBehaviour
         if (img != null)
         {
             img.color = isActive
-                ? new Color(0.28f, 0.65f, 0.18f, 1f) // Vibrant Forest Green (#47A62E)
-                : new Color(0.22f, 0.16f, 0.12f, 0.95f); // Deep cozy dark wood
+                ? Color.white
+                : new Color(0.76f, 0.68f, 0.60f, 1f);
         }
         if (txt != null)
         {
-            txt.color = isActive ? Color.white : new Color(0.92f, 0.88f, 0.80f, 1f); // Warm cream high-contrast text
+            txt.color = isActive ? Color.white : new Color(0.95f, 0.90f, 0.82f, 1f);
             txt.textWrappingMode = TextWrappingModes.NoWrap;
             txt.fontSize = 11.5f;
             txt.fontStyle = isActive ? FontStyles.Bold : FontStyles.Normal;
@@ -1385,8 +1428,8 @@ public class KitchenUI : MonoBehaviour
     {
         if (food == null) return "";
         List<string> parts = new List<string>();
-        if (food.healthValue > 0) parts.Add($"<color=#FF6B6B><b>+{food.healthValue} HP</b></color>");
-        if (food.hungerValue > 0) parts.Add($"<color=#FFD043><b>+{food.hungerValue} Độ No</b></color>");
+        if (food.healthValue > 0) parts.Add($"<color=#B71C1C><b>+{food.healthValue} HP</b></color>");
+        if (food.hungerValue > 0) parts.Add($"<color=#8A5300><b>+{food.hungerValue} Độ No</b></color>");
         if (food.foodBuff != null)
         {
             for (int i = 0; i < food.foodBuff.Length; i++)
@@ -1395,7 +1438,7 @@ public class KitchenUI : MonoBehaviour
                 if (fb != null && fb.buffs != null)
                 {
                     string stat = CombatUI.GetBuffStatLabel(fb.buffs);
-                    parts.Add($"<color=#50D8FF><b>+{fb.buffValue} {stat}</b></color>");
+                    parts.Add($"<color=#0D5C8A><b>+{fb.buffValue} {stat}</b></color>");
                 }
             }
         }

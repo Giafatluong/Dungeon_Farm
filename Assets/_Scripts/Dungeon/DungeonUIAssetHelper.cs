@@ -102,13 +102,19 @@ public static class DungeonUIAssetHelper
 
     public static Sprite GetCozySlotSprite()
     {
-        return GetSlotSprite();
+        if (s_CachedCozySlotSprite != null) return s_CachedCozySlotSprite;
+        s_CachedCozySlotSprite = FindSprite("Ô trống") ?? GetSlotSprite();
+        return s_CachedCozySlotSprite;
     }
+    private static Sprite s_CachedCozySlotSprite;
 
     public static Sprite GetSelectedSlotSprite()
     {
-        return GetSlotSprite();
+        if (s_CachedSelectedSlotSprite != null) return s_CachedSelectedSlotSprite;
+        s_CachedSelectedSlotSprite = FindSprite("Ô chọn") ?? GetSlotSprite();
+        return s_CachedSelectedSlotSprite;
     }
+    private static Sprite s_CachedSelectedSlotSprite;
 
     public static Sprite GetHpFillSprite()
     {
@@ -495,8 +501,81 @@ public static class DungeonUIAssetHelper
         }
     }
 
+    public static Sprite GetHoverSlotSprite()
+    {
+        if (s_CachedHoverSlotSprite != null) return s_CachedHoverSlotSprite;
+        s_CachedHoverSlotSprite = FindSprite("Ô khi rê chuột");
+        return s_CachedHoverSlotSprite != null ? s_CachedHoverSlotSprite : GetCozySlotSprite();
+    }
+    private static Sprite s_CachedHoverSlotSprite;
+
+    public static Sprite GetLockedSlotSprite()
+    {
+        if (s_CachedLockedSlotSprite != null) return s_CachedLockedSlotSprite;
+        s_CachedLockedSlotSprite = FindSprite("Ô khóa");
+        return s_CachedLockedSlotSprite != null ? s_CachedLockedSlotSprite : GetCozySlotSprite();
+    }
+    private static Sprite s_CachedLockedSlotSprite;
+
+    public static Sprite GetCloseButtonSprite()
+    {
+        if (s_CachedCloseBtnSprite != null) return s_CachedCloseBtnSprite;
+        s_CachedCloseBtnSprite = FindSprite("CloseBtn");
+        return s_CachedCloseBtnSprite;
+    }
+    private static Sprite s_CachedCloseBtnSprite;
+
+    public static Sprite GetFoodCardSprite()
+    {
+        if (s_CachedFoodCardSprite != null) return s_CachedFoodCardSprite;
+        s_CachedFoodCardSprite = FindSprite("Food_Card");
+        return s_CachedFoodCardSprite;
+    }
+    private static Sprite s_CachedFoodCardSprite;
+
+    public static Sprite GetWoodFrameSprite()
+    {
+        if (s_CachedWoodFrameSprite != null) return s_CachedWoodFrameSprite;
+        s_CachedWoodFrameSprite = FindSprite("Frame_01");
+        return s_CachedWoodFrameSprite;
+    }
+    private static Sprite s_CachedWoodFrameSprite;
+
+    public static Sprite GetRiskGaugeBgSprite(int tier = 0)
+    {
+        string name = tier switch
+        {
+            1 => "RiskGauge_Bg-1",
+            2 => "RiskGauge_Bg-2",
+            3 => "Compromised_Gauge",
+            _ => "RiskGauge_Bg"
+        };
+        return FindSprite(name);
+    }
+
+    public static Sprite GetRiskGaugeFillSprite()
+    {
+        if (s_CachedRiskFillSprite != null) return s_CachedRiskFillSprite;
+        s_CachedRiskFillSprite = FindSprite("Fill_100");
+        return s_CachedRiskFillSprite;
+    }
+    private static Sprite s_CachedRiskFillSprite;
+
     public static void StyleTactileButton(Button btn, Image img, ButtonStyle style)
     {
+        // Preserve scene-configured SpriteSwap art (e.g. BtnAttack / BtnDefend / BtnEat / BtnEndTurn)
+        if (btn != null && btn.transition == Selectable.Transition.SpriteSwap && img != null && img.sprite != null)
+        {
+            img.color = Color.white;
+            btn.targetGraphic = img;
+            TextMeshProUGUI swapTmp = btn.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (swapTmp != null)
+            {
+                ApplyFont(swapTmp, withOutline: true);
+            }
+            return;
+        }
+
         Color btnColor = style switch
         {
             ButtonStyle.Victory => new Color(0.28f, 0.65f, 0.35f, 1f),
@@ -554,11 +633,12 @@ public static class DungeonUIAssetHelper
 
 #if UNITY_EDITOR
         // 1. Direct path lookup for primary UI and environment assets (instant 0ms resolution)
-        if (spriteName.StartsWith("UI_", System.StringComparison.OrdinalIgnoreCase))
+        found = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>($"Assets/_Assets/Assets/{spriteName}.png");
+        if (found == null && spriteName.StartsWith("UI_", System.StringComparison.OrdinalIgnoreCase))
         {
             found = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>($"Assets/_Assets/Ui_Inventory/{spriteName}.png");
         }
-        else if (spriteName.StartsWith("E1_") || spriteName.StartsWith("E2_") || spriteName.StartsWith("E3_") || spriteName.StartsWith("DungeonGround_"))
+        else if (found == null && (spriteName.StartsWith("E1_") || spriteName.StartsWith("E2_") || spriteName.StartsWith("E3_") || spriteName.StartsWith("DungeonGround_")))
         {
             found = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>($"Assets/Fantasy Adventure Pack/Sprites/Environment Sprites/{spriteName}.png");
         }

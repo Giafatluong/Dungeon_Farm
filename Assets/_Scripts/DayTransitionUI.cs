@@ -335,33 +335,33 @@ public class DayTransitionUI : MonoBehaviour
                 cropDetails.Add($"{kvp.Key} x{kvp.Value}");
             }
             string detailStr = string.Join(", ", cropDetails);
-            farmSb.AppendLine($"* <color=#81C784><b>{readyCount} crop plots</b> are fully ripe and ready to harvest!</color> ({detailStr})");
+            farmSb.AppendLine($"* <color=#1E6B3A><b>{readyCount} crop plots</b> are fully ripe and ready to harvest!</color> ({detailStr})");
         }
         else
         {
-            farmSb.AppendLine("* <color=#B0BEC5>No crops have ripened this morning.</color>");
+            farmSb.AppendLine("* <color=#6D5B4F>No crops have ripened this morning.</color>");
         }
 
         if (plantedCount > 0)
         {
             if (plantedDetails.Count > 0 && plantedDetails.Count <= 3)
             {
-                farmSb.AppendLine($"* <color=#FFF59D>{plantedCount} planted plots</color> growing: {string.Join(", ", plantedDetails)}.");
+                farmSb.AppendLine($"* <color=#7A4E00><b>{plantedCount} planted plots</b></color> growing: {string.Join(", ", plantedDetails)}.");
             }
             else
             {
-                farmSb.AppendLine($"* <color=#FFF59D>{plantedCount} planted plots</color> are steadily progressing through their stages.");
+                farmSb.AppendLine($"* <color=#7A4E00><b>{plantedCount} planted plots</b></color> are steadily progressing through their stages.");
             }
         }
 
         if (emptyCount > 0)
         {
-            farmSb.AppendLine($"* <color=#FFE082>{emptyCount} empty tilled plots</color> remain. Sow new seeds to expand your harvest.");
+            farmSb.AppendLine($"* <color=#5C4A3D><b>{emptyCount} empty tilled plots</b></color> remain. Sow new seeds to expand your harvest.");
         }
 
         if (plots.Length == 0)
         {
-            farmSb.AppendLine("* No farm plots detected in this area.");
+            farmSb.AppendLine("* <color=#5C4A3D>No farm plots detected in this area.</color>");
         }
 
         if (farmContentText != null)
@@ -389,13 +389,13 @@ public class DayTransitionUI : MonoBehaviour
                 {
                     if (ProgressionManager.Instance.IsBossAvailable(f))
                     {
-                        worldSb.AppendLine($"* <color=#FF8A65><b>[FLOOR {f} BOSS]</b> has respawned! The challenge portal is reopened.</color>");
+                        worldSb.AppendLine($"* <color=#B71C1C><b>[FLOOR {f} BOSS]</b> has respawned! The challenge portal is reopened.</color>");
                         foundBossNews = true;
                     }
                     else
                     {
                         int daysLeft = ProgressionManager.Instance.GetDaysUntilBossReset(f);
-                        worldSb.AppendLine($"* <color=#90A4AE><b>[FLOOR {f} BOSS]</b> is regenerating (<b>{daysLeft} days</b> remaining).</color>");
+                        worldSb.AppendLine($"* <color=#546E7A><b>[FLOOR {f} BOSS]</b> is regenerating (<b>{daysLeft} days</b> remaining).</color>");
                         foundBossNews = true;
                     }
                 }
@@ -403,12 +403,12 @@ public class DayTransitionUI : MonoBehaviour
 
             if (!foundBossNews)
             {
-                worldSb.AppendLine("* <color=#80CBC4>Floor 1 of the Dungeon is open and awaits daring adventurers.</color>");
+                worldSb.AppendLine("* <color=#00695C>Floor 1 of the Dungeon is open and awaits daring adventurers.</color>");
             }
         }
         else
         {
-            worldSb.AppendLine("* <color=#80CBC4>The Dungeon is fully prepared for your next expedition.</color>");
+            worldSb.AppendLine("* <color=#00695C>The Dungeon is fully prepared for your next expedition.</color>");
         }
 
         // Check Merchant on each floor (Only notify if merchant was previously encountered on that floor)
@@ -423,11 +423,11 @@ public class DayTransitionUI : MonoBehaviour
                 var m = discoveredMerchants[i];
                 if (m.remainingDays > 0)
                 {
-                    worldSb.AppendLine($"* <color=#4DD0E1><b>[WANDERING MERCHANT]</b> is on <b>Floor {m.floorNumber}</b> (<b>{m.remainingDays} days</b> left on visit).</color>");
+                    worldSb.AppendLine($"* <color=#006064><b>[WANDERING MERCHANT]</b> is on <b>Floor {m.floorNumber}</b> (<b>{m.remainingDays} days</b> left on visit).</color>");
                 }
                 else if (m.cooldownDays > 0)
                 {
-                    worldSb.AppendLine($"* <color=#B0BEC5><b>[WANDERING MERCHANT]</b> on <b>Floor {m.floorNumber}</b> is restocking goods (Returns in <b>{m.cooldownDays} days</b>).</color>");
+                    worldSb.AppendLine($"* <color=#6D5B4F><b>[WANDERING MERCHANT]</b> on <b>Floor {m.floorNumber}</b> is restocking goods (Returns in <b>{m.cooldownDays} days</b>).</color>");
                 }
             }
         }
