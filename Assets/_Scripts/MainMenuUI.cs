@@ -595,7 +595,12 @@ public class MainMenuUI : MonoBehaviour
             Image rootImg = menuRootGO.GetComponent<Image>();
             if (rootImg != null)
             {
-                rootImg.color = new Color(0.04f, 0.07f, 0.11f, 1f); // Opaque atmospheric base
+                if (rootImg.sprite == null)
+                {
+                    Sprite bgSpr = DungeonUIAssetHelper.FindSprite("MainMenu_Background");
+                    if (bgSpr != null) rootImg.sprite = bgSpr;
+                }
+                rootImg.color = rootImg.sprite != null ? Color.white : new Color(0.04f, 0.07f, 0.11f, 1f);
             }
 
             EnsureBackground();
@@ -610,9 +615,9 @@ public class MainMenuUI : MonoBehaviour
                 if (titleTextT != null)
                 {
                     TextMeshProUGUI tTMP = titleTextT.GetComponent<TextMeshProUGUI>();
-                    if (tTMP != null && tTMP.text != "HARVEST & HOLLOW")
+                    if (tTMP != null && (string.IsNullOrEmpty(tTMP.text) || tTMP.text.Contains("DUNGEON FARM")))
                     {
-                        tTMP.text = "HARVEST & HOLLOW";
+                        tTMP.text = "<b>HARVEST & HOLLOW</b>\n<size=13.5><color=#D8C8AE>NÔNG TRẠI YÊN BÌNH & HẦM NGỤC CỔ ĐẠI</color></size>";
                         tTMP.fontStyle = FontStyles.Bold;
                         DungeonUIAssetHelper.ApplyFont(tTMP, withOutline: true);
                     }
@@ -685,7 +690,7 @@ public class MainMenuUI : MonoBehaviour
             unlockedFloor = PlayerPrefs.GetInt("Progression_HighestFloor", 1);
         }
 
-        saveInfoText.text = $"Current Progress: <color=#FFE066><b>Day {currentDay}</b></color>  |  Dungeon: <color=#80CBC4><b>Floor {unlockedFloor}</b></color>";
+        saveInfoText.text = $"Tiến Trình: <color=#FFE066><b>Ngày {currentDay}</b></color> • Hầm Ngục: <color=#FFE066><b>Tầng {unlockedFloor}</b></color>";
     }
     #endregion
 
@@ -696,6 +701,9 @@ public class MainMenuUI : MonoBehaviour
     private void EnsureBackground()
     {
         if (menuRootGO == null) return;
+
+        Image rootImg = menuRootGO.GetComponent<Image>();
+        if (rootImg != null && rootImg.sprite != null) return;
 
         Transform existingBg = menuRootGO.transform.Find("MainMenu_Background");
         if (existingBg != null)
