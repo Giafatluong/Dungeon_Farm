@@ -339,6 +339,7 @@ public class KitchenStation : MonoBehaviour, IInteractable
         }
 
         destinationContainer.AddItem(completedRecipe.resultFood, completedAmount);
+        PlayerStats.Instance?.SaveBackpack(true);
 
         if (ProgressionManager.Instance != null)
         {

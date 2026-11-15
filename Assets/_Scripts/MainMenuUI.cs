@@ -205,6 +205,9 @@ public class MainMenuUI : MonoBehaviour
     #region Open & Close Controls
     public void Open()
     {
+        // Auto-save current game progress when opening the menu
+        GameSaveManager.SaveAll("MainMenuOpened");
+
         AutoBindReferences();
         RefreshSaveSummary();
         ShowSubPanel(mainButtonsPanel);
@@ -397,106 +400,15 @@ public class MainMenuUI : MonoBehaviour
     public void OnConfirmNewGameYes()
     {
         Debug.Log("[MainMenuUI] Resetting ALL game data for a completely fresh New Game...");
+        GameSaveManager.ResetAllGameData();
 
-        // 1. Delete all PlayerPrefs
-        PlayerPrefs.DeleteAll();
-        PlayerPrefs.SetInt("Farm_CurrentDay", 1);
-        PlayerPrefs.SetInt("Dungeon_HighestUnlockedFloor", 1);
-        PlayerPrefs.Save();
-
-        // 2. Reset all ProgressionManager progression (Permanent stats, Dungeon floors, Bosses, Blessings, Recipes)
-        if (ProgressionManager.Instance != null)
-        {
-            ProgressionManager.Instance.ResetAllProgression();
-        }
-
-        // 3. Reset DayManager to Day 1
-        if (DayManager.Instance != null)
-        {
-            DayManager.Instance.currentDay = 1;
-        }
-
-        // 4. Clear all data in all ItemContainers (Backpack & Storage Chest)
-        try
-        {
-            ItemContainer[] containers = GameAssetHelper.LoadAll<ItemContainer>();
-            if (containers != null)
-            {
-                for (int i = 0; i < containers.Length; i++)
-                {
-                    if (containers[i] != null)
-                    {
-                        containers[i].Clear();
-                    }
-                }
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogWarning($"[MainMenuUI] Error clearing ItemContainers: {ex.Message}");
-        }
-
-        InventoryButton.selectedItem = null;
-
-        // 5. Reset all Statue Offerings
-        try
-        {
-            Offering[] offerings = GameAssetHelper.LoadAll<Offering>();
-            if (offerings != null)
-            {
-                for (int i = 0; i < offerings.Length; i++)
-                {
-                    if (offerings[i] != null)
-                    {
-                        offerings[i].completed = false;
-                    }
-                }
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogWarning($"[MainMenuUI] Error resetting Offerings: {ex.Message}");
-        }
-
-        // 6. Reset all FarmPlots in current scene
-        try
-        {
-            FarmPlot[] plots = FindObjectsByType<FarmPlot>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            if (plots != null)
-            {
-                for (int i = 0; i < plots.Length; i++)
-                {
-                    if (plots[i] != null)
-                    {
-                        plots[i].SetDefault();
-                    }
-                }
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogWarning($"[MainMenuUI] Error resetting FarmPlots: {ex.Message}");
-        }
-
-        // 7. Reset Tutorial progress and prepare tutorial crops and seeds (AFTER plots are defaulted)
+        // Prepare initial tutorial crops and seeds
         if (TutorialManager.Instance != null)
         {
-            TutorialManager.Instance.ResetTutorial();
             TutorialManager.Instance.EnsureTutorialCropsReady(force: true);
         }
 
-        // 8. Reset player stats in PlayerStats
-        if (PlayerStats.Instance != null)
-        {
-            PlayerStats.Instance.ClearTemporaryBuffs();
-            PlayerStats.Instance.RefreshStatsFromProgression();
-            PlayerStats.Instance.currentHealth = PlayerStats.Instance.maxHealth;
-            PlayerStats.Instance.currentHunger = PlayerStats.Instance.maxHunger;
-            PlayerStats.Instance.currentAP = PlayerStats.Instance.maxAP;
-            PlayerStats.Instance.defendCount = 0;
-        }
-
-        // 8. Close menu, restore timeScale, and reload Base scene
+        // Close menu, restore timeScale, and reload Base scene
         Close();
         ShowSubPanel(mainButtonsPanel);
         Time.timeScale = 1f;
@@ -559,7 +471,8 @@ public class MainMenuUI : MonoBehaviour
 
     public void OnQuitClicked()
     {
-        Debug.Log("[MainMenuUI] Quitting Game...");
+        Debug.Log("[MainMenuUI] Quitting Game... Auto-saving all progress first.");
+        GameSaveManager.SaveAll("QuitButtonClicked");
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -653,6 +566,7 @@ public class MainMenuUI : MonoBehaviour
     private void RefreshSaveSummary()
     {
         if (saveInfoText == null) return;
+        bool hasSave = GameSaveManager.HasSaveData();
         int currentDay = PlayerPrefs.GetInt("Farm_CurrentDay", 1);
         int unlockedFloor = 1;
         if (ProgressionManager.Instance != null)
@@ -661,10 +575,17 @@ public class MainMenuUI : MonoBehaviour
         }
         else
         {
-            unlockedFloor = PlayerPrefs.GetInt("Progression_HighestFloor", 1);
+            unlockedFloor = PlayerPrefs.GetInt("Dungeon_HighestUnlockedFloor", 1);
         }
 
-        saveInfoText.text = $"Tiến Trình: <color=#FFE066><b>Ngày {currentDay}</b></color> • Hầm Ngục: <color=#FFE066><b>Tầng {unlockedFloor}</b></color>";
+        if (!hasSave)
+        {
+            saveInfoText.text = "Tiến Trình: <color=#FFE066><b>Mùa Vụ Mới</b></color> (Chưa có dữ liệu cũ)";
+        }
+        else
+        {
+            saveInfoText.text = $"Tiến Trình: <color=#FFE066><b>Ngày {currentDay}</b></color> • Hầm Ngục: <color=#FFE066><b>Tầng {unlockedFloor}</b></color>";
+        }
     }
     #endregion
 

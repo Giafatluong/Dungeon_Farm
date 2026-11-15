@@ -84,6 +84,23 @@ public class DayManager : MonoBehaviour
         Debug.Log($"[DayManager] Player is sleeping... Advancing from Day {currentDay}.");
         OnDaySleep?.Invoke();
 
+        // When sleeping, player will wake up by their bed
+        PlayerPrefs.SetFloat(GameSaveManager.PlayerSavedPosXKey, 12f);
+        PlayerPrefs.SetFloat(GameSaveManager.PlayerSavedPosYKey, 0.5f);
+        PlayerPrefs.SetInt(GameSaveManager.PlayerHasSavedPosKey, 1);
+
+        GameObject player = PlayerMovement.Instance != null ? PlayerMovement.Instance.gameObject : GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            player.transform.position = new Vector3(12f, 0.5f, 0f);
+            Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.position = new Vector2(12f, 0.5f);
+                rb.linearVelocity = Vector2.zero;
+            }
+        }
+
         DayTransitionUI transitionUI = DayTransitionUI.EnsureInstance();
 
         if (transitionUI != null && !transitionUI.IsOpen)
@@ -140,8 +157,8 @@ public class DayManager : MonoBehaviour
             }
         }
 
-        // Flush all saved plot and day data in one batch
-        PlayerPrefs.Save();
+        // Complete game save across all systems (Plots, Day, Backpack, Chest, Progression)
+        GameSaveManager.SaveAll("NewDayAdvanced");
 
         // At home base, stats do not automatically decrease (Hunger/HP preserved per design)
 

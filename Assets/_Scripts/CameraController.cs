@@ -6,8 +6,14 @@ public class CameraController : MonoBehaviour
     public Vector3 offset = new Vector3(0, 1.5f, -10f);
     public bool isCinematicOverride = false;
 
+    private Transform playerTransform;
+    private Transform camTransform;
+    private float cachedTargetZ = -10f;
+    private float nextSearchTime = 0f;
+
     private void Awake()
     {
+        camTransform = transform;
         Camera cam = GetComponent<Camera>();
         if (cam != null)
         {
@@ -19,42 +25,53 @@ public class CameraController : MonoBehaviour
         {
             offset.z = -10f;
         }
+        cachedTargetZ = offset.z;
     }
 
     private void Start()
     {
+        ResolvePlayer();
+    }
+
+    private void ResolvePlayer()
+    {
         if (player == null)
         {
             PlayerMovement pm = PlayerMovement.Instance != null ? PlayerMovement.Instance : FindFirstObjectByType<PlayerMovement>();
-            if (pm != null) player = pm.gameObject;
+            if (pm != null)
+            {
+                player = pm.gameObject;
+                playerTransform = pm.transform;
+            }
+        }
+        else if (playerTransform == null)
+        {
+            playerTransform = player.transform;
         }
     }
-
-    private float nextSearchTime = 0f;
 
     private void FixedUpdate()
     {
         if (isCinematicOverride) return;
 
-        if (player == null)
+        if (playerTransform == null)
         {
-            PlayerMovement pm = PlayerMovement.Instance;
-            if (pm != null)
+            if (PlayerMovement.Instance != null)
             {
-                player = pm.gameObject;
+                player = PlayerMovement.Instance.gameObject;
+                playerTransform = PlayerMovement.Instance.transform;
             }
             else if (Time.time >= nextSearchTime)
             {
                 nextSearchTime = Time.time + 1.0f;
-                pm = FindFirstObjectByType<PlayerMovement>();
-                if (pm != null) player = pm.gameObject;
+                ResolvePlayer();
             }
         }
 
-        if (player != null)
+        if (playerTransform != null)
         {
-            float targetZ = !Mathf.Approximately(offset.z, 0f) ? offset.z : -10f;
-            transform.position = new Vector3(player.transform.position.x + offset.x, player.transform.position.y + offset.y, targetZ);
+            Vector3 pPos = playerTransform.position;
+            camTransform.position = new Vector3(pPos.x + offset.x, pPos.y + offset.y, cachedTargetZ);
         }
     }
 }

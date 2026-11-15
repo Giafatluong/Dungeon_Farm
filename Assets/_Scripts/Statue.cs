@@ -319,6 +319,8 @@ public class Statue : MonoBehaviour, IInteractable
             ProgressionManager.Instance.AddPermanentStat(offering.rewardStat, offering.rewardAmount);
         }
 
+        GameSaveManager.SaveAll("StatueOfferingSuccess");
+
         Debug.Log($"Offering successful: {offering.offeringName}! Received +{offering.rewardAmount} {offering.rewardStat} permanently.");
         OnOfferingSuccess?.Invoke(offering);
         TutorialManager.Instance?.NotifyStatueOfferingDone();

@@ -42,6 +42,9 @@ public class InteractionPromptUI : MonoBehaviour
     private string currentLabel;
     private float popScale = 1f;
 
+    private RecipeData _cachedCompletedRecipe;
+    private string _cachedFoodClaimLabel;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -239,9 +242,20 @@ public class InteractionPromptUI : MonoBehaviour
         KitchenStation kitchen = KitchenStation.Instance;
         if (kitchen != null && kitchen.playerInRange && !kitchen.isOpen)
         {
-            string kLabel = kitchen.hasCompletedFood
-                ? $"Nhận: {kitchen.completedRecipe.DisplayName}"
-                : (kitchen.isCooking ? "Đang nấu..." : kitchenLabel);
+            string kLabel;
+            if (kitchen.hasCompletedFood)
+            {
+                if (_cachedCompletedRecipe != kitchen.completedRecipe)
+                {
+                    _cachedCompletedRecipe = kitchen.completedRecipe;
+                    _cachedFoodClaimLabel = $"Nhận: {kitchen.completedRecipe.DisplayName}";
+                }
+                kLabel = _cachedFoodClaimLabel;
+            }
+            else
+            {
+                kLabel = kitchen.isCooking ? "Đang nấu..." : kitchenLabel;
+            }
             Consider(kitchen.transform, kLabel, playerPos, ref bestSqr, ref best);
         }
 

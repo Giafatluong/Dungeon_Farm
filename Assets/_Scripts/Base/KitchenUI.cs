@@ -200,6 +200,11 @@ public class KitchenUI : MonoBehaviour
             float pct = Mathf.Clamp01(elapsed / currentStation.cookDuration);
 
             if (progressSlider != null) progressSlider.value = pct;
+            if (progressFillImage != null)
+            {
+                progressFillImage.gameObject.SetActive(pct > 0.001f);
+                progressFillImage.color = new Color(1.0f, 0.65f, 0.15f, 1f);
+            }
             if (progressStatusText != null)
             {
                 progressStatusText.text = $"🔥 ĐANG NẤU... {Mathf.RoundToInt(pct * 100)}% ({elapsed:0.0}s/{currentStation.cookDuration:0.0}s)";
@@ -731,13 +736,47 @@ public class KitchenUI : MonoBehaviour
         }
     }
 
+    private void SetupProgressBarVisual()
+    {
+        if (progressSlider != null)
+        {
+            Image bgImg = progressSlider.GetComponent<Image>();
+            if (bgImg != null)
+            {
+                // Sliced frame with cozy dark warm trough color (NEVER red RiskGauge_Bg!)
+                DungeonUIAssetHelper.StyleSlicedFrame(bgImg, new Color(0.12f, 0.09f, 0.07f, 0.95f));
+                bgImg.preserveAspect = false;
+            }
+        }
+
+        if (progressFillImage != null)
+        {
+            // Sliced clean frame with amber flame color (NEVER red Fill_100!)
+            DungeonUIAssetHelper.StyleSlicedFrame(progressFillImage, new Color(1.0f, 0.65f, 0.15f, 1f));
+            progressFillImage.preserveAspect = false;
+        }
+
+        if (progressStatusText != null)
+        {
+            DungeonUIAssetHelper.ApplyFont(progressStatusText, withOutline: true);
+            progressStatusText.fontStyle = FontStyles.Bold;
+        }
+    }
+
     private void UpdateStoveControlsVisual()
     {
         if (currentStation == null) currentStation = KitchenStation.Instance;
 
+        SetupProgressBarVisual();
+
         if (currentStation != null && currentStation.hasCompletedFood)
         {
             if (progressSlider != null) progressSlider.value = 1f;
+            if (progressFillImage != null)
+            {
+                progressFillImage.gameObject.SetActive(true);
+                progressFillImage.color = new Color(0.25f, 0.85f, 0.35f, 1f); // Vibrant completed green
+            }
             if (progressStatusText != null) progressStatusText.text = "ĐÃ NẤU XONG!";
             if (stoveSubtitleText != null)
             {
@@ -761,6 +800,11 @@ public class KitchenUI : MonoBehaviour
             float elapsed = Time.time - currentStation.cookStartTime;
             float pct = Mathf.Clamp01(elapsed / currentStation.cookDuration);
             if (progressSlider != null) progressSlider.value = pct;
+            if (progressFillImage != null)
+            {
+                progressFillImage.gameObject.SetActive(pct > 0.001f);
+                progressFillImage.color = new Color(1.0f, 0.65f, 0.15f, 1f); // Warm flame amber
+            }
             if (progressStatusText != null)
             {
                 progressStatusText.text = $"🔥 ĐANG NẤU... {Mathf.RoundToInt(pct * 100)}%";
@@ -788,7 +832,13 @@ public class KitchenUI : MonoBehaviour
         }
         else
         {
+            // Initial / Idle state: NOT cooking!
             if (progressSlider != null) progressSlider.value = 0f;
+            if (progressFillImage != null)
+            {
+                // Ensure fill is completely hidden when not cooking
+                progressFillImage.gameObject.SetActive(false);
+            }
             if (progressStatusText != null) progressStatusText.text = "SẴN SÀNG";
             if (stoveSubtitleText != null) stoveSubtitleText.text = "Đặt đúng 4 ô nguyên liệu vào nồi để nấu • Nhấp vào ô để lấy ra";
             if (cookButtonText != null)

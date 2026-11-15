@@ -538,6 +538,16 @@ public class CombatUI : MonoBehaviour
             return;
         }
 
+        // Advance to next stage from entrance via Space / Return / D
+        if (isAtEntrance && isPlayerAlive && !isActing)
+        {
+            if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                OnEndTurnClicked();
+                return;
+            }
+        }
+
         bool canUseShortcuts = combatManager != null && combatManager.isCombatActive && !combatManager.isPreparingCombat && combatManager.currentTurn == CombatManager.Turn.Player && isPlayerAlive && !isActing;
         if (!canUseShortcuts) return;
 
@@ -1036,6 +1046,35 @@ public class CombatUI : MonoBehaviour
         cachedTarget = curSelected;
 
         bool isAtEntrance = waveManager != null && waveManager.isAtEntrance;
+        if (isAtEntrance)
+        {
+            if (attackButton != null)
+            {
+                attackButton.interactable = false;
+                var txt = attackButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (txt != null) txt.text = "ATTACK [1]\n<size=11><color=#888888>(Phòng an toàn)</color></size>";
+            }
+            if (defendButton != null)
+            {
+                defendButton.interactable = false;
+                var txt = defendButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (txt != null) txt.text = "DEFEND [2]\n<size=11><color=#888888>(Phòng an toàn)</color></size>";
+            }
+            if (eatButton != null)
+            {
+                eatButton.interactable = isAlive && !isActing;
+                var txt = eatButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (txt != null) txt.text = "EAT [3]\n<size=11><color=#50FA7B>Ăn trước trận (1 AP)</color></size>";
+            }
+            if (endTurnButton != null)
+            {
+                endTurnButton.interactable = isAlive && !isActing;
+                var txt = endTurnButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (txt != null) txt.text = "TIẾP TỤC [Space]";
+            }
+            return;
+        }
+
         bool canAct = isPlayerTurn && hasAP && isAlive && !isActing;
         bool canEat = isAlive && !isActing && (canAct || (isPlayerTurn && canFreeEat) || isAtEntrance);
 
@@ -1413,6 +1452,20 @@ public class CombatUI : MonoBehaviour
 
     public void OnEndTurnClicked()
     {
+        if (waveManager != null && waveManager.isAtEntrance)
+        {
+            if (foodPanel != null) foodPanel.SetActive(false);
+            if (DungeonEntranceArrowUI.Instance != null && DungeonEntranceArrowUI.Instance.container != null && DungeonEntranceArrowUI.Instance.container.activeSelf)
+            {
+                DungeonEntranceArrowUI.Instance.OnArrowClicked();
+            }
+            else
+            {
+                waveManager.ProceedFromEntrance();
+            }
+            return;
+        }
+
         if (combatManager == null || combatManager.isPlayerActing) return;
         if (CombatTutorialGuide.Instance != null && CombatTutorialGuide.Instance.IsTutorialActive && !CombatTutorialGuide.Instance.IsActionAllowed(CombatTutorialGuide.CombatAction.EndTurn)) return;
         if (foodPanel != null) foodPanel.SetActive(false);

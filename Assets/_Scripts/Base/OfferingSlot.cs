@@ -303,9 +303,14 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
     {
         if (outline != null && !isCompleted)
         {
-            outline.effectColor = new Color(1f, 0.85f, 0.35f, 1f);
+            outline.effectColor = new Color(1.0f, 0.95f, 0.42f, 1f);
+            outline.effectDistance = new Vector2(3f, -3f);
         }
-        transform.localScale = Vector3.one * 1.05f;
+
+        if (slotBackground != null && !isCompleted)
+        {
+            slotBackground.color = Color.Lerp(slotBackground.color, new Color(0.35f, 0.38f, 0.50f, 0.98f), 0.5f);
+        }
 
         if (requiredItem != null)
         {
@@ -318,8 +323,20 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
         if (outline != null)
         {
             outline.effectColor = isCompleted ? new Color(0.3f, 0.9f, 0.4f, 0.8f) : new Color(0.5f, 0.45f, 0.3f, 0.6f);
+            outline.effectDistance = new Vector2(3f, -3f);
         }
-        transform.localScale = Vector3.one;
+
+        if (slotBackground != null)
+        {
+            if (isCompleted)
+                slotBackground.color = new Color(0.12f, 0.28f, 0.18f, 0.95f);
+            else if (currentContributed > 0)
+                slotBackground.color = new Color(0.24f, 0.22f, 0.14f, 0.95f);
+            else if (requiredItem != null && requiredItem.isRare)
+                slotBackground.color = new Color(0.26f, 0.18f, 0.12f, 0.95f);
+            else
+                slotBackground.color = new Color(0.14f, 0.16f, 0.22f, 0.95f);
+        }
 
         ItemTooltipUI.Instance?.Hide();
     }

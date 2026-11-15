@@ -221,6 +221,15 @@ public class HomeChest : MonoBehaviour, IInteractable
     public void CloseChest()
     {
         SaveChestData();
+        if (PlayerStats.Instance != null)
+        {
+            PlayerStats.Instance.SaveBackpack();
+        }
+        else if (backpackContainer != null)
+        {
+            ItemContainerPersistence.SaveContainer(backpackContainer, ItemContainerPersistence.BackpackKeyPrefix);
+        }
+
         _isOpen = false;
         UpdateVisualState(false);
 
@@ -301,26 +310,7 @@ public class HomeChest : MonoBehaviour, IInteractable
 
     public static void SaveContainer(ItemContainer container)
     {
-        if (container == null || container.itemSlots == null) return;
-        int count = container.itemSlots.Length;
-        PlayerPrefs.SetInt("HomeChest_SlotCount", count);
-
-        for (int i = 0; i < count; i++)
-        {
-            var slot = container.itemSlots[i];
-            if (slot != null && slot.itemData != null && slot.amount > 0)
-            {
-                PlayerPrefs.SetString($"HomeChest_Slot_{i}_Item", slot.itemData.name);
-                PlayerPrefs.SetInt($"HomeChest_Slot_{i}_Amount", slot.amount);
-            }
-            else
-            {
-                PlayerPrefs.DeleteKey($"HomeChest_Slot_{i}_Item");
-                PlayerPrefs.DeleteKey($"HomeChest_Slot_{i}_Amount");
-            }
-        }
-        PlayerPrefs.Save();
-        Debug.Log($"[HomeChest] Saved chest contents ({count} slots).");
+        ItemContainerPersistence.SaveContainer(container, ItemContainerPersistence.ChestKeyPrefix);
     }
 
     public void LoadChestData()
@@ -331,51 +321,7 @@ public class HomeChest : MonoBehaviour, IInteractable
 
     public static void LoadContainer(ItemContainer container)
     {
-        if (container == null || container.itemSlots == null) return;
-        if (!PlayerPrefs.HasKey("HomeChest_SlotCount"))
-        {
-            container.Clear();
-            return;
-        }
-
-        int count = Mathf.Min(container.itemSlots.Length, PlayerPrefs.GetInt("HomeChest_SlotCount", container.itemSlots.Length));
-
-        ItemData[] allItems = GameAssetHelper.LoadAll<ItemData>();
-        var itemMap = new System.Collections.Generic.Dictionary<string, ItemData>(System.StringComparer.OrdinalIgnoreCase);
-        for (int i = 0; i < allItems.Length; i++)
-        {
-            if (allItems[i] != null)
-            {
-                if (!itemMap.ContainsKey(allItems[i].name)) itemMap[allItems[i].name] = allItems[i];
-                if (!string.IsNullOrEmpty(allItems[i].itemName) && !itemMap.ContainsKey(allItems[i].itemName))
-                {
-                    itemMap[allItems[i].itemName] = allItems[i];
-                }
-            }
-        }
-
-        for (int i = 0; i < container.itemSlots.Length; i++)
-        {
-            if (container.itemSlots[i] == null) container.itemSlots[i] = new ItemSlot();
-
-            if (i < count && PlayerPrefs.HasKey($"HomeChest_Slot_{i}_Item"))
-            {
-                string itemName = PlayerPrefs.GetString($"HomeChest_Slot_{i}_Item", "");
-                int amount = PlayerPrefs.GetInt($"HomeChest_Slot_{i}_Amount", 0);
-                if (!string.IsNullOrEmpty(itemName) && amount > 0 && itemMap.TryGetValue(itemName, out ItemData data))
-                {
-                    container.itemSlots[i].itemData = data;
-                    container.itemSlots[i].amount = amount;
-                    continue;
-                }
-            }
-
-            container.itemSlots[i].itemData = null;
-            container.itemSlots[i].amount = 0;
-        }
-
-        container.NotifyChange();
-        Debug.Log($"[HomeChest] Loaded chest contents ({container.itemSlots.Length} slots).");
+        ItemContainerPersistence.LoadContainer(container, ItemContainerPersistence.ChestKeyPrefix, clearIfMissing: true);
     }
     #endregion
 

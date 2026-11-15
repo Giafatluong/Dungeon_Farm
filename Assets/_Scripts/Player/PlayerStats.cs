@@ -125,6 +125,7 @@ public class PlayerStats : MonoBehaviour
     private void Start()
     {
         RefreshStatsFromProgression();
+        LoadBackpack();
         currentHealth = maxHealth;
         currentHunger = maxHunger;
         currentAP = maxAP;
@@ -147,6 +148,26 @@ public class PlayerStats : MonoBehaviour
             healthBar.SetHealthBar(currentHealth, maxHealth);
         }
     }
+
+    #region Backpack Persistence
+    public void SaveBackpack(bool flush = true)
+    {
+        ResolveItemContainer();
+        if (itemContainer != null)
+        {
+            ItemContainerPersistence.SaveContainer(itemContainer, ItemContainerPersistence.BackpackKeyPrefix, flush);
+        }
+    }
+
+    public void LoadBackpack()
+    {
+        ResolveItemContainer();
+        if (itemContainer != null && ItemContainerPersistence.HasSavedContainer(ItemContainerPersistence.BackpackKeyPrefix))
+        {
+            ItemContainerPersistence.LoadContainer(itemContainer, ItemContainerPersistence.BackpackKeyPrefix);
+        }
+    }
+    #endregion
 
     #region PlayerAction
 

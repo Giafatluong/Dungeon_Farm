@@ -34,6 +34,7 @@ public class DungeonTutorialController : MonoBehaviour
     private RectTransform currentTargetRT;
 
     private WaveManager waveManager;
+    private float nextWaveManagerSearchTime = 0f;
     private int lastObservedWave = -999;
     private bool isTutorialFloor = false;
     private bool hasShownEntranceGuide = false;
@@ -111,6 +112,9 @@ public class DungeonTutorialController : MonoBehaviour
     {
         if (waveManager == null)
         {
+            if (Time.time < nextWaveManagerSearchTime) return;
+            nextWaveManagerSearchTime = Time.time + 0.5f;
+
             waveManager = WaveManager.Instance != null ? WaveManager.Instance : FindFirstObjectByType<WaveManager>();
             if (waveManager == null) return;
             RefreshTutorialFloorState();
@@ -242,7 +246,7 @@ public class DungeonTutorialController : MonoBehaviour
         DungeonEntranceArrowUI arrowUI = DungeonEntranceArrowUI.Instance != null ? DungeonEntranceArrowUI.Instance : FindFirstObjectByType<DungeonEntranceArrowUI>();
         if (arrowUI != null && arrowUI.arrowButton != null)
         {
-            PointToTarget(arrowUI.arrowButton.GetComponent<RectTransform>(), "TIẾP TỤC [▶]");
+            PointToTarget(arrowUI.arrowButton.GetComponent<RectTransform>(), "BẤM VÀO ĐÂY [▶]");
         }
     }
 
@@ -634,10 +638,29 @@ public class DungeonTutorialController : MonoBehaviour
         bannerGO.SetActive(false);
 
         // 2. Bouncing Pointer Indicator
-        pointerGO = new GameObject("TutorialPointer", typeof(RectTransform), typeof(Image));
+        pointerGO = new GameObject("TutorialPointer", typeof(RectTransform), typeof(Image), typeof(Button));
         pointerGO.transform.SetParent(overlayCanvasGO.transform, false);
         pointerRT = pointerGO.GetComponent<RectTransform>();
         pointerRT.sizeDelta = new Vector2(250, 50);
+
+        Button pBtn = pointerGO.GetComponent<Button>();
+        pBtn.transition = Selectable.Transition.None;
+        pBtn.onClick.AddListener(() =>
+        {
+            if (currentTargetRT != null)
+            {
+                Button tb = currentTargetRT.GetComponent<Button>();
+                if (tb != null)
+                {
+                    tb.onClick.Invoke();
+                    return;
+                }
+            }
+            if (DungeonEntranceArrowUI.Instance != null)
+            {
+                DungeonEntranceArrowUI.Instance.OnArrowClicked();
+            }
+        });
 
         Image pFrame = pointerGO.GetComponent<Image>();
         DungeonUIAssetHelper.StyleSlicedFrame(pFrame, new Color(1f, 0.82f, 0.20f, 1f)); // Bright golden frame

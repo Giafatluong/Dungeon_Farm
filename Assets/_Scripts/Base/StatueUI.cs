@@ -982,7 +982,7 @@ public class StatueUI : MonoBehaviour
 
         Outline outline = slotGO.AddComponent<Outline>();
         outline.effectColor = new Color(0.5f, 0.45f, 0.3f, 0.6f);
-        outline.effectDistance = new Vector2(1, -1);
+        outline.effectDistance = new Vector2(3f, -3f);
 
         // Item Icon
         GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));

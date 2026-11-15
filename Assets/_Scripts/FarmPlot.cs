@@ -118,6 +118,7 @@ public class FarmPlot : MonoBehaviour
         _lastAdvancedDay = curDay;
 
         SavePlotData();
+        PlayerStats.Instance?.SaveBackpack(true);
 
         if (VFXManager.Instance != null)
         {
@@ -228,6 +229,7 @@ public class FarmPlot : MonoBehaviour
         }
 
         SavePlotData();
+        PlayerStats.Instance?.SaveBackpack(true);
     }
 
     private int _lastAdvancedDay = -1;

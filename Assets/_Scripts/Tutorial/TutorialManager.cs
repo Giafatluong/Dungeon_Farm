@@ -466,7 +466,7 @@ public class TutorialManager : MonoBehaviour
         // Step 1: Track movement
         if (currentStep == TutorialStep.Movement)
         {
-            PlayerMovement pm = PlayerMovement.Instance != null ? PlayerMovement.Instance : Object.FindFirstObjectByType<PlayerMovement>();
+            PlayerMovement pm = PlayerMovement.Instance;
             if (pm != null)
             {
                 if (!hasTrackedFirstPos)
@@ -517,7 +517,7 @@ public class TutorialManager : MonoBehaviour
         // Step 5: Cooking fail-safe
         else if (currentStep == TutorialStep.Cooking)
         {
-            PlayerStats ps = PlayerStats.Instance != null ? PlayerStats.Instance : Object.FindFirstObjectByType<PlayerStats>();
+            PlayerStats ps = PlayerStats.Instance;
             if (ps != null && ps.itemContainer != null)
             {
                 for (int i = 0; i < ps.itemContainer.itemSlots.Length; i++)

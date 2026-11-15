@@ -89,6 +89,11 @@ public class SceneTransitionManager : MonoBehaviour
                 PositionPlayerAtDungeonEntrance();
                 StartCoroutine(EnsurePlayerAtDungeonEntranceRoutine());
             }
+            else
+            {
+                GameSaveManager.RestorePlayerPosition();
+                StartCoroutine(EnsureSavedPlayerPositionRoutine());
+            }
         }
 
         previousSceneName = scene.name;
@@ -140,6 +145,15 @@ public class SceneTransitionManager : MonoBehaviour
         PositionPlayerAtDungeonEntrance();
     }
 
+    private System.Collections.IEnumerator EnsureSavedPlayerPositionRoutine()
+    {
+        yield return null;
+        if (!SpawnAtDungeonEntranceOnBaseLoad)
+        {
+            GameSaveManager.RestorePlayerPosition();
+        }
+    }
+
     private void OnDestroy()
     {
         SceneManager.sceneLoaded -= HandleSceneLoaded;
@@ -161,8 +175,7 @@ public class SceneTransitionManager : MonoBehaviour
             targetFloor: targetFloor,
             onBeforeLoad: () =>
             {
-                FarmPlot.SaveAllPlots();
-                PlayerPrefs.Save();
+                GameSaveManager.SaveAll("LoadDungeon");
 
                 if (ProgressionManager.Instance != null)
                 {
@@ -203,7 +216,7 @@ public class SceneTransitionManager : MonoBehaviour
                     DungeonSummaryUI.AdvanceDayOnReturnStatic();
                 }
 
-                PlayerPrefs.Save();
+                GameSaveManager.SaveAll("LoadBase");
             },
             onAfterLoad: () =>
             {
@@ -225,11 +238,7 @@ public class SceneTransitionManager : MonoBehaviour
             targetFloor: -1,
             onBeforeLoad: () =>
             {
-                if (SceneManager.GetActiveScene().name == "Base")
-                {
-                    FarmPlot.SaveAllPlots();
-                }
-                PlayerPrefs.Save();
+                GameSaveManager.SaveAll("LoadScene_" + sceneName);
             }
         );
     }

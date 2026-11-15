@@ -58,11 +58,17 @@ public class PlayerMovement : MonoBehaviour
     private void Start()
     {
         EnsurePlayerVisibility();
+        GameSaveManager.RestorePlayerPosition();
     }
 
     private void OnEnable()
     {
         EnsurePlayerVisibility();
+    }
+
+    private void OnDisable()
+    {
+        GameSaveManager.SavePlayerPosition();
     }
 
     public void EnsurePlayerVisibility()

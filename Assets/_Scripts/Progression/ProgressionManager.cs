@@ -1,5 +1,5 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class ProgressionManager : MonoBehaviour
 {
@@ -315,6 +315,16 @@ public class ProgressionManager : MonoBehaviour
         SavePermanentStats();
         CheckAllBlessingUnlocks();
         OnProgressionChanged?.Invoke();
+    }
+
+    public void SaveProgression()
+    {
+        SavePermanentStats();
+        SaveFloorProgression();
+        SaveDiscoveredRecipes();
+        SaveUnlockedRecipes();
+        SaveUnlockedBlessings();
+        PlayerPrefs.Save();
     }
 
     public void SavePermanentStats()

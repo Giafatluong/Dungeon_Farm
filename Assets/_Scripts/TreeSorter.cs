@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
 using System.Collections.Generic;
@@ -16,10 +16,38 @@ public class TreeSorter : MonoBehaviour
     private struct ObstacleData
     {
         public Renderer renderer;
+        public SpriteRenderer spriteRenderer;
+        public Tilemap tilemap;
         public float baseX;
         public float baseY;
         public float halfWidth;
         public float topY;
+        public float currentAlpha;
+        public int currentOrder;
+    }
+
+    private static ObstacleData CreateObstacleData(Renderer r, float bx, float by, float hw, float ty)
+    {
+        SpriteRenderer sr = r as SpriteRenderer;
+        Tilemap tm = null;
+        if (sr == null && r is TilemapRenderer tmr)
+        {
+            tm = tmr.GetComponent<Tilemap>();
+        }
+
+        float a = sr != null ? sr.color.a : (tm != null ? tm.color.a : 1.0f);
+        return new ObstacleData
+        {
+            renderer = r,
+            spriteRenderer = sr,
+            tilemap = tm,
+            baseX = bx,
+            baseY = by,
+            halfWidth = hw,
+            topY = ty,
+            currentAlpha = a,
+            currentOrder = r != null ? r.sortingOrder : 4
+        };
     }
 
     private static TreeSorter _instance;
@@ -138,14 +166,7 @@ public class TreeSorter : MonoBehaviour
             {
                 sr.sortingOrder = 4;
                 ResetVisual(sr);
-                list.Add(new ObstacleData
-                {
-                    renderer = sr,
-                    baseX = 40.5f,
-                    baseY = 10.88f,
-                    halfWidth = 1.6f,
-                    topY = 14.0f
-                });
+                list.Add(CreateObstacleData(sr, 40.5f, 10.88f, 1.6f, 14.0f));
             }
         }
 
@@ -165,14 +186,7 @@ public class TreeSorter : MonoBehaviour
             {
                 wr.sortingOrder = 4;
                 ResetVisual(wr);
-                list.Add(new ObstacleData
-                {
-                    renderer = wr,
-                    baseX = 5.5f,
-                    baseY = 0.4f,
-                    halfWidth = 1.2f,
-                    topY = 2.0f
-                });
+                list.Add(CreateObstacleData(wr, 5.5f, 0.4f, 1.2f, 2.0f));
             }
         }
 
@@ -193,14 +207,7 @@ public class TreeSorter : MonoBehaviour
             {
                 cr.sortingOrder = 4;
                 ResetVisual(cr);
-                list.Add(new ObstacleData
-                {
-                    renderer = cr,
-                    baseX = campObj.transform.position.x,
-                    baseY = campObj.transform.position.y - 0.2f,
-                    halfWidth = 0.8f,
-                    topY = campObj.transform.position.y + 0.8f
-                });
+                list.Add(CreateObstacleData(cr, campObj.transform.position.x, campObj.transform.position.y - 0.2f, 0.8f, campObj.transform.position.y + 0.8f));
             }
         }
 
@@ -227,14 +234,7 @@ public class TreeSorter : MonoBehaviour
             {
                 hr.sortingOrder = 4;
                 ResetVisual(hr);
-                list.Add(new ObstacleData
-                {
-                    renderer = hr,
-                    baseX = 12.0f,
-                    baseY = 1.4f,
-                    halfWidth = 2.8f,
-                    topY = 4.8f
-                });
+                list.Add(CreateObstacleData(hr, 12.0f, 1.4f, 2.8f, 4.8f));
             }
         }
 
@@ -247,14 +247,7 @@ public class TreeSorter : MonoBehaviour
             {
                 chr.sortingOrder = 4;
                 ResetVisual(chr);
-                list.Add(new ObstacleData
-                {
-                    renderer = chr,
-                    baseX = chestObj.transform.position.x,
-                    baseY = chestObj.transform.position.y - 0.15f,
-                    halfWidth = 0.7f,
-                    topY = chestObj.transform.position.y + 0.6f
-                });
+                list.Add(CreateObstacleData(chr, chestObj.transform.position.x, chestObj.transform.position.y - 0.15f, 0.7f, chestObj.transform.position.y + 0.6f));
             }
         }
 
@@ -289,14 +282,7 @@ public class TreeSorter : MonoBehaviour
                     ty = r.bounds.max.y;
                 }
 
-                list.Add(new ObstacleData
-                {
-                    renderer = r,
-                    baseX = bx,
-                    baseY = by,
-                    halfWidth = hw,
-                    topY = ty
-                });
+                list.Add(CreateObstacleData(r, bx, by, hw, ty));
             }
         }
 
@@ -331,14 +317,7 @@ public class TreeSorter : MonoBehaviour
                     ty = r.bounds.max.y;
                 }
 
-                list.Add(new ObstacleData
-                {
-                    renderer = r,
-                    baseX = bx,
-                    baseY = by,
-                    halfWidth = hw,
-                    topY = ty
-                });
+                list.Add(CreateObstacleData(r, bx, by, hw, ty));
             }
         }
 
@@ -427,90 +406,72 @@ public class TreeSorter : MonoBehaviour
         }
 
         Vector3 pPos = playerTransform.position;
-        // Player feet position (visual ground contact point)
         float feetY = pPos.y - 0.42f;
+        float pX = pPos.x;
+        float pY = pPos.y;
 
         for (int i = 0; i < sceneObstacles.Length; i++)
         {
-            var obs = sceneObstacles[i];
+            ref ObstacleData obs = ref sceneObstacles[i];
             if (obs.renderer == null) continue;
 
-            // Sorting logic:
-            // - Player is baseline sortingOrder = 10
-            // - TilemapRenderers (House, Fence) stay at sortingOrder = 4 (under Player 10)
-            // - SpriteRenderers (Trees, Decor):
-            //   - When Player stands in front (south of object base):
-            //     Object sortingOrder = 4 (under Player 10), target alpha = 1.0f.
-            //   - When Player stands behind (north of object base and under canopy):
-            //     Object sortingOrder = 14 (on top of Player 10), target alpha = 0.45f
-            //     so the player is clearly visible through the foliage without disappearing!
             int targetOrder = 4;
             float targetAlpha = 1.0f;
             bool isBehind = false;
 
-            if (obs.renderer is SpriteRenderer)
+            if (obs.spriteRenderer != null)
             {
-                if (Mathf.Abs(pPos.x - obs.baseX) <= obs.halfWidth && feetY >= obs.baseY && pPos.y <= obs.topY + 0.5f)
+                if (Mathf.Abs(pX - obs.baseX) <= obs.halfWidth && feetY >= obs.baseY && pY <= obs.topY + 0.5f)
                 {
                     isBehind = true;
                     targetOrder = 14;
                     targetAlpha = 0.45f;
                 }
-            }
 
-            SetObstacleVisual(obs.renderer, targetOrder, targetAlpha, isBehind);
+                // Optimization: if already settled at target alpha and target order, skip completely!
+                if (!isBehind && obs.currentOrder == 4 && obs.currentAlpha >= 0.999f)
+                {
+                    continue;
+                }
+
+                UpdateSpriteObstacleVisual(ref obs, targetOrder, targetAlpha, isBehind);
+            }
+            else if (obs.tilemap != null)
+            {
+                if (obs.currentOrder != targetOrder)
+                {
+                    obs.renderer.sortingOrder = targetOrder;
+                    obs.currentOrder = targetOrder;
+                }
+            }
         }
     }
 
-    private static void SetObstacleVisual(Renderer r, int targetOrder, float targetAlpha, bool isBehind)
+    private static void UpdateSpriteObstacleVisual(ref ObstacleData obs, int targetOrder, float targetAlpha, bool isBehind)
     {
-        if (r == null) return;
+        SpriteRenderer sr = obs.spriteRenderer;
+        if (sr == null) return;
 
-        if (r is SpriteRenderer sr)
+        float curA = obs.currentAlpha;
+        if (Mathf.Abs(curA - targetAlpha) > 0.01f)
+        {
+            float newA = Mathf.MoveTowards(curA, targetAlpha, Time.deltaTime * 6f);
+            Color c = sr.color;
+            sr.color = new Color(c.r, c.g, c.b, newA);
+            obs.currentAlpha = newA;
+        }
+        else if (curA != targetAlpha)
         {
             Color c = sr.color;
-            // Smoothly interpolate alpha towards target
-            if (Mathf.Abs(c.a - targetAlpha) > 0.01f)
-            {
-                float newA = Mathf.MoveTowards(c.a, targetAlpha, Time.deltaTime * 6f);
-                sr.color = new Color(c.r, c.g, c.b, newA);
-            }
-            else if (c.a != targetAlpha)
-            {
-                sr.color = new Color(c.r, c.g, c.b, targetAlpha);
-            }
-
-            // If behind, tree is in front (14) so foliage can be transparent over player.
-            // If in front, tree is behind player (4) immediately so player is never hidden.
-            // While fading out after being behind, keep at 14 until nearly fully opaque so it doesn't pop.
-            int desiredOrder = targetOrder;
-            if (!isBehind && sr.color.a < 0.95f)
-            {
-                // Only keep order 14 if player didn't walk south of the base
-                // If player is south (in front), desiredOrder is already 4.
-            }
-
-            if (r.sortingOrder != desiredOrder)
-            {
-                r.sortingOrder = desiredOrder;
-            }
+            sr.color = new Color(c.r, c.g, c.b, targetAlpha);
+            obs.currentAlpha = targetAlpha;
         }
-        else if (r is TilemapRenderer tmr)
-        {
-            if (r.sortingOrder != targetOrder)
-            {
-                r.sortingOrder = targetOrder;
-            }
 
-            Tilemap tm = tmr.GetComponent<Tilemap>();
-            if (tm != null)
-            {
-                Color c = tm.color;
-                if (Mathf.Abs(c.a - targetAlpha) > 0.02f)
-                {
-                    tm.color = new Color(c.r, c.g, c.b, targetAlpha);
-                }
-            }
+        int desiredOrder = targetOrder;
+        if (obs.currentOrder != desiredOrder)
+        {
+            obs.renderer.sortingOrder = desiredOrder;
+            obs.currentOrder = desiredOrder;
         }
     }
 }

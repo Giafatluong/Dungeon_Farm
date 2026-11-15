@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -658,7 +658,7 @@ public class DungeonSummaryUI : MonoBehaviour
         {
             int curDay = PlayerPrefs.GetInt("Farm_CurrentDay", 1);
             PlayerPrefs.SetInt("Farm_CurrentDay", curDay + days);
-            PlayerPrefs.Save();
+            GameSaveManager.SaveAll("DungeonReturnStatic");
         }
         Debug.Log($"[DungeonSummaryUI] Expedition finished: Automatically advanced +{days} day(s) (Farm crops grew +{days} day(s) older)!");
 

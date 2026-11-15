@@ -48,9 +48,27 @@ public class DungeonEntranceArrowUI : MonoBehaviour
             containerRT = container.GetComponent<RectTransform>();
         }
 
-        if (arrowButton != null && arrowButton.onClick.GetPersistentEventCount() == 0)
+        BindButtonListener();
+    }
+
+    private void OnEnable()
+    {
+        BindButtonListener();
+    }
+
+    private void BindButtonListener()
+    {
+        if (arrowButton == null && container != null)
         {
+            arrowButton = container.GetComponent<Button>();
+            if (arrowButton == null) arrowButton = container.GetComponentInChildren<Button>(true);
+        }
+
+        if (arrowButton != null)
+        {
+            arrowButton.onClick.RemoveAllListeners();
             arrowButton.onClick.AddListener(OnArrowClicked);
+            DungeonUIAssetHelper.StyleTactileButton(arrowButton, arrowButton.GetComponent<Image>(), DungeonUIAssetHelper.ButtonStyle.PrimaryCook);
         }
     }
 
@@ -103,12 +121,14 @@ public class DungeonEntranceArrowUI : MonoBehaviour
 
         if (titleText != null)
         {
-            titleText.text = "PROCEED";
+            titleText.text = "TIẾP TỤC";
         }
 
         if (hintText != null)
         {
-            hintText.text = totalStages > 0 ? $"Enter Stage 1/{totalStages} [->]" : "Enter Stage 1 [Space / ->]";
+            hintText.text = totalStages > 0 
+                ? $"Vào Ải 1/{totalStages} [Phím D / Space]" 
+                : "Vào Ải 1 [Phím D / Space]";
         }
 
         if (container != null)
@@ -117,6 +137,8 @@ public class DungeonEntranceArrowUI : MonoBehaviour
             container.SetActive(true);
             container.transform.SetAsLastSibling();
         }
+
+        BindButtonListener();
     }
 
     public void Hide()
@@ -139,8 +161,21 @@ public class DungeonEntranceArrowUI : MonoBehaviour
             container.SetActive(false);
         }
 
+        if (DungeonTutorialController.Instance != null)
+        {
+            DungeonTutorialController.Instance.HidePointer();
+            DungeonTutorialController.Instance.HideBanner();
+        }
+
         System.Action cb = onProceedCallback;
         onProceedCallback = null;
-        cb?.Invoke();
+        if (cb != null)
+        {
+            cb.Invoke();
+        }
+        else if (WaveManager.Instance != null)
+        {
+            WaveManager.Instance.ProceedFromEntrance();
+        }
     }
 }

@@ -563,18 +563,11 @@ public static class DungeonUIAssetHelper
 
     public static void StyleTactileButton(Button btn, Image img, ButtonStyle style)
     {
-        // Preserve scene-configured SpriteSwap art (e.g. BtnAttack / BtnDefend / BtnEat / BtnEndTurn)
-        if (btn != null && btn.transition == Selectable.Transition.SpriteSwap && img != null && img.sprite != null)
-        {
-            img.color = Color.white;
-            btn.targetGraphic = img;
-            TextMeshProUGUI swapTmp = btn.GetComponentInChildren<TextMeshProUGUI>(true);
-            if (swapTmp != null)
-            {
-                ApplyFont(swapTmp, withOutline: true);
-            }
-            return;
-        }
+        if (btn == null) return;
+
+        // Strictly eliminate separate hover/pressed sprite assets and prevent aspect-ratio squashing
+        btn.transition = Selectable.Transition.None;
+        btn.spriteState = default;
 
         Color btnColor = style switch
         {
@@ -587,36 +580,63 @@ public static class DungeonUIAssetHelper
             _ => Color.white
         };
 
-        StyleButton(btn, img, btnColor);
-
-        if (btn != null)
+        if (img != null)
         {
-            TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>(true);
-            if (tmp != null)
+            // Do not preserve aspect to prevent shrinking inside fixed-height action slots
+            img.preserveAspect = false;
+
+            if (img.sprite == null)
             {
-                ApplyFont(tmp, withOutline: true);
-                tmp.fontStyle = FontStyles.Bold;
-                tmp.color = Color.white;
+                StyleSlicedFrame(img, btnColor);
+                img.color = btnColor;
             }
+            else
+            {
+                img.color = Color.white;
+            }
+            btn.targetGraphic = img;
+        }
+
+        btn.transform.localScale = Vector3.one;
+
+        // Attach universal outline hover glow (3px golden glow + surface illumination, no size change)
+        UIButtonHoverGlow glow = UIButtonHoverGlow.Ensure(btn);
+        if (glow != null)
+        {
+            if (img != null) glow.SetOriginalColor(img.color);
+            glow.RefreshOutline();
+        }
+
+        TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (tmp != null)
+        {
+            ApplyFont(tmp, withOutline: true);
+            tmp.fontStyle = FontStyles.Bold;
         }
     }
 
     public static void StyleButton(Button btn, Image img, Color normalColor, Color? hoverColor = null, Color? pressedColor = null)
     {
         if (btn == null) return;
+
+        btn.transition = Selectable.Transition.None;
+        btn.spriteState = default;
+        btn.transform.localScale = Vector3.one;
+
         if (img != null)
         {
             StyleSlicedFrame(img, normalColor);
+            img.color = normalColor;
             btn.targetGraphic = img;
+            img.preserveAspect = false;
         }
 
-        ColorBlock cb = btn.colors;
-        cb.normalColor = Color.white;
-        cb.highlightedColor = hoverColor ?? new Color(1.15f, 1.15f, 1.15f, 1f);
-        cb.pressedColor = pressedColor ?? new Color(0.85f, 0.85f, 0.85f, 1f);
-        cb.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
-        cb.colorMultiplier = 1f;
-        btn.colors = cb;
+        UIButtonHoverGlow glow = UIButtonHoverGlow.Ensure(btn);
+        if (glow != null)
+        {
+            glow.SetOriginalColor(normalColor);
+            glow.RefreshOutline();
+        }
     }
     #endregion
 

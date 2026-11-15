@@ -119,6 +119,7 @@ public class DungeonBackgroundController : MonoBehaviour
     private bool isForcedMoving = false;
     private Camera targetCamera;
     private PlayerCombatVisual cachedPlayerVisual;
+    private float nextVisualSearchTime = 0f;
     private float lastCameraWidth = 0f;
     private readonly Dictionary<int, Sprite> runtimeGeneratedGroundSprites = new Dictionary<int, Sprite>();
 
@@ -699,7 +700,11 @@ public class DungeonBackgroundController : MonoBehaviour
         // Fallback polling if event wasn't captured
         if (!movingNow)
         {
-            if (cachedPlayerVisual == null) cachedPlayerVisual = FindFirstObjectByType<PlayerCombatVisual>();
+            if (cachedPlayerVisual == null && Time.time >= nextVisualSearchTime)
+            {
+                nextVisualSearchTime = Time.time + 0.5f;
+                cachedPlayerVisual = FindFirstObjectByType<PlayerCombatVisual>();
+            }
             if (cachedPlayerVisual != null && cachedPlayerVisual.IsMovingTransition)
             {
                 movingNow = true;
