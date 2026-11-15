@@ -1,6 +1,8 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using System.Collections.Generic;
 
 /// <summary>
 /// In-world interactive Event Altar / Shrine spawned during Dungeon Event Stages.
@@ -9,7 +11,7 @@ using UnityEngine.UI;
 /// This allows the player to inspect their stats, manage hunger, and view their backpack before deciding to interact.
 /// </summary>
 [DisallowMultipleComponent]
-public class DungeonEventInteractable : MonoBehaviour
+public class DungeonEventInteractable : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     public static DungeonEventInteractable Instance { get; private set; }
 
@@ -82,14 +84,14 @@ public class DungeonEventInteractable : MonoBehaviour
             altarRenderer.sprite = DungeonUIAssetHelper.GetAltarSprite();
         }
 
-        // 2. Click Collider
+        // 2. Click Collider (Generous size covering full altar sprite and immediate vicinity)
         if (boxCollider == null)
         {
             boxCollider = GetComponent<BoxCollider2D>();
             if (boxCollider == null) boxCollider = gameObject.AddComponent<BoxCollider2D>();
         }
         boxCollider.isTrigger = true;
-        boxCollider.size = new Vector2(2.4f, 2.8f);
+        boxCollider.size = new Vector2(2.8f, 3.2f);
         boxCollider.offset = new Vector2(0f, 0.4f);
 
         // 3. Floating Prompt Canvas
@@ -98,12 +100,23 @@ public class DungeonEventInteractable : MonoBehaviour
 
     private void BuildPromptUI()
     {
-        if (promptCanvas != null) return;
-
-        // Check if an EventPromptCanvas already exists in children
-        promptCanvas = GetComponentInChildren<Canvas>(true);
         if (promptCanvas != null)
         {
+            promptCanvas.sortingOrder = 150;
+            return;
+        }
+
+        // Check if an EventPromptCanvas already exists in scene
+        promptCanvas = GetComponentInChildren<Canvas>(true);
+        if (promptCanvas == null)
+        {
+            GameObject existingCanvasGO = GameObject.Find("EventPromptCanvas");
+            if (existingCanvasGO != null) promptCanvas = existingCanvasGO.GetComponent<Canvas>();
+        }
+
+        if (promptCanvas != null)
+        {
+            promptCanvas.sortingOrder = 150;
             Transform panelT = promptCanvas.transform.Find("PromptPanel");
             if (panelT != null)
             {
@@ -116,16 +129,18 @@ public class DungeonEventInteractable : MonoBehaviour
                 {
                     promptClickButton.onClick.RemoveListener(TriggerInteraction);
                     promptClickButton.onClick.AddListener(TriggerInteraction);
+                    UIButtonHoverGlow.Ensure(promptClickButton);
                 }
                 return;
             }
         }
 
         GameObject canvasGO = new GameObject("EventPromptCanvas");
-        canvasGO.transform.SetParent(transform, false);
+        // Keep prompt canvas at scene root so it is never distorted by altar's localScale animation
+        canvasGO.transform.SetParent(null);
         promptCanvas = canvasGO.AddComponent<Canvas>();
         promptCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        promptCanvas.sortingOrder = 35; // Above dungeon hud, below top-level modals
+        promptCanvas.sortingOrder = 150; // Above combat HUD (100) and camp (120)
 
         CanvasScaler scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -165,7 +180,9 @@ public class DungeonEventInteractable : MonoBehaviour
 
         promptClickButton = panelGO.AddComponent<Button>();
         promptClickButton.targetGraphic = bgImage;
+        promptClickButton.onClick.RemoveListener(TriggerInteraction);
         promptClickButton.onClick.AddListener(TriggerInteraction);
+        UIButtonHoverGlow.Ensure(promptClickButton);
 
         // Content Layout
         VerticalLayoutGroup vLayout = panelGO.AddComponent<VerticalLayoutGroup>();
@@ -207,6 +224,7 @@ public class DungeonEventInteractable : MonoBehaviour
         backpackContainer = backpack;
         onCompleteCallback = onComplete;
         isAwaitingInteraction = true;
+        isHovered = false;
 
         EnsureVisualComponents();
 
@@ -238,6 +256,7 @@ public class DungeonEventInteractable : MonoBehaviour
 
         if (promptCanvas != null)
         {
+            promptCanvas.sortingOrder = 150;
             promptCanvas.gameObject.SetActive(true);
         }
 
@@ -262,6 +281,7 @@ public class DungeonEventInteractable : MonoBehaviour
         if (!isAwaitingInteraction) return;
 
         AnimateVisuals();
+        HandleMouseInteraction();
 
         // Ignore hotkey while any modal UI or bag/eating is open
         if (UIEscapeManager.IsAnyModalUIOpen(includeInventory: true, includeMainMenu: true))
@@ -278,19 +298,62 @@ public class DungeonEventInteractable : MonoBehaviour
         }
     }
 
+    private void HandleMouseInteraction()
+    {
+        if (!isAwaitingInteraction) return;
+
+        if (mainCam == null) mainCam = Camera.main;
+        if (mainCam == null) return;
+
+        Vector3 mousePos = Input.mousePosition;
+        Vector3 mouseWorld3D = mainCam.ScreenToWorldPoint(mousePos);
+        Vector2 mouseWorld = new Vector2(mouseWorld3D.x, mouseWorld3D.y);
+
+        bool overCollider = boxCollider != null && boxCollider.OverlapPoint(mouseWorld);
+        bool overPrompt = promptPanelRect != null && promptCanvas != null && promptCanvas.gameObject.activeInHierarchy &&
+                          RectTransformUtility.RectangleContainsScreenPoint(promptPanelRect, mousePos, null);
+
+        // Update hover state dynamically
+        isHovered = overCollider || overPrompt;
+
+        // Direct mouse click check (works reliably in all scenes regardless of raycaster config)
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (UIEscapeManager.IsAnyModalUIOpen(includeInventory: true, includeMainMenu: true))
+                return;
+
+            if (CombatUI.Instance != null && CombatUI.Instance.foodPanel != null && CombatUI.Instance.foodPanel.activeSelf)
+                return;
+
+            if (overCollider || overPrompt)
+            {
+                TriggerInteraction();
+            }
+        }
+    }
+
     private void AnimateVisuals()
     {
         // 1. Altar subtle mystical float & pulse
         float bob = Mathf.Sin(Time.time * 3f) * 0.05f;
         transform.position = new Vector3(baseWorldPosition.x, baseWorldPosition.y + bob, baseWorldPosition.z);
 
-        Vector3 targetScale = isHovered ? new Vector3(1.08f, 1.08f, 1f) : Vector3.one;
-        transform.localScale = Vector3.Lerp(transform.localScale, targetScale, Time.deltaTime * 10f);
+        Vector3 targetScale = isHovered ? new Vector3(1.12f, 1.12f, 1f) : Vector3.one;
+        transform.localScale = Vector3.Lerp(transform.localScale, targetScale, Time.deltaTime * 12f);
 
         if (altarRenderer != null)
         {
             float pulse = (Mathf.Sin(Time.time * 2.5f) + 1f) * 0.5f;
-            altarRenderer.color = Color.Lerp(new Color(0.92f, 0.85f, 1f), Color.white, pulse);
+            Color baseColor = Color.Lerp(new Color(0.92f, 0.85f, 1f), Color.white, pulse);
+            if (isHovered)
+            {
+                // Radiant golden glow on hover to clearly indicate interactability
+                altarRenderer.color = Color.Lerp(baseColor, new Color(1f, 0.95f, 0.5f, 1f), 0.7f);
+            }
+            else
+            {
+                altarRenderer.color = baseColor;
+            }
         }
 
         // 2. Position floating prompt above the Altar in screen space
@@ -306,12 +369,40 @@ public class DungeonEventInteractable : MonoBehaviour
                 {
                     float scale = promptCanvas.scaleFactor > 0f ? promptCanvas.scaleFactor : 1f;
                     float promptBob = Mathf.Sin(Time.time * 4f) * 4f;
-                    promptPanelRect.anchoredPosition = new Vector2(screenPos.x / scale, screenPos.y / scale + promptBob);
+                    promptPanelRect.anchoredPosition = new Vector2(screenPos.x / scale, (screenPos.y + promptBob) / scale);
                 }
             }
         }
     }
 
+    #region Unity EventSystem Interfaces (For Physics2DRaycaster & EventSystem dispatch)
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (!isAwaitingInteraction) return;
+        if (eventData.button != PointerEventData.InputButton.Left) return;
+
+        if (UIEscapeManager.IsAnyModalUIOpen(includeInventory: true, includeMainMenu: true))
+            return;
+
+        if (CombatUI.Instance != null && CombatUI.Instance.foodPanel != null && CombatUI.Instance.foodPanel.activeSelf)
+            return;
+
+        TriggerInteraction();
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (!isAwaitingInteraction) return;
+        isHovered = true;
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        isHovered = false;
+    }
+    #endregion
+
+    #region Legacy Monobehaviour Mouse Callbacks
     private void OnMouseEnter()
     {
         if (!isAwaitingInteraction) return;
@@ -327,15 +418,15 @@ public class DungeonEventInteractable : MonoBehaviour
     {
         if (!isAwaitingInteraction) return;
 
-        // If pointer is over other blocking UI, ignore
-        if (UnityEngine.EventSystems.EventSystem.current != null &&
-            UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-        {
+        if (UIEscapeManager.IsAnyModalUIOpen(includeInventory: true, includeMainMenu: true))
             return;
-        }
+
+        if (CombatUI.Instance != null && CombatUI.Instance.foodPanel != null && CombatUI.Instance.foodPanel.activeSelf)
+            return;
 
         TriggerInteraction();
     }
+    #endregion
 
     public void TriggerInteraction()
     {
@@ -352,6 +443,11 @@ public class DungeonEventInteractable : MonoBehaviour
             promptCanvasGroup.alpha = 0f;
             promptCanvasGroup.interactable = false;
             promptCanvasGroup.blocksRaycasts = false;
+        }
+
+        if (promptCanvas != null)
+        {
+            promptCanvas.gameObject.SetActive(false);
         }
 
         DungeonEventUI eventUI = DungeonEventUI.EnsureInstance();
@@ -382,7 +478,11 @@ public class DungeonEventInteractable : MonoBehaviour
             promptCanvasGroup.blocksRaycasts = false;
         }
 
+        if (promptCanvas != null)
+        {
+            promptCanvas.gameObject.SetActive(false);
+        }
+
         gameObject.SetActive(false);
     }
 }
-

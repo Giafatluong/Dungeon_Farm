@@ -119,6 +119,13 @@ public class DungeonEntranceArrowUI : MonoBehaviour
         onProceedCallback = onProceed;
         isProceeding = false;
 
+        Canvas parentCanvas = GetComponentInParent<Canvas>(true);
+        if (parentCanvas != null)
+        {
+            if (!parentCanvas.gameObject.activeSelf) parentCanvas.gameObject.SetActive(true);
+            parentCanvas.sortingOrder = 105;
+        }
+
         if (titleText != null)
         {
             titleText.text = "TIẾP TỤC";

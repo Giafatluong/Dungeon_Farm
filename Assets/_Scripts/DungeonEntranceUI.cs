@@ -240,7 +240,28 @@ public class DungeonEntranceUI : MonoBehaviour
 
         if (enterDungeonPanel != null)
         {
+            Canvas panelCanvas = enterDungeonPanel.GetComponent<Canvas>();
+            if (panelCanvas == null) panelCanvas = enterDungeonPanel.AddComponent<Canvas>();
+            panelCanvas.overrideSorting = true;
+            panelCanvas.sortingOrder = 100;
+
+            if (enterDungeonPanel.GetComponent<GraphicRaycaster>() == null)
+            {
+                enterDungeonPanel.AddComponent<GraphicRaycaster>();
+            }
+
+            Image bgImg = enterDungeonPanel.GetComponent<Image>();
+            if (bgImg != null)
+            {
+                bgImg.color = new Color(0.02f, 0.03f, 0.06f, 0.75f);
+            }
+
             enterDungeonPanel.SetActive(true);
+        }
+
+        if (dialogPanel != null)
+        {
+            dialogPanel.SetActive(true);
         }
 
         // Default to highest unlocked floor or current floor
@@ -267,6 +288,11 @@ public class DungeonEntranceUI : MonoBehaviour
     public void Close()
     {
         CloseBlessingWarningModal();
+
+        if (dialogPanel != null)
+        {
+            dialogPanel.SetActive(false);
+        }
 
         if (enterDungeonPanel != null)
         {
@@ -717,6 +743,22 @@ public class DungeonEntranceUI : MonoBehaviour
         if (enterDungeonPanel == null)
         {
             return;
+        }
+
+        Canvas panelCanvas = enterDungeonPanel.GetComponent<Canvas>();
+        if (panelCanvas == null) panelCanvas = enterDungeonPanel.AddComponent<Canvas>();
+        panelCanvas.overrideSorting = true;
+        panelCanvas.sortingOrder = 100;
+
+        if (enterDungeonPanel.GetComponent<GraphicRaycaster>() == null)
+        {
+            enterDungeonPanel.AddComponent<GraphicRaycaster>();
+        }
+
+        Image bgImg = enterDungeonPanel.GetComponent<Image>();
+        if (bgImg != null)
+        {
+            bgImg.color = new Color(0.02f, 0.03f, 0.06f, 0.75f);
         }
 
         Transform existingModal = enterDungeonPanel.transform.Find("FloorSelectionModal");

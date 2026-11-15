@@ -25,6 +25,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private MerchantEvent merchantEvent;
     [SerializeField] private RewardChest rewardChest;
     [SerializeField] private DungeonEventInteractable eventInteractable;
+    [SerializeField] private DungeonExitInteractable exitInteractable;
     [SerializeField] private FloorGenerator floorGenerator;
     [SerializeField] private DungeonBackgroundController backgroundController;
     #endregion
@@ -178,6 +179,11 @@ public class WaveManager : MonoBehaviour
         {
             eventInteractable = GetComponentInChildren<DungeonEventInteractable>(true);
             if (eventInteractable == null) eventInteractable = FindFirstObjectByType<DungeonEventInteractable>(FindObjectsInactive.Include);
+        }
+        if (exitInteractable == null)
+        {
+            exitInteractable = GetComponentInChildren<DungeonExitInteractable>(true);
+            if (exitInteractable == null) exitInteractable = FindFirstObjectByType<DungeonExitInteractable>(FindObjectsInactive.Include);
         }
     }
 
@@ -450,15 +456,146 @@ public class WaveManager : MonoBehaviour
 
         if (currentWaveIndex >= totalStages - 1)
         {
-            Debug.Log("[WaveManager] Completed entire Floor! Opening Grand Floor Victory Rewards.");
-            HandleFloorVictory();
+            Debug.Log("[WaveManager] Final wave cleared! Moving player forward to Dungeon Exit Portal.");
+            StartCoroutine(TransitionToFloorExit(isEmptyBoss: false, emptyDaysLeft: 0));
             return;
         }
 
         StartCoroutine(NextWave());
     }
 
-    private void HandleFloorVictory()
+    private IEnumerator TransitionToFloorExit(bool isEmptyBoss = false, int emptyDaysLeft = 0)
+    {
+        isTransitioning = true;
+
+        // 1. Clean up lingering combat bars and targets
+        if (healthBarManager != null) healthBarManager.ClearEnemyHealthBars();
+        if (targetSelector != null) targetSelector.ClearTarget();
+        if (combatManager != null) combatManager.SetEnemies(new EnemyStats[0]);
+
+        // 2. Hide active combat targeting UI
+        if (CombatUI.Instance != null)
+        {
+            if (CombatUI.Instance.targetInfoPanel != null)
+                CombatUI.Instance.targetInfoPanel.SetActive(false);
+            if (CombatUI.Instance.targetReticle != null)
+                CombatUI.Instance.targetReticle.gameObject.SetActive(false);
+
+            if (!isEmptyBoss)
+            {
+                if (CombatUI.Instance.turnBannerText != null)
+                {
+                    CombatUI.Instance.turnBannerText.text = "HOÀN THÀNH ẢI CUỐI - TIẾN ĐẾN CỔNG RA";
+                    CombatUI.Instance.turnBannerText.color = new Color(0.4f, 1f, 0.85f);
+                }
+                if (CombatUI.Instance.turnBannerBg != null)
+                {
+                    CombatUI.Instance.turnBannerBg.color = new Color(0.08f, 0.22f, 0.18f, 0.9f);
+                }
+            }
+        }
+
+        // 3. Player walking forward animation across the chamber
+        float moveDuration = 1.8f;
+        PlayerCombatVisual playerVisual = FindFirstObjectByType<PlayerCombatVisual>();
+        if (playerVisual != null)
+        {
+            playerVisual.PlayMoveTransition(moveDuration);
+        }
+
+        yield return new WaitForSeconds(moveDuration);
+
+        // 4. Update banner at destination
+        if (CombatUI.Instance != null && CombatUI.Instance.turnBannerText != null)
+        {
+            CombatUI.Instance.turnBannerText.text = "CỔNG DỊCH CHUYỂN HẦM NGỤC";
+            CombatUI.Instance.turnBannerText.color = new Color(1f, 0.85f, 0.3f);
+            if (CombatUI.Instance.turnBannerBg != null)
+            {
+                CombatUI.Instance.turnBannerBg.color = new Color(0.24f, 0.18f, 0.08f, 0.92f);
+            }
+        }
+
+        // 5. Ensure exit interactable exists and is set up
+        if (exitInteractable == null)
+        {
+            exitInteractable = GetComponentInChildren<DungeonExitInteractable>(true);
+            if (exitInteractable == null) exitInteractable = FindFirstObjectByType<DungeonExitInteractable>(FindObjectsInactive.Include);
+            if (exitInteractable == null)
+            {
+                exitInteractable = DungeonExitInteractable.EnsureInstance();
+                exitInteractable.transform.SetParent(transform, false);
+            }
+        }
+
+        FloorData activeFloor = GetActiveFloor();
+        int floorNum = activeFloor != null ? activeFloor.floorNumber : (ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1);
+
+        PlayerStats pStats = (combatManager != null && combatManager.playerStats != null)
+            ? combatManager.playerStats
+            : (PlayerStats.Instance != null ? PlayerStats.Instance : FindFirstObjectByType<PlayerStats>());
+        ItemContainer backpack = pStats != null ? pStats.itemContainer : null;
+
+        if (exitInteractable != null)
+        {
+            exitInteractable.Setup(activeFloor, floorNum, backpack, onInteract: () =>
+            {
+                if (isEmptyBoss)
+                {
+                    FloorVictoryUI victoryUI = FloorVictoryUI.EnsureInstance();
+                    if (victoryUI != null)
+                    {
+                        victoryUI.OpenEmptyBossRoom(activeFloor, floorNum, emptyDaysLeft,
+                            onReturnToBase: () =>
+                            {
+                                exitInteractable?.Dismiss();
+                                if (ProgressionManager.Instance != null)
+                                {
+                                    ProgressionManager.Instance.CompleteRun();
+                                }
+                                else if (SceneTransitionManager.Instance != null)
+                                {
+                                    SceneTransitionManager.Instance.LoadBase();
+                                }
+                                else
+                                {
+                                    UnityEngine.SceneManagement.SceneManager.LoadScene("Base");
+                                }
+                            },
+                            onNextFloor: () =>
+                            {
+                                exitInteractable?.Dismiss();
+                                ProceedToNextFloor(floorNum + 1);
+                            });
+                    }
+                    else
+                    {
+                        exitInteractable?.Dismiss();
+                        ProceedToNextFloor(floorNum + 1);
+                    }
+                }
+                else
+                {
+                    HandleFloorVictory();
+                }
+            });
+        }
+        else
+        {
+            if (isEmptyBoss)
+            {
+                ProceedToNextFloor(floorNum + 1);
+            }
+            else
+            {
+                HandleFloorVictory();
+            }
+        }
+
+        isTransitioning = false;
+    }
+
+    public void HandleFloorVictory()
     {
         FloorData activeFloor = GetActiveFloor();
         int floorNum = activeFloor != null ? activeFloor.floorNumber : (ProgressionManager.Instance != null ? ProgressionManager.Instance.currentFloor : 1);
@@ -485,6 +622,7 @@ public class WaveManager : MonoBehaviour
             victoryUI.Open(activeFloor, floorNum, backpack, isFirstTime,
                 onReturnToBase: () =>
                 {
+                    exitInteractable?.Dismiss();
                     if (ProgressionManager.Instance != null)
                     {
                         ProgressionManager.Instance.CompleteRun();
@@ -500,6 +638,7 @@ public class WaveManager : MonoBehaviour
                 },
                 onNextFloor: () =>
                 {
+                    exitInteractable?.Dismiss();
                     ProceedToNextFloor(floorNum + 1);
                 });
         }
@@ -519,6 +658,10 @@ public class WaveManager : MonoBehaviour
     public void ProceedToNextFloor(int nextFloorNum)
     {
         Debug.Log($"[WaveManager] Transitioning directly to next floor: Floor {nextFloorNum}");
+        if (exitInteractable != null)
+        {
+            exitInteractable.Dismiss();
+        }
         if (ProgressionManager.Instance != null)
         {
             ProgressionManager.Instance.currentFloor = nextFloorNum;
@@ -699,7 +842,7 @@ public class WaveManager : MonoBehaviour
             CombatUI.Instance.LogMessage($"[Empty Boss Room] Floor {floorNum} Boss has not respawned ({daysLeft} days remaining). Area is completely safe!");
             if (CombatUI.Instance.turnBannerText != null)
             {
-                CombatUI.Instance.turnBannerText.text = "EMPTY BOSS ROOM (BOSS NOT RESPAWNED)";
+                CombatUI.Instance.turnBannerText.text = "PHÒNG TRỐNG (BOSS CHƯA HỒI SINH) - TIẾN ĐẾN CỔNG RA";
                 CombatUI.Instance.turnBannerText.color = new Color(0.4f, 1f, 0.6f);
             }
             if (CombatUI.Instance.turnBannerBg != null)
@@ -708,35 +851,7 @@ public class WaveManager : MonoBehaviour
             }
         }
 
-        FloorData activeFloor = GetActiveFloor();
-        FloorVictoryUI victoryUI = FloorVictoryUI.EnsureInstance();
-        if (victoryUI != null)
-        {
-            victoryUI.OpenEmptyBossRoom(activeFloor, floorNum, daysLeft,
-                onReturnToBase: () =>
-                {
-                    if (ProgressionManager.Instance != null)
-                    {
-                        ProgressionManager.Instance.CompleteRun();
-                    }
-                    else if (SceneTransitionManager.Instance != null)
-                    {
-                        SceneTransitionManager.Instance.LoadBase();
-                    }
-                    else
-                    {
-                        UnityEngine.SceneManagement.SceneManager.LoadScene("Base");
-                    }
-                },
-                onNextFloor: () =>
-                {
-                    ProceedToNextFloor(floorNum + 1);
-                });
-        }
-        else
-        {
-            ProceedToNextFloor(floorNum + 1);
-        }
+        StartCoroutine(TransitionToFloorExit(isEmptyBoss: true, emptyDaysLeft: daysLeft));
     }
     #endregion
 

@@ -200,6 +200,32 @@ public static class DungeonUIAssetHelper
 #endif
         return null;
     }
+
+    public static Sprite GetExitPortalSprite()
+    {
+        Sprite portal = Resources.Load<Sprite>("DungeonEvents/TX Props Rune Pillar X3 Glow")
+                     ?? FindSprite("TX Props Rune Pillar X3 Glow")
+                     ?? FindSprite("TX Props Rune Pillar X2 Glow")
+                     ?? FindSprite("TX Props Altar Rune 1")
+                     ?? GetAltarSprite();
+        if (portal != null) return portal;
+
+#if UNITY_EDITOR
+        Object[] sub = UnityEditor.AssetDatabase.LoadAllAssetRepresentationsAtPath("Assets/Cainos/Pixel Art Top Down - Basic/Texture/TX Props.png");
+        if (sub != null && sub.Length > 0)
+        {
+            for (int i = 0; i < sub.Length; i++)
+            {
+                if (sub[i] is Sprite s && (s.name.Contains("Rune Pillar") || s.name.Contains("Pillar")))
+                {
+                    _spriteCache["TX Props Rune Pillar X3 Glow"] = s;
+                    return s;
+                }
+            }
+        }
+#endif
+        return portal ?? GetAltarSprite();
+    }
     #endregion
 
     #region Prefabs & Fonts

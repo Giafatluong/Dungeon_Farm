@@ -310,6 +310,9 @@ public class LoadingScreenUI : MonoBehaviour
             yield return null;
         }
 
+        // Re-ensure UI references after scene load
+        EnsureUIConstructed();
+
         // 6. Wait 2 frames for scene objects to run Awake & Start
         yield return null;
         yield return new WaitForEndOfFrame();
@@ -324,7 +327,10 @@ public class LoadingScreenUI : MonoBehaviour
         while (elapsed < fadeOutTime)
         {
             elapsed += Time.unscaledDeltaTime;
-            canvasGroup.alpha = 1f - Mathf.Clamp01(elapsed / fadeOutTime);
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 1f - Mathf.Clamp01(elapsed / fadeOutTime);
+            }
             yield return null;
         }
 
@@ -353,25 +359,48 @@ public class LoadingScreenUI : MonoBehaviour
     {
         if (targetCanvas != null && canvasGroup != null)
         {
+            targetCanvas.sortingOrder = 9999;
             BindExistingUIElements();
             return;
         }
 
         Canvas[] existingCanvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        List<Canvas> found = new List<Canvas>();
         for (int i = 0; i < existingCanvases.Length; i++)
         {
             if (existingCanvases[i] != null && existingCanvases[i].name == "[LoadingScreenCanvas]")
             {
-                if (targetCanvas == null || existingCanvases[i].transform.childCount > 0)
+                found.Add(existingCanvases[i]);
+            }
+        }
+
+        for (int i = 0; i < found.Count; i++)
+        {
+            if (found[i] != null && found[i].transform.childCount > 0)
+            {
+                if (targetCanvas == null)
                 {
-                    targetCanvas = existingCanvases[i];
+                    targetCanvas = found[i];
                     canvasGroup = targetCanvas.GetComponent<CanvasGroup>();
+                }
+                else
+                {
+                    // Clean up redundant duplicate canvases in scene
+                    Destroy(found[i].gameObject);
                 }
             }
         }
 
+        if (targetCanvas == null && found.Count > 0)
+        {
+            targetCanvas = found[0];
+            canvasGroup = targetCanvas.GetComponent<CanvasGroup>();
+        }
+
         if (targetCanvas != null)
         {
+            targetCanvas.transform.SetParent(this.transform, false);
+            targetCanvas.sortingOrder = 9999;
             BindExistingUIElements();
             return;
         }
