@@ -85,6 +85,8 @@ public class DungeonEntranceUI : MonoBehaviour
     private void Start()
     {
         EnsureUIConstructed();
+        if (enterDungeonPanel != null) enterDungeonPanel.SetActive(false);
+        if (dialogPanel != null) dialogPanel.SetActive(false);
     }
 
     private void Update()

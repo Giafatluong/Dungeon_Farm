@@ -22,14 +22,6 @@ public class DayTransitionUI : MonoBehaviour
             return Instance;
         }
 
-        if (Application.isPlaying)
-        {
-            GameObject go = new GameObject("DayTransitionUI");
-            Instance = go.AddComponent<DayTransitionUI>();
-            DontDestroyOnLoad(go);
-            return Instance;
-        }
-
         return null;
     }
     public static DayTransitionUI Instance { get; private set; }
@@ -489,247 +481,80 @@ public class DayTransitionUI : MonoBehaviour
         Debug.Log("[DayTransitionUI] New day started successfully!");
     }
 
-    #region Procedural UI Construction
+    #region Scene UI Binding
     public void EnsureUIConstructed()
     {
-        if (morningReportModal != null && fadeCanvasGroup != null) return;
+        AutoBindSceneReferences();
+    }
 
-        // Find or create dedicated high-priority Canvas
+    private void AutoBindSceneReferences()
+    {
         if (targetCanvas == null)
         {
-            Canvas existing = null;
-            Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            for (int i = 0; i < canvases.Length; i++)
+            targetCanvas = GetComponentInParent<Canvas>();
+            if (targetCanvas == null)
             {
-                if (canvases[i] != null && canvases[i].name == "DayTransitionCanvas")
+                Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                for (int i = 0; i < canvases.Length; i++)
                 {
-                    existing = canvases[i];
-                    break;
+                    if (canvases[i] != null && canvases[i].name == "DayTransitionCanvas")
+                    {
+                        targetCanvas = canvases[i];
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (targetCanvas != null)
+        {
+            if (fadeCanvasGroup == null || fadeOverlayImage == null)
+            {
+                Transform fadeT = targetCanvas.transform.Find("DayTransition_FadeOverlay");
+                if (fadeT != null)
+                {
+                    fadeCanvasGroup = fadeT.GetComponent<CanvasGroup>();
+                    fadeOverlayImage = fadeT.GetComponent<Image>();
                 }
             }
 
-            if (existing != null)
+            if (morningReportModal == null)
             {
-                targetCanvas = existing;
-            }
-            else
-            {
-                GameObject canvasGO = new GameObject("DayTransitionCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-                targetCanvas = canvasGO.GetComponent<Canvas>();
-                targetCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                targetCanvas.sortingOrder = 9999; // Topmost priority so nothing in scene can block it
-
-                CanvasScaler scaler = canvasGO.GetComponent<CanvasScaler>();
-                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1920, 1080);
-                scaler.matchWidthOrHeight = 0.5f;
-
-                GraphicRaycaster gr = canvasGO.GetComponent<GraphicRaycaster>();
-                gr.blockingObjects = GraphicRaycaster.BlockingObjects.None;
-
-                if (Application.isPlaying) DontDestroyOnLoad(canvasGO);
+                Transform modalT = targetCanvas.transform.Find("MorningReportModal");
+                if (modalT != null)
+                {
+                    morningReportModal = modalT.gameObject;
+                }
             }
         }
 
-        // 1. Black Fade Overlay
-        if (fadeOverlayImage == null)
+        if (morningReportModal != null)
         {
-            GameObject overlayGO = new GameObject("DayTransition_FadeOverlay", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
-            overlayGO.transform.SetParent(targetCanvas.transform, false);
-            overlayGO.transform.SetAsLastSibling();
+            Transform modalT = morningReportModal.transform;
+            if (modalCanvasGroup == null) modalCanvasGroup = morningReportModal.GetComponent<CanvasGroup>();
+            if (headerTitleText == null) headerTitleText = modalT.Find("HeaderPanel/TitleText")?.GetComponent<TextMeshProUGUI>();
+            if (headerSubtitleText == null) headerSubtitleText = modalT.Find("HeaderPanel/SubtitleText")?.GetComponent<TextMeshProUGUI>();
+            if (farmSectionTitleText == null) farmSectionTitleText = modalT.Find("ContentContainer/FarmSectionBox/SectionTitle")?.GetComponent<TextMeshProUGUI>();
+            if (farmContentText == null) farmContentText = modalT.Find("ContentContainer/FarmSectionBox/SectionBody")?.GetComponent<TextMeshProUGUI>();
+            if (worldSectionTitleText == null) worldSectionTitleText = modalT.Find("ContentContainer/WorldSectionBox/SectionTitle")?.GetComponent<TextMeshProUGUI>();
+            if (worldContentText == null) worldContentText = modalT.Find("ContentContainer/WorldSectionBox/SectionBody")?.GetComponent<TextMeshProUGUI>();
 
-            RectTransform overlayRT = overlayGO.GetComponent<RectTransform>();
-            overlayRT.anchorMin = Vector2.zero;
-            overlayRT.anchorMax = Vector2.one;
-            overlayRT.sizeDelta = Vector2.zero;
-            overlayRT.anchoredPosition = Vector2.zero;
-
-            fadeOverlayImage = overlayGO.GetComponent<Image>();
-            fadeOverlayImage.color = new Color(0.02f, 0.03f, 0.05f, 1f);
-            fadeOverlayImage.raycastTarget = true;
-
-            fadeCanvasGroup = overlayGO.GetComponent<CanvasGroup>();
-            fadeCanvasGroup.alpha = 0f;
-            fadeCanvasGroup.blocksRaycasts = false;
+            if (startNewDayButton == null)
+            {
+                Transform btnT = modalT.Find("StartNewDayButton");
+                if (btnT != null)
+                {
+                    startNewDayButton = btnT.GetComponent<Button>();
+                    startNewDayButtonText = btnT.Find("BtnText")?.GetComponent<TextMeshProUGUI>();
+                }
+            }
         }
 
-        // 2. Morning Report Modal Dialog
-        if (morningReportModal == null)
+        if (startNewDayButton != null)
         {
-            morningReportModal = new GameObject("MorningReportModal", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
-            morningReportModal.transform.SetParent(targetCanvas.transform, false);
-            morningReportModal.transform.SetAsLastSibling();
-
-            RectTransform modalRT = morningReportModal.GetComponent<RectTransform>();
-            modalRT.anchorMin = new Vector2(0.5f, 0.5f);
-            modalRT.anchorMax = new Vector2(0.5f, 0.5f);
-            modalRT.pivot = new Vector2(0.5f, 0.5f);
-            modalRT.sizeDelta = new Vector2(740, 560);
-            modalRT.anchoredPosition = Vector2.zero;
-
-            Image modalBg = morningReportModal.GetComponent<Image>();
-            DungeonUIAssetHelper.StyleSlicedFrame(modalBg, new Color(0.11f, 0.13f, 0.18f, 0.98f));
-            modalBg.raycastTarget = true;
-
-            modalCanvasGroup = morningReportModal.GetComponent<CanvasGroup>();
-            modalCanvasGroup.alpha = 0f;
-            modalCanvasGroup.interactable = true;
-            modalCanvasGroup.blocksRaycasts = false;
-
-            // Header Container
-            GameObject headerGO = new GameObject("HeaderPanel", typeof(RectTransform));
-            headerGO.transform.SetParent(morningReportModal.transform, false);
-            RectTransform headerRT = headerGO.GetComponent<RectTransform>();
-            headerRT.anchorMin = new Vector2(0, 1);
-            headerRT.anchorMax = new Vector2(1, 1);
-            headerRT.pivot = new Vector2(0.5f, 1);
-            headerRT.sizeDelta = new Vector2(-40, 80);
-            headerRT.anchoredPosition = new Vector2(0, -20);
-
-            // Title
-            GameObject titleGO = new GameObject("TitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
-            titleGO.transform.SetParent(headerRT, false);
-            RectTransform titleRT = titleGO.GetComponent<RectTransform>();
-            titleRT.anchorMin = new Vector2(0, 0.5f);
-            titleRT.anchorMax = new Vector2(1, 1);
-            titleRT.sizeDelta = Vector2.zero;
-            titleRT.anchoredPosition = new Vector2(0, 5);
-
-            headerTitleText = titleGO.GetComponent<TextMeshProUGUI>();
-            DungeonUIAssetHelper.ApplyFont(headerTitleText);
-            headerTitleText.fontSize = 28;
-            headerTitleText.fontStyle = FontStyles.Bold;
-            headerTitleText.alignment = TextAlignmentOptions.Center;
-            headerTitleText.color = new Color(1f, 0.84f, 0.31f); // Warm Morning Gold
-            headerTitleText.text = "[*] DAWN - DAY 01";
-            headerTitleText.raycastTarget = false;
-
-            // Subtitle
-            GameObject subGO = new GameObject("SubtitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
-            subGO.transform.SetParent(headerRT, false);
-            RectTransform subRT = subGO.GetComponent<RectTransform>();
-            subRT.anchorMin = new Vector2(0, 0);
-            subRT.anchorMax = new Vector2(1, 0.5f);
-            subRT.sizeDelta = Vector2.zero;
-            subRT.anchoredPosition = Vector2.zero;
-
-            headerSubtitleText = subGO.GetComponent<TextMeshProUGUI>();
-            DungeonUIAssetHelper.ApplyFont(headerSubtitleText);
-            headerSubtitleText.fontSize = 15;
-            headerSubtitleText.alignment = TextAlignmentOptions.Center;
-            headerSubtitleText.color = new Color(0.7f, 0.76f, 0.84f);
-            headerSubtitleText.text = "A peaceful night has passed. New changes have arrived across the farm and the world outside.";
-            headerSubtitleText.raycastTarget = false;
-
-            // Divider Line
-            GameObject divGO = new GameObject("Divider", typeof(RectTransform), typeof(Image));
-            divGO.transform.SetParent(morningReportModal.transform, false);
-            RectTransform divRT = divGO.GetComponent<RectTransform>();
-            divRT.anchorMin = new Vector2(0.08f, 1);
-            divRT.anchorMax = new Vector2(0.92f, 1);
-            divRT.sizeDelta = new Vector2(0, 2);
-            divRT.anchoredPosition = new Vector2(0, -106);
-            Image divImg = divGO.GetComponent<Image>();
-            divImg.color = new Color(0.7f, 0.55f, 0.22f, 0.6f);
-            divImg.raycastTarget = false;
-
-            // 3. Content Sections Container
-            GameObject contentGO = new GameObject("ContentContainer", typeof(RectTransform), typeof(VerticalLayoutGroup));
-            contentGO.transform.SetParent(morningReportModal.transform, false);
-            RectTransform contentRT = contentGO.GetComponent<RectTransform>();
-            contentRT.anchorMin = new Vector2(0.06f, 0.16f);
-            contentRT.anchorMax = new Vector2(0.94f, 0.79f);
-            contentRT.sizeDelta = Vector2.zero;
-            contentRT.anchoredPosition = Vector2.zero;
-
-            VerticalLayoutGroup contentVLG = contentGO.GetComponent<VerticalLayoutGroup>();
-            contentVLG.spacing = 18f;
-            contentVLG.childControlHeight = true;
-            contentVLG.childControlWidth = true;
-            contentVLG.childForceExpandHeight = false;
-            contentVLG.childForceExpandWidth = true;
-
-            // Section 1: Farm Box
-            GameObject farmBox = CreateSectionCard(contentGO.transform, "FarmSectionBox", out farmSectionTitleText, out farmContentText);
-
-            // Section 2: World / Dungeon News Box
-            GameObject worldBox = CreateSectionCard(contentGO.transform, "WorldSectionBox", out worldSectionTitleText, out worldContentText);
-
-            // 4. Start New Day Button
-            GameObject btnGO = new GameObject("StartNewDayButton", typeof(RectTransform), typeof(Image), typeof(Button));
-            btnGO.transform.SetParent(morningReportModal.transform, false);
-            RectTransform btnRT = btnGO.GetComponent<RectTransform>();
-            btnRT.anchorMin = new Vector2(0.5f, 0);
-            btnRT.anchorMax = new Vector2(0.5f, 0);
-            btnRT.pivot = new Vector2(0.5f, 0);
-            btnRT.sizeDelta = new Vector2(340, 52);
-            btnRT.anchoredPosition = new Vector2(0, 24);
-
-            Image btnImg = btnGO.GetComponent<Image>();
-            btnImg.raycastTarget = true;
-            startNewDayButton = btnGO.GetComponent<Button>();
-            startNewDayButton.interactable = true;
-            DungeonUIAssetHelper.StyleButton(startNewDayButton, btnImg, new Color(0.85f, 0.45f, 0.12f, 1f), new Color(1f, 0.60f, 0.25f, 1f));
-            startNewDayButton.onClick.RemoveAllListeners();
+            startNewDayButton.onClick.RemoveListener(OnStartNewDayClicked);
             startNewDayButton.onClick.AddListener(OnStartNewDayClicked);
-
-            GameObject btnTextGO = new GameObject("BtnText", typeof(RectTransform), typeof(TextMeshProUGUI));
-            btnTextGO.transform.SetParent(btnGO.transform, false);
-            RectTransform btnTextRT = btnTextGO.GetComponent<RectTransform>();
-            btnTextRT.anchorMin = Vector2.zero;
-            btnTextRT.anchorMax = Vector2.one;
-            btnTextRT.sizeDelta = Vector2.zero;
-
-            startNewDayButtonText = btnTextGO.GetComponent<TextMeshProUGUI>();
-            DungeonUIAssetHelper.ApplyFont(startNewDayButtonText);
-            startNewDayButtonText.fontSize = 19;
-            startNewDayButtonText.fontStyle = FontStyles.Bold;
-            startNewDayButtonText.alignment = TextAlignmentOptions.Center;
-            startNewDayButtonText.color = Color.white;
-            startNewDayButtonText.raycastTarget = false; // Must not block button click!
-            startNewDayButtonText.text = "START NEW DAY  (Space)";
-
-            morningReportModal.SetActive(false);
         }
-    }
-
-    private GameObject CreateSectionCard(Transform parent, string cardName, out TextMeshProUGUI titleText, out TextMeshProUGUI bodyText)
-    {
-        GameObject cardGO = new GameObject(cardName, typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
-        cardGO.transform.SetParent(parent, false);
-
-        Image cardBg = cardGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(cardBg, new Color(0.07f, 0.08f, 0.12f, 0.90f));
-        cardBg.raycastTarget = false;
-
-        VerticalLayoutGroup vlg = cardGO.GetComponent<VerticalLayoutGroup>();
-        vlg.padding = new RectOffset(16, 16, 12, 12);
-        vlg.spacing = 6f;
-        vlg.childControlWidth = true;
-        vlg.childControlHeight = true;
-        vlg.childForceExpandHeight = false;
-
-        // Title
-        GameObject tGO = new GameObject("SectionTitle", typeof(RectTransform), typeof(TextMeshProUGUI));
-        tGO.transform.SetParent(cardGO.transform, false);
-        titleText = tGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(titleText);
-        titleText.fontSize = 16;
-        titleText.fontStyle = FontStyles.Bold;
-        titleText.color = new Color(0.96f, 0.77f, 0.35f);
-        titleText.raycastTarget = false;
-
-        // Body
-        GameObject bGO = new GameObject("SectionBody", typeof(RectTransform), typeof(TextMeshProUGUI));
-        bGO.transform.SetParent(cardGO.transform, false);
-        bodyText = bGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(bodyText);
-        bodyText.fontSize = 14;
-        bodyText.lineSpacing = 6f;
-        bodyText.color = new Color(0.9f, 0.92f, 0.96f);
-        bodyText.raycastTarget = false;
-
-        return cardGO;
     }
     #endregion
 }

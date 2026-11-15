@@ -104,6 +104,14 @@ public class LoadingScreenUI : MonoBehaviour
         HideImmediate();
     }
 
+    private void Start()
+    {
+        if (!isTransitioning)
+        {
+            HideImmediate();
+        }
+    }
+
     /// <summary>
     /// Loads the target scene asynchronously while displaying a smooth, stylish loading screen.
     /// </summary>
@@ -340,231 +348,33 @@ public class LoadingScreenUI : MonoBehaviour
         }
     }
 
-    #region Procedural UI Hierarchy Construction
+    #region Scene UI Binding
     public void EnsureUIConstructed()
     {
-        if (targetCanvas != null && canvasGroup != null) return;
-
-        // Check if an existing [LoadingScreenCanvas] already exists in scene
-        Canvas[] existingCanvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        for (int i = 0; i < existingCanvases.Length; i++)
-        {
-            if (existingCanvases[i] != null && existingCanvases[i].name == "[LoadingScreenCanvas]")
-            {
-                if (targetCanvas == null)
-                {
-                    targetCanvas = existingCanvases[i];
-                    canvasGroup = targetCanvas.GetComponent<CanvasGroup>();
-                }
-                else if (Application.isPlaying && existingCanvases[i] != targetCanvas)
-                {
-                    Destroy(existingCanvases[i].gameObject);
-                }
-            }
-        }
         if (targetCanvas != null && canvasGroup != null)
         {
             BindExistingUIElements();
             return;
         }
 
-        // 1. Root Canvas
-        GameObject canvasGo = new GameObject("[LoadingScreenCanvas]", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
-        canvasGo.transform.SetParent(transform, false);
-        if (Application.isPlaying) DontDestroyOnLoad(canvasGo);
+        Canvas[] existingCanvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < existingCanvases.Length; i++)
+        {
+            if (existingCanvases[i] != null && existingCanvases[i].name == "[LoadingScreenCanvas]")
+            {
+                if (targetCanvas == null || existingCanvases[i].transform.childCount > 0)
+                {
+                    targetCanvas = existingCanvases[i];
+                    canvasGroup = targetCanvas.GetComponent<CanvasGroup>();
+                }
+            }
+        }
 
-        targetCanvas = canvasGo.GetComponent<Canvas>();
-        targetCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        targetCanvas.sortingOrder = 99999; // Always on top of all existing UI
-
-        CanvasScaler scaler = canvasGo.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
-        scaler.matchWidthOrHeight = 0.5f;
-
-        canvasGroup = canvasGo.GetComponent<CanvasGroup>();
-        canvasGroup.alpha = 0f;
-        canvasGroup.blocksRaycasts = false;
-
-        // 2. Fullscreen Background
-        GameObject bgGo = new GameObject("Background", typeof(RectTransform), typeof(Image));
-        bgGo.transform.SetParent(canvasGo.transform, false);
-        RectTransform bgRT = bgGo.GetComponent<RectTransform>();
-        bgRT.anchorMin = Vector2.zero;
-        bgRT.anchorMax = Vector2.one;
-        bgRT.sizeDelta = Vector2.zero;
-        bgImage = bgGo.GetComponent<Image>();
-        bgImage.color = new Color(0.043f, 0.055f, 0.078f, 1f); // Deep Obsidian Slate (#0B0E14)
-        bgImage.raycastTarget = true;
-
-        // Subtle Gold Top & Bottom Accent Lines
-        CreateHorizontalLine(canvasGo.transform, 1f, new Vector2(0f, -2f), new Color(0.95f, 0.75f, 0.25f, 0.4f), 3f);
-        CreateHorizontalLine(canvasGo.transform, 0f, new Vector2(0f, 2f), new Color(0.95f, 0.75f, 0.25f, 0.4f), 3f);
-
-        // 3. Header Area (Top Centered)
-        GameObject headerGo = new GameObject("HeaderGroup", typeof(RectTransform));
-        headerGo.transform.SetParent(canvasGo.transform, false);
-        RectTransform headerRT = headerGo.GetComponent<RectTransform>();
-        headerRT.anchorMin = new Vector2(0.5f, 0.75f);
-        headerRT.anchorMax = new Vector2(0.5f, 0.75f);
-        headerRT.sizeDelta = new Vector2(900f, 160f);
-        headerRT.anchoredPosition = Vector2.zero;
-
-        // Diamond deco
-        GameObject decoGo = new GameObject("Deco", typeof(RectTransform), typeof(TextMeshProUGUI));
-        decoGo.transform.SetParent(headerGo.transform, false);
-        RectTransform decoRT = decoGo.GetComponent<RectTransform>();
-        decoRT.anchoredPosition = new Vector2(0f, 40f);
-        decoRT.sizeDelta = new Vector2(400f, 30f);
-        TextMeshProUGUI decoTmp = decoGo.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(decoTmp);
-        decoTmp.text = "<color=#F59E0B>~   *   ~</color>";
-        decoTmp.fontSize = 20;
-        decoTmp.alignment = TextAlignmentOptions.Center;
-
-        // Main Title
-        GameObject titleGo = new GameObject("TitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        titleGo.transform.SetParent(headerGo.transform, false);
-        RectTransform titleRT = titleGo.GetComponent<RectTransform>();
-        titleRT.anchoredPosition = new Vector2(0f, 0f);
-        titleRT.sizeDelta = new Vector2(850f, 54f);
-        titleText = titleGo.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(titleText);
-        titleText.text = "TIẾN VÀO HẦM NGỤC";
-        titleText.fontSize = 38;
-        titleText.fontStyle = FontStyles.Bold;
-        titleText.alignment = TextAlignmentOptions.Center;
-
-        // Subtitle
-        GameObject subGo = new GameObject("SubtitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        subGo.transform.SetParent(headerGo.transform, false);
-        RectTransform subRT = subGo.GetComponent<RectTransform>();
-        subRT.anchoredPosition = new Vector2(0f, -44f);
-        subRT.sizeDelta = new Vector2(850f, 36f);
-        subtitleText = subGo.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(subtitleText);
-        subtitleText.text = "[ TẦNG 1 - ANCIENT DUNGEON ]";
-        subtitleText.fontSize = 20;
-        subtitleText.color = new Color(0.70f, 0.75f, 0.82f, 1f);
-        subtitleText.alignment = TextAlignmentOptions.Center;
-
-        // 4. Center Emblem & Status
-        GameObject centerGo = new GameObject("CenterGroup", typeof(RectTransform));
-        centerGo.transform.SetParent(canvasGo.transform, false);
-        RectTransform centerRT = centerGo.GetComponent<RectTransform>();
-        centerRT.anchorMin = new Vector2(0.5f, 0.50f);
-        centerRT.anchorMax = new Vector2(0.5f, 0.50f);
-        centerRT.sizeDelta = new Vector2(600f, 140f);
-        centerRT.anchoredPosition = new Vector2(0f, 10f);
-
-        GameObject emblemGo = new GameObject("Emblem", typeof(RectTransform), typeof(TextMeshProUGUI));
-        emblemGo.transform.SetParent(centerGo.transform, false);
-        RectTransform emblemRT = emblemGo.GetComponent<RectTransform>();
-        emblemRT.anchoredPosition = new Vector2(0f, 30f);
-        emblemRT.sizeDelta = new Vector2(100f, 80f);
-        emblemText = emblemGo.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(emblemText);
-        emblemText.text = "[ DUNGEON ]";
-        emblemText.fontSize = 28;
-        emblemText.alignment = TextAlignmentOptions.Center;
-
-        GameObject statusGo = new GameObject("StatusText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        statusGo.transform.SetParent(centerGo.transform, false);
-        RectTransform statusRT = statusGo.GetComponent<RectTransform>();
-        statusRT.anchoredPosition = new Vector2(0f, -32f);
-        statusRT.sizeDelta = new Vector2(600f, 32f);
-        statusText = statusGo.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(statusText);
-        statusText.text = "Đang chuẩn bị dữ liệu...";
-        statusText.fontSize = 17;
-        statusText.color = new Color(0.78f, 0.82f, 0.88f, 1f);
-        statusText.alignment = TextAlignmentOptions.Center;
-
-        // 5. Progress Bar Group (Width: 680, Height: 24)
-        GameObject barGroupGo = new GameObject("ProgressBarGroup", typeof(RectTransform));
-        barGroupGo.transform.SetParent(canvasGo.transform, false);
-        RectTransform barGroupRT = barGroupGo.GetComponent<RectTransform>();
-        barGroupRT.anchorMin = new Vector2(0.5f, 0.32f);
-        barGroupRT.anchorMax = new Vector2(0.5f, 0.32f);
-        barGroupRT.sizeDelta = new Vector2(680f, 26f);
-        barGroupRT.anchoredPosition = Vector2.zero;
-
-        // Bar Dark Frame Background
-        GameObject barBgGo = new GameObject("BarBackground", typeof(RectTransform), typeof(Image));
-        barBgGo.transform.SetParent(barGroupGo.transform, false);
-        RectTransform barBgRT = barBgGo.GetComponent<RectTransform>();
-        barBgRT.anchorMin = Vector2.zero;
-        barBgRT.anchorMax = Vector2.one;
-        barBgRT.sizeDelta = Vector2.zero;
-        Image barBg = barBgGo.GetComponent<Image>();
-        barBg.color = new Color(0.08f, 0.10f, 0.15f, 1f); // Dark Slate
-
-        // Bar Fill
-        GameObject barFillGo = new GameObject("BarFill", typeof(RectTransform), typeof(Image));
-        barFillGo.transform.SetParent(barGroupGo.transform, false);
-        RectTransform barFillRT = barFillGo.GetComponent<RectTransform>();
-        barFillRT.anchorMin = new Vector2(0f, 0f);
-        barFillRT.anchorMax = new Vector2(1f, 1f);
-        barFillRT.sizeDelta = new Vector2(-6f, -6f); // 3px inner margin
-        barFillRT.anchoredPosition = Vector2.zero;
-        progressFillImage = barFillGo.GetComponent<Image>();
-        progressFillImage.type = Image.Type.Filled;
-        progressFillImage.fillMethod = Image.FillMethod.Horizontal;
-        progressFillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
-        progressFillImage.fillAmount = 0f;
-        progressFillImage.color = new Color(0.96f, 0.62f, 0.12f, 1f);
-
-        // Bar Percentage Text
-        GameObject percentGo = new GameObject("PercentText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        percentGo.transform.SetParent(barGroupGo.transform, false);
-        RectTransform percentRT = percentGo.GetComponent<RectTransform>();
-        percentRT.anchoredPosition = new Vector2(0f, 28f);
-        percentRT.sizeDelta = new Vector2(200f, 24f);
-        percentText = percentGo.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(percentText);
-        percentText.text = "0%";
-        percentText.fontSize = 16;
-        percentText.fontStyle = FontStyles.Bold;
-        percentText.color = Color.white;
-        percentText.alignment = TextAlignmentOptions.Center;
-
-        // 6. Game Tips Box (Anchored near Bottom)
-        GameObject tipBoxGo = new GameObject("TipBox", typeof(RectTransform), typeof(Image));
-        tipBoxGo.transform.SetParent(canvasGo.transform, false);
-        RectTransform tipBoxRT = tipBoxGo.GetComponent<RectTransform>();
-        tipBoxRT.anchorMin = new Vector2(0.5f, 0.14f);
-        tipBoxRT.anchorMax = new Vector2(0.5f, 0.14f);
-        tipBoxRT.sizeDelta = new Vector2(860f, 84f);
-        tipBoxRT.anchoredPosition = Vector2.zero;
-        Image tipBg = tipBoxGo.GetComponent<Image>();
-        tipBg.color = new Color(0.08f, 0.10f, 0.15f, 0.85f);
-
-        // Tip Header
-        GameObject tipHeaderGo = new GameObject("TipHeader", typeof(RectTransform), typeof(TextMeshProUGUI));
-        tipHeaderGo.transform.SetParent(tipBoxGo.transform, false);
-        RectTransform tipHeaderRT = tipHeaderGo.GetComponent<RectTransform>();
-        tipHeaderRT.anchoredPosition = new Vector2(0f, 22f);
-        tipHeaderRT.sizeDelta = new Vector2(820f, 24f);
-        tipHeaderText = tipHeaderGo.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(tipHeaderText);
-        tipHeaderText.text = "[ MẸO HỮU ÍCH ]";
-        tipHeaderText.fontSize = 14;
-        tipHeaderText.fontStyle = FontStyles.Bold;
-        tipHeaderText.color = new Color(0.96f, 0.62f, 0.12f, 1f);
-        tipHeaderText.alignment = TextAlignmentOptions.Center;
-
-        // Tip Body
-        GameObject tipBodyGo = new GameObject("TipBody", typeof(RectTransform), typeof(TextMeshProUGUI));
-        tipBodyGo.transform.SetParent(tipBoxGo.transform, false);
-        RectTransform tipBodyRT = tipBodyGo.GetComponent<RectTransform>();
-        tipBodyRT.anchoredPosition = new Vector2(0f, -12f);
-        tipBodyRT.sizeDelta = new Vector2(800f, 44f);
-        tipBodyText = tipBodyGo.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(tipBodyText);
-        tipBodyText.text = "Thu thập quặng và đá ma thuật để nâng cấp các pho tượng vĩnh viễn tại căn cứ.";
-        tipBodyText.fontSize = 16;
-        tipBodyText.color = new Color(0.90f, 0.92f, 0.96f, 1f);
-        tipBodyText.alignment = TextAlignmentOptions.Center;
+        if (targetCanvas != null)
+        {
+            BindExistingUIElements();
+            return;
+        }
     }
 
     public bool IsActuallyVisible() => isTransitioning && canvasGroup != null && canvasGroup.alpha > 0.05f;
@@ -576,8 +386,8 @@ public class LoadingScreenUI : MonoBehaviour
 
         if (canvasGroup == null) canvasGroup = targetCanvas.GetComponent<CanvasGroup>();
         if (bgImage == null) bgImage = root.Find("Background")?.GetComponent<Image>();
-        if (titleText == null) titleText = root.Find("HeaderGroup/Title")?.GetComponent<TextMeshProUGUI>();
-        if (subtitleText == null) subtitleText = root.Find("HeaderGroup/Subtitle")?.GetComponent<TextMeshProUGUI>();
+        if (titleText == null) titleText = (root.Find("HeaderGroup/TitleText") ?? root.Find("HeaderGroup/Title"))?.GetComponent<TextMeshProUGUI>();
+        if (subtitleText == null) subtitleText = (root.Find("HeaderGroup/SubtitleText") ?? root.Find("HeaderGroup/Subtitle"))?.GetComponent<TextMeshProUGUI>();
         if (emblemText == null) emblemText = root.Find("CenterEmblemGroup/EmblemText")?.GetComponent<TextMeshProUGUI>();
         if (statusText == null) statusText = root.Find("CenterEmblemGroup/StatusText")?.GetComponent<TextMeshProUGUI>();
         if (progressFillImage == null) progressFillImage = root.Find("ProgressBarGroup/BarFill")?.GetComponent<Image>();
@@ -586,18 +396,6 @@ public class LoadingScreenUI : MonoBehaviour
         if (tipBodyText == null) tipBodyText = root.Find("TipBox/TipBody")?.GetComponent<TextMeshProUGUI>();
     }
 
-    private void CreateHorizontalLine(Transform parent, float anchorY, Vector2 anchoredPos, Color col, float height)
-    {
-        GameObject line = new GameObject("AccentLine", typeof(RectTransform), typeof(Image));
-        line.transform.SetParent(parent, false);
-        RectTransform rt = line.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0f, anchorY);
-        rt.anchorMax = new Vector2(1f, anchorY);
-        rt.sizeDelta = new Vector2(0f, height);
-        rt.anchoredPosition = anchoredPos;
-        Image img = line.GetComponent<Image>();
-        img.color = col;
-    }
     #endregion
 }
 

@@ -1,0 +1,72 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Connection attempt to the License Client on channel: "LicenseClient-dohuu" failed because channel doesn't exist; code: "0x80000002"
+[Licensing::Module] Successfully launched the LicensingClient (PId: 23396)
+[Licensing::IpcConnector] Successfully connected to the License Client on channel: "LicenseClient-dohuu" at "2026-11-13T08:58:25.3977714Z"
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.13.1+ca5f299
+  Session Id:              1a3dea9643f84ae2a3c459f1ddb67cba
+  Correlation Id:          c207d918b73143288c8eabbdeff33da6
+  External correlation Id: 4539526334314681696
+  Machine Id:              nN6AYD9S3T+IInaClQ8nLFzRlc4=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-dohuu" (connect: 1.80s, validation: 0.14s, handshake: 4.33s)
+[Licensing::IpcConnector] Successfully connected to the License Notification on channel: "LicenseClient-dohuu-notifications" at "2026-11-13T08:58:29.8645743Z"
+[Licensing::Module] Connected to LicensingClient (PId: 23396, launch time: 0.01, total connection time: 6.27s)
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Error: Code 500 while processing request (status: Unable to update licenses. Errors: No ULF license found.,Token not found in cache)
+[Licensing::Client] Error: Code 500 while updating license in client (status: Unable to update licenses. Errors: No ULF license found.,Token not found in cache)
+Built from '2022.3/staging' branch; Version is '2022.3.13f1 (5f90a5ebde0f) revision 6262949'; Using compiler version '192829333'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) 64bit CoreSingleLanguage' Language: 'en' Physical Memory: 16068 MB
+[Licensing::Client] Successfully resolved entitlements
+[Licensing::Module] Serial number assigned to: "18968071506291-UnityPersXXXX"
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1, IsPro: 0
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\2022.3.13f1\Editor\Unity.exe
+-batchmode
+-quit
+-projectPath
+.
+-logFile
+compile.log
+Successfully changed project path to: C:/Users/dohuu/Documents/Unity/2D/Farming
+C:/Users/dohuu/Documents/Unity/2D/Farming
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gfx=262144"
+Player connection [10592] Host "[IP] 192.168.1.8 [Port] 55496 [Flags] 2 [Guid] 4125197996 [EditorId] 4125197996 [Version] 1048832 [Id] WindowsEditor(7,GFL) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" joined multi-casting on [225.0.0.222:54997]...
+
+Player connection [10592] Host "[IP] 192.168.1.8 [Port] 55496 [Flags] 2 [Guid] 4125197996 [EditorId] 4125197996 [Version] 1048832 [Id] WindowsEditor(7,GFL) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" joined alternative multi-casting on [225.0.0.222:34997]...
+
+[Physics::Module] Initialized MultithreadedJobDispatcher with 11 workers.
+[Package Manager] UpmClient::Connect -- Connected to IPC stream "Upm-21176" after 1.4 seconds.
+Source asset database is recreated because source asset version has changed
+ArtifactDBVersion changed from '0x01f5f63b' to '0x5ce21767'
+[Licensing::Client] Successfully resolved entitlements

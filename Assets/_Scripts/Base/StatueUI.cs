@@ -82,6 +82,10 @@ public class StatueUI : MonoBehaviour
         }
         _instance = this;
         AutoBindReferences();
+
+        isExplicitlyOpened = false;
+        if (statuePanel != null) statuePanel.SetActive(false);
+        if (blessingModalPanel != null) blessingModalPanel.SetActive(false);
     }
 
     private void AutoBindReferences()
@@ -533,142 +537,9 @@ public class StatueUI : MonoBehaviour
 
     public void EnsureProceduralBlessingModal()
     {
-        if (blessingModalPanel != null) return;
-
-        Canvas parentCanvas = GetCanvas();
-        if (parentCanvas == null) return;
-
-        // 1. Root Modal Overlay
-        blessingModalPanel = new GameObject("BlessingModal", typeof(RectTransform), typeof(Image));
-        blessingModalPanel.transform.SetParent(parentCanvas.transform, false);
-        blessingModalPanel.transform.SetAsLastSibling();
-
-        RectTransform modalRT = blessingModalPanel.GetComponent<RectTransform>();
-        modalRT.anchorMin = Vector2.zero;
-        modalRT.anchorMax = Vector2.one;
-        modalRT.sizeDelta = Vector2.zero;
-
-        Image modalOverlay = blessingModalPanel.GetComponent<Image>();
-        modalOverlay.color = new Color(0.02f, 0.03f, 0.05f, 0.85f);
-
-        // 2. DialogBox Window
-        GameObject boxGO = new GameObject("DialogBox", typeof(RectTransform), typeof(Image));
-        boxGO.transform.SetParent(blessingModalPanel.transform, false);
-        RectTransform boxRT = boxGO.GetComponent<RectTransform>();
-        boxRT.anchorMin = new Vector2(0.5f, 0.5f);
-        boxRT.anchorMax = new Vector2(0.5f, 0.5f);
-        boxRT.pivot = new Vector2(0.5f, 0.5f);
-        boxRT.sizeDelta = new Vector2(1180f, 860f);
-
-        Image boxBg = boxGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(boxBg, new Color(0.09f, 0.11f, 0.15f, 0.98f));
-
-        Outline boxOutline = boxGO.AddComponent<Outline>();
-        boxOutline.effectColor = new Color(0.85f, 0.72f, 0.35f, 0.95f);
-        boxOutline.effectDistance = new Vector2(2, -2);
-
-        // Header Title
-        GameObject titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
-        titleGO.transform.SetParent(boxGO.transform, false);
-        RectTransform titleRT = titleGO.GetComponent<RectTransform>();
-        titleRT.anchorMin = new Vector2(0, 1);
-        titleRT.anchorMax = new Vector2(1, 1);
-        titleRT.pivot = new Vector2(0.5f, 1);
-        titleRT.anchoredPosition = new Vector2(0, -18);
-        titleRT.sizeDelta = new Vector2(-60, 32);
-
-        TextMeshProUGUI titleTMP = titleGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(titleTMP);
-        titleTMP.fontSize = 22;
-        titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.text = "DIVINE BLESSINGS (CHOOSE BUILD PATH)";
-        titleTMP.color = new Color(1f, 0.88f, 0.45f);
-
-        // Subtitle
-        GameObject subGO = new GameObject("Subtitle", typeof(RectTransform), typeof(TextMeshProUGUI));
-        subGO.transform.SetParent(boxGO.transform, false);
-        RectTransform subRT = subGO.GetComponent<RectTransform>();
-        subRT.anchorMin = new Vector2(0, 1);
-        subRT.anchorMax = new Vector2(1, 1);
-        subRT.pivot = new Vector2(0.5f, 1);
-        subRT.anchoredPosition = new Vector2(0, -48);
-        subRT.sizeDelta = new Vector2(-60, 24);
-
-        TextMeshProUGUI subTMP = subGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(subTMP);
-        subTMP.fontSize = 11;
-        subTMP.alignment = TextAlignmentOptions.Center;
-        subTMP.text = "RÃª chuá»™t Ä‘á»ƒ phÃ³ng to & xem chi tiáº¿t â€¢ Click vÃ o tháº» bÃ i Ä‘á»ƒ kÃ­ch hoáº¡t hoáº·c chuyá»ƒn Ä‘á»•i PhÆ°á»›c LÃ nh";
-        subTMP.color = new Color(0.72f, 0.78f, 0.88f);
-
-        // Close Button
-        GameObject closeBtnGO = new GameObject("BtnCloseModal", typeof(RectTransform), typeof(Image), typeof(Button));
-        closeBtnGO.transform.SetParent(boxGO.transform, false);
-        RectTransform closeBtnRT = closeBtnGO.GetComponent<RectTransform>();
-        closeBtnRT.anchorMin = new Vector2(1, 1);
-        closeBtnRT.anchorMax = new Vector2(1, 1);
-        closeBtnRT.pivot = new Vector2(1, 1);
-        closeBtnRT.anchoredPosition = new Vector2(-18, -16);
-        closeBtnRT.sizeDelta = new Vector2(36, 36);
-
-        Image closeBtnBg = closeBtnGO.GetComponent<Image>();
-        modalCloseButton = closeBtnGO.GetComponent<Button>();
-        DungeonUIAssetHelper.StyleTactileButton(modalCloseButton, closeBtnBg, DungeonUIAssetHelper.ButtonStyle.WoodRustic);
-        closeBtnBg.color = new Color(0.65f, 0.20f, 0.20f, 0.95f);
-        modalCloseButton.onClick.AddListener(CloseBlessingSelectionModal);
-
-        GameObject closeTxtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
-        closeTxtGO.transform.SetParent(closeBtnGO.transform, false);
-        TextMeshProUGUI closeTMP = closeTxtGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(closeTMP);
-        closeTMP.fontSize = 18;
-        closeTMP.fontStyle = FontStyles.Bold;
-        closeTMP.alignment = TextAlignmentOptions.Center;
-        closeTMP.text = "X";
-        closeTMP.color = Color.white;
-        closeTxtGO.GetComponent<RectTransform>().sizeDelta = new Vector2(36, 36);
-
-        // 3. CardsContainer Grid
-        GameObject containerGO = new GameObject("CardsContainer", typeof(RectTransform), typeof(GridLayoutGroup));
-        containerGO.transform.SetParent(boxGO.transform, false);
-        RectTransform cRT = containerGO.GetComponent<RectTransform>();
-        cRT.anchorMin = new Vector2(0, 0);
-        cRT.anchorMax = new Vector2(1, 1);
-        cRT.pivot = new Vector2(0.5f, 0.5f);
-        cRT.anchoredPosition = new Vector2(0, -32f);
-        cRT.sizeDelta = new Vector2(-48f, -96f);
-
-        GridLayoutGroup glg = containerGO.GetComponent<GridLayoutGroup>();
-        glg.cellSize = new Vector2(246f, 366f);
-        glg.spacing = new Vector2(16f, 14f);
-        glg.padding = new RectOffset(16, 16, 8, 8);
-        glg.childAlignment = TextAnchor.MiddleCenter;
-        glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        glg.constraintCount = 4;
-
-        // 4. Instantiate 8 Cards with BlessingCardUI
-        blessingCards.Clear();
-        BlessingType[] types = new BlessingType[]
+        if (blessingModalPanel == null)
         {
-            BlessingType.KeepLootOnDefeat,
-            BlessingType.RawVitality,
-            BlessingType.SwiftMomentum,
-            BlessingType.BastionStrike,
-            BlessingType.BitterDecay,
-            BlessingType.StarvingFury,
-            BlessingType.GluttonousAegis,
-            BlessingType.EndlessFeast
-        };
-
-        for (int i = 0; i < types.Length; i++)
-        {
-            GameObject cardGO = new GameObject($"Card_{types[i]}", typeof(RectTransform), typeof(Image), typeof(BlessingCardUI));
-            cardGO.transform.SetParent(containerGO.transform, false);
-            BlessingCardUI cardUI = cardGO.GetComponent<BlessingCardUI>();
-            cardUI.blessingType = types[i];
-            cardUI.EnsureFigmaCardStructure();
-            blessingCards.Add(cardUI);
+            AutoBindReferences();
         }
     }
 

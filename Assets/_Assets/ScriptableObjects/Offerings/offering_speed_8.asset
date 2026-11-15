@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: offering_speed_8
   m_EditorClassIdentifier: Assembly-CSharp::Offering
   offeringKey: offering_speed_8
-  offeringName: "Lễ Vật Nhanh Nhẹn - Bậc 8"
-  categoryName: "Nhanh Nhẹn"
+  offeringName: "L\u1EC5 V\u1EADt Nhanh Nh\u1EB9n - B\u1EADc 8"
+  categoryName: "Nhanh Nh\u1EB9n"
   tier: 8
-  prerequisiteOfferingKey: 'offering_speed_7'
+  prerequisiteOfferingKey: offering_speed_7
   requiredItems:
   - item: {fileID: 11400000, guid: aaf3001eed98e2443b500d28635dfb36, type: 2}
     amount: 18
