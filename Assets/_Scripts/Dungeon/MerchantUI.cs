@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -158,7 +158,7 @@ public class MerchantUI : MonoBehaviour
                 occupied++;
             }
         }
-        backpackHeaderTitle.text = $"PLAYER BACKPACK <size=11><color=#A0D8EF>({occupied}/{backpackContainer.maxSlots} SLOTS)</color></size>";
+        backpackHeaderTitle.text = $"BA LÔ CỦA BẠN <size=11><color=#A0D8EF>({occupied}/{backpackContainer.maxSlots} Ô)</color></size>";
     }
 
     public void Open(MerchantEvent merchant, ItemContainer backpack, System.Action onContinue)
@@ -202,20 +202,20 @@ public class MerchantUI : MonoBehaviour
         {
             if (subtitleText != null)
             {
-                subtitleText.text = $"Floor {floorNum} Traveling Merchant | Visit time remaining: {daysLeft} day(s)";
+                subtitleText.text = $"Thương Nhân Du Mục Tầng {floorNum} | Thời gian ghé thăm còn: {daysLeft} ngày";
                 subtitleText.color = new Color(0.78f, 0.82f, 0.92f);
             }
-            SetFeedback("Welcome, brave traveler! Browse my rare recipes, barter seeds, or stock up on hot travel rations.");
+            SetFeedback("Chào mừng nhà thám hiểm dũng cảm! Hãy xem qua các công thức hiếm, đổi hạt giống hoặc mua lương khô nóng hổi mang theo.");
         }
         else
         {
             if (subtitleText != null)
             {
                 subtitleText.text = cdLeft > 0
-                    ? $"<color=#FF7777>Floor {floorNum} Merchant has departed! Returns in {cdLeft} day(s).</color>"
-                    : $"<color=#FF7777>Floor {floorNum} Merchant stall is temporarily closed.</color>";
+                    ? $"<color=#FF7777>Thương nhân Tầng {floorNum} đã rời đi! Sẽ quay lại sau {cdLeft} ngày.</color>"
+                    : $"<color=#FF7777>Quầy hàng của Thương nhân Tầng {floorNum} tạm thời đóng cửa.</color>";
             }
-            SetFeedback("The merchant packed up and departed to a new land. You can rest for a moment then continue your journey.");
+            SetFeedback("Đoàn thương buôn đã dọn hàng chuyển sang vùng đất mới. Bạn có thể nghỉ chân chốc lát rồi tiếp tục hành trình.");
         }
     }
 
@@ -276,7 +276,7 @@ public class MerchantUI : MonoBehaviour
         bool isMerchantActive = currentMerchant == null || (currentMerchant.merchantActive && currentMerchant.remainingDays > 0 && currentMerchant.merchantCooldown <= 0);
         if (!isMerchantActive)
         {
-            CreateSectionHeader("REST STOP - MERCHANT DEPARTED", new Color(0.6f, 0.8f, 1f), ref currentY);
+            CreateSectionHeader("TRẠM DỪNG CHÂN - THƯƠNG NHÂN ĐÃ RỜI ĐI", new Color(0.6f, 0.8f, 1f), ref currentY);
             CreateDepartedRestCard(ref currentY);
         }
         else
@@ -289,7 +289,7 @@ public class MerchantUI : MonoBehaviour
             // 1. Seed Barter Section
             if (currentMerchant.seedTrades != null && currentMerchant.seedTrades.Length > 0)
             {
-                CreateSectionHeader("SEED BARTER EXCHANGE", new Color(0.45f, 0.9f, 0.55f), ref currentY);
+                CreateSectionHeader("GIAO THƯƠNG HẠT GIỐNG", new Color(0.45f, 0.9f, 0.55f), ref currentY);
                 for (int i = 0; i < currentMerchant.seedTrades.Length; i++)
                 {
                     SeedTrade trade = currentMerchant.seedTrades[i];
@@ -303,7 +303,7 @@ public class MerchantUI : MonoBehaviour
             // 2. Survival Rations Section
             if (currentMerchant.rationTrades != null && currentMerchant.rationTrades.Length > 0)
             {
-                CreateSectionHeader("TRAVEL RATIONS & SUPPLIES", new Color(0.45f, 0.8f, 1f), ref currentY);
+                CreateSectionHeader("LƯƠNG KHÔ & VẬT PHẨM HÀNH TRÌNH", new Color(0.45f, 0.8f, 1f), ref currentY);
                 for (int i = 0; i < currentMerchant.rationTrades.Length; i++)
                 {
                     RationTrade trade = currentMerchant.rationTrades[i];
@@ -370,7 +370,7 @@ public class MerchantUI : MonoBehaviour
         textTMP.fontSize = 11.5f;
         textTMP.lineSpacing = 3;
         textTMP.color = new Color(0.85f, 0.9f, 0.95f);
-        textTMP.text = "The merchant caravan packed up and departed after their dungeon stay ended.\nThey left some warm coals and pure spring water for passing travelers.";
+        textTMP.text = "Đoàn thương buôn đã dọn dẹp hàng quán và rời đi sau kỳ hạn lưu trú tại hầm ngục.\nHọ đã để lại một ít than hồng ấm áp và nước suối tinh khiết cho khách bộ hành đi ngang qua.";
 
         // Rest / Continue Button
         GameObject btnGO = new GameObject("BtnRest", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -399,7 +399,7 @@ public class MerchantUI : MonoBehaviour
         btnTMP.fontSize = 12.5f;
         btnTMP.fontStyle = FontStyles.Bold;
         btnTMP.alignment = TextAlignmentOptions.Center;
-        btnTMP.text = "[Rest & Recover 20 HP -> Continue]";
+        btnTMP.text = "[Nghỉ ngơi hồi phục 20 HP -> Tiếp tục]";
         btnTMP.color = Color.white;
         btnTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(458, 36);
     }
@@ -579,9 +579,9 @@ public class MerchantUI : MonoBehaviour
         hlg.childForceExpandWidth = false;
         hlg.childForceExpandHeight = true;
 
-        CreateHeaderLabel(barGO, "NHẬN ĐƯỢC (REWARD)", 195, new Color(1f, 0.85f, 0.35f), TextAlignmentOptions.Left);
+        CreateHeaderLabel(barGO, "VẬT PHẨM NHẬN", 195, new Color(1f, 0.85f, 0.35f), TextAlignmentOptions.Left);
         CreateHeaderLabel(barGO, "⇄", 20, new Color(0.6f, 0.7f, 0.85f), TextAlignmentOptions.Center);
-        CreateHeaderLabel(barGO, "DÙNG ĐỔI (COST)", 190, new Color(0.5f, 0.85f, 1f), TextAlignmentOptions.Left);
+        CreateHeaderLabel(barGO, "VẬT PHẨM ĐỔI", 190, new Color(0.5f, 0.85f, 1f), TextAlignmentOptions.Left);
         CreateHeaderLabel(barGO, "THAO TÁC", 75, new Color(0.8f, 0.85f, 0.9f), TextAlignmentOptions.Center);
     }
 

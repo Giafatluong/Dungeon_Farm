@@ -672,15 +672,15 @@ public class TutorialManager : MonoBehaviour
                     stepIndex = 5,
                     totalSteps = 8,
                     objectiveTitle = "Nấu Ăn: Tìm Hiểu Độ No & Tốc Độ",
-                    targetLabel = "Bếp Lửa Trại (Kitchen)",
+                    targetLabel = "Bếp Lửa Trại",
                     actionKeyPrompt = "[E] MỞ BẾP -> [Nấu Ăn]",
                     actionInstruction = "Đến Bếp Lửa trại, nhấn <color=#FFEA30><b>[E]</b></color>, chọn Súp Cà Rốt (tốn 4 Cà Rốt) và bấm <color=#FFA726><b>[Nấu Ăn]</b></color>.",
                     fullDialogue = "Nấu ăn là chìa khóa sinh tồn để chi phối Tốc Độ và Độ No:\n" +
                                    "- Nhấn <color=#FFEA30><b>[E]</b></color> mở Bếp, chọn <color=#FFA726><b>[Súp Cà Rốt]</b></color> (tốn 4 Cà Rốt) và bấm [Nấu Ăn].\n" +
-                                   "- <color=#50FA7B><b>Tốc Độ (SPD):</b></color> Ai có SPD cao hơn sẽ RA ĐÒN TRƯỚC! Ăn Súp (+2 SPD) giúp bạn đạt 11 SPD > 10 SPD của quái để giành quyền đi trước.\n" +
-                                   "- <color=#FFD700><b>Độ No (Fullness):</b></color> Có 3 mốc (hiển thị bằng icon tròn dưới thanh máu):\n" +
-                                   "  + <color=#50FA7B><b>No Nê (30-79%):</b></color> +2 ATK, +1 DEF, +2 SPD!  |  <color=#FF6B6B><b>Đói (<30%):</b></color> -2 ATK, -3 SPD.\n" +
-                                   "  + <color=#FFA500><b>Bội Thực (>=80%):</b></color> Hồi máu nhưng bị giảm -4 SPD.\n" +
+                                   "- <color=#50FA7B><b>Tốc Độ:</b></color> Ai có tốc độ cao hơn sẽ RA ĐÒN TRƯỚC! Ăn Súp (+2 Tốc độ) giúp bạn đạt 11 Tốc độ > 10 Tốc độ của quái để giành quyền đi trước.\n" +
+                                   "- <color=#FFD700><b>Độ No:</b></color> Có 3 mốc (hiển thị bằng icon tròn dưới thanh máu):\n" +
+                                   "  + <color=#50FA7B><b>No Nê (30-79%):</b></color> +2 Sức đánh, +1 Thủ, +2 Tốc độ!  |  <color=#FF6B6B><b>Đói (<30%):</b></color> -2 Sức đánh, -3 Tốc độ.\n" +
+                                   "  + <color=#FFA500><b>Bội Thực (>=80%):</b></color> Hồi máu nhưng bị giảm -4 Tốc độ.\n" +
                                    "Rê chuột vào icon dưới thanh máu để xem chi tiết. Nhớ chuẩn bị thức ăn trước khi xuống hầm ngục nhé!",
                     targetPosition = kPos,
                     targetTransform = kitchen != null ? kitchen.transform : null
@@ -733,13 +733,13 @@ public class TutorialManager : MonoBehaviour
                     stepIndex = 7,
                     totalSteps = 8,
                     objectiveTitle = "Tượng Nữ Thần: Dâng Lễ Tăng Chỉ Số",
-                    targetLabel = "Tượng Nữ Thần (Ancient Shrine)",
+                    targetLabel = "Tượng Nữ Thần",
                     actionKeyPrompt = "[E] DÂNG LỄ (4 Cà Rốt)",
-                    actionInstruction = "Đến Tượng Thần ở phía Đông, nhấn <color=#FFEA30><b>[E]</b></color> dùng 4 Cà Rốt đã giữ lại để dâng lễ nhận <color=#FF6B6B><b>+1 ATK</b></color> vĩnh viễn.",
+                    actionInstruction = "Đến Tượng Thần ở phía Đông, nhấn <color=#FFEA30><b>[E]</b></color> dùng 4 Cà Rốt đã giữ lại để dâng lễ nhận <color=#FF6B6B><b>+1 Sức Đánh</b></color> vĩnh viễn.",
                     fullDialogue = "Đây là Tượng Nữ Thần Cổ Đại — nơi bạn dùng nông sản để đổi lấy sức mạnh vĩnh viễn:\n" +
                                    "- Đến trước Tượng Thần ở phía Đông, nhấn phím <color=#FFEA30><b>[E]</b></color> mở giao diện Dâng Lễ.\n" +
-                                   "- Chọn Trụ Chiến Binh, bấm nút <color=#FFA726><b>[Quick Offer]</b></color> để hiến tế 4 củ Cà Rốt đã giữ lại trong ba lô.\n" +
-                                   "- Nhận ngay <color=#FF6B6B><b>+1 Sức Đánh (ATK) Vĩnh Viễn!</b></color>\n" +
+                                   "- Chọn Trụ Chiến Binh, bấm nút <color=#FFA726><b>[Dâng Lễ Nhanh]</b></color> để hiến tế 4 củ Cà Rốt đã giữ lại trong ba lô.\n" +
+                                   "- Nhận ngay <color=#FF6B6B><b>+1 Sức Đánh Vĩnh Viễn!</b></color>\n" +
                                    "Tượng Thần sẽ mở thêm nhiều Phước Lành khi bạn dâng lễ nông sản cấp cao sau này (hệ thống tự động nhận diện cả vật phẩm trong Rương Nhà).",
                     targetPosition = sPos,
                     targetTransform = statue != null ? statue.transform : null
@@ -755,11 +755,11 @@ public class TutorialManager : MonoBehaviour
                     stepIndex = 8,
                     totalSteps = 8,
                     objectiveTitle = "Cổng Hầm Ngục: Tiến Vào Ải Hướng Dẫn",
-                    targetLabel = "Cổng Hầm Ngục (Dungeon Gate)",
+                    targetLabel = "Cổng Hầm Ngục",
                     actionKeyPrompt = "[E] VÀO HẦM NGỤC",
                     actionInstruction = "Đến Cổng Hầm Ngục ngay cạnh Tượng Thần, nhấn <color=#FFEA30><b>[E]</b></color> để tiến thẳng vào Hầm Ngục Hướng Dẫn (Tầng 0).",
                     fullDialogue = "Bạn đã nắm vững toàn bộ chu trình sinh tồn ở Căn cứ!\n" +
-                                   "- Bụng no, bát Súp Tốc Độ sẵn sàng trong túi, +1 ATK vĩnh viễn đã kích hoạt và hạt giống đã cất an toàn!\n" +
+                                   "- Bụng no, bát Súp Tốc Độ sẵn sàng trong túi, +1 Sức Đánh vĩnh viễn đã kích hoạt và hạt giống đã cất an toàn!\n" +
                                    "- Bước lại Cổng Hầm Ngục ngay cạnh Tượng Thần, nhấn phím <color=#FFEA30><b>[E]</b></color> để tiến thẳng vào Hầm Ngục Hướng Dẫn (Tầng 0)!",
                     targetPosition = dPos,
                     targetTransform = entrance != null ? entrance.transform : null

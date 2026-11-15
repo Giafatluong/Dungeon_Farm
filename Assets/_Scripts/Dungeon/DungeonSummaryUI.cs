@@ -266,37 +266,37 @@ public class DungeonSummaryUI : MonoBehaviour
         // 3. Stats Column
         if (statFloorText != null)
         {
-            statFloorText.text = $"<b>[Exploration Floor]</b> <color=#FFE066>Floor {floorNum}</color>";
+            statFloorText.text = $"<b>[Tầng Khám Phá]</b> <color=#FFE066>Tầng {floorNum}</color>";
         }
 
         if (statStagesText != null)
         {
-            statStagesText.text = $"<b>[Stages Cleared]</b> <color=#A0E8AF>{stagesCleared}/{totalStages} Stages</color>";
+            statStagesText.text = $"<b>[Chặng Đã Vượt]</b> <color=#A0E8AF>{stagesCleared}/{totalStages} Chặng</color>";
         }
 
         if (statBossText != null)
         {
             if (bossDefeated)
             {
-                statBossText.text = "<b>[Boss Leader]</b> <color=#FFD700>DEFEATED</color>";
+                statBossText.text = "<b>[Thủ Lĩnh]</b> <color=#FFD700>ĐÃ ĐÁNH BẠI</color>";
             }
             else if (result == ExpeditionResult.Retreat)
             {
-                statBossText.text = "<b>[Boss Leader]</b> <color=#88CCFF>Safe Retreat</color>";
+                statBossText.text = "<b>[Thủ Lĩnh]</b> <color=#88CCFF>Rút Lui An Toàn</color>";
             }
             else
             {
-                statBossText.text = "<b>[Boss Leader]</b> <color=#FF7777>Undefeated</color>";
+                statBossText.text = "<b>[Thủ Lĩnh]</b> <color=#FF7777>Chưa Đánh Bại</color>";
             }
         }
 
         if (statHealthText != null && ps != null)
         {
-            statHealthText.text = $"<b>[Vitality]</b> {ps.currentHealth}/{ps.maxHealth} HP   |   <b>[Fullness]</b> {ps.currentHunger}/{ps.maxHunger}";
+            statHealthText.text = $"<b>[Sinh Lực]</b> {ps.currentHealth}/{ps.maxHealth} HP   |   <b>[Độ No]</b> {ps.currentHunger}/{ps.maxHunger}";
         }
         else if (statHealthText != null)
         {
-            statHealthText.text = "<b>[Vitality]</b> Healthy";
+            statHealthText.text = "<b>[Sinh Lực]</b> Khỏe mạnh";
         }
 
         if (statBlessingText != null)
@@ -305,11 +305,11 @@ public class DungeonSummaryUI : MonoBehaviour
             {
                 BlessingInfo info = BlessingDatabase.GetBlessingInfo(pm.activeBlessing);
                 string bName = info != null ? info.title : pm.activeBlessing.ToString();
-                statBlessingText.text = $"<b>[Blessing]</b> <color=#88FFDD>{bName}</color>";
+                statBlessingText.text = $"<b>[Phước Lành]</b> <color=#88FFDD>{bName}</color>";
             }
             else
             {
-                statBlessingText.text = "<b>[Blessing]</b> <color=#AAAAAA>None active</color>";
+                statBlessingText.text = "<b>[Phước Lành]</b> <color=#AAAAAA>Không kích hoạt</color>";
             }
         }
 
@@ -330,11 +330,11 @@ public class DungeonSummaryUI : MonoBehaviour
 
             if (result == ExpeditionResult.Victory)
             {
-                specialNoticeText.text = "<color=#66FF88>[EXCELLENT EXPEDITION!]</color>\nAll loot, golden treasures, and harvested crops have been safely brought back to your farm.";
+                specialNoticeText.text = "<color=#66FF88>[CHUYẾN ĐI XUẤT SẮC!]</color>\nToàn bộ chiến lợi phẩm, kho báu hoàng kim và nông sản thu hoạch đã được mang về an toàn cho nông trại của bạn.";
             }
             else if (result == ExpeditionResult.Retreat)
             {
-                specialNoticeText.text = "<color=#66E0FF>[TACTICAL SAFE RETREAT!]</color>\nYou rested at the Camp and returned home safely. 100% of items in your inventory are preserved.";
+                specialNoticeText.text = "<color=#66E0FF>[RÚT LUI CHIẾN THUẬT AN TOÀN!]</color>\nBạn đã nghỉ tại Trại và trở về nhà an toàn. Toàn bộ 100% vật phẩm trong ba lô được bảo toàn nguyên vẹn.";
             }
             else // Defeat
             {

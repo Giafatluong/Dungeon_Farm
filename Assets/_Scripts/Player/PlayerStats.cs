@@ -611,7 +611,7 @@ public class PlayerStats : MonoBehaviour
         else if (GetCurrentFullnessTier() == FullnessTier.Overstuffed && currentHealth < maxHealth)
         {
             Heal(2);
-            DamagePopupManager.ShowText(transform.position + Vector3.up * 1.2f, "+2 HP (Digestion)", new Color(0.35f, 1f, 0.45f), 4.2f);
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 1.2f, "+2 Máu", new Color(0.35f, 1f, 0.45f), 4.2f);
         }
 
         ReduceTurnBuffDuration(); // Decrement turn-based buffs when player advances through stages

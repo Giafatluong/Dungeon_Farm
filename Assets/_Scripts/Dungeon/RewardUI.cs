@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
@@ -129,15 +129,15 @@ public class RewardUI : MonoBehaviour
 
         if (titleText != null)
         {
-            titleText.text = !string.IsNullOrEmpty(customTitle) ? customTitle : "TREASURE VAULT - STAGE REWARD";
+            titleText.text = !string.IsNullOrEmpty(customTitle) ? customTitle : "PHÒNG KHO BÁU - PHẦN THƯỞNG CHẶNG";
         }
         if (subtitleText != null)
         {
-            subtitleText.text = !string.IsNullOrEmpty(customSubtitle) ? customSubtitle : "An ancient treasure cache has unlocked! Claim seeds, rare crops, and provisions.";
+            subtitleText.text = !string.IsNullOrEmpty(customSubtitle) ? customSubtitle : "Rương kho báu cổ xưa đã được mở khóa! Hãy nhận hạt giống, nông sản quý và quân lương.";
         }
         if (leftHeaderTitle != null)
         {
-            leftHeaderTitle.text = !string.IsNullOrEmpty(customTitle) ? customTitle.ToUpper() : "CHEST CACHE CONTENTS";
+            leftHeaderTitle.text = !string.IsNullOrEmpty(customTitle) ? customTitle.ToUpper() : "VẬT PHẨM TRONG RƯƠNG";
         }
 
         currentChest = chest;
@@ -175,7 +175,7 @@ public class RewardUI : MonoBehaviour
 
         RefreshAll();
 
-        SetHint("Click <b>[Take]</b> to pick up an item or <b>[CLAIM ALL]</b> to store all into backpack.");
+        SetHint("Nhấp <b>[Nhận]</b> để lấy từng món hoặc <b>[NHẬN TẤT CẢ]</b> để cất hết vào ba lô.");
         Debug.Log("[RewardUI] Reward/Loot room opened successfully.");
     }
 
@@ -223,7 +223,7 @@ public class RewardUI : MonoBehaviour
                 occupied++;
             }
         }
-        backpackHeaderTitle.text = $"YOUR BACKPACK <size=11><color=#A0D8EF>({occupied}/{maxSlots} SLOTS)</color></size>";
+        backpackHeaderTitle.text = $"BA LÔ CỦA BẠN <size=11><color=#A0D8EF>({occupied}/{maxSlots} Ô)</color></size>";
     }
 
     private void RefreshChestItems()
@@ -671,13 +671,13 @@ public class RewardUI : MonoBehaviour
         string nameLower = item.name.ToLower();
         if (nameLower.Contains("seed") || item.itemName.ToLower().Contains("seed"))
         {
-            return "<color=#88FF88>[SEED]</color>";
+            return "<color=#88FF88>[HẠT GIỐNG]</color>";
         }
         if (item is FoodData)
         {
-            return "<color=#FFAA44>[FOOD]</color>";
+            return "<color=#FFAA44>[MÓN ĂN]</color>";
         }
-        return "<color=#88CCFF>[CROP]</color>";
+        return "<color=#88CCFF>[NÔNG SẢN]</color>";
     }
 
     private string GetItemDescription(ItemData item)
@@ -729,7 +729,7 @@ public class RewardUI : MonoBehaviour
         bool success = currentChest.ClaimSingleItem(foundIndex, backpackContainer, out string message);
         if (success)
         {
-            SetHint($"<color=#88FF88>Claimed:</color> {message}");
+            SetHint($"<color=#88FF88>Đã nhận:</color> {message}");
         }
         else
         {
@@ -745,17 +745,17 @@ public class RewardUI : MonoBehaviour
         int claimed = currentChest.ClaimAllLoot(backpackContainer, out bool isFull);
         if (claimed > 0)
         {
-            string msg = $"<color=#88FF88>Collected {claimed} item stacks into backpack!</color>";
+            string msg = $"<color=#88FF88>Đã thu thập {claimed} xấp vật phẩm vào ba lô!</color>";
             if (isFull)
             {
-                msg += " <color=#FFCC00>(Backpack is now full!)</color>";
+                msg += " <color=#FFCC00>(Ba lô hiện đã đầy!)</color>";
             }
             SetHint(msg);
             RefreshAll();
         }
         else if (isFull)
         {
-            SetHint("<color=#FF7777>Backpack is full! Free up inventory slots first.</color>");
+            SetHint("<color=#FF7777>Ba lô đã đầy! Hãy dọn bớt ô trống trước.</color>");
         }
     }
 

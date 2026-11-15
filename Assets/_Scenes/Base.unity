@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!29 &1
 OcclusionCullingSettings:
@@ -7581,7 +7581,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "<b>H\u01AF\u1EDANG D\u1EAAN N\xD4NG D\xC2N (HOW TO PLAY)</b>\n<size=11.5><color=#D4C2B0>S\u1ED5
+  m_text: "<b>H\u01AF\u1EDANG D\u1EAAN N\xD4NG D\xC2N</b>\n<size=11.5><color=#D4C2B0>S\u1ED5
     tay l\xE0m n\xF4ng, n\u1EA5u \u0103n & chi\u1EBFn \u0111\u1EA5u h\u1EA7m ng\u1EE5c</color></size>"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -12683,7 +12683,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "<b>B\u1EAET \u0110\u1EA6U V\u1EE4 M\xD9A M\u1EDAI (NEW GAME)</b>\n<size=11.5><color=#FFE5C4>B\u1EAFt
+  m_text: "<b>B\u1EAET \u0110\u1EA6U V\u1EE4 M\xD9A M\u1EDAI</b>\n<size=11.5><color=#FFE5C4>B\u1EAFt
     \u0111\u1EA7u t\u1EEB Ng\xE0y 1 v\xE0 kh\xE1m ph\xE1 t\u1EEB \u0111\u1EA7u</color></size>"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -15592,7 +15592,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "B\u1EAET \u0110\u1EA6U V\u1EE4 M\xD9A M\u1EDAI (NEW GAME)?"
+  m_text: "B\u1EAET \u0110\u1EA6U V\u1EE4 M\xD9A M\u1EDAI?"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -31018,7 +31018,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "S\u1ED4 TAY C\xD4NG TH\u1EE8C (RECIPES)"
+  m_text: "S\u1ED4 TAY C\xD4NG TH\u1EE8C"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -32696,7 +32696,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "B\u1EBEP L\u1EECA & N\u1ED2I H\u1EA6M (COOKING POT)"
+  m_text: "B\u1EBEP L\u1EECA & N\u1ED2I H\u1EA6M"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -34850,7 +34850,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "H\u1ED3i 60 M\xE1u (HP) | +45 \u0110\u1ED9 No"
+  m_text: "H\u1ED3i 60 M\xE1u | +45 \u0110\u1ED9 No"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -35110,7 +35110,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "B\u1EAET \u0110\u1EA6U N\u1EA4U M\xD3N (COOK)"
+  m_text: "B\u1EAET \u0110\u1EA6U N\u1EA4U M\xD3N"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -35468,7 +35468,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "NGUY\xCAN LI\u1EC6U TRONG BALO (BACKPACK)"
+  m_text: "NGUY\xCAN LI\u1EC6U TRONG BALO"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -36986,7 +36986,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: ANCIENT SHRINE (DIVINE BLESSING STATUE)
+  m_text: TƯỢNG THẦN CỔ XƯA
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -38635,7 +38635,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: PLAYER INVENTORY (BACKPACK)
+  m_text: PLAYER INVENTORY
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -43041,7 +43041,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "<b>TI\u1EBEP T\u1EE4C N\xD4NG TR\u1EA0I (CONTINUE)</b>\n<size=11.5><color=#D9F0D8>Tr\u1EDF
+  m_text: "<b>TI\u1EBEP T\u1EE4C N\xD4NG TR\u1EA0I</b>\n<size=11.5><color=#D9F0D8>Tr\u1EDF
     l\u1EA1i ng\xE0y l\xE0m n\xF4ng v\xE0 chuy\u1EBFn phi\xEAu l\u01B0u \u0111ang
     l\u01B0u</color></size>"
   m_isRightToLeft: 0
@@ -48335,7 +48335,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "<b>THO\xC1T RA NGO\xC0I (QUIT GAME)</b>\n<size=11.5><color=#F0C4C4>L\u01B0u
+  m_text: "<b>THO\xC1T RA NGO\xC0I</b>\n<size=11.5><color=#F0C4C4>L\u01B0u
     ti\u1EBFn tr\xECnh an to\xE0n v\xE0 \u0111\xF3ng tr\xF2 ch\u01A1i</color></size>"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -62169,7 +62169,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: DIVINE BLESSINGS (CHOOSE BUILD PATH)
+  m_text: PHƯỚC LÀNH CỔ XƯA
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -64606,7 +64606,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "<b>C\xC0I \u0110\u1EB6T H\u1EC6 TH\u1ED0NG (SETTINGS)</b>\n<size=11.5><color=#C8C8D0>Ch\u1EBF
+  m_text: "<b>C\xC0I \u0110\u1EB6T H\u1EC6 TH\u1ED0NG</b>\n<size=11.5><color=#C8C8D0>Ch\u1EBF
     \u0111\u1ED9 m\xE0n h\xECnh, \xE2m l\u01B0\u1EE3ng \xE2m thanh & ph\xEDm b\u1EA5m</color></size>"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -73369,7 +73369,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "H\xC0NG PH\xCDM N\xD3NG (HOTBAR) - 11 \xD4 C\u1EA6M TAY [PH\xCDM 1 - 9]"
+  m_text: "H\xC0NG PH\xCDM N\xD3NG - 11 \xD4 C\u1EA6M TAY [PH\xCDM 1 - 9]"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -86844,7 +86844,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "R\u01AF\u01A0NG CH\u1EE8A \u0110\u1ED2 (HOME CHEST)"
+  m_text: "R\u01AF\u01A0NG CH\u1EE8A \u0110\u1ED2"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

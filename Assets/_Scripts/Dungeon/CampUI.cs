@@ -265,13 +265,13 @@ public class CampUI : MonoBehaviour
 
         if (campTitleText != null)
         {
-            campTitleText.text = "CAMP ENCOUNTER";
+            campTitleText.text = "TRẠM NGHỈ LỬA TRẠI";
             campTitleText.color = new Color(1f, 0.85f, 0.35f);
         }
 
         if (campDescText != null)
         {
-            campDescText.text = "A warm campfire burns in the dungeon. Rest, eat, or cook to recover.\n<color=#FFAA55>Warning: Activities create noise and aroma that attract wandering monsters!</color>";
+            campDescText.text = "Ngọn lửa trại ấm áp đang cháy sáng trong hầm ngục. Hãy nghỉ ngơi, ăn uống hoặc nấu nướng để hồi phục.\n<color=#FFAA55>Cảnh báo: Các hoạt động sẽ tạo ra tiếng ồn và mùi hương thu hút quái vật xung quanh!</color>";
             campDescText.color = new Color(0.85f, 0.88f, 0.95f);
         }
 
@@ -280,7 +280,7 @@ public class CampUI : MonoBehaviour
             TextMeshProUGUI continueTxt = continueButton.GetComponentInChildren<TextMeshProUGUI>();
             if (continueTxt != null)
             {
-                continueTxt.text = "CONTINUE FORWARD\n(Next Stage)";
+                continueTxt.text = "TIẾP TỤC TIẾN LÊN\n(Chặng Tiếp Theo)";
             }
         }
 
@@ -289,7 +289,7 @@ public class CampUI : MonoBehaviour
             if (CombatUI.Instance.targetInfoPanel != null) CombatUI.Instance.targetInfoPanel.SetActive(false);
             if (CombatUI.Instance.turnBannerText != null)
             {
-                CombatUI.Instance.turnBannerText.text = "CAMPFIRE - REST & RECOVER";
+                CombatUI.Instance.turnBannerText.text = "LỬA TRẠI - NGHỈ NGƠI & HỒI PHỤC";
                 CombatUI.Instance.turnBannerText.color = new Color(1f, 0.85f, 0.3f);
             }
             if (CombatUI.Instance.turnBannerBg != null && CombatUI.Instance.turnBannerBg.sprite == null)
@@ -318,19 +318,19 @@ public class CampUI : MonoBehaviour
 
         if (campTitleText != null)
         {
-            campTitleText.text = "CAMP (AMBUSH REPELLED)";
+            campTitleText.text = "TRẠM NGHỈ (ĐÃ ĐẨY LÙI PHỤC KÍCH)";
             campTitleText.color = new Color(1f, 0.5f, 0.3f);
         }
 
         if (campDescText != null)
         {
-            campDescText.text = "<color=#88FF88>You defeated the ambushers!</color>\n<color=#FFAA55>The campsite has been compromised and attracted nearby monsters. You must advance!</color>";
+            campDescText.text = "<color=#88FF88>Bạn đã đánh bại toán quái phục kích!</color>\n<color=#FFAA55>Khu vực lửa trại đã bị lộ và thu hút quái vật xung quanh. Bạn buộc phải rời đi ngay!</color>";
             campDescText.color = Color.white;
         }
 
         if (ambushRiskPercentText != null)
         {
-            ambushRiskPercentText.text = "Camp Compromised: <b>100%</b>";
+            ambushRiskPercentText.text = "Trại Bị Lộ: <b>100%</b>";
             ambushRiskPercentText.color = new Color(1f, 0.4f, 0.3f);
         }
 
@@ -362,7 +362,7 @@ public class CampUI : MonoBehaviour
 
         if (ambushRiskStatusText != null)
         {
-            ambushRiskStatusText.text = "Cannot rest here any longer. Move forward now!";
+            ambushRiskStatusText.text = "Không thể nghỉ ngơi ở đây nữa. Hãy tiếp tục tiến lên!";
             ambushRiskStatusText.color = new Color(1f, 0.4f, 0.4f);
         }
 
@@ -380,7 +380,7 @@ public class CampUI : MonoBehaviour
             TextMeshProUGUI continueTxt = continueButton.GetComponentInChildren<TextMeshProUGUI>();
             if (continueTxt != null)
             {
-                continueTxt.text = "CONTINUE FORWARD\n(MANDATORY)";
+                continueTxt.text = "TIẾP TỤC TIẾN LÊN\n(BẮT BUỘC)";
             }
         }
 
@@ -389,7 +389,7 @@ public class CampUI : MonoBehaviour
             if (CombatUI.Instance.targetInfoPanel != null) CombatUI.Instance.targetInfoPanel.SetActive(false);
             if (CombatUI.Instance.turnBannerText != null)
             {
-                CombatUI.Instance.turnBannerText.text = "AMBUSH DEFEATED - ADVANCE FORWARD";
+                CombatUI.Instance.turnBannerText.text = "ĐÃ ĐẨY LÙI PHỤC KÍCH - TIẾN LÊN";
                 CombatUI.Instance.turnBannerText.color = new Color(1f, 0.85f, 0.3f);
             }
             if (CombatUI.Instance.turnBannerBg != null && CombatUI.Instance.turnBannerBg.sprite == null)
@@ -449,7 +449,7 @@ public class CampUI : MonoBehaviour
             ambushAlertBanner.transform.SetAsLastSibling();
             if (ambushAlertText != null)
             {
-                ambushAlertText.text = "AMBUSH! Monsters detected your campsite!";
+                ambushAlertText.text = "BỊ PHỤC KÍCH! Quái vật đã phát hiện ra lửa trại của bạn!";
             }
         }
 
@@ -514,7 +514,7 @@ public class CampUI : MonoBehaviour
         {
             if (CombatUI.Instance != null)
             {
-                CombatUI.Instance.LogMessage("Fullness is already 0, cannot exercise further!");
+                CombatUI.Instance.LogMessage("Độ no đã là 0, không thể tập luyện thêm!");
             }
             return;
         }
@@ -522,7 +522,7 @@ public class CampUI : MonoBehaviour
         bool success = camp.PerformAction(Camp.ActionType.Exercise);
         if (success && CombatUI.Instance != null)
         {
-            CombatUI.Instance.LogMessage($"Exercised! Reduced {camp.exerciseHungerReduction} fullness.");
+            CombatUI.Instance.LogMessage($"Đã tập luyện! Giảm {camp.exerciseHungerReduction} độ no.");
         }
     }
 
@@ -534,7 +534,7 @@ public class CampUI : MonoBehaviour
         {
             if (CombatUI.Instance != null)
             {
-                CombatUI.Instance.LogMessage("Health is already full, no need to rest!");
+                CombatUI.Instance.LogMessage("Máu đã đầy, không cần nghỉ ngơi!");
             }
             return;
         }
@@ -542,7 +542,7 @@ public class CampUI : MonoBehaviour
         bool success = camp.PerformAction(Camp.ActionType.Rest);
         if (success && CombatUI.Instance != null)
         {
-            CombatUI.Instance.LogMessage($"Rested by the campfire! Recovered {camp.restHealAmount} HP.");
+            CombatUI.Instance.LogMessage($"Đã nghỉ ngơi bên lửa trại! Hồi phục {camp.restHealAmount} HP.");
         }
     }
 
@@ -569,7 +569,7 @@ public class CampUI : MonoBehaviour
 
         if (ambushRiskPercentText != null)
         {
-            ambushRiskPercentText.text = $"Ambush Risk: <b>{percentInt}%</b>";
+            ambushRiskPercentText.text = $"Nguy Cơ Bị Phục Kích: <b>{percentInt}%</b>";
         }
 
         if (ambushRiskBgImage != null)
@@ -624,22 +624,22 @@ public class CampUI : MonoBehaviour
         {
             if (percent == 0f)
             {
-                ambushRiskStatusText.text = "The campsite is quiet and safe.";
+                ambushRiskStatusText.text = "Khu trại đang yên tĩnh và an toàn.";
                 ambushRiskStatusText.color = new Color(0.7f, 1f, 0.7f);
             }
             else if (percent < 0.35f)
             {
-                ambushRiskStatusText.text = "Food aroma and camp noise begin spreading...";
+                ambushRiskStatusText.text = "Mùi thức ăn và tiếng động bắt đầu lan tỏa...";
                 ambushRiskStatusText.color = new Color(1f, 0.9f, 0.6f);
             }
             else if (percent < 0.70f)
             {
-                ambushRiskStatusText.text = "Footsteps and monster growls heard nearby!";
+                ambushRiskStatusText.text = "Nghe thấy tiếng bước chân và tiếng gầm gừ gần đây!";
                 ambushRiskStatusText.color = new Color(1f, 0.6f, 0.3f);
             }
             else
             {
-                ambushRiskStatusText.text = "EXTREME DANGER! Monsters may ambush at any moment!";
+                ambushRiskStatusText.text = "CỰC KỲ NGUY HIỂM! Quái vật có thể ập tới bất cứ lúc nào!";
                 ambushRiskStatusText.color = new Color(1f, 0.3f, 0.3f);
             }
         }
@@ -664,19 +664,19 @@ public class CampUI : MonoBehaviour
                     PlayerStats.FullnessTier.Overstuffed => " <color=#FFCC00>[Bội Thực: +3 DEF, -4 SPD, -1 ATK, Hồi HP]</color>",
                     _ => ""
                 };
-                playerStatusText.text = $"HP: <color=#66FF66>{playerStats.currentHealth}/{playerStats.maxHealth}</color>   |   Fullness: <color=#FFAA33>{playerStats.currentHunger}/{playerStats.maxHunger}</color>{tierTag}";
+                playerStatusText.text = $"HP: <color=#66FF66>{playerStats.currentHealth}/{playerStats.maxHealth}</color>   |   Độ No: <color=#FFAA33>{playerStats.currentHunger}/{playerStats.maxHunger}</color>{tierTag}";
             }
 
             if (playerBuffsText != null)
             {
                 if (playerStats.activeBuffs == null || playerStats.activeBuffs.Count == 0)
                 {
-                    playerBuffsText.text = "Buffs: None";
+                    playerBuffsText.text = "Hiệu ứng: Không có";
                     playerBuffsText.color = new Color(0.7f, 0.7f, 0.7f);
                 }
                 else
                 {
-                    System.Text.StringBuilder sb = new System.Text.StringBuilder("Buffs: ");
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder("Hiệu ứng: ");
                     for (int i = 0; i < playerStats.activeBuffs.Count; i++)
                     {
                         ActiveBuff b = playerStats.activeBuffs[i];
@@ -685,9 +685,9 @@ public class CampUI : MonoBehaviour
                             string sign = b.buffValue > 0 ? "+" : "";
                             string durType = b.buffDurationType switch
                             {
-                                FoodData.BuffDurationType.Turn => "Turn",
-                                FoodData.BuffDurationType.Combat => "Battle",
-                                FoodData.BuffDurationType.Floor => "Floor",
+                                FoodData.BuffDurationType.Turn => "Lượt",
+                                FoodData.BuffDurationType.Combat => "Trận",
+                                FoodData.BuffDurationType.Floor => "Tầng",
                                 _ => b.buffDurationType.ToString()
                             };
                             sb.Append($"[{b.buff.buffName} {sign}{b.buffValue} ({b.remainingDuration} {durType})] ");
@@ -741,7 +741,7 @@ public class CampUI : MonoBehaviour
             if (noFoodText != null)
             {
                 noFoodText.gameObject.SetActive(true);
-                noFoodText.text = "Backpack not found!";
+                noFoodText.text = "Không tìm thấy túi đồ!";
             }
             return;
         }
@@ -766,7 +766,7 @@ public class CampUI : MonoBehaviour
             if (noFoodText != null)
             {
                 noFoodText.gameObject.SetActive(true);
-                noFoodText.text = "No food or crops in your bag!";
+                noFoodText.text = "Không có thức ăn hoặc nông sản trong túi!";
             }
             return;
         }
@@ -882,7 +882,7 @@ public class CampUI : MonoBehaviour
         TextMeshProUGUI btnText = btnTextGO.GetComponent<TextMeshProUGUI>();
         btnText.fontSize = 11;
         btnText.alignment = TextAlignmentOptions.Center;
-        btnText.text = canEat ? "EAT (+15%)" : "FULL";
+        btnText.text = canEat ? "ĂN (+15%)" : "NO";
 
         return row;
     }
@@ -910,7 +910,7 @@ public class CampUI : MonoBehaviour
             if (noRecipeText != null)
             {
                 noRecipeText.gameObject.SetActive(true);
-                noRecipeText.text = "No cooking recipes unlocked!\n(Visit Merchants or Statues to unlock recipes)";
+                noRecipeText.text = "Chưa mở khóa công thức nấu ăn nào!\n(Gặp Thương Nhân hoặc Pho Tượng để mở khóa công thức)";
             }
             return;
         }
@@ -1035,7 +1035,7 @@ public class CampUI : MonoBehaviour
         TextMeshProUGUI btnText = btnTextGO.GetComponent<TextMeshProUGUI>();
         btnText.fontSize = 11;
         btnText.alignment = TextAlignmentOptions.Center;
-        btnText.text = canCook ? "COOK (+20%)" : "LACK ITEMS";
+        btnText.text = canCook ? "NẤU (+20%)" : "THIẾU ĐỒ";
 
         return row;
     }
@@ -1056,9 +1056,9 @@ public class CampUI : MonoBehaviour
                     int dur = hasEndlessFeast ? fb.buffDuration * 2 : fb.buffDuration;
                     string durType = fb.buffDurationType switch
                     {
-                        FoodData.BuffDurationType.Turn => dur == 1 ? "Turn" : "Turns",
-                        FoodData.BuffDurationType.Combat => dur == 1 ? "Battle" : "Battles",
-                        FoodData.BuffDurationType.Floor => dur == 1 ? "Floor" : "Floors",
+                        FoodData.BuffDurationType.Turn => "Lượt",
+                        FoodData.BuffDurationType.Combat => "Trận",
+                        FoodData.BuffDurationType.Floor => "Tầng",
                         _ => fb.buffDurationType.ToString()
                     };
                     string sign = fb.buffValue > 0 ? "+" : "";

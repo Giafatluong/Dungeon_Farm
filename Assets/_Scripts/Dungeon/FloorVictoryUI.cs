@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -489,7 +489,7 @@ public class FloorVictoryUI : MonoBehaviour
                         TextMeshProUGUI sTitleTMP = sTitleRT.GetComponent<TextMeshProUGUI>();
                         if (sTitleTMP != null)
                         {
-                            sTitleTMP.text = "CHỈ SỐ VĨNH VIỄN (PERMANENT STATS)";
+                            sTitleTMP.text = "CHỈ SỐ VĨNH VIỄN";
                             sTitleTMP.fontSize = 12.5f;
                             sTitleTMP.fontStyle = FontStyles.Bold;
                             sTitleTMP.color = new Color(1f, 0.85f, 0.3f);
@@ -559,7 +559,7 @@ public class FloorVictoryUI : MonoBehaviour
                         TextMeshProUGUI bTitleTMP = bTitleRT.GetComponent<TextMeshProUGUI>();
                         if (bTitleTMP != null)
                         {
-                            bTitleTMP.text = "PHƯỚC LÀNH CỔ XƯA (ANCIENT BLESSINGS)";
+                            bTitleTMP.text = "PHƯỚC LÀNH CỔ XƯA";
                             bTitleTMP.fontSize = 12.5f;
                             bTitleTMP.fontStyle = FontStyles.Bold;
                             bTitleTMP.color = new Color(0.75f, 0.85f, 1f);
@@ -753,10 +753,10 @@ public class FloorVictoryUI : MonoBehaviour
             }
 
             List<string> badges = new();
-            if (bonusATK > 0) badges.Add($"  <color=#FF6B6B>[ATK]</color> +{bonusATK} Tấn công (Attack)");
-            if (bonusDEF > 0) badges.Add($"  <color=#54A0FF>[DEF]</color> +{bonusDEF} Phòng thủ (Defense)");
-            if (bonusHP > 0) badges.Add($"  <color=#1DD1A1>[HP]</color> +{bonusHP} Máu tối đa (Max HP)");
-            if (bonusSpeed > 0) badges.Add($"  <color=#FECA57>[SPD]</color> +{bonusSpeed} Tốc độ (Speed)");
+            if (bonusATK > 0) badges.Add($"  <color=#FF6B6B>+{bonusATK}</color> Tấn công");
+            if (bonusDEF > 0) badges.Add($"  <color=#54A0FF>+{bonusDEF}</color> Phòng thủ");
+            if (bonusHP > 0) badges.Add($"  <color=#1DD1A1>+{bonusHP}</color> Máu tối đa");
+            if (bonusSpeed > 0) badges.Add($"  <color=#FECA57>+{bonusSpeed}</color> Tốc độ");
 
             statsBadgesText.text = $"<color=#FFE082><b>THƯỞNG LẦN ĐẦU VƯỢT TẦNG:</b></color>\n{string.Join("\n", badges)}\n\n<size=11><color=#88FF88>✓ Các chỉ số này đã được cộng vĩnh viễn vào nhân vật của bạn!</color></size>";
         }
@@ -1122,7 +1122,7 @@ public class FloorVictoryUI : MonoBehaviour
             tmp.fontSize = 12;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = new Color(0.85f, 0.95f, 0.85f);
-            tmp.text = "<b>ALL REWARDS CLAIMED!</b>\n<size=10.5><color=#88FF88>All items have been safely placed in your backpack or storage chest.</color></size>";
+            tmp.text = "<b>ĐÃ NHẬN TẤT CẢ PHẦN THƯỞNG!</b>\n<size=10.5><color=#88FF88>Toàn bộ vật phẩm đã được chuyển an toàn vào ba lô hoặc rương nhà.</color></size>";
         }
 
         emptyNoticeGO.SetActive(true);
@@ -1386,7 +1386,7 @@ public class FloorVictoryUI : MonoBehaviour
         tbtTmp.fontStyle = FontStyles.Bold;
         tbtTmp.alignment = TextAlignmentOptions.Center;
         tbtTmp.color = Color.white;
-        tbtTmp.text = "CLAIM";
+        tbtTmp.text = "NHẬN";
 
         return row;
     }

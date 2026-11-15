@@ -53,17 +53,17 @@ public class LoadingScreenUI : MonoBehaviour
     // Floor Names Map
     private static readonly Dictionary<int, string> FloorNames = new Dictionary<int, string>
     {
-        { 0, "Tutorial Catacombs" },
-        { 1, "Ancient Dungeon" },
-        { 2, "Monster Swamp" },
-        { 3, "Demon Citadel" },
-        { 4, "Frozen Crypt" },
-        { 5, "Infernal Forge" },
-        { 6, "Forgotten Catacombs" },
-        { 7, "Blood Sanctum" },
-        { 8, "Ruins of the Void" },
-        { 9, "Abyssal Depths" },
-        { 10, "The Eternal Throne" }
+        { 0, "Hầm Ngục Hướng Dẫn" },
+        { 1, "Hầm Ngục Cổ Xưa" },
+        { 2, "Đầm Lầy Quái Vật" },
+        { 3, "Thành Trì Ác Quỷ" },
+        { 4, "Hầm Mộ Băng Giá" },
+        { 5, "Lò Rèn Hỏa Ngục" },
+        { 6, "Địa Đạo Lãng Quên" },
+        { 7, "Thánh Điện Huyết Tộc" },
+        { 8, "Tàn Tích Hư Vô" },
+        { 9, "Vực Sâu Hắc Ám" },
+        { 10, "Ngai Vàng Vĩnh Cửu" }
     };
 
     // Curated Tips Pool
@@ -72,9 +72,9 @@ public class LoadingScreenUI : MonoBehaviour
         "Mẹo: Hãy luôn chọn Phước Lành trước khi vào hầm ngục để nhận sức mạnh bổ trợ to lớn!",
         "Mẹo: Thu thập quặng và đá ma thuật để nâng cấp các pho tượng vĩnh viễn tại căn cứ.",
         "Mẹo: Khi xuất hiện vòng đỏ cảnh báo dưới chân, hãy lập tức né tránh kỹ năng của Boss!",
-        "Mẹo: Trạm nghỉ (Camp) cho phép bạn hồi máu an toàn hoặc tiếp tục tiến sâu để nhận thêm thưởng.",
+        "Mẹo: Trạm nghỉ cho phép bạn hồi máu an toàn hoặc tiếp tục tiến sâu để nhận thêm thưởng.",
         "Mẹo: Các món ăn nấu tại nhà bếp sẽ cung cấp lượng hồi phục và buff chỉ số vượt trội.",
-        "Mẹo: Hãy quản lý điểm thể lực (AP) cẩn thận, cân đối giữa tấn công và phòng thủ.",
+        "Mẹo: Hãy quản lý điểm thể lực cẩn thận, cân đối giữa tấn công và phòng thủ.",
         "Mẹo: Đánh bại Boss ở tầng cuối mỗi khu vực để mở khóa tầng hầm ngục tiếp theo.",
         "Mẹo: Hành trang đầy? Hãy ưu tiên giữ lại các vật phẩm quý hiếm và đá thăng cấp."
     };
@@ -84,7 +84,7 @@ public class LoadingScreenUI : MonoBehaviour
         "Mẹo: Đừng quên tưới nước cho các mảnh đất đã gieo hạt để cây trồng phát triển tốt nhất.",
         "Mẹo: Thương nhân tại căn cứ sẽ cập nhật hàng hóa và hạt giống mới mỗi ngày.",
         "Mẹo: Đem nông sản và chiến lợi phẩm về nhà bếp để chế biến các công thức nấu ăn mới.",
-        "Mẹo: Nâng cấp tượng thần tại căn cứ để tăng vĩnh viễn ATK, DEF và Max HP cho nhân vật.",
+        "Mẹo: Dâng lễ tượng thần tại căn cứ để nhận các chỉ số vĩnh viễn và mở khóa phước lành.",
         "Mẹo: Thu hoạch cây trồng kịp thời trước khi bắt đầu chuyến thám hiểm hầm ngục tiếp theo.",
         "Mẹo: Bạn có thể kiểm tra báo cáo buổi sáng để nắm tình trạng nông trại nhanh chóng."
     };
@@ -154,7 +154,7 @@ public class LoadingScreenUI : MonoBehaviour
 
             if (emblemText != null)
             {
-                emblemText.text = "[ COMBAT ]";
+                emblemText.text = "[ CHIẾN ĐẤU ]";
                 emblemText.fontSize = 28;
                 emblemText.color = new Color(0.98f, 0.78f, 0.20f, 1f);
             }

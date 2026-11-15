@@ -296,26 +296,26 @@ public class RewardChest : MonoBehaviour
         message = "";
         if (currentChestLoot == null || index < 0 || index >= currentChestLoot.Count)
         {
-            message = "Item not found in chest.";
+            message = "Vật phẩm không tồn tại trong rương.";
             return false;
         }
 
         ItemSlot slot = currentChestLoot[index];
         if (slot == null || slot.itemData == null || slot.amount <= 0)
         {
-            message = "Invalid item.";
+            message = "Vật phẩm không hợp lệ.";
             return false;
         }
 
         if (backpack == null)
         {
-            message = "No backpack available.";
+            message = "Không tìm thấy ba lô.";
             return false;
         }
 
         if (!backpack.CanAddItem(slot.itemData))
         {
-            message = $"Backpack is full! Cannot take {slot.itemData.itemName}.";
+            message = $"Ba lô đã đầy! Không thể nhận thêm {slot.itemData.itemName}.";
             return false;
         }
 

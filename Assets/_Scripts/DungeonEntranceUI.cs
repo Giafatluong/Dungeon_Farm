@@ -156,7 +156,7 @@ public class DungeonEntranceUI : MonoBehaviour
             floorNumber = 3,
             floorName = "TẦNG 3: THÀNH CỔ QUỶ DỮ",
             bossName = "Kỵ Sĩ Bầu Trời Hắc Ám",
-            subTitle = "18 Phòng Tối Thượng — Sát Thương Bùng Nổ & Ớt Hiểm (Chilli)",
+            subTitle = "18 Phòng Tối Thượng — Sát Thương Bùng Nổ & Ớt Hiểm",
             description = "Mục đích: Tử địa khắc nghiệt trước đây. Quái vật thiết giáp hạng nặng cực trâu (4 DEF, 14-17 ATK). Chỉ có thể vượt qua khi chuẩn bị các món ăn đại tiệc cao cấp (Ngô Cay, Canh Thập Cẩm Cay) và kết hợp phước lành thần thánh!"
         });
 
@@ -370,7 +370,7 @@ public class DungeonEntranceUI : MonoBehaviour
         }
         else if (!IsFloorUnlocked(selectedFloor))
         {
-            ShowWarning($"Floor {selectedFloor} is locked! Defeat Floor {selectedFloor - 1} Boss first.");
+            ShowWarning($"Tầng {selectedFloor} đang bị khóa! Hãy đánh bại Thủ Lĩnh Tầng {selectedFloor - 1} trước.");
             return;
         }
 
@@ -552,7 +552,7 @@ public class DungeonEntranceUI : MonoBehaviour
     {
         if (!IsFloorUnlocked(floor))
         {
-            ShowWarning($"Floor {floor} is locked! Defeat Floor {floor - 1} Boss first.");
+            ShowWarning($"Tầng {floor} đang bị khóa! Hãy đánh bại Thủ Lĩnh Tầng {floor - 1} trước.");
             return;
         }
 
@@ -595,10 +595,10 @@ public class DungeonEntranceUI : MonoBehaviour
         return new FloorDisplayData
         {
             floorNumber = floor,
-            floorName = $"FLOOR {floor}",
-            bossName = $"Floor {floor} Boss",
-            subTitle = $"Floor {floor} of the dungeon",
-            description = $"Explore floor {floor} and defeat the boss to proceed."
+            floorName = $"TẦNG {floor}",
+            bossName = $"Thủ Lĩnh Tầng {floor}",
+            subTitle = $"Tầng {floor} của hầm ngục",
+            description = $"Khám phá tầng {floor} và đánh bại thủ lĩnh để tiếp tục tiến sâu hơn."
         };
     }
 
@@ -629,33 +629,33 @@ public class DungeonEntranceUI : MonoBehaviour
                 bool bossAvailable = ProgressionManager.Instance == null || ProgressionManager.Instance.IsBossAvailable(floorNum);
                 if (bossAvailable)
                 {
-                    card.statusBadgeText.text = "BOSS READY";
+                    card.statusBadgeText.text = "BOSS XUẤT HIỆN";
                     card.statusBadgeText.color = new Color(1f, 0.88f, 0.35f);
                     card.statusBadgeBg.color = new Color(0.35f, 0.25f, 0.08f, 0.9f);
                 }
                 else
                 {
                     int cd = ProgressionManager.Instance != null ? ProgressionManager.Instance.GetDaysUntilBossReset(floorNum) : 0;
-                    card.statusBadgeText.text = $"DA VUOT ({cd}N)";
+                    card.statusBadgeText.text = $"ĐÃ VƯỢT ({cd}N)";
                     card.statusBadgeText.color = ColorStatusDefeatedText;
                     card.statusBadgeBg.color = ColorStatusDefeatedBg;
                 }
             }
             else if (isSelected)
             {
-                card.statusBadgeText.text = "> CHON";
+                card.statusBadgeText.text = "> ĐANG CHỌN";
                 card.statusBadgeText.color = ColorStatusSelectedText;
                 card.statusBadgeBg.color = ColorStatusSelectedBg;
             }
             else if (isUnlocked)
             {
-                card.statusBadgeText.text = "SAN SANG";
+                card.statusBadgeText.text = "SẴN SÀNG";
                 card.statusBadgeText.color = ColorStatusUnlockedText;
                 card.statusBadgeBg.color = ColorStatusUnlockedBg;
             }
             else
             {
-                card.statusBadgeText.text = "KHOA";
+                card.statusBadgeText.text = "ĐANG KHÓA";
                 card.statusBadgeText.color = ColorStatusLockedText;
                 card.statusBadgeBg.color = ColorStatusLockedBg;
             }
@@ -692,7 +692,7 @@ public class DungeonEntranceUI : MonoBehaviour
 
         if (enterButtonText != null)
         {
-            enterButtonText.text = selUnlocked ? $"TIẾN VÀO TẦNG {selectedFloor} (ENTER)" : $"TẦNG {selectedFloor} (ĐANG KHÓA)";
+            enterButtonText.text = selUnlocked ? $"TIẾN VÀO TẦNG {selectedFloor}" : $"TẦNG {selectedFloor} (ĐANG KHÓA)";
         }
 
         if (enterButton != null)
@@ -1072,7 +1072,7 @@ public class DungeonEntranceUI : MonoBehaviour
         enterButtonText.fontSizeMax = 12f;
         enterButtonText.fontStyle = FontStyles.Bold;
         enterButtonText.alignment = TextAlignmentOptions.Center;
-        enterButtonText.text = "TIẾN VÀO TẦNG 1 (ENTER)";
+        enterButtonText.text = "TIẾN VÀO TẦNG 1";
         enterButtonText.color = Color.white;
 
         // "Back" Button
@@ -1228,7 +1228,7 @@ public class DungeonEntranceUI : MonoBehaviour
         bossText.alignment = TextAlignmentOptions.Left;
         bossText.textWrappingMode = TextWrappingModes.NoWrap;
         bossText.overflowMode = TextOverflowModes.Ellipsis;
-        bossText.text = $"Boss: {data.bossName}";
+        bossText.text = $"Thủ Lĩnh: {data.bossName}";
         bossText.color = new Color(0.6f, 0.72f, 0.82f);
 
         // 3. Right Status Badge
@@ -1258,7 +1258,7 @@ public class DungeonEntranceUI : MonoBehaviour
         sText.fontSizeMax = 9.5f;
         sText.fontStyle = FontStyles.Bold;
         sText.alignment = TextAlignmentOptions.Center;
-        sText.text = "SAN SANG";
+        sText.text = "SẴN SÀNG";
         sText.color = Color.white;
 
         FloorCardUI cardUI = new FloorCardUI

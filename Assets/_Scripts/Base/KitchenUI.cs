@@ -843,7 +843,7 @@ public class KitchenUI : MonoBehaviour
             if (stoveSubtitleText != null) stoveSubtitleText.text = "Đặt đúng 4 ô nguyên liệu vào nồi để nấu • Nhấp vào ô để lấy ra";
             if (cookButtonText != null)
             {
-                cookButtonText.text = "BẮT ĐẦU NẤU MÓN (COOK)";
+                cookButtonText.text = "BẮT ĐẦU NẤU MÓN";
                 cookButtonText.color = new Color(0.22f, 0.13f, 0.06f, 1f);
             }
             if (cookButton != null)

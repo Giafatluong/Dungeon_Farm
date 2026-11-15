@@ -693,9 +693,9 @@ public class CombatUI : MonoBehaviour
     {
         if (playerStats == null) return;
 
-        if (playerNameText != null && playerNameText.text != "HERO (PLAYER)")
+        if (playerNameText != null && playerNameText.text != "NGƯỜI CHƠI")
         {
-            playerNameText.text = "HERO (PLAYER)";
+            playerNameText.text = "NGƯỜI CHƠI";
         }
 
         int curHp = playerStats.currentHealth;
@@ -797,11 +797,11 @@ public class CombatUI : MonoBehaviour
             {
                 if (buffCount == 0)
                 {
-                    buffsText.text = "Buffs: None";
+                    buffsText.text = "Hiệu ứng: Không có";
                 }
                 else
                 {
-                    System.Text.StringBuilder sb = new("Buffs: ");
+                    System.Text.StringBuilder sb = new("Hiệu ứng: ");
                     for (int i = 0; i < playerStats.activeBuffs.Count; i++)
                     {
                         ActiveBuff b = playerStats.activeBuffs[i];
@@ -810,9 +810,9 @@ public class CombatUI : MonoBehaviour
                             string sign = b.buffValue > 0 ? "+" : "";
                             string durType = b.buffDurationType switch
                             {
-                                FoodData.BuffDurationType.Turn => b.remainingDuration == 1 ? "Turn" : "Turns",
-                                FoodData.BuffDurationType.Combat => b.remainingDuration == 1 ? "Battle" : "Battles",
-                                FoodData.BuffDurationType.Floor => b.remainingDuration == 1 ? "Floor" : "Floors",
+                                FoodData.BuffDurationType.Turn => "Lượt",
+                                FoodData.BuffDurationType.Combat => "Trận",
+                                FoodData.BuffDurationType.Floor => "Tầng",
                                 _ => b.buffDurationType.ToString()
                             };
                             string bColor = b.buffValue >= 0 ? "#66CCFF" : "#FF7777";
@@ -1052,19 +1052,19 @@ public class CombatUI : MonoBehaviour
             {
                 attackButton.interactable = false;
                 var txt = attackButton.GetComponentInChildren<TextMeshProUGUI>();
-                if (txt != null) txt.text = "ATTACK [1]\n<size=11><color=#888888>(Phòng an toàn)</color></size>";
+                if (txt != null) txt.text = "TẤN CÔNG [1]\n<size=11><color=#888888>(Phòng an toàn)</color></size>";
             }
             if (defendButton != null)
             {
                 defendButton.interactable = false;
                 var txt = defendButton.GetComponentInChildren<TextMeshProUGUI>();
-                if (txt != null) txt.text = "DEFEND [2]\n<size=11><color=#888888>(Phòng an toàn)</color></size>";
+                if (txt != null) txt.text = "PHÒNG THỦ [2]\n<size=11><color=#888888>(Phòng an toàn)</color></size>";
             }
             if (eatButton != null)
             {
                 eatButton.interactable = isAlive && !isActing;
                 var txt = eatButton.GetComponentInChildren<TextMeshProUGUI>();
-                if (txt != null) txt.text = "EAT [3]\n<size=11><color=#50FA7B>Ăn trước trận (1 AP)</color></size>";
+                if (txt != null) txt.text = "ĂN [3]\n<size=11><color=#50FA7B>Ăn trước trận (1 AP)</color></size>";
             }
             if (endTurnButton != null)
             {
@@ -1101,11 +1101,11 @@ public class CombatUI : MonoBehaviour
                 if (curTarget != null && curTarget.currentHealth > 0)
                 {
                     int dmg = CalculatePredictedDamage(curTarget);
-                    txt.text = $"ATTACK [1]\n<size=11><color=#FFDD88>Sát thương: {dmg}</color></size>";
+                    txt.text = $"TẤN CÔNG [1]\n<size=11><color=#FFDD88>Sát thương: {dmg}</color></size>";
                 }
                 else
                 {
-                    txt.text = "ATTACK [1]\n<size=11><color=#D0D0D0>(1 AP)</color></size>";
+                    txt.text = "TẤN CÔNG [1]\n<size=11><color=#D0D0D0>(1 AP)</color></size>";
                 }
             }
         }
@@ -1118,7 +1118,7 @@ public class CombatUI : MonoBehaviour
                 int defVal = playerStats != null ? playerStats.defendValue : 5;
                 bool isFree = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.BastionStrike) && combatManager != null && !combatManager.hasDefendedThisTurn;
                 string cost = isFree ? "<color=#50FA7B>0 AP</color>" : "1 AP";
-                txt.text = $"DEFEND [2]\n<size=11><color=#AADDFF>+{defVal} DEF ({cost})</color></size>";
+                txt.text = $"PHÒNG THỦ [2]\n<size=11><color=#AADDFF>+{defVal} DEF ({cost})</color></size>";
             }
         }
         if (eatButton != null)
@@ -1129,7 +1129,7 @@ public class CombatUI : MonoBehaviour
             {
                 bool isFreeEat = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.EndlessFeast) && combatManager != null && !combatManager.hasEatenThisTurn;
                 string eatCost = isFreeEat ? "<color=#50FA7B>0 AP</color>" : "1 AP";
-                txt.text = $"EAT [3]\n<size=11><color=#FFD700>Ăn ({eatCost})</color></size>";
+                txt.text = $"ĂN [3]\n<size=11><color=#FFD700>Ăn ({eatCost})</color></size>";
             }
         }
         if (endTurnButton != null) endTurnButton.interactable = allowEndTurn;
@@ -1263,11 +1263,11 @@ public class CombatUI : MonoBehaviour
             string spdStr = $"    <color=#FFEE55><b>SPD: {enemySpd}</b></color>";
             if (enemy is Boss boss)
             {
-                targetNameText.text = $"TARGET: <color=#FF5533>[BOSS]</color> {boss.bossName} (Phase {boss.GetCurrentPhase()}){spdStr}";
+                targetNameText.text = $"MỤC TIÊU: <color=#FF5533>[BOSS]</color> {boss.bossName} (Giai đoạn {boss.GetCurrentPhase()}){spdStr}";
             }
             else
             {
-                targetNameText.text = $"TARGET: {enemy.enemyData?.enemyName ?? "Enemy"}{spdStr}";
+                targetNameText.text = $"MỤC TIÊU: {enemy.enemyData?.enemyName ?? "Quái vật"}{spdStr}";
             }
         }
 
@@ -1325,17 +1325,17 @@ public class CombatUI : MonoBehaviour
 
             string intentDesc = enemy.currentIntent switch
             {
-                EnemyData.EnemyIntent.Attack => $"<color=#FF7777>Attack ({enemy.GetCurrentATK()} DMG)</color>",
-                EnemyData.EnemyIntent.Defend => $"<color=#77B5FE>Defend (+{defValue} DEF)</color>",
-                EnemyData.EnemyIntent.Buff => $"<color=#FFD700>Buff{buffSkillInfo}</color>",
-                EnemyData.EnemyIntent.Debuff => $"<color=#DA70D6>Debuff{debuffSkillInfo}</color>",
-                _ => "<color=#AAAAAA>Attack</color>"
+                EnemyData.EnemyIntent.Attack => $"<color=#FF7777>Tấn công ({enemy.GetCurrentATK()} DMG)</color>",
+                EnemyData.EnemyIntent.Defend => $"<color=#77B5FE>Phòng thủ (+{defValue} DEF)</color>",
+                EnemyData.EnemyIntent.Buff => $"<color=#FFD700>Tăng lực{buffSkillInfo}</color>",
+                EnemyData.EnemyIntent.Debuff => $"<color=#DA70D6>Gây hại{debuffSkillInfo}</color>",
+                _ => "<color=#AAAAAA>Tấn công</color>"
             };
 
             string activeBuffsDesc = "";
             if (enemy.activeBuffs != null && enemy.activeBuffs.Count > 0)
             {
-                System.Text.StringBuilder ebSb = new("\n<size=10><color=#B0BEC5>Effects: ");
+                System.Text.StringBuilder ebSb = new("\n<size=10><color=#B0BEC5>Hiệu ứng: ");
                 for (int i = 0; i < enemy.activeBuffs.Count; i++)
                 {
                     ActiveBuff eb = enemy.activeBuffs[i];
@@ -1350,7 +1350,7 @@ public class CombatUI : MonoBehaviour
                 activeBuffsDesc = ebSb.ToString();
             }
 
-            targetIntentText.text = $"Intent: {intentDesc}{activeBuffsDesc}";
+            targetIntentText.text = $"Ý định: {intentDesc}{activeBuffsDesc}";
         }
     }
 
@@ -1361,13 +1361,13 @@ public class CombatUI : MonoBehaviour
             if (waveManager.isAtEntrance)
             {
                 int total = waveManager.GetTotalStages();
-                stageProgressText.text = total > 0 ? $"Entrance (0/{total})" : "Entrance";
+                stageProgressText.text = total > 0 ? $"Lối vào (0/{total})" : "Lối vào";
             }
             else
             {
                 int current = waveManager.GetCurrentWaveIndex() + 1;
                 int total = waveManager.GetTotalStages();
-                stageProgressText.text = total > 0 ? $"Stage: {current}/{total}" : $"Stage: {current}";
+                stageProgressText.text = total > 0 ? $"Chặng: {current}/{total}" : $"Chặng: {current}";
             }
         }
     }
@@ -1420,7 +1420,7 @@ public class CombatUI : MonoBehaviour
 
         if (targetSelector == null || targetSelector.selectedEnemy == null)
         {
-            LogMessage("No enemy in target!");
+            LogMessage("Chưa chọn mục tiêu quái vật!");
             return;
         }
 
@@ -1617,7 +1617,7 @@ public class CombatUI : MonoBehaviour
             if (noFoodText != null)
             {
                 noFoodText.gameObject.SetActive(true);
-                noFoodText.text = "No food or crops in inventory!";
+                noFoodText.text = "Không có thức ăn hoặc nông sản trong túi!";
             }
             return;
         }
@@ -1780,12 +1780,12 @@ public class CombatUI : MonoBehaviour
 
         if (!string.IsNullOrEmpty(buffInfo))
         {
-            string feastTag = hasEndlessFeast ? " <color=#FFAAEE>[Feast: 2x Dur]</color>" : "";
-            label.text = $"<b>{food.itemName}</b> <color=#FFD700>x{count}</color>\n<size=10.5>{statInfo}</size>\n<size=9.5><b>Buff:</b> {buffInfo}{feastTag}</size>";
+            string feastTag = hasEndlessFeast ? " <color=#FFAAEE>[Đại Tiệc: x2 T.Gian]</color>" : "";
+            label.text = $"<b>{food.itemName}</b> <color=#FFD700>x{count}</color>\n<size=10.5>{statInfo}</size>\n<size=9.5><b>Hiệu ứng:</b> {buffInfo}{feastTag}</size>";
         }
         else if (food is not FoodData && hasRawVitality)
         {
-            label.text = $"<b>{food.itemName}</b> <color=#FFD700>x{count}</color>\n<size=10.5>{statInfo}</size>\n<size=9.5><color=#A8E6CF>Passive: +100% HP & +33% Độ No</color></size>";
+            label.text = $"<b>{food.itemName}</b> <color=#FFD700>x{count}</color>\n<size=10.5>{statInfo}</size>\n<size=9.5><color=#A8E6CF>Nội tại: +100% HP & +33% Độ No</color></size>";
         }
         else
         {
@@ -1825,7 +1825,7 @@ public class CombatUI : MonoBehaviour
         btnTextRT.offsetMin = Vector2.zero;
         btnTextRT.offsetMax = Vector2.zero;
         TextMeshProUGUI btnText = btnTextGO.GetComponent<TextMeshProUGUI>();
-        btnText.text = "EAT";
+        btnText.text = "ĂN";
         btnText.fontSize = 13;
         btnText.fontStyle = FontStyles.Bold;
         btnText.color = Color.white;
@@ -1865,7 +1865,7 @@ public class CombatUI : MonoBehaviour
         {
             int hp = hasRawVitality ? 12 : 6;
             int hunger = hasRawVitality ? 20 : 15;
-            string bonus = hasRawVitality ? " <color=#86EFAC><b>(Raw Vitality)</b></color>" : " <color=#93C5FD>(Ăn Thô)</color>";
+            string bonus = hasRawVitality ? " <color=#86EFAC><b>(Sức Sống Thô)</b></color>" : " <color=#93C5FD>(Ăn Thô)</color>";
             statInfo = $"<color=#FF6B6B><b>+{hp} HP</b></color> <color=#94A3B8>|</color> <color=#FFD043><b>+{hunger} Độ No</b></color>{bonus}";
         }
 
@@ -1881,7 +1881,7 @@ public class CombatUI : MonoBehaviour
                 }
                 else if (n.Contains("stat") || n.Contains("desc") || n.Contains("info") || n.Contains("buff"))
                 {
-                    tmpTexts[i].text = !string.IsNullOrEmpty(buffInfo) ? $"{statInfo}\n<b>Buff:</b> {buffInfo}" : statInfo;
+                    tmpTexts[i].text = !string.IsNullOrEmpty(buffInfo) ? $"{statInfo}\n<b>Hiệu ứng:</b> {buffInfo}" : statInfo;
                 }
             }
         }
@@ -1950,9 +1950,9 @@ public class CombatUI : MonoBehaviour
 
         string durUnit = fb.buffDurationType switch
         {
-            FoodData.BuffDurationType.Turn => duration == 1 ? "Turn" : "Turns",
-            FoodData.BuffDurationType.Combat => duration == 1 ? "Battle" : "Battles",
-            FoodData.BuffDurationType.Floor => duration == 1 ? "Floor" : "Floors",
+            FoodData.BuffDurationType.Turn => "Lượt",
+            FoodData.BuffDurationType.Combat => "Trận",
+            FoodData.BuffDurationType.Floor => "Tầng",
             _ => fb.buffDurationType.ToString()
         };
 
@@ -1970,7 +1970,7 @@ public class CombatUI : MonoBehaviour
             if (victoryText != null)
             {
                 victoryText.text = string.IsNullOrEmpty(details)
-                    ? "DUNGEON VICTORY!\n\nYou cleared the dungeon and defeated the Boss!\nAll loot and crops have been secured."
+                    ? "CHIẾN THẮNG HẦM NGỤC!\n\nBạn đã chinh phục hầm ngục và đánh bại Thủ Lĩnh!\nToàn bộ chiến lợi phẩm và nông sản đã được bảo toàn an toàn."
                     : details;
             }
         }
@@ -1983,7 +1983,7 @@ public class CombatUI : MonoBehaviour
             defeatPanel.SetActive(true);
             if (defeatText != null)
             {
-                defeatText.text = "DEFEATED IN BATTLE!\n\nYou were defeated in the dungeon.\nLoot collected during this expedition has been lost.";
+                defeatText.text = "THẤT BẠI TRONG CHIẾN ĐẤU!\n\nBạn đã bị đánh gục trong hầm ngục.\nChiến lợi phẩm thu thập trong chuyến thám hiểm này đã bị rơi mất.";
             }
         }
     }
@@ -2048,12 +2048,12 @@ public class CombatUI : MonoBehaviour
             TextMeshProUGUI titleText = rewardPanel.transform.Find("Box/Title")?.GetComponent<TextMeshProUGUI>();
             if (titleText != null)
             {
-                titleText.text = "TREASURE ROOM REWARD!";
+                titleText.text = "PHẦN THƯỞNG PHÒNG KHO BÁU!";
             }
 
             if (rewardDescriptionText != null)
             {
-                rewardDescriptionText.text = $"TREASURE ROOM!\n\n{rewardDesc}";
+                rewardDescriptionText.text = $"PHÒNG KHO BÁU!\n\n{rewardDesc}";
             }
         }
     }
@@ -2075,17 +2075,17 @@ public class CombatUI : MonoBehaviour
             TextMeshProUGUI titleText = rewardPanel.transform.Find("Box/Title")?.GetComponent<TextMeshProUGUI>();
             if (titleText != null)
             {
-                titleText.text = $"WAVE {waveIndex + 1} CLEARED!";
+                titleText.text = $"VƯỢT QUA ĐỢT {waveIndex + 1}!";
             }
 
             if (rewardDescriptionText != null)
             {
                 System.Text.StringBuilder sb = new();
-                sb.AppendLine("<size=18><color=#B0BEC5>All enemies defeated!</color></size>\n");
+                sb.AppendLine("<size=18><color=#B0BEC5>Tất cả quái vật đã bị tiêu diệt!</color></size>\n");
 
                 if (waveLoot != null && waveLoot.Count > 0)
                 {
-                    sb.AppendLine("<size=20><color=#FFD700>Loot dropped from monsters:</color></size>");
+                    sb.AppendLine("<size=20><color=#FFD700>Chiến lợi phẩm thu được từ quái vật:</color></size>");
                     Dictionary<ItemData, int> combined = new();
                     foreach (var slot in waveLoot)
                     {
@@ -2101,7 +2101,7 @@ public class CombatUI : MonoBehaviour
                 }
                 else
                 {
-                    sb.AppendLine("<color=#888888>(No loot dropped this wave)</color>");
+                    sb.AppendLine("<color=#888888>(Không có chiến lợi phẩm rơi trong đợt này)</color>");
                 }
 
                 rewardDescriptionText.text = sb.ToString();
@@ -2112,7 +2112,7 @@ public class CombatUI : MonoBehaviour
                 TextMeshProUGUI btnText = rewardClaimButton.GetComponentInChildren<TextMeshProUGUI>();
                 if (btnText != null)
                 {
-                    btnText.text = "CONTINUE";
+                    btnText.text = "TIẾP TỤC";
                 }
             }
         }

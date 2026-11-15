@@ -431,30 +431,30 @@ public class CombatTutorialGuide : MonoBehaviour
 
                 if (bannerTitleText != null)
                 {
-                    bannerTitleText.text = "<color=#FFD700>HƯỚNG DẪN CHIẾN ĐẤU [1/4]: CƠ CHẾ TỐC ĐỘ (SPD) & ĐỘ NO</color>";
+                    bannerTitleText.text = "<color=#FFD700>HƯỚNG DẪN CHIẾN ĐẤU [1/4]: CƠ CHẾ TỐC ĐỘ & ĐỘ NO</color>";
                 }
                 if (bannerBodyText != null)
                 {
-                    bannerBodyText.text = "1. <b>Tốc Độ (SPD):</b> Ai có SPD cao hơn sẽ ĐI TRƯỚC! Quái vật có <color=#FF6B6B><b>10 SPD</b></color>, bạn có <color=#5599FF><b>9 SPD</b></color> (sẽ bị đánh trước!).\n" +
+                    bannerBodyText.text = "1. <b>Tốc Độ:</b> Ai có Tốc Độ cao hơn sẽ ĐI TRƯỚC! Quái vật có <color=#FF6B6B><b>10 Tốc Độ</b></color>, bạn có <color=#5599FF><b>9 Tốc Độ</b></color> (sẽ bị đánh trước!).\n" +
                                           "2. <b>Độ No:</b> Giữ ở mốc 'No Nê' (30%-79%) để nhận Buff toàn diện (+2 ATK, +1 DEF, +2 SPD).\n" +
-                                          "Hãy bấm <color=#FFA500><b>[EAT] (Phím 3)</b></color> ăn Súp Cà Rốt để tăng lên <color=#50FA7B><b>11 SPD</b></color> (> 10 SPD) giành quyền ĐI TRƯỚC!";
+                                          "Hãy bấm <color=#FFA500><b>[ĂN] (Phím 3)</b></color> ăn Súp Cà Rốt để tăng lên <color=#50FA7B><b>11 Tốc Độ</b></color> (> 10) giành quyền ĐI TRƯỚC!";
                 }
-                PointToButton(combatUI != null && combatUI.eatButton != null ? combatUI.eatButton.GetComponent<RectTransform>() : null, "[EAT] ĂN SÚP (+2 SPD)");
+                PointToButton(combatUI != null && combatUI.eatButton != null ? combatUI.eatButton.GetComponent<RectTransform>() : null, "[ĂN] ĂN SÚP (+2 TỐC ĐỘ)");
                 if (enemyIntentPillGO != null) enemyIntentPillGO.SetActive(false);
                 break;
 
             case CombatPhase.AttackTarget:
                 if (bannerTitleText != null)
                 {
-                    bannerTitleText.text = "<color=#50FA7B>TỐC ĐỘ ĐÃ ĐẠT 11 SPD > 10 SPD: BẠN ĐÃ ĐI TRƯỚC!</color>";
+                    bannerTitleText.text = "<color=#50FA7B>TỐC ĐỘ ĐÃ ĐẠT 11 > 10: BẠN ĐÃ ĐI TRƯỚC!</color>";
                 }
                 if (bannerBodyText != null)
                 {
-                    bannerBodyText.text = "Xuất sắc! Sau khi ăn Súp, Tốc Độ đạt <color=#50FA7B><b>11 SPD</b></color> (cao hơn 10 SPD của địch), giúp bạn <color=#FFD700><b>GIÀNH QUYỀN ĐI TRƯỚC!</b></color>\n" +
-                                          "<color=#50FA7B><b>Thanh Buff Dưới Máu:</b></color> Các biểu tượng tròn hiển thị trạng thái No Nê & Súp Tốc Độ. Hãy rê chuột vào icon để xem chi tiết!\n" +
-                                          "Giờ đến lượt bạn, hãy bấm <color=#FF5555><b>[ATTACK] (Phím 1)</b></color> để tung đòn tấn công!";
+                    bannerBodyText.text = "Xuất sắc! Sau khi ăn Súp, Tốc Độ đạt <color=#50FA7B><b>11</b></color> (cao hơn 10 của địch), giúp bạn <color=#FFD700><b>GIÀNH QUYỀN ĐI TRƯỚC!</b></color>\n" +
+                                          "<color=#50FA7B><b>Thanh Hiệu Ứng Dưới Máu:</b></color> Các biểu tượng tròn hiển thị trạng thái No Nê & Súp Tốc Độ. Hãy rê chuột vào icon để xem chi tiết!\n" +
+                                          "Giờ đến lượt bạn, hãy bấm <color=#FF5555><b>[TẤN CÔNG] (Phím 1)</b></color> để tung đòn tấn công!";
                 }
-                PointToButton(combatUI != null && combatUI.attackButton != null ? combatUI.attackButton.GetComponent<RectTransform>() : null, "[ATTACK] TẤN CÔNG (1 AP)");
+                PointToButton(combatUI != null && combatUI.attackButton != null ? combatUI.attackButton.GetComponent<RectTransform>() : null, "[TẤN CÔNG] (1 AP)");
                 if (enemyIntentPillGO != null) enemyIntentPillGO.SetActive(false);
                 break;
 
@@ -466,16 +466,16 @@ public class CombatTutorialGuide : MonoBehaviour
                 }
                 if (bannerBodyText != null)
                 {
-                    bannerBodyText.text = "Chú ý nhãn đỏ trên đầu quái vật: <b>Ý Định (Intent)</b> của nó là <color=#FF5555><b>Tấn Công (6 DMG)</b></color>! Quái sắp đánh bạn!\n" +
-                                          "Hãy bấm <color=#5599FF><b>[DEFEND] (Phím 2)</b></color> để nhận <color=#5599FF><b>+5 Giáp Ảo (Shield)</b></color> hấp thụ toàn bộ đòn đánh trước khi trừ vào máu!";
+                    bannerBodyText.text = "Chú ý nhãn đỏ trên đầu quái vật: <b>Ý Định</b> của nó là <color=#FF5555><b>Tấn Công (6 Sát Thương)</b></color>! Quái sắp đánh bạn!\n" +
+                                          "Hãy bấm <color=#5599FF><b>[PHÒNG THỦ] (Phím 2)</b></color> để nhận <color=#5599FF><b>+5 Giáp Ảo</b></color> hấp thụ toàn bộ đòn đánh trước khi trừ vào máu!";
                 }
-                PointToButton(combatUI != null && combatUI.defendButton != null ? combatUI.defendButton.GetComponent<RectTransform>() : null, "[DEFEND] THỦ (+5 GIÁP ẢO)");
+                PointToButton(combatUI != null && combatUI.defendButton != null ? combatUI.defendButton.GetComponent<RectTransform>() : null, "[PHÒNG THỦ] (+5 GIÁP ẢO)");
                 if (enemyIntentPillGO != null)
                 {
                     enemyIntentPillGO.SetActive(true);
                     if (enemyIntentPillText != null)
                     {
-                        enemyIntentPillText.text = "Ý ĐỊNH: TẤN CÔNG (6 DMG)";
+                        enemyIntentPillText.text = "Ý ĐỊNH: TẤN CÔNG (6 SÁT THƯƠNG)";
                     }
                 }
                 break;
@@ -487,7 +487,7 @@ public class CombatTutorialGuide : MonoBehaviour
                 }
                 if (bannerBodyText != null)
                 {
-                    bannerBodyText.text = "Quan sát quái vật lao đến tấn công: Giáp Ảo (+5 Shield) kết hợp DEF sẽ hấp thụ hoàn toàn đòn đánh (BLOCKED!) mà không mất giọt máu nào!";
+                    bannerBodyText.text = "Quan sát quái vật lao đến tấn công: Giáp Ảo kết hợp Phòng Thủ sẽ hấp thụ hoàn toàn đòn đánh mà không mất giọt máu nào!";
                 }
                 PointToButton(null, "");
                 if (enemyIntentPillGO != null) enemyIntentPillGO.SetActive(true);
@@ -503,14 +503,14 @@ public class CombatTutorialGuide : MonoBehaviour
                 {
                     if (hasPlayerDefendedInTutorial)
                     {
-                        bannerBodyText.text = "Xuất sắc! Giáp Ảo đã hấp thụ trọn vẹn sát thương (BLOCKED)! Giờ đến lượt bạn hồi đầy 3 AP, hãy bấm <color=#FF5555><b>[ATTACK] (Phím 1)</b></color> để kết liễu quái vật!";
+                        bannerBodyText.text = "Xuất sắc! Giáp Ảo đã hấp thụ trọn vẹn sát thương! Giờ đến lượt bạn hồi đầy 3 AP, hãy bấm <color=#FF5555><b>[TẤN CÔNG] (Phím 1)</b></color> để kết liễu quái vật!";
                     }
                     else
                     {
-                        bannerBodyText.text = "Quái vật vừa tấn công bạn! Lần sau nhớ dùng [DEFEND] để nhận Giáp Ảo chặn sát thương nhé. Giờ hãy bấm <color=#FF5555><b>[ATTACK] (Phím 1)</b></color> để kết liễu nó!";
+                        bannerBodyText.text = "Quái vật vừa tấn công bạn! Lần sau nhớ dùng [PHÒNG THỦ] để nhận Giáp Ảo chặn sát thương nhé. Giờ hãy bấm <color=#FF5555><b>[TẤN CÔNG] (Phím 1)</b></color> để kết liễu nó!";
                     }
                 }
-                PointToButton(combatUI != null && combatUI.attackButton != null ? combatUI.attackButton.GetComponent<RectTransform>() : null, "[ATTACK] KẾT LIỄU!");
+                PointToButton(combatUI != null && combatUI.attackButton != null ? combatUI.attackButton.GetComponent<RectTransform>() : null, "[TẤN CÔNG] KẾT LIỄU!");
                 break;
 
             case CombatPhase.Finished:
@@ -565,7 +565,7 @@ public class CombatTutorialGuide : MonoBehaviour
             {
                 if (bannerBodyText != null)
                 {
-                    bannerBodyText.text = "Đòn đánh chính xác! Tiếp tục bấm <color=#FF5555><b>[ATTACK]</b></color> để dứt điểm quái vật!";
+                    bannerBodyText.text = "Đòn đánh chính xác! Tiếp tục bấm <color=#FF5555><b>[TẤN CÔNG]</b></color> để dứt điểm quái vật!";
                 }
             }
         }
@@ -578,14 +578,14 @@ public class CombatTutorialGuide : MonoBehaviour
             hasPlayerDefendedInTutorial = true;
             if (bannerTitleText != null)
             {
-                bannerTitleText.text = "<color=#5599FF>GIÁP ẢO ĐÃ KÍCH HOẠT! (+5 SHIELD)</color>";
+                bannerTitleText.text = "<color=#5599FF>GIÁP ẢO ĐÃ KÍCH HOẠT! (+5 GIÁP)</color>";
             }
             if (bannerBodyText != null)
             {
-                bannerBodyText.text = "Giáp Ảo (+5 Shield) đã sẵn sàng! Quan sát biểu tượng Khiên xanh xuất hiện dưới thanh máu của bạn.\n" +
-                                      "Bây giờ hãy bấm <color=#FFA500><b>[KẾT THÚC LƯỢT] (Phím Space)</b></color> để nhường lượt cho quái vật đánh vào Giáp Ảo của bạn!";
+                bannerBodyText.text = "Giáp Ảo (+5 Giáp) đã sẵn sàng! Quan sát biểu tượng Khiên xanh xuất hiện dưới thanh máu của bạn.\n" +
+                                      "Bây giờ hãy bấm <color=#FFA500><b>[KẾT THÚC LƯỢT] (Phím Cách)</b></color> để nhường lượt cho quái vật đánh vào Giáp Ảo của bạn!";
             }
-            PointToButton(combatUI != null && combatUI.endTurnButton != null ? combatUI.endTurnButton.GetComponent<RectTransform>() : null, "[KẾT THÚC LƯỢT] (Space)");
+            PointToButton(combatUI != null && combatUI.endTurnButton != null ? combatUI.endTurnButton.GetComponent<RectTransform>() : null, "[KẾT THÚC LƯỢT]");
 
             if (combatUI != null)
             {

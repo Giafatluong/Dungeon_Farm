@@ -1,7 +1,7 @@
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
 using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 /// <summary>
 /// A single item requirement slot inside an Offering Card.
@@ -73,9 +73,27 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
 
     public void UpdateVisuals()
     {
-        isCompleted = currentContributed >= requiredAmount ||
-            (parentOffering != null && parentOffering.completed) ||
-            (ProgressionManager.Instance != null && parentOffering != null && ProgressionManager.Instance.IsOfferingCompleted(parentOffering.offeringKey));
+        if (parentOffering != null && ProgressionManager.Instance != null)
+        {
+            bool offeringDone = parentOffering.completed ||
+                ProgressionManager.Instance.IsOfferingCompleted(parentOffering.offeringKey);
+
+            if (offeringDone)
+            {
+                currentContributed = requiredAmount;
+                isCompleted = true;
+            }
+            else
+            {
+                currentContributed = ProgressionManager.Instance.GetOfferingProgress(parentOffering.offeringKey, reqIndex);
+                isCompleted = currentContributed >= requiredAmount;
+            }
+        }
+        else
+        {
+            isCompleted = currentContributed >= requiredAmount ||
+                (parentOffering != null && parentOffering.completed);
+        }
 
         if (itemIcon != null)
         {

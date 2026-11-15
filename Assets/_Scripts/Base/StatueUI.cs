@@ -332,7 +332,7 @@ public class StatueUI : MonoBehaviour
             if (ps != null)
             {
                 ps.RefreshStatsFromProgression();
-                DamagePopupManager.ShowText(ps.transform.position + Vector3.up * 1.5f, $"+{offering.rewardAmount} {offering.rewardStat} PERMANENT!", new Color(1f, 0.85f, 0.2f), 4.5f);
+                DamagePopupManager.ShowText(ps.transform.position + Vector3.up * 1.5f, $"+{offering.rewardAmount} {GetStatDisplayName(offering.rewardStat)} VĨNH VIỄN!", new Color(1f, 0.85f, 0.2f), 4.5f);
             }
 
             if (currentStatue != null)
@@ -340,7 +340,7 @@ public class StatueUI : MonoBehaviour
                 currentStatue.NotifyOfferingSuccess(offering);
             }
 
-            SetFeedback($"<color=#FFD700>[BLESSING] DIVINE BLESSING! Completed {GetOfferingDisplayName(offering)}! (+{offering.rewardAmount} {offering.rewardStat} permanently)</color>");
+            SetFeedback($"<color=#FFD700>PHƯỚC LÀNH CỔ XƯA! Đã hoàn thành {GetOfferingDisplayName(offering)}! (+{offering.rewardAmount} {GetStatDisplayName(offering.rewardStat)} vĩnh viễn)</color>");
             Debug.Log($"[StatueUI] Offering completed: {offering.offeringName}! Rewarded permanent +{offering.rewardAmount} {offering.rewardStat}");
             TutorialManager.Instance?.NotifyStatueOfferingDone();
 
@@ -360,7 +360,7 @@ public class StatueUI : MonoBehaviour
 
         if (!offering.IsUnlocked())
         {
-            SetFeedback("<color=#FF6666>Cá»™t má»‘c nÃ y Ä‘ang bá»‹ khÃ³a! Cáº§n hoÃ n thÃ nh cá»™t má»‘c trÆ°á»›c Ä‘Ã³.</color>");
+            SetFeedback("<color=#FF6666>Cột mốc này đang bị khóa! Cần hoàn thành cột mốc trước đó.</color>");
             return;
         }
 
@@ -368,7 +368,7 @@ public class StatueUI : MonoBehaviour
             (ProgressionManager.Instance != null && ProgressionManager.Instance.IsOfferingCompleted(offering.offeringKey));
         if (isDone)
         {
-            SetFeedback("<color=#88FF88>This offering is already complete!</color>");
+            SetFeedback("<color=#88FF88>Cột mốc dâng lễ này đã hoàn thành!</color>");
             return;
         }
 
@@ -394,6 +394,19 @@ public class StatueUI : MonoBehaviour
                 deposit += backpackDeposit;
             }
 
+            if (deposit < needed && HomeChest.Instance != null && HomeChest.Instance.chestContainer != null)
+            {
+                int chestAvail = GetTotalItemCount(HomeChest.Instance.chestContainer, req.item);
+                if (chestAvail > 0)
+                {
+                    int fromChest = Mathf.Min(chestAvail, needed - deposit);
+                    HomeChest.Instance.chestContainer.RemoveItem(req.item, fromChest);
+                    HomeChest.Instance.chestContainer.NotifyChange();
+                    HomeChest.Instance.SaveChestData();
+                    deposit += fromChest;
+                }
+            }
+
             if (deposit <= 0) continue;
 
             if (ProgressionManager.Instance != null)
@@ -408,12 +421,13 @@ public class StatueUI : MonoBehaviour
         {
             backpackContainer.NotifyChange();
             CurrentItemPanel.RefreshHotbar();
-            SetFeedback($"<color=#FFD700>Quick-offered {totalDeposited} items to {GetOfferingDisplayName(offering)}!</color>");
+            SetFeedback($"<color=#FFD700>Đã dâng nhanh {totalDeposited} vật phẩm cho {GetOfferingDisplayName(offering)}!</color>");
             CheckOfferingCompletion(offering);
+            RefreshAllOfferingSlots();
         }
         else
         {
-            SetFeedback("<color=#FFAA55>No matching items in backpack for this offering.</color>");
+            SetFeedback("<color=#FFAA55>Không có vật phẩm phù hợp trong ba lô hoặc Rương Nhà để dâng lễ.</color>");
         }
     }
 
@@ -443,7 +457,7 @@ public class StatueUI : MonoBehaviour
         int totalDef = ps != null ? ps.GetCurrentDEF() : (1 + def);
         int totalSpd = ps != null ? ps.GetCurrentSpeed() : (14 + spd);
 
-        permanentStatsText.text = $"<b>Blessed Permanent Stats:</b>   <color=#55FF88>HP: {totalHp} (+{hp})</color>   |   <color=#FF7777>ATK: {totalAtk} (+{atk})</color>   |   <color=#77AAFF>DEF: {totalDef} (+{def})</color>   |   <color=#FFFF77>Speed: {totalSpd} (+{spd})</color>";
+        permanentStatsText.text = $"<b>Chỉ Số Vĩnh Viễn:</b>   <color=#55FF88>HP: {totalHp} (+{hp})</color>   |   <color=#FF7777>ATK: {totalAtk} (+{atk})</color>   |   <color=#77AAFF>DEF: {totalDef} (+{def})</color>   |   <color=#FFFF77>Tốc độ: {totalSpd} (+{spd})</color>";
     }
 
     #region Run Blessings UI (Divine Blessings & Build Paths)
@@ -456,8 +470,8 @@ public class StatueUI : MonoBehaviour
 
         if (isStarter)
         {
-            blessingStatusText.text = "<b><color=#55CCFF>[STARTER] [PROTECTION] Divine Protection:</color></b> Automatically protecting your inventory (items won't drop upon defeat on Floors 1-2)!";
-            if (blessingButtonText != null) blessingButtonText.text = "Change Blessing";
+            blessingStatusText.text = "<b><color=#55CCFF>[BẢO HỘ TÂN THỦ] Thần Linh Che Chở:</color></b> Tự động bảo vệ ba lô của bạn (không bị rơi vật phẩm khi gục ngã ở Tầng 1-2)!";
+            if (blessingButtonText != null) blessingButtonText.text = "Đổi Phước Lành";
         }
         else if (currentType != BlessingType.None)
         {
@@ -466,13 +480,13 @@ public class StatueUI : MonoBehaviour
             string title = info != null ? info.title : currentType.ToString();
             string icon = info != null ? info.iconSymbol : "[BUFF]";
             string desc = info != null ? info.description : "";
-            blessingStatusText.text = $"<b><color=#{hex}>[ACTIVE] {icon} {title}:</color></b> {desc} <i><color=#AAAAAA>(Expires at day end, defeat, or run clear)</color></i>";
-            if (blessingButtonText != null) blessingButtonText.text = "Change Blessing";
+            blessingStatusText.text = $"<b><color=#{hex}>[HIỆU LỰC] {icon} {title}:</color></b> {desc} <i><color=#AAAAAA>(Hết hạn vào cuối ngày, khi gục ngã hoặc hoàn thành hầm ngục)</color></i>";
+            if (blessingButtonText != null) blessingButtonText.text = "Đổi Phước Lành";
         }
         else
         {
-            blessingStatusText.text = "<b><color=#FFCC44>[NO BLESSING CHOSEN]</color></b> Choose a blessing to empower your run before entering the Dungeon!";
-            if (blessingButtonText != null) blessingButtonText.text = "Choose Blessing";
+            blessingStatusText.text = "<b><color=#FFCC44>[CHƯA CHỌN PHƯỚC LÀNH]</color></b> Hãy chọn một phước lành để gia tăng sức mạnh trước khi tiến vào Hầm Ngục!";
+            if (blessingButtonText != null) blessingButtonText.text = "Chọn Phước Lành";
         }
     }
 
@@ -698,10 +712,10 @@ public class StatueUI : MonoBehaviour
         hlg.childForceExpandWidth = true;
         hlg.childForceExpandHeight = true;
 
-        CreateTabButton("Táº¥n CÃ´ng (ATK)", OfferingViewCategory.Might, tabsGO.transform);
-        CreateTabButton("PhÃ²ng Thá»§ (DEF)", OfferingViewCategory.Protection, tabsGO.transform);
-        CreateTabButton("Tá»‘c Äá»™ (SPD)", OfferingViewCategory.Swiftness, tabsGO.transform);
-        CreateTabButton("Sinh Má»‡nh (HP)", OfferingViewCategory.Vitality, tabsGO.transform);
+        CreateTabButton("Tấn Công", OfferingViewCategory.Might, tabsGO.transform);
+        CreateTabButton("Phòng Thủ", OfferingViewCategory.Protection, tabsGO.transform);
+        CreateTabButton("Tốc Độ", OfferingViewCategory.Swiftness, tabsGO.transform);
+        CreateTabButton("Sinh Mệnh", OfferingViewCategory.Vitality, tabsGO.transform);
     }
 
     private void CreateTabButton(string label, OfferingViewCategory category, Transform parent)
@@ -860,7 +874,7 @@ public class StatueUI : MonoBehaviour
         badgeTMP.fontSize = 10;
         badgeTMP.alignment = TextAlignmentOptions.Center;
         badgeTMP.fontStyle = FontStyles.Bold;
-        string statLabel = off.rewardStat == Offering.RewardStat.MaxHP ? "HP" : off.rewardStat.ToString();
+        string statLabel = GetStatDisplayName(off.rewardStat);
         badgeTMP.text = $"+{off.rewardAmount} {statLabel}";
         badgeTMP.color = Color.white;
         badgeTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
@@ -874,7 +888,7 @@ public class StatueUI : MonoBehaviour
             DungeonUIAssetHelper.ApplyFont(doneTMP);
             doneTMP.fontSize = 11;
             doneTMP.fontStyle = FontStyles.Bold;
-            doneTMP.text = "[ÄÃƒ HOÃ€N THÃ€NH]";
+            doneTMP.text = "[ĐÃ HOÀN THÀNH]";
             doneTMP.color = new Color(0.35f, 1f, 0.5f);
             doneGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 20);
         }
@@ -894,7 +908,7 @@ public class StatueUI : MonoBehaviour
             lockTMP.fontSize = 9;
             lockTMP.fontStyle = FontStyles.Bold;
             lockTMP.alignment = TextAlignmentOptions.Center;
-            lockTMP.text = off.tier == 5 ? "[Cáº¦N BOSS 1]" : (off.tier == 10 ? "[Cáº¦N BOSS Tá»I THÆ¯á»¢NG]" : "[CHÆ¯A Má»ž KHÃ“A]");
+            lockTMP.text = off.tier == 5 ? "[CẦN BOSS 1]" : (off.tier == 10 ? "[CẦN BOSS TỐI THƯỢNG]" : "[CHƯA MỞ KHÓA]");
             lockTMP.color = new Color(1f, 0.65f, 0.65f);
             lockTxtGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 20);
         }
@@ -918,7 +932,7 @@ public class StatueUI : MonoBehaviour
             btnTMP.fontSize = 10;
             btnTMP.fontStyle = FontStyles.Bold;
             btnTMP.alignment = TextAlignmentOptions.Center;
-            btnTMP.text = "Quick Offer";
+            btnTMP.text = "Dâng Nhanh";
             btnTMP.color = Color.white;
             btnTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
         }
@@ -1188,6 +1202,18 @@ public class StatueUI : MonoBehaviour
         return canvas;
     }
 
+    private static string GetStatDisplayName(Offering.RewardStat stat)
+    {
+        return stat switch
+        {
+            Offering.RewardStat.ATK => "Công",
+            Offering.RewardStat.DEF => "Thủ",
+            Offering.RewardStat.Speed => "Tốc Độ",
+            Offering.RewardStat.MaxHP => "Máu",
+            _ => "Chỉ Số"
+        };
+    }
+
     private static string GetOfferingDisplayName(Offering off)
     {
         if (off == null) return "Offering";
@@ -1213,11 +1239,11 @@ public class StatueUI : MonoBehaviour
 
         return off.rewardStat switch
         {
-            Offering.RewardStat.ATK => $"Lá»… Váº­t Chiáº¿n Binh {tierRoman} (+{off.rewardAmount} ATK)",
-            Offering.RewardStat.DEF => $"Lá»… Váº­t Há»™ Vá»‡ {tierRoman} (+{off.rewardAmount} DEF)",
-            Offering.RewardStat.Speed => $"Lá»… Váº­t Nhanh Nháº¹n {tierRoman} (+{off.rewardAmount} Speed)",
-            Offering.RewardStat.MaxHP => $"Lá»… Váº­t Sinh Má»‡nh {tierRoman} (+{off.rewardAmount} HP)",
-            _ => $"Lá»… Váº­t {tierRoman} (+{off.rewardAmount})"
+            Offering.RewardStat.ATK => $"Lễ Vật Chiến Binh {tierRoman}",
+            Offering.RewardStat.DEF => $"Lễ Vật Hộ Vệ {tierRoman}",
+            Offering.RewardStat.Speed => $"Lễ Vật Nhanh Nhẹn {tierRoman}",
+            Offering.RewardStat.MaxHP => $"Lễ Vật Sinh Mệnh {tierRoman}",
+            _ => $"Lễ Vật {tierRoman}"
         };
     }
 

@@ -237,7 +237,7 @@ public class CombatManager : MonoBehaviour
         Time.timeScale = BattleSpeed;
 
         OnCombatStarted?.Invoke();
-        LogMessage("Combat started!");
+        LogMessage("Trận chiến bắt đầu!");
 
         if (turnManager != null)
         {
@@ -282,13 +282,13 @@ public class CombatManager : MonoBehaviour
             if (playerStats.GetCurrentFullnessTier() == PlayerStats.FullnessTier.Overstuffed && playerStats.currentHealth < playerStats.maxHealth)
             {
                 playerStats.Heal(2);
-                DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.3f, "+2 HP (Digestion)", new Color(0.35f, 1f, 0.45f), 4.2f);
-                LogMessage("[Độ No: Bội Thực] Quá trình tiêu hóa hồi phục +2 HP!");
+                DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.3f, "+2 Máu", new Color(0.35f, 1f, 0.45f), 4.2f);
+                LogMessage("[Độ No: Bội Thực] Quá trình tiêu hóa hồi phục +2 Máu!");
             }
         }
 
         OnTurnChanged?.Invoke(currentTurn);
-        LogMessage("Your turn! Choose your action.");
+        LogMessage("Lượt của bạn! Hãy chọn hành động.");
     }
 
     public void StartEnemyTurn(EnemyStats enemy)
@@ -310,7 +310,7 @@ public class CombatManager : MonoBehaviour
 
         currentTurn = Turn.Enemy;
         OnTurnChanged?.Invoke(currentTurn);
-        LogMessage($"{enemy.enemyData?.enemyName ?? "Enemy"} is taking its turn...");
+        LogMessage($"{enemy.enemyData?.enemyName ?? "Kẻ địch"} đang thực hiện lượt...");
 
         if (enemyTurnCoroutine != null) StopCoroutine(enemyTurnCoroutine);
         enemyTurnCoroutine = StartCoroutine(EnemyTurnRoutine(enemy));
@@ -325,7 +325,15 @@ public class CombatManager : MonoBehaviour
         {
             actionTaken = enemy.currentIntent;
             enemy.PerformIntentAction(playerStats);
-            LogMessage($"{enemy.enemyData?.enemyName ?? "Enemy"} used {actionTaken}!");
+            string intentName = actionTaken switch
+            {
+                EnemyData.EnemyIntent.Attack => "Tấn Công",
+                EnemyData.EnemyIntent.Defend => "Phòng Thủ",
+                EnemyData.EnemyIntent.Buff => "Tăng Lực",
+                EnemyData.EnemyIntent.Debuff => "Gây Hại",
+                _ => actionTaken.ToString()
+            };
+            LogMessage($"{enemy.enemyData?.enemyName ?? "Kẻ địch"} sử dụng {intentName}!");
         }
 
         // Allow enemy action animation to complete before advancing turn
@@ -371,7 +379,7 @@ public class CombatManager : MonoBehaviour
             playerStats.ReduceTurnBuffDuration();
         }
 
-        LogMessage("Turn ended.");
+        LogMessage("Kết thúc lượt.");
         OnPlayerEndTurnAction?.Invoke();
 
         if (turnManager != null)
@@ -421,7 +429,7 @@ public class CombatManager : MonoBehaviour
             if (targetSelector != null) targetSelector.AutoSelectTarget(enemies);
             if (targetSelector == null || targetSelector.selectedEnemy == null || targetSelector.selectedEnemy.currentHealth <= 0)
             {
-                LogMessage("No target selected!");
+                LogMessage("Chưa chọn mục tiêu!");
                 return;
             }
         }
@@ -433,7 +441,7 @@ public class CombatManager : MonoBehaviour
             target = targetSelector != null ? targetSelector.selectedEnemy : null;
             if (target == null || target.currentHealth <= 0)
             {
-                LogMessage("Target is already dead!");
+                LogMessage("Mục tiêu đã bị tiêu diệt!");
                 return;
             }
         }
@@ -468,7 +476,7 @@ public class CombatManager : MonoBehaviour
         playerStats.currentAP--;
         OnPlayerAttackAction?.Invoke(target, dealtDamage);
 
-        LogMessage($"You attacked {target.enemyData?.enemyName ?? "enemy"} for {dealtDamage} damage!");
+        LogMessage($"Bạn đã tấn công {target.enemyData?.enemyName ?? "kẻ địch"}, gây {dealtDamage} sát thương!");
 
         // Blessing: Bitter Decay - Reduces 2 DEF and inflicts direct poison damage
         if (ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.BitterDecay) && target.currentHealth > 0)
@@ -476,7 +484,7 @@ public class CombatManager : MonoBehaviour
             target.ReduceDEF(2);
             int poisonDmg = target.TakeDamage(4, showFeedback: true, ignoreDefense: true); // Extra 4 direct poison damage
             DamagePopupManager.ShowText(target.transform.position + Vector3.up * 1.2f, $"Decay Poison! -{poisonDmg} HP", new Color(0.6f, 0.3f, 0.9f), 4.5f);
-            LogMessage($"[Blessing: BitterDecay] Corroded 2 DEF and dealt {poisonDmg} poison damage to {target.enemyData?.enemyName ?? "monster"}!");
+            LogMessage($"[Phước Lành: Rữa Mục] Giảm 2 DEF và gây {poisonDmg} sát thương độc lên {target.enemyData?.enemyName ?? "quái vật"}!");
             if (VFXManager.Instance != null)
             {
                 VFXManager.Instance.PlayAttackAnimationByDamage(target.transform.position, poisonDmg, false, isPoison: true);
@@ -509,12 +517,12 @@ public class CombatManager : MonoBehaviour
         {
             hasDefendedThisTurn = true;
             playerStats.currentAP = Mathf.Min(playerStats.maxAP, playerStats.currentAP + 1);
-            DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.5f, "+1 AP (Bastion)!", new Color(1f, 0.8f, 0.2f), 4.5f);
-            LogMessage("[Blessing: BastionStrike] Bastion Strike: First defend restored +1 AP!");
+            DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.5f, "+1 Thể Lực", new Color(1f, 0.8f, 0.2f), 4.5f);
+            LogMessage("[Phước Lành: Pháo Đài] Lần thủ đầu tiên hồi lại +1 Thể lực!");
         }
 
-        DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.1f, $"+{playerStats.defendValue} DEF", new Color(0.4f, 0.75f, 1f), 4.6f);
-        LogMessage($"You take a defensive stance! (+{playerStats.defendValue} shield per stack, {playerStats.defendCount} stack(s))");
+        DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.1f, $"+{playerStats.defendValue} Thủ", new Color(0.4f, 0.75f, 1f), 4.6f);
+        LogMessage($"Bạn vào thế phòng thủ! (+{playerStats.defendValue} giáp mỗi cộng dồn, hiện có {playerStats.defendCount} cộng dồn)");
         OnPlayerDefendAction?.Invoke();
     }
 
@@ -530,7 +538,7 @@ public class CombatManager : MonoBehaviour
 
         if (!isAtEntrance && !isFreeEat && playerStats.currentAP <= 0)
         {
-            LogMessage("Not enough AP to eat!");
+            LogMessage("Không đủ điểm AP để ăn!");
             return;
         }
 
@@ -539,7 +547,7 @@ public class CombatManager : MonoBehaviour
         {
             if (playerStats.currentHunger >= playerStats.maxHunger && playerStats.currentHealth >= playerStats.maxHealth)
             {
-                LogMessage("Health and fullness are full, no need to eat!");
+                LogMessage("Máu và độ no đều đã đầy, không cần ăn!");
                 DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.3f, "FULL HP & FULLNESS!", Color.yellow, 4.5f);
             }
             return;
@@ -551,7 +559,7 @@ public class CombatManager : MonoBehaviour
         {
             hasEatenThisTurn = true;
             DamagePopupManager.ShowText(playerStats.transform.position + Vector3.up * 1.4f, "Feast: 0 AP!", new Color(1f, 0.5f, 0.8f), 4.5f);
-            LogMessage($"[Blessing: EndlessFeast] Endless Feast: Ate {food.itemName} without consuming AP!");
+            LogMessage($"[Phước Lành: Tiệc Vô Tận] Ăn {food.itemName} mà không tốn AP!");
         }
         else if (!isAtEntrance)
         {
@@ -571,9 +579,9 @@ public class CombatManager : MonoBehaviour
                     int dur = hasFeast ? fb.buffDuration * 2 : fb.buffDuration;
                     string durUnit = fb.buffDurationType switch
                     {
-                        FoodData.BuffDurationType.Turn => dur == 1 ? "turn" : "turns",
-                        FoodData.BuffDurationType.Combat => dur == 1 ? "battle" : "battles",
-                        FoodData.BuffDurationType.Floor => dur == 1 ? "floor" : "floors",
+                        FoodData.BuffDurationType.Turn => "lượt",
+                        FoodData.BuffDurationType.Combat => "trận",
+                        FoodData.BuffDurationType.Floor => "tầng",
                         _ => fb.buffDurationType.ToString()
                     };
                     string sign = fb.buffValue > 0 ? "+" : "";
@@ -582,13 +590,13 @@ public class CombatManager : MonoBehaviour
             }
             if (bLogs.Count > 0)
             {
-                LogMessage($"You ate {food.itemName}! (Buffs: {string.Join(", ", bLogs)})");
+                LogMessage($"Bạn đã ăn {food.itemName}! (Hiệu ứng: {string.Join(", ", bLogs)})");
                 OnPlayerEatAction?.Invoke(food);
                 return;
             }
         }
 
-        LogMessage($"You ate {food.itemName}!");
+        LogMessage($"Bạn đã ăn {food.itemName}!");
         OnPlayerEatAction?.Invoke(food);
     }
 
@@ -619,7 +627,7 @@ public class CombatManager : MonoBehaviour
         {
             int reflectDmg = target.TakeDamage(reflectedDamage);
             DamagePopupManager.ShowText(target.transform.position + Vector3.up * 1.3f, $"Reflected {reflectDmg} DMG!", new Color(0.9f, 0.8f, 0.2f), 4.5f);
-            LogMessage($"[Blessing: GluttonousAegis] Reflected {reflectDmg} damage to {target.enemyData?.enemyName ?? "enemy"}!");
+            LogMessage($"[Phước Lành: Khiên Phàm Ăn] Phản lại {reflectDmg} sát thương lên {target.enemyData?.enemyName ?? "kẻ địch"}!");
             CheckAllEnemiesDead();
         }
     }
@@ -632,7 +640,7 @@ public class CombatManager : MonoBehaviour
     {
         if (deadEnemy == null) return;
 
-        LogMessage($"{deadEnemy.enemyData?.enemyName ?? "Enemy"} was defeated!");
+        LogMessage($"{deadEnemy.enemyData?.enemyName ?? "Quái vật"} đã bị tiêu diệt!");
 
         // Drop loot - collect into currentWaveLoot for player to loot via UI upon victory
         List<ItemSlot> drops = deadEnemy.GetLootDrops();
@@ -666,7 +674,7 @@ public class CombatManager : MonoBehaviour
                         currentWaveLoot.Add(new ItemSlot { itemData = drops[i].itemData, amount = drops[i].amount });
                     }
 
-                    LogMessage($"Loot drop: {drops[i].itemData.itemName} x{drops[i].amount}");
+                    LogMessage($"Rơi vật phẩm: {drops[i].itemData.itemName} x{drops[i].amount}");
                 }
             }
         }
@@ -749,7 +757,7 @@ public class CombatManager : MonoBehaviour
 
         if (victory)
         {
-            LogMessage("Victory! All enemies defeated.");
+            LogMessage("Chiến thắng! Tất cả quái vật đã bị tiêu diệt.");
             TutorialManager.Instance?.NotifyCombatFinished();
 
             WaveManager waveManager = WaveManager.Instance != null ? WaveManager.Instance : FindFirstObjectByType<WaveManager>();
@@ -830,7 +838,7 @@ public class CombatManager : MonoBehaviour
         }
         else
         {
-            LogMessage("Defeated...");
+            LogMessage("Thất bại...");
         }
     }
 

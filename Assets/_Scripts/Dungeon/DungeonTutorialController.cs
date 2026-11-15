@@ -240,13 +240,13 @@ public class DungeonTutorialController : MonoBehaviour
             stageBadge: isTutorialFloor ? $"ẢI 0/{totalStages}: PHÒNG CHỜ AN TOÀN" : "PHÒNG CHỜ AN TOÀN",
             title: "CHUẨN BỊ THUỘC TÍNH TRƯỚC KHI CHIẾN ĐẤU",
             instruction: "Chào mừng đến Hầm Ngục! Đây là phòng an toàn: Hãy mở túi đồ <color=#FFEA30><b>[B]</b></color> kiểm tra 6 thuộc tính (HP, ATK, DEF, Speed, 3 AP, Độ No). Mỗi khi qua ải mới sẽ tốn 12 Độ No! Bấm nút mũi tên hoặc [Space] để bắt đầu chiến đấu.",
-            keyPrompt: "Bấm [▶ TIẾP TỤC] (Phím D hoặc Space)"
+            keyPrompt: "Bấm [TIẾP TỤC] (Phím D hoặc Space)"
         );
 
         DungeonEntranceArrowUI arrowUI = DungeonEntranceArrowUI.Instance != null ? DungeonEntranceArrowUI.Instance : FindFirstObjectByType<DungeonEntranceArrowUI>();
         if (arrowUI != null && arrowUI.arrowButton != null)
         {
-            PointToTarget(arrowUI.arrowButton.GetComponent<RectTransform>(), "BẤM VÀO ĐÂY [▶]");
+            PointToTarget(arrowUI.arrowButton.GetComponent<RectTransform>(), "BẤM VÀO ĐÂY");
         }
     }
 
@@ -258,7 +258,7 @@ public class DungeonTutorialController : MonoBehaviour
         int totalStages = waveManager != null ? waveManager.GetTotalStages() : 5;
 
         ShowBanner(
-            stageBadge: isTutorialFloor ? $"ẢI {stageNum}/{totalStages}: RƯƠNG KHO BÁU (REWARD ROOM)" : "ẢI KHO BÁU (REWARD)",
+            stageBadge: isTutorialFloor ? $"ẢI {stageNum}/{totalStages}: RƯƠNG KHO BÁU" : "ẢI KHO BÁU",
             title: "THU NHẶT CHIẾN LỢI PHẨM VÀ HẠT GIỐNG MỚI",
             instruction: "Sau khi diệt quái, bạn sẽ gặp Rương Kho Báu chứa hạt giống quý và chiến lợi phẩm: Bấm nút <color=#FFEA30><b>[LẤY HẾT]</b></color> để gom toàn bộ đồ vào Ba lô, sau đó bấm <color=#4EFA8B><b>[TIẾP TỤC]</b></color> để sang ải tiếp theo.",
             keyPrompt: "Bấm [LẤY HẾT] -> Bấm [TIẾP TỤC]"
@@ -303,7 +303,7 @@ public class DungeonTutorialController : MonoBehaviour
         int totalStages = waveManager != null ? waveManager.GetTotalStages() : 5;
 
         ShowBanner(
-            stageBadge: isTutorialFloor ? $"ẢI {stageNum}/{totalStages}: SỰ KIỆN HẦM NGỤC (EVENT ROOM)" : "SỰ KIỆN HẦM NGỤC (EVENT)",
+            stageBadge: isTutorialFloor ? $"ẢI {stageNum}/{totalStages}: SỰ KIỆN HẦM NGỤC" : "SỰ KIỆN HẦM NGỤC",
             title: "SỰ KIỆN NGẪU NHIÊN: ĐÁNH ĐỔI RỦI RO & PHẦN THƯỞNG",
             instruction: "Sự kiện hầm ngục mang đến cơ hội đánh đổi: Dùng máu, độ no hoặc nông sản để đổi lấy buff chỉ số mạnh mẽ, hạt giống quý hoặc hồi phục. Hãy đọc kỹ chi phí / phần thưởng và nhấp chọn một phương án phù hợp!",
             keyPrompt: "Đọc chi phí & Nhấp chọn một phương án"
@@ -345,7 +345,7 @@ public class DungeonTutorialController : MonoBehaviour
         int totalStages = waveManager != null ? waveManager.GetTotalStages() : 5;
 
         ShowBanner(
-            stageBadge: isTutorialFloor ? $"ẢI {stageNum}/{totalStages}: THƯƠNG NHÂN DU MỤC (MERCHANT ROOM)" : "THƯƠNG NHÂN DU MỤC (MERCHANT)",
+            stageBadge: isTutorialFloor ? $"ẢI {stageNum}/{totalStages}: THƯƠNG NHÂN DU MỤC" : "THƯƠNG NHÂN DU MỤC",
             title: "TRAO ĐỔI HÀNG HÓA VỚI THƯƠNG NHÂN DU MỤC",
             instruction: "Thương nhân du mục không dùng tiền vàng: Bạn có thể đổi hạt giống cấp thấp lấy hạt giống cấp cao, đổi nông sản lấy thức ăn chế biến sẵn hoặc buff chiến đấu! Hãy bấm nút <color=#FFEA30><b>[ĐỔI]</b></color> món cần hoặc bấm <color=#4EFA8B><b>[TIẾP TỤC]</b></color> khi đã hoàn tất.",
             keyPrompt: "Bấm [ĐỔI] món đồ cần thiết hoặc [TIẾP TỤC]"
@@ -372,7 +372,7 @@ public class DungeonTutorialController : MonoBehaviour
         int totalStages = waveManager != null ? waveManager.GetTotalStages() : 5;
 
         ShowBanner(
-            stageBadge: isTutorialFloor ? $"ẢI {stageNum}/{totalStages}: LỬA TRẠI NGHỈ CHÂN (CAMP ROOM)" : "TRẠI NGHỈ CHÂN (CAMP)",
+            stageBadge: isTutorialFloor ? $"ẢI {stageNum}/{totalStages}: LỬA TRẠI NGHỈ CHÂN" : "TRẠI NGHỈ CHÂN",
             title: "TRẠI NGHỈ CHÂN: ĂN UỐNG, HỒI MÁU & RÚT LUI",
             instruction: "Tại Trại: Ăn uống, Nấu ăn dã chiến, Tập luyện và Nghỉ ngơi (+25 HP). Cẩn thận: Mỗi hành động tăng Nguy cơ Phục kích!\n" +
                          "<color=#FFD700><b>Rút Lui An Toàn:</b></color> Bấm <color=#FFEA30><b>[RÚT LUI AN TOÀN]</b></color> để mang 100% quà về Căn Cứ. Thời gian ở Nông Trại sẽ trôi tương ứng để cây trồng lớn lên và chín rộ!",
