@@ -4,7 +4,7 @@ using UnityEngine;
 public class FloorData : ScriptableObject
 {
     [Header("Floor Information")]
-    public string floorName = "Floor 1";
+    public string floorName = "Tầng 1";
     public int floorNumber = 1;
 
     [Header("Level Design - Stage Sequence")]

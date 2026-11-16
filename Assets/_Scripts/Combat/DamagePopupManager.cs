@@ -49,7 +49,7 @@ public class DamagePopupManager : MonoBehaviour
     {
         if (amount <= 0)
         {
-            ShowText(worldPos, "BLOCKED", Color.gray);
+            ShowText(worldPos, "CHẶN ĐÒN", Color.gray);
             return;
         }
 

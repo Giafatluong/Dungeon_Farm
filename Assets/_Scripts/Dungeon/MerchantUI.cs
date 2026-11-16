@@ -406,26 +406,46 @@ public class MerchantUI : MonoBehaviour
 
     private void CreateSectionHeader(string title, Color color, ref float currentY)
     {
-        GameObject headerGO = new GameObject("SectionHeader", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
+        GameObject headerGO = new GameObject("SectionHeader", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
         headerGO.transform.SetParent(waresContainer, false);
         RectTransform rt = headerGO.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0, 1);
         rt.anchorMax = new Vector2(1, 1);
         rt.pivot = new Vector2(0, 1);
-        rt.anchoredPosition = new Vector2(4, -currentY);
-        rt.sizeDelta = new Vector2(-8, 22);
-        currentY += 22f + 6f;
+        rt.anchoredPosition = new Vector2(0, -currentY);
+        rt.sizeDelta = new Vector2(0, 26);
+        currentY += 26f + 6f;
 
         LayoutElement le = headerGO.GetComponent<LayoutElement>();
-        le.minHeight = 22f;
-        le.preferredHeight = 22f;
+        le.minHeight = 26f;
+        le.preferredHeight = 26f;
         le.flexibleHeight = 0f;
         le.flexibleWidth = 1f;
 
-        TextMeshProUGUI tmp = headerGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(tmp);
+        Image bannerImg = headerGO.GetComponent<Image>();
+        if (!DungeonUIAssetHelper.ApplyCompSprite(bannerImg, "Comp_Merchant_SectionBanner", sliced: true, Color.white))
+        {
+            bannerImg.color = new Color(0.14f, 0.10f, 0.08f, 0.92f);
+        }
+
+        GameObject txtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        txtGO.transform.SetParent(headerGO.transform, false);
+        RectTransform trt = txtGO.GetComponent<RectTransform>();
+        trt.anchorMin = Vector2.zero;
+        trt.anchorMax = Vector2.one;
+        trt.offsetMin = new Vector2(12, 2);
+        trt.offsetMax = new Vector2(-12, -2);
+
+        TextMeshProUGUI tmp = txtGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(tmp, withOutline: true);
         tmp.fontSize = 12f;
+        tmp.enableAutoSizing = true;
+        tmp.fontSizeMin = 9.5f;
+        tmp.fontSizeMax = 12f;
         tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = TextAlignmentOptions.MidlineLeft;
+        tmp.textWrappingMode = TextWrappingModes.NoWrap;
+        tmp.overflowMode = TextOverflowModes.Ellipsis;
         tmp.color = color;
         tmp.text = $"[ {title} ]";
     }
@@ -435,7 +455,7 @@ public class MerchantUI : MonoBehaviour
     {
         if (merchantPanel == null) return;
 
-        // 1. Ensure Window Modal is 1040x620 centered
+        // 1. Ensure Window Modal is 1040x620 centered + styled with GOTY Comp_* sprites
         Transform windowT = merchantPanel.transform.Find("Window");
         if (windowT is RectTransform windowRT)
         {
@@ -445,48 +465,60 @@ public class MerchantUI : MonoBehaviour
             windowRT.anchoredPosition = Vector2.zero;
             windowRT.sizeDelta = new Vector2(1040, 620);
 
-            // Title at top: y = -14, height 30
+            Image winImg = windowT.GetComponent<Image>();
+            if (winImg != null)
+            {
+                DungeonUIAssetHelper.ApplyCompSprite(winImg, "Comp_Merchant_ModalBase", sliced: true, Color.white);
+            }
+
+            // Title at top: y = -16, height 30
             Transform titleT = windowT.Find("Title");
             if (titleT is RectTransform titleRT)
             {
                 titleRT.anchorMin = new Vector2(0, 1);
                 titleRT.anchorMax = new Vector2(1, 1);
                 titleRT.pivot = new Vector2(0.5f, 1);
-                titleRT.anchoredPosition = new Vector2(0, -14);
-                titleRT.sizeDelta = new Vector2(-60, 30);
+                titleRT.anchoredPosition = new Vector2(0, -16);
+                titleRT.sizeDelta = new Vector2(-80, 30);
             }
 
-            // Subtitle: y = -44, height 20
+            // Subtitle: y = -46, height 20
             Transform subT = windowT.Find("Subtitle");
             if (subT is RectTransform subRT)
             {
                 subRT.anchorMin = new Vector2(0, 1);
                 subRT.anchorMax = new Vector2(1, 1);
                 subRT.pivot = new Vector2(0.5f, 1);
-                subRT.anchoredPosition = new Vector2(0, -44);
-                subRT.sizeDelta = new Vector2(-60, 20);
+                subRT.anchoredPosition = new Vector2(0, -46);
+                subRT.sizeDelta = new Vector2(-80, 20);
             }
 
-            // Feedback: y = -66, height 22
+            // Feedback: y = -68, height 22
             Transform feedT = windowT.Find("Feedback");
             if (feedT is RectTransform feedRT)
             {
                 feedRT.anchorMin = new Vector2(0, 1);
                 feedRT.anchorMax = new Vector2(1, 1);
                 feedRT.pivot = new Vector2(0.5f, 1);
-                feedRT.anchoredPosition = new Vector2(0, -66);
-                feedRT.sizeDelta = new Vector2(-60, 22);
+                feedRT.anchoredPosition = new Vector2(0, -68);
+                feedRT.sizeDelta = new Vector2(-80, 22);
             }
 
-            // Left Column (WaresColumn): 57.5% width, starts at y = -94, bottom at y = 68
+            // Left Column (WaresColumn): 57.5% width, padded away from ModalBase drop shadow
             Transform waresColT = windowT.Find("WaresColumn");
             if (waresColT is RectTransform waresColRT)
             {
                 waresColRT.anchorMin = new Vector2(0, 0);
                 waresColRT.anchorMax = new Vector2(0.575f, 1);
                 waresColRT.pivot = new Vector2(0, 1);
-                waresColRT.offsetMin = new Vector2(20, 68);
-                waresColRT.offsetMax = new Vector2(-10, -94);
+                waresColRT.offsetMin = new Vector2(24, 72);
+                waresColRT.offsetMax = new Vector2(-8, -94);
+
+                Image wcImg = waresColT.GetComponent<Image>();
+                if (wcImg != null)
+                {
+                    DungeonUIAssetHelper.ApplyCompSprite(wcImg, "Comp_Merchant_ColumnPanel", sliced: true, Color.white);
+                }
 
                 // Viewport
                 Transform vpT = waresColT.Find("Viewport");
@@ -494,20 +526,26 @@ public class MerchantUI : MonoBehaviour
                 {
                     vpRT.anchorMin = Vector2.zero;
                     vpRT.anchorMax = Vector2.one;
-                    vpRT.offsetMin = new Vector2(6, 6);
-                    vpRT.offsetMax = new Vector2(-20, -6);
+                    vpRT.offsetMin = new Vector2(8, 8);
+                    vpRT.offsetMax = new Vector2(-20, -8);
                 }
             }
 
-            // Right Column (BackpackColumn): 42.5% width, starts at y = -94, bottom at y = 68
+            // Right Column (BackpackColumn): 42.5% width, padded away from ModalBase drop shadow
             Transform bpColT = windowT.Find("BackpackColumn");
             if (bpColT is RectTransform bpColRT)
             {
                 bpColRT.anchorMin = new Vector2(0.575f, 0);
                 bpColRT.anchorMax = new Vector2(1, 1);
                 bpColRT.pivot = new Vector2(1, 1);
-                bpColRT.offsetMin = new Vector2(10, 68);
-                bpColRT.offsetMax = new Vector2(-20, -94);
+                bpColRT.offsetMin = new Vector2(8, 72);
+                bpColRT.offsetMax = new Vector2(-24, -94);
+
+                Image bpImg = bpColT.GetComponent<Image>();
+                if (bpImg != null)
+                {
+                    DungeonUIAssetHelper.ApplyCompSprite(bpImg, "Comp_Merchant_ColumnPanel", sliced: true, Color.white);
+                }
             }
 
             // Continue Expedition Button at bottom center
@@ -517,10 +555,36 @@ public class MerchantUI : MonoBehaviour
                 contRT.anchorMin = new Vector2(0.5f, 0);
                 contRT.anchorMax = new Vector2(0.5f, 0);
                 contRT.pivot = new Vector2(0.5f, 0);
-                contRT.anchoredPosition = new Vector2(0, 14);
+                contRT.anchoredPosition = new Vector2(0, 20);
                 contRT.sizeDelta = new Vector2(250, 44);
             }
         }
+
+        if (continueButton != null)
+        {
+            DungeonUIAssetHelper.ApplyCompButton(continueButton, continueButton.GetComponent<Image>(), "Comp_Merchant_TradeBtn", Color.white);
+            TextMeshProUGUI contTxt = continueButton.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (contTxt != null)
+            {
+                contTxt.enableAutoSizing = true;
+                contTxt.fontSizeMin = 10f;
+                contTxt.fontSizeMax = 14f;
+                contTxt.textWrappingMode = TextWrappingModes.NoWrap;
+            }
+        }
+        if (closeButton != null)
+        {
+            Image closeImg = closeButton.GetComponent<Image>();
+            if (DungeonUIAssetHelper.ApplyCompButton(closeButton, closeImg, "Comp_Statue_BtnCloseX", Color.white) && closeImg != null)
+            {
+                closeImg.type = Image.Type.Simple;
+            }
+        }
+
+        ConfigureAutoSizeTMP(titleText, 14f, 20f);
+        ConfigureAutoSizeTMP(subtitleText, 10f, 13f);
+        ConfigureAutoSizeTMP(feedbackText, 9.5f, 12.5f);
+        ConfigureAutoSizeTMP(backpackHeaderTitle, 11f, 15f);
 
         // 2. Configure waresContainer layout
         if (waresContainer is RectTransform contentRT)
@@ -550,6 +614,17 @@ public class MerchantUI : MonoBehaviour
         }
     }
 
+    private static void ConfigureAutoSizeTMP(TextMeshProUGUI tmp, float minSize, float maxSize)
+    {
+        if (tmp == null) return;
+        DungeonUIAssetHelper.ApplyFont(tmp);
+        tmp.enableAutoSizing = true;
+        tmp.fontSizeMin = minSize;
+        tmp.fontSizeMax = maxSize;
+        tmp.textWrappingMode = TextWrappingModes.NoWrap;
+        tmp.overflowMode = TextOverflowModes.Ellipsis;
+    }
+
     private void CreateWaresHeaderBar(ref float currentY)
     {
         GameObject barGO = new GameObject("WaresHeaderBar", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
@@ -559,43 +634,53 @@ public class MerchantUI : MonoBehaviour
         barRT.anchorMax = new Vector2(1, 1);
         barRT.pivot = new Vector2(0, 1);
         barRT.anchoredPosition = new Vector2(0, -currentY);
-        barRT.sizeDelta = new Vector2(0, 24);
-        currentY += 24f + 6f;
+        barRT.sizeDelta = new Vector2(0, 26);
+        currentY += 26f + 6f;
 
         LayoutElement le = barGO.GetComponent<LayoutElement>();
-        le.minHeight = 24f;
-        le.preferredHeight = 24f;
+        le.minHeight = 26f;
+        le.preferredHeight = 26f;
         le.flexibleHeight = 0f;
         le.flexibleWidth = 1f;
 
         Image barBg = barGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(barBg, new Color(0.12f, 0.14f, 0.20f, 0.95f));
+        if (!DungeonUIAssetHelper.ApplyCompSprite(barBg, "Comp_Merchant_SectionBanner", sliced: true, Color.white))
+        {
+            DungeonUIAssetHelper.StyleSlicedFrame(barBg, new Color(0.12f, 0.14f, 0.20f, 0.95f));
+        }
 
         HorizontalLayoutGroup hlg = barGO.GetComponent<HorizontalLayoutGroup>();
-        hlg.padding = new RectOffset(8, 8, 2, 2);
+        hlg.padding = new RectOffset(10, 10, 2, 2);
         hlg.spacing = 6;
-        hlg.childControlWidth = false;
+        hlg.childControlWidth = true;
         hlg.childControlHeight = true;
         hlg.childForceExpandWidth = false;
         hlg.childForceExpandHeight = true;
 
-        CreateHeaderLabel(barGO, "VẬT PHẨM NHẬN", 195, new Color(1f, 0.85f, 0.35f), TextAlignmentOptions.Left);
-        CreateHeaderLabel(barGO, "⇄", 20, new Color(0.6f, 0.7f, 0.85f), TextAlignmentOptions.Center);
-        CreateHeaderLabel(barGO, "VẬT PHẨM ĐỔI", 190, new Color(0.5f, 0.85f, 1f), TextAlignmentOptions.Left);
-        CreateHeaderLabel(barGO, "THAO TÁC", 75, new Color(0.8f, 0.85f, 0.9f), TextAlignmentOptions.Center);
+        CreateHeaderLabel(barGO, "VẬT PHẨM NHẬN", 140f, 1f, new Color(1f, 0.88f, 0.51f), TextAlignmentOptions.Left);
+        CreateHeaderLabel(barGO, "⇄", 28f, 0f, new Color(0.84f, 0.80f, 0.78f), TextAlignmentOptions.Center);
+        CreateHeaderLabel(barGO, "VẬT PHẨM ĐỔI", 135f, 1f, new Color(0.55f, 0.88f, 1f), TextAlignmentOptions.Left);
+        CreateHeaderLabel(barGO, "THAO TÁC", 78f, 0f, new Color(0.90f, 0.88f, 0.85f), TextAlignmentOptions.Center);
     }
 
-    private void CreateHeaderLabel(GameObject parent, string text, float width, Color color, TextAlignmentOptions align)
+    private void CreateHeaderLabel(GameObject parent, string text, float minWidth, float flexWidth, Color color, TextAlignmentOptions align)
     {
-        GameObject lblGO = new GameObject("HeaderLbl", typeof(RectTransform), typeof(TextMeshProUGUI));
+        GameObject lblGO = new GameObject("HeaderLbl", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
         lblGO.transform.SetParent(parent.transform, false);
-        RectTransform rt = lblGO.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(width, 20);
+        LayoutElement le = lblGO.GetComponent<LayoutElement>();
+        le.minWidth = minWidth;
+        le.preferredWidth = flexWidth > 0f ? minWidth : minWidth;
+        le.flexibleWidth = flexWidth;
 
         TextMeshProUGUI tmp = lblGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(tmp);
         tmp.fontSize = 10.5f;
+        tmp.enableAutoSizing = true;
+        tmp.fontSizeMin = 8.5f;
+        tmp.fontSizeMax = 10.5f;
         tmp.fontStyle = FontStyles.Bold;
+        tmp.textWrappingMode = TextWrappingModes.NoWrap;
+        tmp.overflowMode = TextOverflowModes.Ellipsis;
         tmp.alignment = align;
         tmp.color = color;
         tmp.text = text;
@@ -612,142 +697,229 @@ public class MerchantUI : MonoBehaviour
         cardRT.anchorMax = new Vector2(1, 1);
         cardRT.pivot = new Vector2(0, 1);
         cardRT.anchoredPosition = new Vector2(0, -currentY);
-        cardRT.sizeDelta = new Vector2(0, 48);
-        currentY += 48f + 6f;
+        cardRT.sizeDelta = new Vector2(0, 60);
+        currentY += 60f + 6f;
 
         LayoutElement le = cardGO.GetComponent<LayoutElement>();
-        le.minHeight = 48f;
-        le.preferredHeight = 48f;
+        le.minHeight = 60f;
+        le.preferredHeight = 60f;
         le.flexibleHeight = 0f;
         le.flexibleWidth = 1f;
 
         Image bg = cardGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.13f, 0.15f, 0.22f, 0.98f));
+        if (!DungeonUIAssetHelper.ApplyCompSprite(bg, "Comp_Merchant_TradeRowBase", sliced: true, Color.white))
+        {
+            DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.13f, 0.15f, 0.22f, 0.98f));
+        }
 
         HorizontalLayoutGroup hlg = cardGO.GetComponent<HorizontalLayoutGroup>();
-        hlg.padding = new RectOffset(8, 8, 4, 4);
-        hlg.spacing = 6;
-        hlg.childControlWidth = false;
+        hlg.padding = new RectOffset(10, 10, 8, 8);
+        hlg.spacing = 6f;
+        hlg.childAlignment = TextAnchor.MiddleLeft;
+        hlg.childControlWidth = true;
         hlg.childControlHeight = true;
         hlg.childForceExpandWidth = false;
-        hlg.childForceExpandHeight = true;
+        hlg.childForceExpandHeight = false;
 
         // --- CỘT 1: ITEM NHẬN ĐƯỢC (REWARD) ---
-        GameObject outColGO = new GameObject("OutputCol", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        GameObject outColGO = new GameObject("OutputCol", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
         outColGO.transform.SetParent(cardGO.transform, false);
-        outColGO.GetComponent<RectTransform>().sizeDelta = new Vector2(195, 40);
+        LayoutElement outColLE = outColGO.GetComponent<LayoutElement>();
+        outColLE.minWidth = 140f;
+        outColLE.flexibleWidth = 1f;
+        outColLE.minHeight = 44f;
+        outColLE.preferredHeight = 44f;
+
         HorizontalLayoutGroup outHlg = outColGO.GetComponent<HorizontalLayoutGroup>();
-        outHlg.spacing = 6;
-        outHlg.childControlWidth = false;
+        outHlg.spacing = 6f;
+        outHlg.childAlignment = TextAnchor.MiddleLeft;
+        outHlg.childControlWidth = true;
         outHlg.childControlHeight = true;
         outHlg.childForceExpandWidth = false;
-        outHlg.childForceExpandHeight = true;
+        outHlg.childForceExpandHeight = false;
 
         // Slot Box nhận
-        GameObject outSlotGO = new GameObject("OutSlot", typeof(RectTransform), typeof(Image));
+        GameObject outSlotGO = new GameObject("OutSlot", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
         outSlotGO.transform.SetParent(outColGO.transform, false);
-        outSlotGO.GetComponent<RectTransform>().sizeDelta = new Vector2(38, 38);
+        LayoutElement outSlotLE = outSlotGO.GetComponent<LayoutElement>();
+        outSlotLE.minWidth = 40f;
+        outSlotLE.preferredWidth = 40f;
+        outSlotLE.minHeight = 40f;
+        outSlotLE.preferredHeight = 40f;
         Image outSlotImg = outSlotGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlotImage(outSlotImg, new Color(0.24f, 0.32f, 0.44f, 1f));
+        if (!DungeonUIAssetHelper.ApplyCompSprite(outSlotImg, "Comp_Merchant_ItemSlot", sliced: true, Color.white))
+        {
+            DungeonUIAssetHelper.StyleSlotImage(outSlotImg, new Color(0.24f, 0.32f, 0.44f, 1f));
+        }
 
         GameObject outIconGO = new GameObject("OutIcon", typeof(RectTransform), typeof(Image));
         outIconGO.transform.SetParent(outSlotGO.transform, false);
         RectTransform outIconRT = outIconGO.GetComponent<RectTransform>();
-        outIconRT.anchorMin = new Vector2(0.5f, 0.5f);
-        outIconRT.anchorMax = new Vector2(0.5f, 0.5f);
-        outIconRT.anchoredPosition = Vector2.zero;
-        outIconRT.sizeDelta = new Vector2(28, 28);
+        outIconRT.anchorMin = Vector2.zero;
+        outIconRT.anchorMax = Vector2.one;
+        outIconRT.offsetMin = new Vector2(5, 5);
+        outIconRT.offsetMax = new Vector2(-5, -5);
         Image outIcon = outIconGO.GetComponent<Image>();
         outIcon.preserveAspect = true;
         if (outItem != null) outIcon.sprite = outItem.itemIcon;
 
         // Label thông tin item nhận
-        GameObject outDescGO = new GameObject("OutDesc", typeof(RectTransform), typeof(TextMeshProUGUI));
+        GameObject outDescGO = new GameObject("OutDesc", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
         outDescGO.transform.SetParent(outColGO.transform, false);
-        outDescGO.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 40);
+        LayoutElement outDescLE = outDescGO.GetComponent<LayoutElement>();
+        outDescLE.minWidth = 80f;
+        outDescLE.flexibleWidth = 1f;
+        outDescLE.minHeight = 42f;
+        outDescLE.preferredHeight = 42f;
         TextMeshProUGUI outDescTMP = outDescGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(outDescTMP, withOutline: true);
         outDescTMP.fontSize = 11.5f;
+        outDescTMP.enableAutoSizing = true;
+        outDescTMP.fontSizeMin = 9f;
+        outDescTMP.fontSizeMax = 12f;
+        outDescTMP.alignment = TextAlignmentOptions.MidlineLeft;
+        outDescTMP.textWrappingMode = TextWrappingModes.Normal;
+        outDescTMP.overflowMode = TextOverflowModes.Ellipsis;
         string outName = outItem != null ? outItem.itemName : "Vật phẩm";
         string outSub = outItem is FoodData fdOut
             ? $"<color=#FF6B6B>+{fdOut.healthValue} HP</color> | <color=#FFD043>+{fdOut.hungerValue} No</color>"
             : $"<color=#CBD5E1>{outCategory}</color>";
         outDescTMP.text = $"<color=#FFD700><b>{outAmount}x {outName}</b></color>\n<size=9.5>{outSub}</size>";
 
-        // --- MŨI TÊN CHUYỂN ĐỔI ---
-        GameObject arrowGO = new GameObject("Arrow", typeof(RectTransform), typeof(TextMeshProUGUI));
-        arrowGO.transform.SetParent(cardGO.transform, false);
-        arrowGO.GetComponent<RectTransform>().sizeDelta = new Vector2(20, 40);
+        // --- MŨI TÊN CHUYỂN ĐỔI (ArrowBadge Image + child Text) ---
+        GameObject arrowBgGO = new GameObject("ArrowBadge", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+        arrowBgGO.transform.SetParent(cardGO.transform, false);
+        LayoutElement arrowLE = arrowBgGO.GetComponent<LayoutElement>();
+        arrowLE.minWidth = 28f;
+        arrowLE.preferredWidth = 28f;
+        arrowLE.minHeight = 28f;
+        arrowLE.preferredHeight = 28f;
+        Image arrowBgImg = arrowBgGO.GetComponent<Image>();
+        if (DungeonUIAssetHelper.ApplyCompSprite(arrowBgImg, "Comp_Merchant_ArrowBadge", sliced: false, Color.white))
+        {
+            arrowBgImg.type = Image.Type.Simple;
+        }
+        else
+        {
+            arrowBgImg.color = new Color(0.18f, 0.12f, 0.08f, 0.9f);
+        }
+
+        GameObject arrowGO = new GameObject("ArrowText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        arrowGO.transform.SetParent(arrowBgGO.transform, false);
+        RectTransform arrowTextRT = arrowGO.GetComponent<RectTransform>();
+        arrowTextRT.anchorMin = Vector2.zero;
+        arrowTextRT.anchorMax = Vector2.one;
+        arrowTextRT.offsetMin = Vector2.zero;
+        arrowTextRT.offsetMax = Vector2.zero;
         TextMeshProUGUI arrowTMP = arrowGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(arrowTMP);
         arrowTMP.fontSize = 14f;
         arrowTMP.fontStyle = FontStyles.Bold;
         arrowTMP.alignment = TextAlignmentOptions.Center;
         arrowTMP.text = "⇄";
-        arrowTMP.color = new Color(0.65f, 0.75f, 0.9f);
+        arrowTMP.color = new Color(1f, 0.88f, 0.51f);
 
         // --- CỘT 2: ITEM DÙNG ĐỔI (PAY/COST) ---
-        GameObject inColGO = new GameObject("InputCol", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        GameObject inColGO = new GameObject("InputCol", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
         inColGO.transform.SetParent(cardGO.transform, false);
-        inColGO.GetComponent<RectTransform>().sizeDelta = new Vector2(190, 40);
+        LayoutElement inColLE = inColGO.GetComponent<LayoutElement>();
+        inColLE.minWidth = 135f;
+        inColLE.flexibleWidth = 1f;
+        inColLE.minHeight = 44f;
+        inColLE.preferredHeight = 44f;
+
         HorizontalLayoutGroup inHlg = inColGO.GetComponent<HorizontalLayoutGroup>();
-        inHlg.spacing = 6;
-        inHlg.childControlWidth = false;
+        inHlg.spacing = 6f;
+        inHlg.childAlignment = TextAnchor.MiddleLeft;
+        inHlg.childControlWidth = true;
         inHlg.childControlHeight = true;
         inHlg.childForceExpandWidth = false;
-        inHlg.childForceExpandHeight = true;
+        inHlg.childForceExpandHeight = false;
 
         // Slot Box dùng đổi
-        GameObject inSlotGO = new GameObject("InSlot", typeof(RectTransform), typeof(Image));
+        GameObject inSlotGO = new GameObject("InSlot", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
         inSlotGO.transform.SetParent(inColGO.transform, false);
-        inSlotGO.GetComponent<RectTransform>().sizeDelta = new Vector2(38, 38);
+        LayoutElement inSlotLE = inSlotGO.GetComponent<LayoutElement>();
+        inSlotLE.minWidth = 40f;
+        inSlotLE.preferredWidth = 40f;
+        inSlotLE.minHeight = 40f;
+        inSlotLE.preferredHeight = 40f;
         Image inSlotImg = inSlotGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlotImage(inSlotImg, new Color(0.24f, 0.26f, 0.35f, 1f));
+        if (!DungeonUIAssetHelper.ApplyCompSprite(inSlotImg, "Comp_Merchant_ItemSlot", sliced: true, Color.white))
+        {
+            DungeonUIAssetHelper.StyleSlotImage(inSlotImg, new Color(0.24f, 0.26f, 0.35f, 1f));
+        }
 
         GameObject inIconGO = new GameObject("InIcon", typeof(RectTransform), typeof(Image));
         inIconGO.transform.SetParent(inSlotGO.transform, false);
         RectTransform inIconRT = inIconGO.GetComponent<RectTransform>();
-        inIconRT.anchorMin = new Vector2(0.5f, 0.5f);
-        inIconRT.anchorMax = new Vector2(0.5f, 0.5f);
-        inIconRT.anchoredPosition = Vector2.zero;
-        inIconRT.sizeDelta = new Vector2(28, 28);
+        inIconRT.anchorMin = Vector2.zero;
+        inIconRT.anchorMax = Vector2.one;
+        inIconRT.offsetMin = new Vector2(5, 5);
+        inIconRT.offsetMax = new Vector2(-5, -5);
         Image inIcon = inIconGO.GetComponent<Image>();
         inIcon.preserveAspect = true;
         if (inItem != null) inIcon.sprite = inItem.itemIcon;
 
         // Label thông tin item dùng đổi
-        GameObject inDescGO = new GameObject("InDesc", typeof(RectTransform), typeof(TextMeshProUGUI));
+        GameObject inDescGO = new GameObject("InDesc", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
         inDescGO.transform.SetParent(inColGO.transform, false);
-        inDescGO.GetComponent<RectTransform>().sizeDelta = new Vector2(145, 40);
+        LayoutElement inDescLE = inDescGO.GetComponent<LayoutElement>();
+        inDescLE.minWidth = 80f;
+        inDescLE.flexibleWidth = 1f;
+        inDescLE.minHeight = 42f;
+        inDescLE.preferredHeight = 42f;
         TextMeshProUGUI inDescTMP = inDescGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(inDescTMP, withOutline: true);
-        inDescTMP.fontSize = 11f;
+        inDescTMP.fontSize = 11.5f;
+        inDescTMP.enableAutoSizing = true;
+        inDescTMP.fontSizeMin = 9f;
+        inDescTMP.fontSizeMax = 11.5f;
+        inDescTMP.alignment = TextAlignmentOptions.MidlineLeft;
+        inDescTMP.textWrappingMode = TextWrappingModes.Normal;
+        inDescTMP.overflowMode = TextOverflowModes.Ellipsis;
         string inColor = haveInput >= inAmount ? "#4ADE80" : "#FF6B6B";
         string inName = inItem != null ? inItem.itemName : "Nguyên liệu";
         inDescTMP.text = $"<b>{inAmount}x {inName}</b>\n<size=10><color=#CBD5E1>Cần:</color> {inAmount} (<color={inColor}>Có: {haveInput}</color>)</size>";
 
         // --- NÚT TRADE ---
-        GameObject btnGO = new GameObject("BtnTrade", typeof(RectTransform), typeof(Image), typeof(Button));
+        GameObject btnGO = new GameObject("BtnTrade", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
         btnGO.transform.SetParent(cardGO.transform, false);
-        btnGO.GetComponent<RectTransform>().sizeDelta = new Vector2(75, 34);
+        LayoutElement btnLE = btnGO.GetComponent<LayoutElement>();
+        btnLE.minWidth = 78f;
+        btnLE.preferredWidth = 78f;
+        btnLE.minHeight = 36f;
+        btnLE.preferredHeight = 36f;
 
         Image btnBg = btnGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(btnBg, canAfford ? new Color(0.18f, 0.52f, 0.34f, 1f) : new Color(0.24f, 0.26f, 0.32f, 0.8f));
-
         Button btn = btnGO.GetComponent<Button>();
+        Color btnTint = canAfford ? Color.white : new Color(0.55f, 0.55f, 0.58f, 0.85f);
+        if (!DungeonUIAssetHelper.ApplyCompButton(btn, btnBg, "Comp_Merchant_TradeBtn", btnTint))
+        {
+            DungeonUIAssetHelper.StyleSlicedFrame(btnBg, canAfford ? new Color(0.18f, 0.52f, 0.34f, 1f) : new Color(0.24f, 0.26f, 0.32f, 0.8f));
+        }
+
         btn.interactable = canAfford;
         btn.onClick.AddListener(() => onTradeClicked?.Invoke());
 
         GameObject btnTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         btnTextGO.transform.SetParent(btnGO.transform, false);
+        RectTransform btnTxtRT = btnTextGO.GetComponent<RectTransform>();
+        btnTxtRT.anchorMin = Vector2.zero;
+        btnTxtRT.anchorMax = Vector2.one;
+        btnTxtRT.offsetMin = new Vector2(4, 2);
+        btnTxtRT.offsetMax = new Vector2(-4, -2);
         TextMeshProUGUI btnTMP = btnTextGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(btnTMP);
-        btnTMP.fontSize = 11.5f;
+        DungeonUIAssetHelper.ApplyFont(btnTMP, withOutline: true);
+        btnTMP.fontSize = 12f;
+        btnTMP.enableAutoSizing = true;
+        btnTMP.fontSizeMin = 9f;
+        btnTMP.fontSizeMax = 12f;
         btnTMP.fontStyle = FontStyles.Bold;
         btnTMP.alignment = TextAlignmentOptions.Center;
-        btnTMP.text = "ĐỔI";
-        btnTMP.color = canAfford ? Color.white : new Color(0.65f, 0.65f, 0.65f);
-        btnTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(75, 34);
+        btnTMP.textWrappingMode = TextWrappingModes.NoWrap;
+        btnTMP.text = canAfford ? "ĐỔI" : "THIẾU";
+        btnTMP.color = canAfford ? Color.white : new Color(0.72f, 0.72f, 0.72f);
     }
 
     private void CreateSeedTradeCard(SeedTrade trade, ref float currentY)

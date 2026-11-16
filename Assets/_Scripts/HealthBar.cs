@@ -355,20 +355,20 @@ public class HealthBar : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHa
                     switch (curIntent)
                     {
                         case EnemyData.EnemyIntent.Attack:
-                            intentText.text = $"<color=#FF5555>ATK {curAtk}</color>";
+                            intentText.text = $"<color=#FF5555>TẤN CÔNG {curAtk}</color>";
                             break;
                         case EnemyData.EnemyIntent.Defend:
                             int defVal = (enemyTarget.enemyData != null) ? Mathf.Max(5, enemyTarget.enemyData.DEF) : 5;
-                            intentText.text = $"<color=#55AAFF>DEFEND (+{defVal})</color>";
+                            intentText.text = $"<color=#55AAFF>PHÒNG THỦ (+{defVal})</color>";
                             break;
                         case EnemyData.EnemyIntent.Buff:
-                            intentText.text = "<color=#FFDD44>BUFF</color>";
+                            intentText.text = "<color=#FFDD44>TĂNG LỰC</color>";
                             break;
                         case EnemyData.EnemyIntent.Debuff:
-                            intentText.text = "<color=#DD55FF>DEBUFF</color>";
+                            intentText.text = "<color=#DD55FF>GÂY HẠI</color>";
                             break;
                         default:
-                            intentText.text = $"<color=#FF5555>ATK {curAtk}</color>";
+                            intentText.text = $"<color=#FF5555>TẤN CÔNG {curAtk}</color>";
                             break;
                     }
                 }

@@ -658,43 +658,51 @@ public class CombatTutorialGuide : MonoBehaviour
 
         TMP_FontAsset font = DungeonUIAssetHelper.GetFontAsset();
 
-        // Banner Card (Top-Center below turn banner)
+        // Banner Card (Top-Center below turn banner; sized to clear DialogueBase drop shadow)
         GameObject cardGO = new GameObject("CombatGuidanceCard", typeof(RectTransform), typeof(Image));
         cardGO.transform.SetParent(overlayRootGO.transform, false);
         bannerCardRT = cardGO.GetComponent<RectTransform>();
         bannerCardRT.anchorMin = new Vector2(0.5f, 1f);
         bannerCardRT.anchorMax = new Vector2(0.5f, 1f);
         bannerCardRT.pivot = new Vector2(0.5f, 1f);
-        bannerCardRT.anchoredPosition = new Vector2(0, -90);
-        bannerCardRT.sizeDelta = new Vector2(820, 168);
+        bannerCardRT.anchoredPosition = new Vector2(0, -86);
+        bannerCardRT.sizeDelta = new Vector2(860, 196);
 
         Image cardFrame = cardGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(cardFrame, new Color(0.85f, 0.55f, 0.18f, 0.98f)); // Golden amber
+        bool hasGotyCard = DungeonUIAssetHelper.ApplyCompSprite(cardFrame, "Comp_Tutorial_DialogueBase", sliced: true, Color.white);
+        if (!hasGotyCard)
+        {
+            DungeonUIAssetHelper.StyleSlicedFrame(cardFrame, new Color(0.85f, 0.55f, 0.18f, 0.98f)); // Golden amber
+        }
 
-        // Inner dark plate
+        // Inner layout plate (transparent when GOTY DialogueBase sprite is active)
         GameObject plate = new GameObject("DarkPlate", typeof(RectTransform), typeof(Image));
         plate.transform.SetParent(cardGO.transform, false);
         RectTransform plRT = plate.GetComponent<RectTransform>();
         plRT.anchorMin = Vector2.zero;
         plRT.anchorMax = Vector2.one;
-        plRT.offsetMin = new Vector2(4, 4);
-        plRT.offsetMax = new Vector2(-4, -4);
-        plate.GetComponent<Image>().color = new Color(0.09f, 0.10f, 0.12f, 0.96f);
+        plRT.offsetMin = hasGotyCard ? new Vector2(24, 26) : new Vector2(4, 4);
+        plRT.offsetMax = hasGotyCard ? new Vector2(-24, -14) : new Vector2(-4, -4);
+        Image plateImg = plate.GetComponent<Image>();
+        plateImg.color = hasGotyCard ? Color.clear : new Color(0.09f, 0.10f, 0.12f, 0.96f);
+        plateImg.raycastTarget = false;
 
-        // Title row
+        // Title row (clear of SkipButton on the top-right)
         GameObject titleGO = new GameObject("TitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
         titleGO.transform.SetParent(plate.transform, false);
         RectTransform tRT = titleGO.GetComponent<RectTransform>();
         tRT.anchorMin = new Vector2(0, 1);
         tRT.anchorMax = new Vector2(1, 1);
         tRT.pivot = new Vector2(0, 1);
-        tRT.anchoredPosition = new Vector2(14, -8);
-        tRT.sizeDelta = new Vector2(-120, 24);
+        tRT.anchoredPosition = new Vector2(10, -6);
+        tRT.sizeDelta = new Vector2(-120, 26);
         bannerTitleText = titleGO.GetComponent<TextMeshProUGUI>();
         bannerTitleText.fontSize = 15.5f;
         bannerTitleText.enableAutoSizing = true;
-        bannerTitleText.fontSizeMin = 13f;
+        bannerTitleText.fontSizeMin = 12f;
         bannerTitleText.fontSizeMax = 15.5f;
+        bannerTitleText.textWrappingMode = TextWrappingModes.NoWrap;
+        bannerTitleText.overflowMode = TextOverflowModes.Ellipsis;
         bannerTitleText.fontStyle = FontStyles.Bold;
         bannerTitleText.color = new Color(1f, 0.92f, 0.30f); // Bright sunlight gold
         DungeonUIAssetHelper.ApplyFont(bannerTitleText, withOutline: true);
@@ -706,11 +714,14 @@ public class CombatTutorialGuide : MonoBehaviour
         sRT.anchorMin = new Vector2(1, 1);
         sRT.anchorMax = new Vector2(1, 1);
         sRT.pivot = new Vector2(1, 1);
-        sRT.anchoredPosition = new Vector2(-8, -6);
-        sRT.sizeDelta = new Vector2(90, 26);
+        sRT.anchoredPosition = new Vector2(-8, -4);
+        sRT.sizeDelta = new Vector2(94, 28);
         Image skipImg = skipGO.GetComponent<Image>();
-        skipImg.color = new Color(0.15f, 0.17f, 0.22f, 0.95f);
         skipButton = skipGO.GetComponent<Button>();
+        if (!DungeonUIAssetHelper.ApplyCompButton(skipButton, skipImg, "Comp_Statue_Tab", Color.white))
+        {
+            skipImg.color = new Color(0.15f, 0.17f, 0.22f, 0.95f);
+        }
         skipButton.onClick.AddListener(SkipTutorial);
 
         GameObject skipTxtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -718,11 +729,14 @@ public class CombatTutorialGuide : MonoBehaviour
         RectTransform stRT = skipTxtGO.GetComponent<RectTransform>();
         stRT.anchorMin = Vector2.zero;
         stRT.anchorMax = Vector2.one;
-        stRT.offsetMin = Vector2.zero;
-        stRT.offsetMax = Vector2.zero;
+        stRT.offsetMin = new Vector2(4, 2);
+        stRT.offsetMax = new Vector2(-4, -2);
         TextMeshProUGUI skipTmp = skipTxtGO.GetComponent<TextMeshProUGUI>();
         skipTmp.text = "[ Bỏ qua ]";
         skipTmp.fontSize = 12;
+        skipTmp.enableAutoSizing = true;
+        skipTmp.fontSizeMin = 9.5f;
+        skipTmp.fontSizeMax = 12f;
         skipTmp.fontStyle = FontStyles.Bold;
         skipTmp.alignment = TextAlignmentOptions.Center;
         skipTmp.color = new Color(0.95f, 0.95f, 0.95f);
@@ -734,22 +748,24 @@ public class CombatTutorialGuide : MonoBehaviour
         RectTransform bRT = bodyGO.GetComponent<RectTransform>();
         bRT.anchorMin = new Vector2(0, 0);
         bRT.anchorMax = new Vector2(1, 1);
-        bRT.offsetMin = new Vector2(16, 8);
-        bRT.offsetMax = new Vector2(-16, -34);
+        bRT.offsetMin = new Vector2(10, 6);
+        bRT.offsetMax = new Vector2(-10, -36);
         bannerBodyText = bodyGO.GetComponent<TextMeshProUGUI>();
         bannerBodyText.fontSize = 13.5f;
         bannerBodyText.enableAutoSizing = true;
-        bannerBodyText.fontSizeMin = 11.5f;
+        bannerBodyText.fontSizeMin = 10.5f;
         bannerBodyText.fontSizeMax = 13.5f;
+        bannerBodyText.textWrappingMode = TextWrappingModes.Normal;
+        bannerBodyText.overflowMode = TextOverflowModes.Ellipsis;
         bannerBodyText.color = Color.white;
-        bannerBodyText.lineSpacing = 0;
+        bannerBodyText.lineSpacing = 2f;
         DungeonUIAssetHelper.ApplyFont(bannerBodyText, withOutline: true);
 
         // Floating Spotlight Pointer
         pointerGO = new GameObject("CombatSpotlightPointer", typeof(RectTransform));
         pointerGO.transform.SetParent(overlayRootGO.transform, false);
         pointerRT = pointerGO.GetComponent<RectTransform>();
-        pointerRT.sizeDelta = new Vector2(240, 50);
+        pointerRT.sizeDelta = new Vector2(260, 56);
 
         // Arrow icon pointing down
         GameObject arrowGO = new GameObject("ArrowIcon", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -776,18 +792,24 @@ public class CombatTutorialGuide : MonoBehaviour
         bgRT.anchorMax = new Vector2(0.5f, 0f);
         bgRT.pivot = new Vector2(0.5f, 0f);
         bgRT.anchoredPosition = new Vector2(0, 16);
-        bgRT.sizeDelta = new Vector2(250, 34);
+        bgRT.sizeDelta = new Vector2(260, 36);
         Image bImg = badgeGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(bImg, new Color(1f, 0.82f, 0.20f, 1f));
+        bool hasGotyPtr = DungeonUIAssetHelper.ApplyCompSprite(bImg, "Comp_Combat_SpeedBtn", sliced: true, Color.white);
+        if (!hasGotyPtr)
+        {
+            DungeonUIAssetHelper.StyleSlicedFrame(bImg, new Color(1f, 0.82f, 0.20f, 1f));
+        }
 
         GameObject bPlate = new GameObject("DarkPlate", typeof(RectTransform), typeof(Image));
         bPlate.transform.SetParent(badgeGO.transform, false);
         RectTransform bpRT = bPlate.GetComponent<RectTransform>();
         bpRT.anchorMin = Vector2.zero;
         bpRT.anchorMax = Vector2.one;
-        bpRT.offsetMin = new Vector2(2, 2);
-        bpRT.offsetMax = new Vector2(-2, -2);
-        bPlate.GetComponent<Image>().color = new Color(0.05f, 0.07f, 0.09f, 0.98f);
+        bpRT.offsetMin = hasGotyPtr ? new Vector2(6, 4) : new Vector2(2, 2);
+        bpRT.offsetMax = hasGotyPtr ? new Vector2(-6, -4) : new Vector2(-2, -2);
+        Image bPlateImg = bPlate.GetComponent<Image>();
+        bPlateImg.color = hasGotyPtr ? Color.clear : new Color(0.05f, 0.07f, 0.09f, 0.98f);
+        bPlateImg.raycastTarget = false;
 
         GameObject pTxtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         pTxtGO.transform.SetParent(bPlate.transform, false);
@@ -797,7 +819,11 @@ public class CombatTutorialGuide : MonoBehaviour
         ptRT.offsetMin = new Vector2(4, 0);
         ptRT.offsetMax = new Vector2(-4, 0);
         pointerBadgeText = pTxtGO.GetComponent<TextMeshProUGUI>();
-        pointerBadgeText.fontSize = 13.5f;
+        pointerBadgeText.fontSize = 13f;
+        pointerBadgeText.enableAutoSizing = true;
+        pointerBadgeText.fontSizeMin = 9.5f;
+        pointerBadgeText.fontSizeMax = 13f;
+        pointerBadgeText.textWrappingMode = TextWrappingModes.NoWrap;
         pointerBadgeText.fontStyle = FontStyles.Bold;
         pointerBadgeText.alignment = TextAlignmentOptions.Center;
         pointerBadgeText.color = new Color(1f, 0.95f, 0.30f);
@@ -807,18 +833,24 @@ public class CombatTutorialGuide : MonoBehaviour
         enemyIntentPillGO = new GameObject("EnemyIntentPill", typeof(RectTransform), typeof(Image));
         enemyIntentPillGO.transform.SetParent(overlayRootGO.transform, false);
         enemyIntentPillRT = enemyIntentPillGO.GetComponent<RectTransform>();
-        enemyIntentPillRT.sizeDelta = new Vector2(200, 30);
+        enemyIntentPillRT.sizeDelta = new Vector2(224, 32);
         Image eipFrame = enemyIntentPillGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(eipFrame, new Color(0.95f, 0.28f, 0.28f, 0.95f)); // Danger crimson frame
+        bool hasGotyPill = DungeonUIAssetHelper.ApplyCompSprite(eipFrame, "Comp_Combat_IntentPill", sliced: true, Color.white);
+        if (!hasGotyPill)
+        {
+            DungeonUIAssetHelper.StyleSlicedFrame(eipFrame, new Color(0.95f, 0.28f, 0.28f, 0.95f)); // Danger crimson frame
+        }
 
         GameObject eipDark = new GameObject("DarkPlate", typeof(RectTransform), typeof(Image));
         eipDark.transform.SetParent(enemyIntentPillGO.transform, false);
         RectTransform edRT = eipDark.GetComponent<RectTransform>();
         edRT.anchorMin = Vector2.zero;
         edRT.anchorMax = Vector2.one;
-        edRT.offsetMin = new Vector2(2, 2);
-        edRT.offsetMax = new Vector2(-2, -2);
-        eipDark.GetComponent<Image>().color = new Color(0.18f, 0.04f, 0.04f, 0.95f);
+        edRT.offsetMin = hasGotyPill ? new Vector2(10, 4) : new Vector2(2, 2);
+        edRT.offsetMax = hasGotyPill ? new Vector2(-10, -4) : new Vector2(-2, -2);
+        Image eipDarkImg = eipDark.GetComponent<Image>();
+        eipDarkImg.color = hasGotyPill ? Color.clear : new Color(0.18f, 0.04f, 0.04f, 0.95f);
+        eipDarkImg.raycastTarget = false;
 
         GameObject eipTxtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         eipTxtGO.transform.SetParent(eipDark.transform, false);
@@ -829,9 +861,13 @@ public class CombatTutorialGuide : MonoBehaviour
         etRT.offsetMax = new Vector2(-4, 0);
         enemyIntentPillText = eipTxtGO.GetComponent<TextMeshProUGUI>();
         enemyIntentPillText.fontSize = 12.5f;
+        enemyIntentPillText.enableAutoSizing = true;
+        enemyIntentPillText.fontSizeMin = 9.5f;
+        enemyIntentPillText.fontSizeMax = 12.5f;
+        enemyIntentPillText.textWrappingMode = TextWrappingModes.NoWrap;
         enemyIntentPillText.fontStyle = FontStyles.Bold;
         enemyIntentPillText.alignment = TextAlignmentOptions.Center;
-        enemyIntentPillText.color = new Color(1f, 0.85f, 0.85f);
+        enemyIntentPillText.color = new Color(1f, 0.92f, 0.92f);
         enemyIntentPillText.text = "Ý ĐỊNH: TẤN CÔNG (6 DMG)";
         DungeonUIAssetHelper.ApplyFont(enemyIntentPillText, withOutline: true);
 

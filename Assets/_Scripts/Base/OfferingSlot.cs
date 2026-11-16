@@ -38,6 +38,15 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
         countText = count;
         checkmarkObj = checkmark;
         outline = slotOutline;
+
+        if (countText != null)
+        {
+            countText.enableAutoSizing = true;
+            countText.fontSizeMin = 8.5f;
+            countText.fontSizeMax = 10.5f;
+            countText.textWrappingMode = TextWrappingModes.NoWrap;
+            countText.overflowMode = TextOverflowModes.Overflow;
+        }
     }
 
     public void Setup(Offering offering, int requirementIndex, ItemRequirement requirement)
@@ -139,23 +148,39 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
             checkmarkObj.SetActive(isCompleted);
         }
 
+        UpdateSlotBackgroundVisual(isHovered: false);
+    }
+
+    private void UpdateSlotBackgroundVisual(bool isHovered)
+    {
         if (slotBackground != null)
         {
-            if (isCompleted)
+            bool usesGotySlot = slotBackground.sprite != null && slotBackground.sprite.name.StartsWith("Comp_");
+            if (usesGotySlot)
             {
-                slotBackground.color = new Color(0.12f, 0.28f, 0.18f, 0.95f);
-            }
-            else if (currentContributed > 0)
-            {
-                slotBackground.color = new Color(0.24f, 0.22f, 0.14f, 0.95f);
-            }
-            else if (requiredItem != null && requiredItem.isRare)
-            {
-                slotBackground.color = new Color(0.26f, 0.18f, 0.12f, 0.95f);
+                if (isCompleted)
+                    slotBackground.color = new Color(0.76f, 1f, 0.80f, 1f);
+                else if (isHovered)
+                    slotBackground.color = new Color(1f, 0.96f, 0.82f, 1f);
+                else if (currentContributed > 0)
+                    slotBackground.color = new Color(1f, 0.95f, 0.78f, 1f);
+                else if (requiredItem != null && requiredItem.isRare)
+                    slotBackground.color = new Color(1f, 0.90f, 0.74f, 1f);
+                else
+                    slotBackground.color = Color.white;
             }
             else
             {
-                slotBackground.color = new Color(0.14f, 0.16f, 0.22f, 0.95f);
+                if (isCompleted)
+                    slotBackground.color = new Color(0.12f, 0.28f, 0.18f, 0.95f);
+                else if (isHovered)
+                    slotBackground.color = Color.Lerp(slotBackground.color, new Color(0.35f, 0.38f, 0.50f, 0.98f), 0.5f);
+                else if (currentContributed > 0)
+                    slotBackground.color = new Color(0.24f, 0.22f, 0.14f, 0.95f);
+                else if (requiredItem != null && requiredItem.isRare)
+                    slotBackground.color = new Color(0.26f, 0.18f, 0.12f, 0.95f);
+                else
+                    slotBackground.color = new Color(0.14f, 0.16f, 0.22f, 0.95f);
             }
         }
 
@@ -163,10 +188,13 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
         {
             if (isCompleted)
                 outline.effectColor = new Color(0.3f, 0.9f, 0.4f, 0.8f);
+            else if (isHovered)
+                outline.effectColor = new Color(1.0f, 0.95f, 0.42f, 1f);
             else if (requiredItem != null && requiredItem.isRare)
                 outline.effectColor = new Color(1f, 0.8f, 0.25f, 0.95f);
             else
                 outline.effectColor = new Color(0.5f, 0.45f, 0.3f, 0.6f);
+            outline.effectDistance = new Vector2(2f, -2f);
         }
     }
 
@@ -319,15 +347,9 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (outline != null && !isCompleted)
+        if (!isCompleted)
         {
-            outline.effectColor = new Color(1.0f, 0.95f, 0.42f, 1f);
-            outline.effectDistance = new Vector2(3f, -3f);
-        }
-
-        if (slotBackground != null && !isCompleted)
-        {
-            slotBackground.color = Color.Lerp(slotBackground.color, new Color(0.35f, 0.38f, 0.50f, 0.98f), 0.5f);
+            UpdateSlotBackgroundVisual(isHovered: true);
         }
 
         if (requiredItem != null)
@@ -338,24 +360,7 @@ public class OfferingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler, I
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (outline != null)
-        {
-            outline.effectColor = isCompleted ? new Color(0.3f, 0.9f, 0.4f, 0.8f) : new Color(0.5f, 0.45f, 0.3f, 0.6f);
-            outline.effectDistance = new Vector2(3f, -3f);
-        }
-
-        if (slotBackground != null)
-        {
-            if (isCompleted)
-                slotBackground.color = new Color(0.12f, 0.28f, 0.18f, 0.95f);
-            else if (currentContributed > 0)
-                slotBackground.color = new Color(0.24f, 0.22f, 0.14f, 0.95f);
-            else if (requiredItem != null && requiredItem.isRare)
-                slotBackground.color = new Color(0.26f, 0.18f, 0.12f, 0.95f);
-            else
-                slotBackground.color = new Color(0.14f, 0.16f, 0.22f, 0.95f);
-        }
-
+        UpdateSlotBackgroundVisual(isHovered: false);
         ItemTooltipUI.Instance?.Hide();
     }
 

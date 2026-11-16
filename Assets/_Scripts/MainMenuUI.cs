@@ -461,11 +461,11 @@ public class MainMenuUI : MonoBehaviour
     {
         if (fullscreenBtnText != null)
         {
-            fullscreenBtnText.text = Screen.fullScreen ? "Mode: [ FULLSCREEN ]" : "Mode: [ WINDOWED ]";
+            fullscreenBtnText.text = Screen.fullScreen ? "Chế Độ: [ TOÀN MÀN HÌNH ]" : "Chế Độ: [ CỬA SỔ ]";
         }
         if (soundBtnText != null)
         {
-            soundBtnText.text = AudioListener.volume > 0f ? "Sound: [ ON 100% ]" : "Sound: [ MUTED ]";
+            soundBtnText.text = AudioListener.volume > 0f ? "Âm Thanh: [ BẬT 100% ]" : "Âm Thanh: [ TẮT TIẾNG ]";
         }
     }
 

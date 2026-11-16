@@ -132,7 +132,7 @@ public class ItemDrop : MonoBehaviour
                 // Backpack full: Do not collect or destroy dropped item; cooldown prevents per-frame popup spam
                 isMoving = false;
                 collectCooldownUntil = Time.time + 1.5f;
-                DamagePopupManager.ShowText(transform.position + Vector3.up * 0.6f, "Backpack Full!", new Color(1f, 0.4f, 0.4f), 3.0f);
+                DamagePopupManager.ShowText(transform.position + Vector3.up * 0.6f, "Ba Lô Đã Đầy!", new Color(1f, 0.4f, 0.4f), 3.0f);
                 return;
             }
 

@@ -515,29 +515,34 @@ public class DungeonTutorialController : MonoBehaviour
 
         TMP_FontAsset font = DungeonUIAssetHelper.GetFontAsset();
 
-        // 1. Top Instruction Banner Card
+        // 1. Top Instruction Banner Card (960x212 accommodates DialogueBase drop shadow)
         bannerGO = new GameObject("DungeonTutorialBanner", typeof(RectTransform), typeof(Image));
         bannerGO.transform.SetParent(overlayCanvasGO.transform, false);
         bannerRT = bannerGO.GetComponent<RectTransform>();
         bannerRT.anchorMin = new Vector2(0.5f, 1f);
         bannerRT.anchorMax = new Vector2(0.5f, 1f);
         bannerRT.pivot = new Vector2(0.5f, 1f);
-        bannerRT.anchoredPosition = new Vector2(0, -85);
-        bannerRT.sizeDelta = new Vector2(920, 185);
+        bannerRT.anchoredPosition = new Vector2(0, -82);
+        bannerRT.sizeDelta = new Vector2(960, 212);
 
         Image bannerFrame = bannerGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(bannerFrame, new Color(0.20f, 0.70f, 0.50f, 1f)); // Vivid emerald frame
+        bool hasGotyBanner = DungeonUIAssetHelper.ApplyCompSprite(bannerFrame, "Comp_Tutorial_DialogueBase", sliced: true, Color.white);
+        if (!hasGotyBanner)
+        {
+            DungeonUIAssetHelper.StyleSlicedFrame(bannerFrame, new Color(0.20f, 0.70f, 0.50f, 1f)); // Vivid emerald frame
+        }
 
-        // Inner solid dark plate for high contrast
+        // Inner layout plate (transparent when GOTY sprite is used)
         GameObject plate = new GameObject("DarkPlate", typeof(RectTransform), typeof(Image));
         plate.transform.SetParent(bannerGO.transform, false);
         RectTransform plRT = plate.GetComponent<RectTransform>();
         plRT.anchorMin = Vector2.zero;
         plRT.anchorMax = Vector2.one;
-        plRT.offsetMin = new Vector2(5, 5);
-        plRT.offsetMax = new Vector2(-5, -5);
+        plRT.offsetMin = hasGotyBanner ? new Vector2(24, 26) : new Vector2(5, 5);
+        plRT.offsetMax = hasGotyBanner ? new Vector2(-24, -14) : new Vector2(-5, -5);
         Image plImg = plate.GetComponent<Image>();
-        plImg.color = new Color(0.05f, 0.07f, 0.09f, 0.98f); // Solid pitch dark
+        plImg.color = hasGotyBanner ? Color.clear : new Color(0.05f, 0.07f, 0.09f, 0.98f);
+        plImg.raycastTarget = false;
 
         // Close Button (Top-Right)
         GameObject closeBtnGO = new GameObject("CloseButton", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -546,11 +551,14 @@ public class DungeonTutorialController : MonoBehaviour
         cRT.anchorMin = new Vector2(1, 1);
         cRT.anchorMax = new Vector2(1, 1);
         cRT.pivot = new Vector2(1, 1);
-        cRT.anchoredPosition = new Vector2(-8, -6);
-        cRT.sizeDelta = new Vector2(76, 24);
+        cRT.anchoredPosition = new Vector2(-8, -4);
+        cRT.sizeDelta = new Vector2(82, 26);
         Image cImg = closeBtnGO.GetComponent<Image>();
-        cImg.color = new Color(0.18f, 0.20f, 0.25f, 0.95f);
         Button cBtn = closeBtnGO.GetComponent<Button>();
+        if (!DungeonUIAssetHelper.ApplyCompButton(cBtn, cImg, "Comp_Statue_Tab", Color.white))
+        {
+            cImg.color = new Color(0.18f, 0.20f, 0.25f, 0.95f);
+        }
         cBtn.onClick.AddListener(HideBanner);
 
         GameObject cTxtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -558,82 +566,101 @@ public class DungeonTutorialController : MonoBehaviour
         RectTransform ctRT = cTxtGO.GetComponent<RectTransform>();
         ctRT.anchorMin = Vector2.zero;
         ctRT.anchorMax = Vector2.one;
-        ctRT.offsetMin = Vector2.zero;
-        ctRT.offsetMax = Vector2.zero;
+        ctRT.offsetMin = new Vector2(4, 2);
+        ctRT.offsetMax = new Vector2(-4, -2);
         TextMeshProUGUI cTmp = cTxtGO.GetComponent<TextMeshProUGUI>();
         cTmp.text = "[ Đóng ]";
         cTmp.fontSize = 12;
+        cTmp.enableAutoSizing = true;
+        cTmp.fontSizeMin = 9.5f;
+        cTmp.fontSizeMax = 12f;
         cTmp.fontStyle = FontStyles.Bold;
         cTmp.alignment = TextAlignmentOptions.Center;
         cTmp.color = new Color(0.95f, 0.95f, 0.95f);
         DungeonUIAssetHelper.ApplyFont(cTmp, withOutline: true);
 
-        // Stage Badge
+        // Stage Badge (bounded cleanly away from CloseButton)
         GameObject badgeGO = new GameObject("Badge", typeof(RectTransform), typeof(TextMeshProUGUI));
         badgeGO.transform.SetParent(plate.transform, false);
         RectTransform bRT = badgeGO.GetComponent<RectTransform>();
-        bRT.anchorMin = new Vector2(0.5f, 1f);
-        bRT.anchorMax = new Vector2(0.5f, 1f);
-        bRT.pivot = new Vector2(0.5f, 1f);
-        bRT.anchoredPosition = new Vector2(0, -8);
-        bRT.sizeDelta = new Vector2(860, 22);
+        bRT.anchorMin = new Vector2(0, 1);
+        bRT.anchorMax = new Vector2(1, 1);
+        bRT.pivot = new Vector2(0.5f, 1);
+        bRT.anchoredPosition = new Vector2(0, -4);
+        bRT.sizeDelta = new Vector2(-180, 22);
         stageBadgeText = badgeGO.GetComponent<TextMeshProUGUI>();
         stageBadgeText.fontSize = 13.5f;
+        stageBadgeText.enableAutoSizing = true;
+        stageBadgeText.fontSizeMin = 10f;
+        stageBadgeText.fontSizeMax = 13.5f;
+        stageBadgeText.textWrappingMode = TextWrappingModes.NoWrap;
+        stageBadgeText.overflowMode = TextOverflowModes.Ellipsis;
         stageBadgeText.fontStyle = FontStyles.Bold;
         stageBadgeText.alignment = TextAlignmentOptions.Center;
         stageBadgeText.color = new Color(0.35f, 1f, 0.65f); // Bright neon emerald
-        DungeonUIAssetHelper.ApplyFont(stageBadgeText);
+        DungeonUIAssetHelper.ApplyFont(stageBadgeText, withOutline: true);
 
-        // Title
+        // Title (bounded cleanly away from CloseButton)
         GameObject titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
         titleGO.transform.SetParent(plate.transform, false);
         RectTransform tRT = titleGO.GetComponent<RectTransform>();
-        tRT.anchorMin = new Vector2(0.5f, 1f);
-        tRT.anchorMax = new Vector2(0.5f, 1f);
-        tRT.pivot = new Vector2(0.5f, 1f);
-        tRT.anchoredPosition = new Vector2(0, -30);
-        tRT.sizeDelta = new Vector2(860, 26);
+        tRT.anchorMin = new Vector2(0, 1);
+        tRT.anchorMax = new Vector2(1, 1);
+        tRT.pivot = new Vector2(0.5f, 1);
+        tRT.anchoredPosition = new Vector2(0, -28);
+        tRT.sizeDelta = new Vector2(-180, 26);
         titleText = titleGO.GetComponent<TextMeshProUGUI>();
         titleText.fontSize = 16.5f;
+        titleText.enableAutoSizing = true;
+        titleText.fontSizeMin = 12f;
+        titleText.fontSizeMax = 16.5f;
+        titleText.textWrappingMode = TextWrappingModes.NoWrap;
+        titleText.overflowMode = TextOverflowModes.Ellipsis;
         titleText.fontStyle = FontStyles.Bold;
         titleText.alignment = TextAlignmentOptions.Center;
         titleText.color = new Color(1f, 0.92f, 0.30f); // Bright sunlight gold
-        DungeonUIAssetHelper.ApplyFont(titleText);
+        DungeonUIAssetHelper.ApplyFont(titleText, withOutline: true);
 
-        // Instruction Body (Auto-sizing enabled so multiple paragraphs never bleed outside)
+        // Instruction Body (stretched with vertical clearance below Title and above KeyPrompt)
         GameObject instGO = new GameObject("Instruction", typeof(RectTransform), typeof(TextMeshProUGUI));
         instGO.transform.SetParent(plate.transform, false);
         RectTransform iRT = instGO.GetComponent<RectTransform>();
-        iRT.anchorMin = new Vector2(0.5f, 1f);
-        iRT.anchorMax = new Vector2(0.5f, 1f);
-        iRT.pivot = new Vector2(0.5f, 1f);
-        iRT.anchoredPosition = new Vector2(0, -56);
-        iRT.sizeDelta = new Vector2(860, 88);
+        iRT.anchorMin = new Vector2(0, 0);
+        iRT.anchorMax = new Vector2(1, 1);
+        iRT.offsetMin = new Vector2(14, 28);
+        iRT.offsetMax = new Vector2(-14, -56);
         instructionText = instGO.GetComponent<TextMeshProUGUI>();
         instructionText.fontSize = 13.5f;
         instructionText.enableAutoSizing = true;
-        instructionText.fontSizeMin = 11f;
+        instructionText.fontSizeMin = 10.5f;
         instructionText.fontSizeMax = 13.5f;
+        instructionText.textWrappingMode = TextWrappingModes.Normal;
+        instructionText.overflowMode = TextOverflowModes.Ellipsis;
         instructionText.alignment = TextAlignmentOptions.Center;
-        instructionText.color = Color.white; // Pure white for crystal clarity
-        instructionText.lineSpacing = 0;
-        DungeonUIAssetHelper.ApplyFont(instructionText);
+        instructionText.color = Color.white;
+        instructionText.lineSpacing = 2f;
+        DungeonUIAssetHelper.ApplyFont(instructionText, withOutline: true);
 
         // Key Prompt Footer
         GameObject keyGO = new GameObject("KeyPrompt", typeof(RectTransform), typeof(TextMeshProUGUI));
         keyGO.transform.SetParent(plate.transform, false);
         RectTransform kRT = keyGO.GetComponent<RectTransform>();
-        kRT.anchorMin = new Vector2(0.5f, 0f);
-        kRT.anchorMax = new Vector2(0.5f, 0f);
+        kRT.anchorMin = new Vector2(0, 0);
+        kRT.anchorMax = new Vector2(1, 0);
         kRT.pivot = new Vector2(0.5f, 0f);
-        kRT.anchoredPosition = new Vector2(0, 8);
-        kRT.sizeDelta = new Vector2(860, 20);
+        kRT.anchoredPosition = new Vector2(0, 6);
+        kRT.sizeDelta = new Vector2(-28, 20);
         keyPromptText = keyGO.GetComponent<TextMeshProUGUI>();
         keyPromptText.fontSize = 13f;
+        keyPromptText.enableAutoSizing = true;
+        keyPromptText.fontSizeMin = 10f;
+        keyPromptText.fontSizeMax = 13f;
+        keyPromptText.textWrappingMode = TextWrappingModes.NoWrap;
+        keyPromptText.overflowMode = TextOverflowModes.Ellipsis;
         keyPromptText.fontStyle = FontStyles.Bold;
         keyPromptText.alignment = TextAlignmentOptions.Center;
         keyPromptText.color = new Color(0.35f, 0.90f, 1f); // Bright electric cyan
-        DungeonUIAssetHelper.ApplyFont(keyPromptText);
+        DungeonUIAssetHelper.ApplyFont(keyPromptText, withOutline: true);
 
         bannerGO.SetActive(false);
 
@@ -641,7 +668,7 @@ public class DungeonTutorialController : MonoBehaviour
         pointerGO = new GameObject("TutorialPointer", typeof(RectTransform), typeof(Image), typeof(Button));
         pointerGO.transform.SetParent(overlayCanvasGO.transform, false);
         pointerRT = pointerGO.GetComponent<RectTransform>();
-        pointerRT.sizeDelta = new Vector2(250, 50);
+        pointerRT.sizeDelta = new Vector2(260, 52);
 
         Button pBtn = pointerGO.GetComponent<Button>();
         pBtn.transition = Selectable.Transition.None;
@@ -663,17 +690,22 @@ public class DungeonTutorialController : MonoBehaviour
         });
 
         Image pFrame = pointerGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(pFrame, new Color(1f, 0.82f, 0.20f, 1f)); // Bright golden frame
+        bool hasGotyPtr = DungeonUIAssetHelper.ApplyCompSprite(pFrame, "Comp_Combat_SpeedBtn", sliced: true, Color.white);
+        if (!hasGotyPtr)
+        {
+            DungeonUIAssetHelper.StyleSlicedFrame(pFrame, new Color(1f, 0.82f, 0.20f, 1f)); // Bright golden frame
+        }
 
         GameObject pPlate = new GameObject("Plate", typeof(RectTransform), typeof(Image));
         pPlate.transform.SetParent(pointerGO.transform, false);
         RectTransform pplRT = pPlate.GetComponent<RectTransform>();
         pplRT.anchorMin = Vector2.zero;
         pplRT.anchorMax = Vector2.one;
-        pplRT.offsetMin = new Vector2(3, 3);
-        pplRT.offsetMax = new Vector2(-3, -3);
+        pplRT.offsetMin = hasGotyPtr ? new Vector2(6, 4) : new Vector2(3, 3);
+        pplRT.offsetMax = hasGotyPtr ? new Vector2(-6, -4) : new Vector2(-3, -3);
         Image pplImg = pPlate.GetComponent<Image>();
-        pplImg.color = new Color(0.05f, 0.07f, 0.09f, 0.98f);
+        pplImg.color = hasGotyPtr ? Color.clear : new Color(0.05f, 0.07f, 0.09f, 0.98f);
+        pplImg.raycastTarget = false;
 
         GameObject arrowGO = new GameObject("ArrowIcon", typeof(RectTransform), typeof(TextMeshProUGUI));
         arrowGO.transform.SetParent(pointerGO.transform, false);
@@ -681,7 +713,7 @@ public class DungeonTutorialController : MonoBehaviour
         aRT.anchorMin = new Vector2(0.5f, 0f);
         aRT.anchorMax = new Vector2(0.5f, 0f);
         aRT.pivot = new Vector2(0.5f, 0f);
-        aRT.anchoredPosition = new Vector2(0, -6);
+        aRT.anchoredPosition = new Vector2(0, -14);
         aRT.sizeDelta = new Vector2(30, 24);
         TextMeshProUGUI aTMP = arrowGO.GetComponent<TextMeshProUGUI>();
         aTMP.fontSize = 18;
@@ -699,10 +731,14 @@ public class DungeonTutorialController : MonoBehaviour
         btRT.offsetMax = new Vector2(-6, -4);
         pointerBadgeText = badgeTextGO.GetComponent<TextMeshProUGUI>();
         pointerBadgeText.fontSize = 13.5f;
+        pointerBadgeText.enableAutoSizing = true;
+        pointerBadgeText.fontSizeMin = 9.5f;
+        pointerBadgeText.fontSizeMax = 13.5f;
+        pointerBadgeText.textWrappingMode = TextWrappingModes.NoWrap;
         pointerBadgeText.fontStyle = FontStyles.Bold;
         pointerBadgeText.alignment = TextAlignmentOptions.Center;
         pointerBadgeText.color = new Color(1f, 0.95f, 0.30f);
-        DungeonUIAssetHelper.ApplyFont(pointerBadgeText);
+        DungeonUIAssetHelper.ApplyFont(pointerBadgeText, withOutline: true);
 
         pointerGO.SetActive(false);
     }

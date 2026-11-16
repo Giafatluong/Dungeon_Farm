@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c32e8c2eb4883b42bac2a10e839d4cb, type: 3}
   m_Name: FlyingRider
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
-  enemyName: Dark Flying Rider (Boss)
+  enemyName: "K\u1EF5 S\u0129 B\u00F3ng \u0110\u00EAm (Tr\u00F9m)"
   maxHealth: 220
   ATK: 19
   DEF: 4

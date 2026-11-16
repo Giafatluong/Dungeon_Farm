@@ -142,7 +142,120 @@ public class CampUI : MonoBehaviour
         FindReferences();
         BindButtons();
         SubscribeEvents();
+        ApplyCampGOTYStyling();
         isInitialized = true;
+    }
+
+    private void ApplyCampGOTYStyling()
+    {
+        if (foodModal != null)
+        {
+            Image fmImg = foodModal.GetComponent<Image>();
+            if (fmImg != null) DungeonUIAssetHelper.ApplyCompSprite(fmImg, "Comp_Camp_SubModalBase", sliced: true, Color.white);
+        }
+        if (cookModal != null)
+        {
+            Image cmImg = cookModal.GetComponent<Image>();
+            if (cmImg != null) DungeonUIAssetHelper.ApplyCompSprite(cmImg, "Comp_Camp_SubModalBase", sliced: true, Color.white);
+        }
+
+        StyleModalCloseButton(closeFoodModalButton);
+        StyleModalCloseButton(closeCookModalButton);
+
+        ConfigureCampAutoSize(campTitleText, 14f, 20f, wrap: false);
+        ConfigureCampAutoSize(campDescText, 10f, 13f, wrap: true);
+        ConfigureCampAutoSize(playerStatusText, 10f, 13f, wrap: false);
+        ConfigureCampAutoSize(playerBuffsText, 9.5f, 12.5f, wrap: false);
+        ConfigureCampAutoSize(ambushRiskPercentText, 10f, 13f, wrap: false);
+        ConfigureCampAutoSize(ambushRiskStatusText, 9.5f, 12.5f, wrap: true);
+
+        EnforceRectangularCampButtons();
+    }
+
+    private void EnforceRectangularCampButtons()
+    {
+        Button[] row1 = new Button[] { eatButton, cookButton, exerciseButton };
+        Button[] row2 = new Button[] { restButton, continueButton, returnHomeButton };
+        string[] row1Sprites = new string[] { "Btn_NEW", "Btn_NEW", "Btn_QUIT" };
+        string[] row2Sprites = new string[] { "Btn_HOW", "Btn_CONTINUE", "Btn_HOW" };
+        float[] xPositions = new float[] { -210f, 0f, 210f };
+        Vector2 rectSize = new Vector2(190f, 52f);
+
+        for (int i = 0; i < 3; i++)
+        {
+            ApplyRectangularCampBtn(row1[i], new Vector2(xPositions[i], 30f), rectSize, row1Sprites[i]);
+            ApplyRectangularCampBtn(row2[i], new Vector2(xPositions[i], -30f), rectSize, row2Sprites[i]);
+        }
+    }
+
+    private static void ApplyRectangularCampBtn(Button btn, Vector2 pos, Vector2 size, string spriteName = null)
+    {
+        if (btn == null) return;
+        RectTransform rt = btn.GetComponent<RectTransform>();
+        if (rt != null)
+        {
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = size;
+            rt.anchoredPosition = pos;
+        }
+
+        Image img = btn.GetComponent<Image>();
+        if (img != null)
+        {
+            if (!string.IsNullOrEmpty(spriteName))
+            {
+                Sprite sp = DungeonUIAssetHelper.FindSprite(spriteName);
+                if (sp != null) img.sprite = sp;
+            }
+            img.type = Image.Type.Sliced;
+            img.preserveAspect = false;
+            img.color = Color.white;
+        }
+
+        TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (tmp != null)
+        {
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.enableAutoSizing = true;
+            tmp.fontSizeMin = 9f;
+            tmp.fontSizeMax = 12f;
+            tmp.margin = new Vector4(6f, 4f, 6f, 4f);
+            tmp.lineSpacing = -5f;
+            DungeonUIAssetHelper.ApplyFont(tmp, withOutline: true);
+        }
+    }
+
+    private static void StyleModalCloseButton(Button btn)
+    {
+        if (btn == null) return;
+        RectTransform rt = btn.GetComponent<RectTransform>();
+        Image img = btn.GetComponent<Image>();
+        bool isSmallIcon = rt != null && rt.sizeDelta.x > 0f && rt.sizeDelta.x < 64f && rt.sizeDelta.y > 0f && rt.sizeDelta.y < 64f;
+        string compName = isSmallIcon ? "Comp_Statue_BtnCloseX" : "Comp_Merchant_TradeBtn";
+        if (DungeonUIAssetHelper.ApplyCompButton(btn, img, compName, Color.white) && isSmallIcon && img != null)
+        {
+            img.type = Image.Type.Simple;
+        }
+        TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (tmp != null)
+        {
+            tmp.enableAutoSizing = true;
+            tmp.fontSizeMin = 9f;
+            tmp.fontSizeMax = 13f;
+        }
+    }
+
+    private static void ConfigureCampAutoSize(TextMeshProUGUI tmp, float minSize, float maxSize, bool wrap)
+    {
+        if (tmp == null) return;
+        DungeonUIAssetHelper.ApplyFont(tmp);
+        tmp.enableAutoSizing = true;
+        tmp.fontSizeMin = minSize;
+        tmp.fontSizeMax = maxSize;
+        tmp.textWrappingMode = wrap ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
+        tmp.overflowMode = TextOverflowModes.Ellipsis;
     }
 
     public void FindReferences()
@@ -542,7 +655,7 @@ public class CampUI : MonoBehaviour
         bool success = camp.PerformAction(Camp.ActionType.Rest);
         if (success && CombatUI.Instance != null)
         {
-            CombatUI.Instance.LogMessage($"Đã nghỉ ngơi bên lửa trại! Hồi phục {camp.restHealAmount} HP.");
+            CombatUI.Instance.LogMessage($"Đã nghỉ ngơi bên lửa trại! Hồi phục {camp.restHealAmount} Máu.");
         }
     }
 
@@ -574,13 +687,7 @@ public class CampUI : MonoBehaviour
 
         if (ambushRiskBgImage != null)
         {
-            int tier = percent < 0.35f ? 0 : (percent < 0.70f ? 1 : 2);
-            Sprite bgSpr = tier switch
-            {
-                1 => riskBgCautionSprite != null ? riskBgCautionSprite : DungeonUIAssetHelper.GetRiskGaugeBgSprite(1),
-                2 => riskBgDangerSprite != null ? riskBgDangerSprite : DungeonUIAssetHelper.GetRiskGaugeBgSprite(2),
-                _ => riskBgSafeSprite != null ? riskBgSafeSprite : DungeonUIAssetHelper.GetRiskGaugeBgSprite(0)
-            };
+            Sprite bgSpr = DungeonUIAssetHelper.GetRiskGaugeBgSprite(0);
             if (bgSpr != null)
             {
                 ambushRiskBgImage.sprite = bgSpr;
@@ -590,17 +697,15 @@ public class CampUI : MonoBehaviour
 
         if (ambushRiskFillImage != null)
         {
-            if (ambushRiskFillImage.sprite == null)
+            Sprite fillSpr = DungeonUIAssetHelper.GetRiskGaugeFillSprite();
+            if (fillSpr != null)
             {
-                Sprite fillSpr = DungeonUIAssetHelper.GetRiskGaugeFillSprite();
-                if (fillSpr != null)
-                {
-                    ambushRiskFillImage.sprite = fillSpr;
-                    ambushRiskFillImage.type = Image.Type.Filled;
-                    ambushRiskFillImage.fillMethod = Image.FillMethod.Horizontal;
-                }
+                ambushRiskFillImage.sprite = fillSpr;
             }
+            ambushRiskFillImage.type = Image.Type.Filled;
+            ambushRiskFillImage.fillMethod = Image.FillMethod.Horizontal;
             ambushRiskFillImage.fillAmount = percent;
+            ambushRiskFillImage.gameObject.SetActive(percent > 0.001f);
 
             if (percent < 0.25f)
             {
@@ -659,12 +764,12 @@ public class CampUI : MonoBehaviour
                 PlayerStats.FullnessTier tier = playerStats.GetCurrentFullnessTier();
                 string tierTag = tier switch
                 {
-                    PlayerStats.FullnessTier.Hungry => " <color=#FF6644>[Đói: -2 ATK, -3 SPD]</color>",
-                    PlayerStats.FullnessTier.Satiated => " <color=#55FF55>[No: +2 ATK, +1 DEF, +2 SPD]</color>",
-                    PlayerStats.FullnessTier.Overstuffed => " <color=#FFCC00>[Bội Thực: +3 DEF, -4 SPD, -1 ATK, Hồi HP]</color>",
+                    PlayerStats.FullnessTier.Hungry => " <color=#FF6644>[Đói: -2 Công, -3 Tốc]</color>",
+                    PlayerStats.FullnessTier.Satiated => " <color=#55FF55>[No: +2 Công, +1 Thủ, +2 Tốc]</color>",
+                    PlayerStats.FullnessTier.Overstuffed => " <color=#FFCC00>[Bội Thực: +3 Thủ, -4 Tốc, -1 Công, Hồi Máu]</color>",
                     _ => ""
                 };
-                playerStatusText.text = $"HP: <color=#66FF66>{playerStats.currentHealth}/{playerStats.maxHealth}</color>   |   Độ No: <color=#FFAA33>{playerStats.currentHunger}/{playerStats.maxHunger}</color>{tierTag}";
+                playerStatusText.text = $"Máu: <color=#66FF66>{playerStats.currentHealth}/{playerStats.maxHealth}</color>   |   Độ No: <color=#FFAA33>{playerStats.currentHunger}/{playerStats.maxHunger}</color>{tierTag}";
             }
 
             if (playerBuffsText != null)
@@ -792,99 +897,36 @@ public class CampUI : MonoBehaviour
     {
         if (food == null) return null;
 
-        GameObject row = new GameObject($"Food_{food.itemName}", typeof(RectTransform), typeof(Image));
-        RectTransform rt = row.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(440, 56);
-
-        Image bg = row.GetComponent<Image>();
-        Sprite cardSprite = DungeonUIAssetHelper.GetFoodCardSprite();
-        if (cardSprite != null)
-        {
-            bg.sprite = cardSprite;
-            bg.type = Image.Type.Sliced;
-            bg.color = Color.white;
-        }
-        else
-        {
-            bg.color = new Color(0.14f, 0.16f, 0.22f, 0.95f);
-        }
-
-        // Icon
-        GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-        iconGO.transform.SetParent(row.transform, false);
-        RectTransform iconRT = iconGO.GetComponent<RectTransform>();
-        iconRT.anchorMin = new Vector2(0, 0.5f);
-        iconRT.anchorMax = new Vector2(0, 0.5f);
-        iconRT.anchoredPosition = new Vector2(28, 0);
-        iconRT.sizeDelta = new Vector2(40, 40);
-        Image iconImg = iconGO.GetComponent<Image>();
-        if (food.itemIcon != null) iconImg.sprite = food.itemIcon;
-
-        // Label Info
-        GameObject labelGO = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
-        labelGO.transform.SetParent(row.transform, false);
-        RectTransform labelRT = labelGO.GetComponent<RectTransform>();
-        labelRT.anchorMin = new Vector2(0, 0);
-        labelRT.anchorMax = new Vector2(1, 1);
-        labelRT.offsetMin = new Vector2(60, 4);
-        labelRT.offsetMax = new Vector2(-110, -4);
-        TextMeshProUGUI label = labelGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(label, withOutline: true);
-        label.fontSize = 13;
-        label.color = Color.white;
-        label.alignment = TextAlignmentOptions.MidlineLeft;
-
+        string labelStr;
         if (food is FoodData fd)
         {
             string buffSummary = GetFoodBuffSummary(fd);
             string buffLine = !string.IsNullOrEmpty(buffSummary) ? $" | {buffSummary}" : "";
-            label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#FF6B6B><b>+{fd.healthValue} HP</b></color> | <color=#FFD043><b>+{fd.hungerValue} Độ No</b></color>{buffLine}</size>";
+            labelStr = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#FF6B6B><b>+{fd.healthValue} Máu</b></color> | <color=#FFD043><b>+{fd.hungerValue} Độ No</b></color>{buffLine}</size>";
         }
         else
         {
-            label.text = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#FF6B6B><b>+6 HP</b></color> | <color=#FFD043><b>+15 Độ No</b></color> <color=#94A3B8>(Ăn Thô)</color></size>";
+            labelStr = $"<b>{food.itemName}</b> x{count}\n<size=11><color=#FF6B6B><b>+6 Máu</b></color> | <color=#FFD043><b>+15 Độ No</b></color> <color=#94A3B8>(Ăn Thô)</color></size>";
         }
 
-        // Eat Button
-        GameObject btnGO = new GameObject("EatBtn", typeof(RectTransform), typeof(Image), typeof(Button));
-        btnGO.transform.SetParent(row.transform, false);
-        RectTransform btnRT = btnGO.GetComponent<RectTransform>();
-        btnRT.anchorMin = new Vector2(1, 0.5f);
-        btnRT.anchorMax = new Vector2(1, 0.5f);
-        btnRT.anchoredPosition = new Vector2(-55, 0);
-        btnRT.sizeDelta = new Vector2(95, 36);
-
-        Image btnImg = btnGO.GetComponent<Image>();
-        btnImg.color = new Color(0.2f, 0.7f, 0.35f, 1f);
-
-        Button btn = btnGO.GetComponent<Button>();
         bool canEat = playerStats != null && playerStats.currentHunger < playerStats.maxHunger;
-        btn.interactable = canEat;
-
-        btn.onClick.AddListener(() =>
-        {
-            if (camp != null)
+        return BuildCampActionRow(
+            rowName: $"Food_{food.itemName}",
+            height: 66f,
+            iconSprite: food.itemIcon,
+            labelText: labelStr,
+            btnName: "EatBtn",
+            btnWidth: 98f,
+            btnTextStr: canEat ? "ĂN (+15%)" : "NO",
+            interactable: canEat,
+            enabledColor: new Color(0.2f, 0.7f, 0.35f, 1f),
+            onClick: () =>
             {
-                bool success = camp.PerformAction(Camp.ActionType.Eat, food);
-                if (success)
+                if (camp != null && camp.PerformAction(Camp.ActionType.Eat, food))
                 {
                     PopulateFoodModal();
                 }
-            }
-        });
-
-        GameObject btnTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
-        btnTextGO.transform.SetParent(btnGO.transform, false);
-        RectTransform btnTextRT = btnTextGO.GetComponent<RectTransform>();
-        btnTextRT.anchorMin = Vector2.zero;
-        btnTextRT.anchorMax = Vector2.one;
-        btnTextRT.sizeDelta = Vector2.zero;
-        TextMeshProUGUI btnText = btnTextGO.GetComponent<TextMeshProUGUI>();
-        btnText.fontSize = 11;
-        btnText.alignment = TextAlignmentOptions.Center;
-        btnText.text = canEat ? "ĂN (+15%)" : "NO";
-
-        return row;
+            });
     }
 
     #endregion
@@ -935,51 +977,6 @@ public class CampUI : MonoBehaviour
 
     private GameObject CreateRecipeCard(RecipeData recipe, ItemContainer container)
     {
-        GameObject row = new GameObject($"Recipe_{recipe.recipeName}", typeof(RectTransform), typeof(Image));
-        RectTransform rt = row.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(450, 68);
-
-        Image bg = row.GetComponent<Image>();
-        Sprite cardSprite = DungeonUIAssetHelper.GetFoodCardSprite();
-        if (cardSprite != null)
-        {
-            bg.sprite = cardSprite;
-            bg.type = Image.Type.Sliced;
-            bg.color = Color.white;
-        }
-        else
-        {
-            bg.color = new Color(0.13f, 0.15f, 0.20f, 0.95f);
-        }
-
-        // Icon
-        GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-        iconGO.transform.SetParent(row.transform, false);
-        RectTransform iconRT = iconGO.GetComponent<RectTransform>();
-        iconRT.anchorMin = new Vector2(0, 0.5f);
-        iconRT.anchorMax = new Vector2(0, 0.5f);
-        iconRT.anchoredPosition = new Vector2(30, 0);
-        iconRT.sizeDelta = new Vector2(44, 44);
-        Image iconImg = iconGO.GetComponent<Image>();
-        if (recipe.resultFood != null && recipe.resultFood.itemIcon != null)
-        {
-            iconImg.sprite = recipe.resultFood.itemIcon;
-        }
-
-        // Label Info
-        GameObject labelGO = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
-        labelGO.transform.SetParent(row.transform, false);
-        RectTransform labelRT = labelGO.GetComponent<RectTransform>();
-        labelRT.anchorMin = new Vector2(0, 0);
-        labelRT.anchorMax = new Vector2(1, 1);
-        labelRT.offsetMin = new Vector2(65, 4);
-        labelRT.offsetMax = new Vector2(-120, -4);
-        TextMeshProUGUI label = labelGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(label, withOutline: true);
-        label.fontSize = 12;
-        label.color = Color.white;
-        label.alignment = TextAlignmentOptions.MidlineLeft;
-
         System.Text.StringBuilder ingSb = new System.Text.StringBuilder();
         bool canCook = CookingManager.Instance != null && CookingManager.Instance.CanCook(recipe, container);
 
@@ -997,45 +994,157 @@ public class CampUI : MonoBehaviour
 
         string rBuff = recipe.resultFood != null ? GetFoodBuffSummary(recipe.resultFood) : "";
         string rBuffLine = !string.IsNullOrEmpty(rBuff) ? $"\n<size=10.5><color=#CBD5E1>Buff:</color> {rBuff}</size>" : "";
-        label.text = $"<b>{recipe.DisplayName}</b>{rBuffLine}\n<size=10.5><color=#CBD5E1>Cần:</color> {ingSb.ToString()}</size>";
+        string labelStr = $"<b>{recipe.DisplayName}</b>{rBuffLine}\n<size=10.5><color=#CBD5E1>Cần:</color> {ingSb}</size>";
 
-        // Cook Button
-        GameObject btnGO = new GameObject("CookBtn", typeof(RectTransform), typeof(Image), typeof(Button));
+        return BuildCampActionRow(
+            rowName: $"Recipe_{recipe.recipeName}",
+            height: 76f,
+            iconSprite: recipe.resultFood != null ? recipe.resultFood.itemIcon : null,
+            labelText: labelStr,
+            btnName: "CookBtn",
+            btnWidth: 104f,
+            btnTextStr: canCook ? "NẤU (+20%)" : "THIẾU ĐỒ",
+            interactable: canCook,
+            enabledColor: new Color(0.85f, 0.45f, 0.1f, 1f),
+            onClick: () =>
+            {
+                if (camp != null && camp.PerformAction(Camp.ActionType.Cook, recipe))
+                {
+                    PopulateCookModal();
+                }
+            });
+    }
+
+    private GameObject BuildCampActionRow(
+        string rowName,
+        float height,
+        Sprite iconSprite,
+        string labelText,
+        string btnName,
+        float btnWidth,
+        string btnTextStr,
+        bool interactable,
+        Color enabledColor,
+        UnityEngine.Events.UnityAction onClick)
+    {
+        GameObject row = new GameObject(rowName, typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+        RectTransform rt = row.GetComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(460f, height);
+
+        LayoutElement le = row.GetComponent<LayoutElement>();
+        le.minHeight = height;
+        le.preferredHeight = height;
+        le.flexibleHeight = 0f;
+
+        Image bg = row.GetComponent<Image>();
+        if (!DungeonUIAssetHelper.ApplyCompSprite(bg, "Comp_Merchant_TradeRowBase", sliced: true, Color.white))
+        {
+            Sprite cardSprite = DungeonUIAssetHelper.GetFoodCardSprite();
+            if (cardSprite != null)
+            {
+                bg.sprite = cardSprite;
+                bg.type = Image.Type.Sliced;
+                bg.color = Color.white;
+            }
+            else
+            {
+                bg.color = new Color(0.14f, 0.16f, 0.22f, 0.95f);
+            }
+        }
+
+        // Framed Item Slot + Icon
+        GameObject slotGO = new GameObject("IconSlot", typeof(RectTransform), typeof(Image));
+        slotGO.transform.SetParent(row.transform, false);
+        RectTransform slotRT = slotGO.GetComponent<RectTransform>();
+        slotRT.anchorMin = new Vector2(0, 0.5f);
+        slotRT.anchorMax = new Vector2(0, 0.5f);
+        slotRT.pivot = new Vector2(0, 0.5f);
+        slotRT.anchoredPosition = new Vector2(12, 0);
+        slotRT.sizeDelta = new Vector2(46, 46);
+        Image slotImg = slotGO.GetComponent<Image>();
+        if (!DungeonUIAssetHelper.ApplyCompSprite(slotImg, "Comp_Merchant_ItemSlot", sliced: true, Color.white))
+        {
+            slotImg.color = new Color(0.12f, 0.08f, 0.06f, 0.9f);
+        }
+
+        GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+        iconGO.transform.SetParent(slotGO.transform, false);
+        RectTransform iconRT = iconGO.GetComponent<RectTransform>();
+        iconRT.anchorMin = Vector2.zero;
+        iconRT.anchorMax = Vector2.one;
+        iconRT.offsetMin = new Vector2(5, 5);
+        iconRT.offsetMax = new Vector2(-5, -5);
+        Image iconImg = iconGO.GetComponent<Image>();
+        iconImg.preserveAspect = true;
+        if (iconSprite != null)
+        {
+            iconImg.sprite = iconSprite;
+        }
+        else
+        {
+            iconImg.enabled = false;
+        }
+
+        // Label Info (auto-sized with safe clearance from icon slot and action button)
+        GameObject labelGO = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+        labelGO.transform.SetParent(row.transform, false);
+        RectTransform labelRT = labelGO.GetComponent<RectTransform>();
+        labelRT.anchorMin = new Vector2(0, 0);
+        labelRT.anchorMax = new Vector2(1, 1);
+        labelRT.offsetMin = new Vector2(68, 6);
+        labelRT.offsetMax = new Vector2(-(btnWidth + 22f), -6);
+
+        TextMeshProUGUI label = labelGO.GetComponent<TextMeshProUGUI>();
+        DungeonUIAssetHelper.ApplyFont(label, withOutline: true);
+        label.fontSize = 12f;
+        label.enableAutoSizing = true;
+        label.fontSizeMin = 9.5f;
+        label.fontSizeMax = 12.5f;
+        label.textWrappingMode = TextWrappingModes.Normal;
+        label.overflowMode = TextOverflowModes.Ellipsis;
+        label.color = Color.white;
+        label.alignment = TextAlignmentOptions.MidlineLeft;
+        label.text = labelText;
+
+        // Action Button
+        GameObject btnGO = new GameObject(btnName, typeof(RectTransform), typeof(Image), typeof(Button));
         btnGO.transform.SetParent(row.transform, false);
         RectTransform btnRT = btnGO.GetComponent<RectTransform>();
         btnRT.anchorMin = new Vector2(1, 0.5f);
         btnRT.anchorMax = new Vector2(1, 0.5f);
-        btnRT.anchoredPosition = new Vector2(-60, 0);
-        btnRT.sizeDelta = new Vector2(105, 38);
+        btnRT.pivot = new Vector2(1, 0.5f);
+        btnRT.anchoredPosition = new Vector2(-12, 0);
+        btnRT.sizeDelta = new Vector2(btnWidth, 38);
 
         Image btnImg = btnGO.GetComponent<Image>();
-        btnImg.color = canCook ? new Color(0.85f, 0.45f, 0.1f, 1f) : new Color(0.35f, 0.35f, 0.35f, 0.6f);
-
         Button btn = btnGO.GetComponent<Button>();
-        btn.interactable = canCook;
-
-        btn.onClick.AddListener(() =>
+        Color btnTint = interactable ? Color.white : new Color(0.55f, 0.55f, 0.58f, 0.8f);
+        if (!DungeonUIAssetHelper.ApplyCompButton(btn, btnImg, "Comp_Merchant_TradeBtn", btnTint))
         {
-            if (camp != null)
-            {
-                bool success = camp.PerformAction(Camp.ActionType.Cook, recipe);
-                if (success)
-                {
-                    PopulateCookModal();
-                }
-            }
-        });
+            btnImg.color = interactable ? enabledColor : new Color(0.35f, 0.35f, 0.35f, 0.6f);
+        }
+        btn.interactable = interactable;
+        btn.onClick.AddListener(onClick);
 
         GameObject btnTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         btnTextGO.transform.SetParent(btnGO.transform, false);
         RectTransform btnTextRT = btnTextGO.GetComponent<RectTransform>();
         btnTextRT.anchorMin = Vector2.zero;
         btnTextRT.anchorMax = Vector2.one;
-        btnTextRT.sizeDelta = Vector2.zero;
+        btnTextRT.offsetMin = new Vector2(6, 2);
+        btnTextRT.offsetMax = new Vector2(-6, -2);
+
         TextMeshProUGUI btnText = btnTextGO.GetComponent<TextMeshProUGUI>();
-        btnText.fontSize = 11;
+        DungeonUIAssetHelper.ApplyFont(btnText, withOutline: true);
+        btnText.fontSize = 11.5f;
+        btnText.enableAutoSizing = true;
+        btnText.fontSizeMin = 9f;
+        btnText.fontSizeMax = 11.5f;
+        btnText.fontStyle = FontStyles.Bold;
+        btnText.textWrappingMode = TextWrappingModes.NoWrap;
         btnText.alignment = TextAlignmentOptions.Center;
-        btnText.text = canCook ? "NẤU (+20%)" : "THIẾU ĐỒ";
+        btnText.color = interactable ? Color.white : new Color(0.75f, 0.75f, 0.75f);
+        btnText.text = btnTextStr;
 
         return row;
     }

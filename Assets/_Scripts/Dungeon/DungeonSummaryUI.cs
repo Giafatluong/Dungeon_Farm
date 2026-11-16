@@ -366,16 +366,16 @@ public class DungeonSummaryUI : MonoBehaviour
         {
             case ExpeditionResult.Victory:
                 bannerColor = new Color(0.24f, 0.18f, 0.10f, 1f); // Dark rich mahogany/gold
-                t = $"SUMMARY: FLOOR {floor} VICTORY!";
-                sub = "You vanquished all monsters and conquered the Dungeon Boss!";
+                t = $"TỔNG KẾT: CHIẾN THẮNG TẦNG {floor}!";
+                sub = "Bạn đã tiêu diệt toàn bộ quái vật và đánh bại Boss Hầm Ngục!";
                 iconSp = DungeonUIAssetHelper.GetChestSprite();
                 titleColor = new Color(1f, 0.88f, 0.35f, 1f); // Radiant Gold
                 break;
 
             case ExpeditionResult.Retreat:
                 bannerColor = new Color(0.10f, 0.20f, 0.26f, 1f); // Deep Twilight Slate
-                t = $"SUMMARY: SAFE RETREAT - FLOOR {floor}";
-                sub = "You retreated safely from the Camp, preserving all gathered resources.";
+                t = $"TỔNG KẾT: RÚT LUI AN TOÀN - TẦNG {floor}";
+                sub = "Bạn đã rút lui an toàn từ Trạm Nghỉ, bảo toàn toàn bộ chiến lợi phẩm thu thập.";
                 iconSp = DungeonUIAssetHelper.GetTentSprite();
                 titleColor = new Color(0.55f, 0.90f, 1f, 1f); // Radiant Cyan
                 break;
@@ -383,8 +383,8 @@ public class DungeonSummaryUI : MonoBehaviour
             case ExpeditionResult.Defeat:
             default:
                 bannerColor = new Color(0.26f, 0.10f, 0.10f, 1f); // Deep Crimson Wine
-                t = $"SUMMARY: DEFEATED ON FLOOR {floor}";
-                sub = "The expedition was cut short by underground perils. Train, prepare, and return stronger!";
+                t = $"TỔNG KẾT: THẤT BẠI TẠI TẦNG {floor}";
+                sub = "Chuyến thám hiểm phải dừng lại trước hiểm nguy hầm ngục. Hãy chuẩn bị kỹ lưỡng và trở lại mạnh mẽ hơn!";
                 iconSp = DungeonUIAssetHelper.GetBossSprite();
                 titleColor = new Color(1f, 0.65f, 0.65f, 1f); // Radiant Coral
                 break;

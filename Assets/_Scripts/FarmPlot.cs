@@ -53,7 +53,7 @@ public class FarmPlot : MonoBehaviour
         ItemData selectedItem = InventoryButton.selectedItem;
         if (selectedItem == null)
         {
-            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, "Select a seed first!", Color.yellow, 3.5f);
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, "Hãy chọn hạt giống trước!", Color.yellow, 3.5f);
             return false;
         }
 
@@ -65,7 +65,7 @@ public class FarmPlot : MonoBehaviour
 
         if (itemContainer == null || !itemContainer.HasItem(selectedItem))
         {
-            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, "Out of seeds in bag!", new Color(1f, 0.4f, 0.4f), 3.5f);
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, "Đã hết hạt giống trong túi!", new Color(1f, 0.4f, 0.4f), 3.5f);
             return false;
         }
 
@@ -86,7 +86,7 @@ public class FarmPlot : MonoBehaviour
 
         if (selectedCrop == null)
         {
-            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, "This item is not a seed!", new Color(1f, 0.4f, 0.4f), 3.5f);
+            DamagePopupManager.ShowText(transform.position + Vector3.up * 0.8f, "Vật phẩm này không phải hạt giống!", new Color(1f, 0.4f, 0.4f), 3.5f);
             return false;
         }
 

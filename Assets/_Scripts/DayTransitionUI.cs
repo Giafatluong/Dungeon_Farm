@@ -261,17 +261,17 @@ public class DayTransitionUI : MonoBehaviour
         // Title
         if (headerTitleText != null)
         {
-            headerTitleText.text = $"[ DAWN - DAY {newDay:D2} ]";
+            headerTitleText.text = $"[ BÌNH MINH - NGÀY {newDay:D2} ]";
         }
         if (headerSubtitleText != null)
         {
-            headerSubtitleText.text = "A peaceful night has passed. New changes have arrived across the farm and dungeon.";
+            headerSubtitleText.text = "Một đêm yên bình đã trôi qua. Những điều mới mẻ đang chờ đón trên nông trại và hầm ngục.";
         }
 
         // 1. Farm
         if (farmSectionTitleText != null)
         {
-            farmSectionTitleText.text = "[ TODAY'S FARM REPORT ]";
+            farmSectionTitleText.text = "[ BÁO CÁO NÔNG TRẠI HÔM NAY ]";
         }
 
         FarmPlot[] plots = FindObjectsByType<FarmPlot>(FindObjectsInactive.Include, FindObjectsSortMode.None);
@@ -290,7 +290,7 @@ public class DayTransitionUI : MonoBehaviour
                 readyCount++;
                 string cropName = (plots[i].currentCrop != null && !string.IsNullOrEmpty(plots[i].currentCrop.cropName))
                     ? plots[i].currentCrop.cropName
-                    : "Produce";
+                    : "Nông sản";
 
                 if (readyCropsSummary.ContainsKey(cropName))
                     readyCropsSummary[cropName]++;
@@ -300,13 +300,13 @@ public class DayTransitionUI : MonoBehaviour
             else if (plots[i].currentState == FarmPlot.State.Planted && plots[i].currentCrop != null)
             {
                 plantedCount++;
-                string cName = !string.IsNullOrEmpty(plots[i].currentCrop.cropName) ? plots[i].currentCrop.cropName : "Crop";
+                string cName = !string.IsNullOrEmpty(plots[i].currentCrop.cropName) ? plots[i].currentCrop.cropName : "Cây trồng";
                 int totalStages = (plots[i].currentCrop.growthStages != null && plots[i].currentCrop.growthStages.Length > 0)
                     ? plots[i].currentCrop.growthStages.Length
                     : 1;
                 int stageNum = plots[i].currentStage + 1;
                 int daysLeftInStage = Mathf.Max(1, plots[i].currentCrop.growthTime) - plots[i].daysInCurrentStage;
-                plantedDetails.Add($"{cName} (Stage {stageNum}/{totalStages}, ~{daysLeftInStage} days remaining)");
+                plantedDetails.Add($"{cName} (Giai đoạn {stageNum}/{totalStages}, còn ~{daysLeftInStage} ngày)");
             }
             else if (plots[i].currentState == FarmPlot.State.Planted)
             {
@@ -327,33 +327,33 @@ public class DayTransitionUI : MonoBehaviour
                 cropDetails.Add($"{kvp.Key} x{kvp.Value}");
             }
             string detailStr = string.Join(", ", cropDetails);
-            farmSb.AppendLine($"* <color=#1E6B3A><b>{readyCount} crop plots</b> are fully ripe and ready to harvest!</color> ({detailStr})");
+            farmSb.AppendLine($"* <color=#1E6B3A><b>{readyCount} ô nông sản</b> đã chín rộ và sẵn sàng thu hoạch!</color> ({detailStr})");
         }
         else
         {
-            farmSb.AppendLine("* <color=#6D5B4F>No crops have ripened this morning.</color>");
+            farmSb.AppendLine("* <color=#6D5B4F>Chưa có nông sản nào chín sáng nay.</color>");
         }
 
         if (plantedCount > 0)
         {
             if (plantedDetails.Count > 0 && plantedDetails.Count <= 3)
             {
-                farmSb.AppendLine($"* <color=#7A4E00><b>{plantedCount} planted plots</b></color> growing: {string.Join(", ", plantedDetails)}.");
+                farmSb.AppendLine($"* <color=#7A4E00><b>{plantedCount} ô đang lớn</b></color>: {string.Join(", ", plantedDetails)}.");
             }
             else
             {
-                farmSb.AppendLine($"* <color=#7A4E00><b>{plantedCount} planted plots</b></color> are steadily progressing through their stages.");
+                farmSb.AppendLine($"* <color=#7A4E00><b>{plantedCount} ô đang lớn</b></color> đang phát triển thuận lợi qua các giai đoạn.");
             }
         }
 
         if (emptyCount > 0)
         {
-            farmSb.AppendLine($"* <color=#5C4A3D><b>{emptyCount} empty tilled plots</b></color> remain. Sow new seeds to expand your harvest.");
+            farmSb.AppendLine($"* <color=#5C4A3D><b>{emptyCount} ô đất trống</b></color> đã cày xới. Hãy gieo thêm hạt giống mới để mở rộng vụ mùa.");
         }
 
         if (plots.Length == 0)
         {
-            farmSb.AppendLine("* <color=#5C4A3D>No farm plots detected in this area.</color>");
+            farmSb.AppendLine("* <color=#5C4A3D>Không có mảnh đất canh tác nào trong khu vực này.</color>");
         }
 
         if (farmContentText != null)
@@ -364,7 +364,7 @@ public class DayTransitionUI : MonoBehaviour
         // 2. World & Dungeon News
         if (worldSectionTitleText != null)
         {
-            worldSectionTitleText.text = "[ DUNGEON & WORLD NEWS ]";
+            worldSectionTitleText.text = "[ TIN TỨC HẦM NGỤC & THẾ GIỚI ]";
         }
 
         System.Text.StringBuilder worldSb = new System.Text.StringBuilder();
@@ -381,13 +381,13 @@ public class DayTransitionUI : MonoBehaviour
                 {
                     if (ProgressionManager.Instance.IsBossAvailable(f))
                     {
-                        worldSb.AppendLine($"* <color=#B71C1C><b>[FLOOR {f} BOSS]</b> has respawned! The challenge portal is reopened.</color>");
+                        worldSb.AppendLine($"* <color=#B71C1C><b>[BOSS TẦNG {f}]</b> đã hồi sinh! Cổng khiêu chiến đã mở lại.</color>");
                         foundBossNews = true;
                     }
                     else
                     {
                         int daysLeft = ProgressionManager.Instance.GetDaysUntilBossReset(f);
-                        worldSb.AppendLine($"* <color=#546E7A><b>[FLOOR {f} BOSS]</b> is regenerating (<b>{daysLeft} days</b> remaining).</color>");
+                        worldSb.AppendLine($"* <color=#546E7A><b>[BOSS TẦNG {f}]</b> đang hồi sinh (còn <b>{daysLeft} ngày</b>).</color>");
                         foundBossNews = true;
                     }
                 }
@@ -395,12 +395,12 @@ public class DayTransitionUI : MonoBehaviour
 
             if (!foundBossNews)
             {
-                worldSb.AppendLine("* <color=#00695C>Floor 1 of the Dungeon is open and awaits daring adventurers.</color>");
+                worldSb.AppendLine("* <color=#00695C>Tầng 1 Hầm ngục đã mở cửa, sẵn sàng đón các nhà thám hiểm dũng cảm.</color>");
             }
         }
         else
         {
-            worldSb.AppendLine("* <color=#00695C>The Dungeon is fully prepared for your next expedition.</color>");
+            worldSb.AppendLine("* <color=#00695C>Hầm ngục đã sẵn sàng cho chuyến thám hiểm tiếp theo của bạn.</color>");
         }
 
         // Check Merchant on each floor (Only notify if merchant was previously encountered on that floor)
@@ -415,11 +415,11 @@ public class DayTransitionUI : MonoBehaviour
                 var m = discoveredMerchants[i];
                 if (m.remainingDays > 0)
                 {
-                    worldSb.AppendLine($"* <color=#006064><b>[WANDERING MERCHANT]</b> is on <b>Floor {m.floorNumber}</b> (<b>{m.remainingDays} days</b> left on visit).</color>");
+                    worldSb.AppendLine($"* <color=#006064><b>[THƯƠNG NHÂN DU MỤC]</b> đang ở <b>Tầng {m.floorNumber}</b> (còn <b>{m.remainingDays} ngày</b> ghé thăm).</color>");
                 }
                 else if (m.cooldownDays > 0)
                 {
-                    worldSb.AppendLine($"* <color=#6D5B4F><b>[WANDERING MERCHANT]</b> on <b>Floor {m.floorNumber}</b> is restocking goods (Returns in <b>{m.cooldownDays} days</b>).</color>");
+                    worldSb.AppendLine($"* <color=#6D5B4F><b>[THƯƠNG NHÂN DU MỤC]</b> ở <b>Tầng {m.floorNumber}</b> đang nhập hàng (Quay lại sau <b>{m.cooldownDays} ngày</b>).</color>");
                 }
             }
         }

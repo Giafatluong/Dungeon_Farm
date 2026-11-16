@@ -132,6 +132,8 @@ public class CombatUI : MonoBehaviour
         if (endTurnButton != null)
             DungeonUIAssetHelper.StyleTactileButton(endTurnButton, endTurnButton.GetComponent<Image>(), DungeonUIAssetHelper.ButtonStyle.EndTurn);
 
+        EnforceRectangularActionButtons();
+
         // 2. Secondary & Flow Buttons
         if (closeFoodPanelButton != null)
             DungeonUIAssetHelper.StyleTactileButton(closeFoodPanelButton, closeFoodPanelButton.GetComponent<Image>(), DungeonUIAssetHelper.ButtonStyle.WoodRustic);
@@ -143,20 +145,39 @@ public class CombatUI : MonoBehaviour
             DungeonUIAssetHelper.StyleTactileButton(rewardClaimButton, rewardClaimButton.GetComponent<Image>(), DungeonUIAssetHelper.ButtonStyle.PrimaryCook);
 
         // 3. Status Bar Fills
+        Sprite barTrackSprite = DungeonUIAssetHelper.GetProgressBarTrackSprite();
         if (hpFillImage != null)
         {
             Sprite hpSprite = DungeonUIAssetHelper.GetHpFillSprite();
-            if (hpSprite != null) { hpFillImage.sprite = hpSprite; hpFillImage.type = Image.Type.Sliced; hpFillImage.color = Color.white; }
+            if (hpSprite != null) { hpFillImage.sprite = hpSprite; }
+            hpFillImage.type = Image.Type.Filled;
+            hpFillImage.fillMethod = Image.FillMethod.Horizontal;
+            hpFillImage.color = new Color(0.25f, 0.85f, 0.35f);
+
+            Image hpTrack = hpFillImage.transform.parent != null ? hpFillImage.transform.parent.GetComponent<Image>() : null;
+            if (hpTrack != null && barTrackSprite != null) { hpTrack.sprite = barTrackSprite; hpTrack.color = Color.white; }
         }
         if (hungerFillImage != null)
         {
             Sprite hungerSprite = DungeonUIAssetHelper.GetHungerFillSprite();
-            if (hungerSprite != null) { hungerFillImage.sprite = hungerSprite; hungerFillImage.type = Image.Type.Sliced; hungerFillImage.color = Color.white; }
+            if (hungerSprite != null) { hungerFillImage.sprite = hungerSprite; }
+            hungerFillImage.type = Image.Type.Filled;
+            hungerFillImage.fillMethod = Image.FillMethod.Horizontal;
+            hungerFillImage.color = new Color(1f, 0.45f, 0.25f);
+
+            Image hungerTrack = hungerFillImage.transform.parent != null ? hungerFillImage.transform.parent.GetComponent<Image>() : null;
+            if (hungerTrack != null && barTrackSprite != null) { hungerTrack.sprite = barTrackSprite; hungerTrack.color = Color.white; }
         }
-        if (targetHpFill != null && targetHpFill.sprite == null)
+        if (targetHpFill != null)
         {
             Sprite hpSprite = DungeonUIAssetHelper.GetHpFillSprite();
-            if (hpSprite != null) { targetHpFill.sprite = hpSprite; targetHpFill.type = Image.Type.Sliced; targetHpFill.color = Color.white; }
+            if (hpSprite != null) { targetHpFill.sprite = hpSprite; }
+            targetHpFill.type = Image.Type.Filled;
+            targetHpFill.fillMethod = Image.FillMethod.Horizontal;
+            targetHpFill.color = new Color(0.95f, 0.25f, 0.25f);
+
+            Image targetTrack = targetHpFill.transform.parent != null ? targetHpFill.transform.parent.GetComponent<Image>() : null;
+            if (targetTrack != null && barTrackSprite != null) { targetTrack.sprite = barTrackSprite; targetTrack.color = Color.white; }
         }
 
         // 4. Modals & Panels - Preserve existing user-assigned scene sprites!
@@ -704,8 +725,16 @@ public class CombatUI : MonoBehaviour
         {
             cachedHp = curHp;
             cachedMaxHp = maxHp;
-            if (hpFillImage != null) hpFillImage.fillAmount = maxHp > 0 ? (float)curHp / maxHp : 0f;
-            if (hpText != null) hpText.text = $"<color=#FF6B6B>HP: {curHp} / {maxHp}</color>";
+            if (hpFillImage != null)
+            {
+                float hpRatio = maxHp > 0 ? (float)curHp / maxHp : 0f;
+                hpFillImage.fillAmount = hpRatio;
+                hpFillImage.gameObject.SetActive(hpRatio > 0.001f);
+                if (hpRatio > 0.5f) hpFillImage.color = new Color(0.25f, 0.85f, 0.35f);
+                else if (hpRatio > 0.25f) hpFillImage.color = new Color(0.95f, 0.8f, 0.15f);
+                else hpFillImage.color = new Color(0.95f, 0.25f, 0.25f);
+            }
+            if (hpText != null) hpText.text = $"<color=#FF6B6B>Máu: {curHp} / {maxHp}</color>";
         }
 
         int curHunger = playerStats.currentHunger;
@@ -716,7 +745,9 @@ public class CombatUI : MonoBehaviour
             cachedMaxHunger = maxHunger;
             if (hungerFillImage != null)
             {
-                hungerFillImage.fillAmount = maxHunger > 0 ? (float)curHunger / maxHunger : 0f;
+                float hungerRatio = maxHunger > 0 ? (float)curHunger / maxHunger : 0f;
+                hungerFillImage.fillAmount = hungerRatio;
+                hungerFillImage.gameObject.SetActive(hungerRatio > 0.001f);
                 PlayerStats.FullnessTier tier = playerStats.GetCurrentFullnessTier();
                 hungerFillImage.color = tier switch
                 {
@@ -754,7 +785,7 @@ public class CombatUI : MonoBehaviour
                     if (i < curAP) orbs += "<color=#00FFAA><b>[■]</b></color> ";
                     else orbs += "<color=#556677><b>[ ]</b></color> ";
                 }
-                apText.text = $"{orbs} <size=12><color=#A0EEDD>AP: {curAP}/{maxAP}</color></size>";
+                apText.text = $"{orbs} <size=12><color=#A0EEDD>Thể Lực: {curAP}/{maxAP}</color></size>";
             }
         }
 
@@ -770,8 +801,8 @@ public class CombatUI : MonoBehaviour
             cachedDefendCount = shield;
             if (statsText != null)
             {
-                string shieldStr = shield > 0 ? $" <color=#50D8FF>(+{shield} Shield)</color>" : "";
-                statsText.text = $"<color=#FFA726><b>ATK: {atk}</b></color>    <color=#50D8FF><b>DEF: {def}</b></color>{shieldStr}    <color=#FFEE55><b>SPD: {spd}</b></color>";
+                string shieldStr = shield > 0 ? $" <color=#50D8FF>(+{shield} Giáp)</color>" : "";
+                statsText.text = $"<color=#FFA726><b>Công: {atk}</b></color>    <color=#50D8FF><b>Thủ: {def}</b></color>{shieldStr}    <color=#FFEE55><b>Tốc: {spd}</b></color>";
             }
         }
 
@@ -980,6 +1011,15 @@ public class CombatUI : MonoBehaviour
             {
                 existingBtn.onClick.RemoveListener(CycleBattleSpeed);
                 existingBtn.onClick.AddListener(CycleBattleSpeed);
+                DungeonUIAssetHelper.ApplyCompButton(existingBtn, existingBtn.GetComponent<Image>(), "Comp_Combat_SpeedBtn", Color.white);
+            }
+            if (speedButtonText != null)
+            {
+                DungeonUIAssetHelper.ApplyFont(speedButtonText, withOutline: true);
+                speedButtonText.enableAutoSizing = true;
+                speedButtonText.fontSizeMin = 10f;
+                speedButtonText.fontSizeMax = 13f;
+                speedButtonText.textWrappingMode = TextWrappingModes.NoWrap;
             }
             UpdateSpeedButtonText();
             return;
@@ -996,27 +1036,78 @@ public class CombatUI : MonoBehaviour
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
         rt.anchoredPosition = new Vector2(-20, -20);
-        rt.sizeDelta = new Vector2(120, 32);
+        rt.sizeDelta = new Vector2(80, 36);
 
         Image img = speedButtonGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(img, new Color(0.2f, 0.25f, 0.35f, 0.95f));
-
         Button btn = speedButtonGO.GetComponent<Button>();
-        btn.onClick.AddListener(CycleBattleSpeed);
+        if (!DungeonUIAssetHelper.ApplyCompButton(btn, img, "Comp_Combat_SpeedBtn", Color.white))
+        {
+            DungeonUIAssetHelper.StyleSlicedFrame(img, new Color(0.2f, 0.25f, 0.35f, 0.95f));
+            btn.onClick.AddListener(CycleBattleSpeed);
+        }
+        else
+        {
+            btn.onClick.AddListener(CycleBattleSpeed);
+        }
 
         GameObject txtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         txtGO.transform.SetParent(speedButtonGO.transform, false);
         RectTransform trt = txtGO.GetComponent<RectTransform>();
         trt.anchorMin = Vector2.zero;
         trt.anchorMax = Vector2.one;
-        trt.offsetMin = Vector2.zero;
-        trt.offsetMax = Vector2.zero;
+        trt.offsetMin = new Vector2(6, 2);
+        trt.offsetMax = new Vector2(-6, -2);
         speedButtonText = txtGO.GetComponent<TextMeshProUGUI>();
         speedButtonText.fontSize = 13f;
+        speedButtonText.enableAutoSizing = true;
+        speedButtonText.fontSizeMin = 10f;
+        speedButtonText.fontSizeMax = 13f;
+        speedButtonText.textWrappingMode = TextWrappingModes.NoWrap;
         speedButtonText.alignment = TextAlignmentOptions.Center;
-        DungeonUIAssetHelper.ApplyFont(speedButtonText);
+        DungeonUIAssetHelper.ApplyFont(speedButtonText, withOutline: true);
 
         UpdateSpeedButtonText();
+    }
+
+    private void EnforceRectangularActionButtons()
+    {
+        Button[] actionBtns = new Button[] { attackButton, defendButton, eatButton, endTurnButton };
+        float[] xPositions = new float[] { -264f, -88f, 88f, 264f };
+        Vector2 rectSize = new Vector2(160f, 58f);
+
+        for (int i = 0; i < actionBtns.Length; i++)
+        {
+            Button btn = actionBtns[i];
+            if (btn == null) continue;
+
+            RectTransform rt = btn.GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                rt.anchorMin = new Vector2(0.5f, 0.5f);
+                rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.sizeDelta = rectSize;
+                rt.anchoredPosition = new Vector2(xPositions[i], 0f);
+            }
+
+            Image img = btn.GetComponent<Image>();
+            if (img != null)
+            {
+                img.type = Image.Type.Sliced;
+                img.preserveAspect = false;
+            }
+
+            TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (tmp != null)
+            {
+                tmp.alignment = TextAlignmentOptions.Center;
+                tmp.enableAutoSizing = true;
+                tmp.fontSizeMin = 9f;
+                tmp.fontSizeMax = 12f;
+                tmp.margin = new Vector4(6f, 4f, 6f, 4f);
+                tmp.lineSpacing = -6f;
+            }
+        }
     }
     #endregion
 
@@ -1117,8 +1208,8 @@ public class CombatUI : MonoBehaviour
             {
                 int defVal = playerStats != null ? playerStats.defendValue : 5;
                 bool isFree = ProgressionManager.Instance != null && ProgressionManager.Instance.HasBlessing(BlessingType.BastionStrike) && combatManager != null && !combatManager.hasDefendedThisTurn;
-                string cost = isFree ? "<color=#50FA7B>0 AP</color>" : "1 AP";
-                txt.text = $"PHÒNG THỦ [2]\n<size=11><color=#AADDFF>+{defVal} DEF ({cost})</color></size>";
+                string cost = isFree ? "<color=#50FA7B>0 Thể lực</color>" : "1 Thể lực";
+                txt.text = $"PHÒNG THỦ [2]\n<size=11><color=#AADDFF>+{defVal} Giáp ({cost})</color></size>";
             }
         }
         if (eatButton != null)
@@ -1260,7 +1351,7 @@ public class CombatUI : MonoBehaviour
         if (targetNameText != null)
         {
             int enemySpd = enemy.GetCurrentSpeed();
-            string spdStr = $"    <color=#FFEE55><b>SPD: {enemySpd}</b></color>";
+            string spdStr = $"    <color=#FFEE55><b>Tốc Độ: {enemySpd}</b></color>";
             if (enemy is Boss boss)
             {
                 targetNameText.text = $"MỤC TIÊU: <color=#FF5533>[BOSS]</color> {boss.bossName} (Giai đoạn {boss.GetCurrentPhase()}){spdStr}";
@@ -1274,7 +1365,9 @@ public class CombatUI : MonoBehaviour
         int maxHp = enemy.enemyData != null ? enemy.enemyData.maxHealth : 1;
         if (targetHpFill != null)
         {
-            targetHpFill.fillAmount = maxHp > 0 ? (float)enemy.currentHealth / maxHp : 0f;
+            float targetHpRatio = maxHp > 0 ? (float)enemy.currentHealth / maxHp : 0f;
+            targetHpFill.fillAmount = targetHpRatio;
+            targetHpFill.gameObject.SetActive(targetHpRatio > 0.001f);
         }
 
         if (targetHpText != null)
@@ -1285,16 +1378,16 @@ public class CombatUI : MonoBehaviour
             {
                 if (afterHp == 0)
                 {
-                    targetHpText.text = $"HP: {enemy.currentHealth}/{maxHp}  ->  <color=#FF4444><b>0 [KẾT LIỄU!]</b></color>";
+                    targetHpText.text = $"Máu: {enemy.currentHealth}/{maxHp}  ->  <color=#FF4444><b>0 [KẾT LIỄU!]</b></color>";
                 }
                 else
                 {
-                    targetHpText.text = $"HP: {enemy.currentHealth}/{maxHp}  ->  <color=#FFA726><b>{afterHp}</b> (-{predictedDmg})</color>";
+                    targetHpText.text = $"Máu: {enemy.currentHealth}/{maxHp}  ->  <color=#FFA726><b>{afterHp}</b> (-{predictedDmg})</color>";
                 }
             }
             else
             {
-                targetHpText.text = $"HP: {enemy.currentHealth}/{maxHp}  <color=#888888>(DEF chặn đòn)</color>";
+                targetHpText.text = $"Máu: {enemy.currentHealth}/{maxHp}  <color=#888888>(Giáp chặn đòn)</color>";
             }
         }
 
@@ -1325,8 +1418,8 @@ public class CombatUI : MonoBehaviour
 
             string intentDesc = enemy.currentIntent switch
             {
-                EnemyData.EnemyIntent.Attack => $"<color=#FF7777>Tấn công ({enemy.GetCurrentATK()} DMG)</color>",
-                EnemyData.EnemyIntent.Defend => $"<color=#77B5FE>Phòng thủ (+{defValue} DEF)</color>",
+                EnemyData.EnemyIntent.Attack => $"<color=#FF7777>Tấn công ({enemy.GetCurrentATK()} Sát thương)</color>",
+                EnemyData.EnemyIntent.Defend => $"<color=#77B5FE>Phòng thủ (+{defValue} Giáp)</color>",
                 EnemyData.EnemyIntent.Buff => $"<color=#FFD700>Tăng lực{buffSkillInfo}</color>",
                 EnemyData.EnemyIntent.Debuff => $"<color=#DA70D6>Gây hại{debuffSkillInfo}</color>",
                 _ => "<color=#AAAAAA>Tấn công</color>"
@@ -1688,7 +1781,7 @@ public class CombatUI : MonoBehaviour
 
         if (food is FoodData fd)
         {
-            statInfo = $"<color=#FF6B6B><b>+{fd.healthValue} HP</b></color> <color=#94A3B8>|</color> <color=#FFD043><b>+{fd.hungerValue} Độ No</b></color>";
+            statInfo = $"<color=#FF6B6B><b>+{fd.healthValue} Máu</b></color> <color=#94A3B8>|</color> <color=#FFD043><b>+{fd.hungerValue} Độ No</b></color>";
 
             if (fd.foodBuff != null && fd.foodBuff.Length > 0)
             {
@@ -1716,8 +1809,8 @@ public class CombatUI : MonoBehaviour
         {
             int hp = hasRawVitality ? 12 : 6;
             int hunger = hasRawVitality ? 20 : 15;
-            string bonus = hasRawVitality ? " <color=#86EFAC><b>(Raw Vitality)</b></color>" : " <color=#93C5FD>(Ăn Thô)</color>";
-            statInfo = $"<color=#FF6B6B><b>+{hp} HP</b></color> <color=#94A3B8>|</color> <color=#FFD043><b>+{hunger} Độ No</b></color>{bonus}";
+            string bonus = hasRawVitality ? " <color=#86EFAC><b>(Sức Sống Tươi Nguyên)</b></color>" : " <color=#93C5FD>(Ăn Thô)</color>";
+            statInfo = $"<color=#FF6B6B><b>+{hp} Máu</b></color> <color=#94A3B8>|</color> <color=#FFD043><b>+{hunger} Độ No</b></color>{bonus}";
         }
 
         float rowHeight = buffCount >= 3 ? 82f : (buffCount > 0 ? 66f : 52f);
@@ -1845,7 +1938,7 @@ public class CombatUI : MonoBehaviour
         string buffInfo = "";
         if (food is FoodData fd)
         {
-            statInfo = $"<color=#FF6B6B><b>+{fd.healthValue} HP</b></color> <color=#94A3B8>|</color> <color=#FFD043><b>+{fd.hungerValue} Độ No</b></color>";
+            statInfo = $"<color=#FF6B6B><b>+{fd.healthValue} Máu</b></color> <color=#94A3B8>|</color> <color=#FFD043><b>+{fd.hungerValue} Độ No</b></color>";
             if (fd.foodBuff != null && fd.foodBuff.Length > 0)
             {
                 List<string> bList = new();
@@ -1865,8 +1958,8 @@ public class CombatUI : MonoBehaviour
         {
             int hp = hasRawVitality ? 12 : 6;
             int hunger = hasRawVitality ? 20 : 15;
-            string bonus = hasRawVitality ? " <color=#86EFAC><b>(Sức Sống Thô)</b></color>" : " <color=#93C5FD>(Ăn Thô)</color>";
-            statInfo = $"<color=#FF6B6B><b>+{hp} HP</b></color> <color=#94A3B8>|</color> <color=#FFD043><b>+{hunger} Độ No</b></color>{bonus}";
+            string bonus = hasRawVitality ? " <color=#86EFAC><b>(Sức Sống Tươi Nguyên)</b></color>" : " <color=#93C5FD>(Ăn Thô)</color>";
+            statInfo = $"<color=#FF6B6B><b>+{hp} Máu</b></color> <color=#94A3B8>|</color> <color=#FFD043><b>+{hunger} Độ No</b></color>{bonus}";
         }
 
         var tmpTexts = rowGO.GetComponentsInChildren<TextMeshProUGUI>(true);

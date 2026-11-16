@@ -194,7 +194,7 @@ public class BuffBarUI : MonoBehaviour
             list.Add(new BuffDisplayInfo
             {
                 id = "player_guard",
-                title = $"Khiên Chống Đỡ (+{totalShield} Shield)",
+                title = $"Khiên Chống Đỡ (+{totalShield} Giáp)",
                 category = "[PHÒNG HỘ]",
                 categoryColor = new Color(0.2f, 0.7f, 1f),
                 icon = BuffSpriteFactory.GetSprite("def_buff"),
@@ -212,13 +212,13 @@ public class BuffBarUI : MonoBehaviour
                 list.Add(new BuffDisplayInfo
                 {
                     id = "fullness_satiated",
-                    title = "No Nê (+2 ATK, +1 DEF, +2 SPD)",
+                    title = "No Nê (+2 Công, +1 Thủ, +2 Tốc)",
                     category = "[CƯỜNG HÓA]",
                     categoryColor = new Color(0.3f, 0.95f, 0.45f),
                     icon = BuffSpriteFactory.GetSprite("fullness_satiated"),
                     stackBadge = "+2",
                     durationText = "⏱ Khi Còn No (30-79%)",
-                    description = "Cơ thể tràn đầy năng lượng! Nhận buff toàn diện <b>+2 ATK</b>, <b>+1 DEF</b> và <b>+2 Speed</b> để luôn giành quyền đi trước."
+                    description = "Cơ thể tràn đầy năng lượng! Nhận buff toàn diện <b>+2 Công</b>, <b>+1 Thủ</b> và <b>+2 Tốc độ</b> để luôn giành quyền đi trước."
                 });
                 break;
 
@@ -226,13 +226,13 @@ public class BuffBarUI : MonoBehaviour
                 list.Add(new BuffDisplayInfo
                 {
                     id = "fullness_hungry",
-                    title = "Đói Bụng (-2 ATK, -3 SPD)",
+                    title = "Đói Bụng (-2 Công, -3 Tốc)",
                     category = "[BẤT LỢI]",
                     categoryColor = new Color(1f, 0.4f, 0.25f),
                     icon = BuffSpriteFactory.GetSprite("fullness_hungry"),
                     stackBadge = "-2",
                     durationText = "⏱ Tới Khi Ăn (< 30%)",
-                    description = "Cơ thể suy nhược vì đói! Bị giảm <b>-2 ATK</b>, <b>-3 Speed</b>. Mất <b>8 HP</b> mỗi phòng chuyển giao nếu chạm đáy 0 Độ No."
+                    description = "Cơ thể suy nhược vì đói! Bị giảm <b>-2 Công</b>, <b>-3 Tốc độ</b>. Mất <b>8 Máu</b> mỗi phòng chuyển giao nếu chạm đáy 0 Độ No."
                 });
                 break;
 
@@ -240,13 +240,13 @@ public class BuffBarUI : MonoBehaviour
                 list.Add(new BuffDisplayInfo
                 {
                     id = "fullness_overstuffed",
-                    title = "Bội Thực (+3 DEF, Hồi 2 HP)",
+                    title = "Bội Thực (+3 Thủ, Hồi 2 Máu)",
                     category = "[TRẠNG THÁI]",
                     categoryColor = new Color(1f, 0.82f, 0.2f),
                     icon = BuffSpriteFactory.GetSprite("fullness_overstuffed"),
                     stackBadge = "+3",
                     durationText = "⏱ Tới Khi Tiêu Hóa (>= 80%)",
-                    description = "Bụng quá no hóa thân thành Pháo Đài: Nhận <b>+3 DEF</b> và tự động hồi <b>+2 HP mỗi lượt</b> & mỗi phòng mới. Bị giảm <b>-4 Speed, -1 ATK</b>."
+                    description = "Bụng quá no hóa thân thành Pháo Đài: Nhận <b>+3 Thủ</b> và tự động hồi <b>+2 Máu mỗi lượt</b> & mỗi phòng mới. Bị giảm <b>-4 Tốc độ, -1 Công</b>."
                 });
                 break;
         }
@@ -324,13 +324,13 @@ public class BuffBarUI : MonoBehaviour
             list.Add(new BuffDisplayInfo
             {
                 id = "enemy_defend",
-                title = $"Phòng Ngự (+{e.defendBonus} DEF)",
+                title = $"Phòng Ngự (+{e.defendBonus} Thủ)",
                 category = "[PHÒNG THỦ]",
                 categoryColor = new Color(0.2f, 0.7f, 1f),
                 icon = BuffSpriteFactory.GetSprite("def_buff"),
                 stackBadge = $"+{e.defendBonus}",
                 durationText = "⏱ Hết Lượt Này",
-                description = $"Quái vật đang giương thế thủ: Tăng thêm <b>+{e.defendBonus} DEF</b> giảm thiểu sát thương nhận vào trong lượt này."
+                description = $"Quái vật đang giương thế thủ: Tăng thêm <b>+{e.defendBonus} Thủ</b> giảm thiểu sát thương nhận vào trong lượt này."
             });
         }
 

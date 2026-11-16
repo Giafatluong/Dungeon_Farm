@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b361ef3d9b53cdd41b30d69a54936c4a, type: 3}
   m_Name: Floor_03
   m_EditorClassIdentifier: Assembly-CSharp::FloorData
-  floorName: "Th\u00E0nh C\u1ED5 Qu\u1EF7 D\u1EEF (Floor 3)"
+  floorName: "Th\u00E0nh C\u1ED5 Qu\u1EF7 D\u1EEF (T\u1EA7ng 3)"
   floorNumber: 3
   waves:
   - {fileID: 11400000, guid: 6728364bf1a6b74a40895e1fe86f905a, type: 2}

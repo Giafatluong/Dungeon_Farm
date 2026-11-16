@@ -167,8 +167,8 @@ public class FloorVictoryUI : MonoBehaviour
 
         EnforceBalancedLayout();
 
-        string floorName = !string.IsNullOrEmpty(currentFloor?.floorName) ? currentFloor.floorName : (currentFloorNum == 0 ? "TẦNG HƯỚNG DẪN" : $"Floor {currentFloorNum}");
-        string bossName = !string.IsNullOrEmpty(currentFloor?.bossName) ? currentFloor.bossName : "Dungeon Boss";
+        string floorName = !string.IsNullOrEmpty(currentFloor?.floorName) ? currentFloor.floorName : (currentFloorNum == 0 ? "TẦNG HƯỚNG DẪN" : $"Tầng {currentFloorNum}");
+        string bossName = !string.IsNullOrEmpty(currentFloor?.bossName) ? currentFloor.bossName : "Trùm Hầm Ngục";
 
         if (titleText != null)
         {
@@ -240,8 +240,8 @@ public class FloorVictoryUI : MonoBehaviour
 
         EnforceBalancedLayout();
 
-        string floorName = !string.IsNullOrEmpty(currentFloor?.floorName) ? currentFloor.floorName : $"Floor {currentFloorNum}";
-        string bossName = !string.IsNullOrEmpty(currentFloor?.bossName) ? currentFloor.bossName : "Dungeon Boss";
+        string floorName = !string.IsNullOrEmpty(currentFloor?.floorName) ? currentFloor.floorName : $"Tầng {currentFloorNum}";
+        string bossName = !string.IsNullOrEmpty(currentFloor?.bossName) ? currentFloor.bossName : "Trùm Hầm Ngục";
 
         if (titleText != null)
         {
@@ -967,11 +967,11 @@ public class FloorVictoryUI : MonoBehaviour
                 btnRowRT.anchorMax = new Vector2(1, 0.5f);
                 btnRowRT.pivot = new Vector2(1, 0.5f);
                 btnRowRT.anchoredPosition = new Vector2(-16, 0);
-                btnRowRT.sizeDelta = new Vector2(520, 42);
+                btnRowRT.sizeDelta = new Vector2(520, 56);
 
                 float currentX = 0f;
-                const float spacing = 14f;
-                const float btnHeight = 40f;
+                const float spacing = 12f;
+                const float btnHeight = 50f;
 
                 // 1. Next Floor Button (Rightmost)
                 if (nextFloorButton != null && nextFloorButton.gameObject.activeSelf)
@@ -980,9 +980,9 @@ public class FloorVictoryUI : MonoBehaviour
                     rt.anchorMin = new Vector2(1, 0.5f);
                     rt.anchorMax = new Vector2(1, 0.5f);
                     rt.pivot = new Vector2(1, 0.5f);
-                    rt.sizeDelta = new Vector2(175f, btnHeight);
+                    rt.sizeDelta = new Vector2(160f, btnHeight);
                     rt.anchoredPosition = new Vector2(-currentX, 0);
-                    currentX += 175f + spacing;
+                    currentX += 160f + spacing;
                 }
 
                 // 2. Return To Base Button (Next to nextFloorButton)
@@ -992,9 +992,9 @@ public class FloorVictoryUI : MonoBehaviour
                     rt.anchorMin = new Vector2(1, 0.5f);
                     rt.anchorMax = new Vector2(1, 0.5f);
                     rt.pivot = new Vector2(1, 0.5f);
-                    rt.sizeDelta = new Vector2(155f, btnHeight);
+                    rt.sizeDelta = new Vector2(150f, btnHeight);
                     rt.anchoredPosition = new Vector2(-currentX, 0);
-                    currentX += 155f + spacing;
+                    currentX += 150f + spacing;
                 }
 
                 // 3. Loot All Button (To the left of returnToBaseButton)
@@ -1004,9 +1004,9 @@ public class FloorVictoryUI : MonoBehaviour
                     rt.anchorMin = new Vector2(1, 0.5f);
                     rt.anchorMax = new Vector2(1, 0.5f);
                     rt.pivot = new Vector2(1, 0.5f);
-                    rt.sizeDelta = new Vector2(140f, btnHeight);
+                    rt.sizeDelta = new Vector2(130f, btnHeight);
                     rt.anchoredPosition = new Vector2(-currentX, 0);
-                    currentX += 140f + spacing;
+                    currentX += 130f + spacing;
                 }
             }
         }
@@ -1164,10 +1164,10 @@ public class FloorVictoryUI : MonoBehaviour
     private string GetItemDescription(ItemData item)
     {
         if (item == null) return "";
-        if (item.itemType == ItemData.ItemType.Seed) return "Valuable seeds for planting at the Farm.";
-        if (item.itemType == ItemData.ItemType.Food) return "Nourishing meal restoring HP and fullness.";
-        if (item.itemType == ItemData.ItemType.Produce) return "Fresh produce harvested from fertile soil.";
-        return "Valuable expedition loot gathered from the dungeon.";
+        if (item.itemType == ItemData.ItemType.Seed) return "Hạt giống quý giá để gieo trồng tại Nông trại.";
+        if (item.itemType == ItemData.ItemType.Food) return "Món ăn bổ dưỡng hồi phục Máu và Độ no.";
+        if (item.itemType == ItemData.ItemType.Produce) return "Nông sản tươi ngon thu hoạch từ mảnh đất màu mỡ.";
+        return "Chiến lợi phẩm thám hiểm giá trị thu thập từ hầm ngục.";
     }
 
     private void OnTakeSingleItem(int index)
@@ -1202,16 +1202,16 @@ public class FloorVictoryUI : MonoBehaviour
             if (storedToHomeChest)
             {
                 HomeChest.SaveContainer(homeChestContainer);
-                SetHint($"<color=#FFD700>Backpack is full! {slot.itemData.itemName} was safely transferred to your Home Chest!</color>");
+                SetHint($"<color=#FFD700>Ba lô đã đầy! {slot.itemData.itemName} đã được chuyển an toàn về Rương Nhà!</color>");
             }
             else
             {
-                SetHint($"Successfully collected: <b>{slot.amount}x {slot.itemData.itemName}</b> into backpack.");
+                SetHint($"Đã nhận thành công: <b>{slot.amount}x {slot.itemData.itemName}</b> vào ba lô.");
             }
         }
         else
         {
-            SetHint("<color=#FF6666>Cannot claim item: Backpack and Home Chest are both full!</color>");
+            SetHint("<color=#FF6666>Không thể nhận: Cả Ba lô và Rương Nhà đều đã đầy!</color>");
         }
     }
 
@@ -1255,11 +1255,11 @@ public class FloorVictoryUI : MonoBehaviour
         if (homeChestOverflow > 0)
         {
             HomeChest.SaveContainer(homeChestContainer);
-            SetHint($"<color=#55FF88>[OK] Claimed all rewards!</color> <color=#FFD700>({homeChestOverflow} overflow items sent to Home Chest)</color>");
+            SetHint($"<color=#55FF88>Đã nhận tất cả phần thưởng!</color> <color=#FFD700>({homeChestOverflow} món đầy được gửi về Rương Nhà)</color>");
         }
         else
         {
-            SetHint("<color=#55FF88>[OK] All special rewards claimed into backpack!</color>");
+            SetHint("<color=#55FF88>Đã nhận tất cả phần thưởng vào ba lô!</color>");
         }
     }
 

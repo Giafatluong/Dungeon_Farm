@@ -1251,7 +1251,7 @@ public class KitchenUI : MonoBehaviour
             StringBuilder sb = new StringBuilder();
             if (recipe.resultFood != null)
             {
-                if (recipe.resultFood.healthValue > 0) sb.Append($"<color=#FF8A80><b>+{recipe.resultFood.healthValue} HP</b></color>");
+                if (recipe.resultFood.healthValue > 0) sb.Append($"<color=#FF8A80><b>+{recipe.resultFood.healthValue} Máu</b></color>");
                 if (recipe.resultFood.hungerValue > 0)
                 {
                     if (sb.Length > 0) sb.Append(" <color=#C7B8A6>|</color> ");
@@ -1514,7 +1514,7 @@ public class KitchenUI : MonoBehaviour
     {
         if (food == null) return "";
         List<string> parts = new List<string>();
-        if (food.healthValue > 0) parts.Add($"<color=#FF8A80><b>+{food.healthValue} HP</b></color>");
+        if (food.healthValue > 0) parts.Add($"<color=#FF8A80><b>+{food.healthValue} Máu</b></color>");
         if (food.hungerValue > 0) parts.Add($"<color=#FFD275><b>+{food.hungerValue} Độ No</b></color>");
         if (food.foodBuff != null)
         {

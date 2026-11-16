@@ -93,44 +93,44 @@ public class DungeonEventManager : MonoBehaviour
             DungeonEvent botanistEvt = new()
             {
                 eventID = "Event_Merchant_Seeds",
-                eventTitle = "The Seed Botanist",
-                eventCategory = "MERCHANT",
-                narrativeStory = "An eccentric botanist in a moss-lined cloak inspects bioluminescent sprouts in the dungeon fissures.\n\"Greetings, farmer! Surface seeds adapt wonderfully to dungeon essence. Barter your common seeds with me!\""
+                eventTitle = "Nhà Thực Vật Học Kỳ Bí",
+                eventCategory = "THƯƠNG NHÂN",
+                narrativeStory = "Một nhà thực vật học lập dị trong chiếc áo choàng phủ rêu đang chăm chú quan sát những mầm cây phát quang trong khe đá hầm ngục.\n\"Chào người nông dân! Hạt giống mặt đất thích nghi rất tốt với tinh hoa hầm ngục. Hãy trao đổi hạt giống thường với ta nào!\""
             };
             botanistEvt.choices.Add(new DungeonEventChoice
             {
-                choiceLabel = "[Barter Rare Seeds]",
-                choiceDetails = "Give 2x Wheat Seeds -> Receive 2x Rare Tomato/Corn Seeds",
+                choiceLabel = "[Đổi Hạt Giống Hiếm]",
+                choiceDetails = "Giao 2x Hạt Lúa Mì -> Nhận 2x Hạt Cà Chua / Bắp Cải Hiếm",
                 requiredItem = wheatSeed != null ? wheatSeed : carrotSeed,
                 requiredItemAmount = 2,
                 rewardItem = tomatoSeed != null ? tomatoSeed : (cornSeed != null ? cornSeed : wheatSeed),
                 rewardItemAmount = 2,
-                outcomeNarrative = "\"Splendid quality! Cultivate these well on your surface soil for higher yields.\""
+                outcomeNarrative = "\"Chất lượng tuyệt hảo! Hãy gieo trồng chúng cẩn thận trên mặt đất để thu hoạch bội thu.\""
             });
             botanistEvt.choices.Add(new DungeonEventChoice
             {
-                choiceLabel = "[Herbal Bark Extract]",
-                choiceDetails = "Give 1x Crop -> Drink invigorating botanical draught (+3 DEF for 6 turns, +15 Fullness)",
+                choiceLabel = "[Chiết Xuất Vỏ Cây Rừng]",
+                choiceDetails = "Giao 1x Nông Sản -> Uống thảo dược tăng cường (+3 Thủ trong 6 lượt, +15 Độ No)",
                 requiredItem = wheat != null ? wheat : (carrot != null ? carrot : cabbage),
                 requiredItemAmount = 1,
                 defBuff = 3,
                 buffDuration = 6,
                 hungerRecovery = 15,
-                outcomeNarrative = "You drink the earthy concoction. Your skin feels resilient as ancient oak bark!"
+                outcomeNarrative = "Bạn uống cạn chén thuốc thảo mộc. Làn da bạn trở nên cứng cáp như vỏ cây cổ thụ nghìn năm!"
             });
             botanistEvt.choices.Add(new DungeonEventChoice
             {
-                choiceLabel = "[Open Trade Ledger]",
-                choiceDetails = "Browse full wares (Recipes, Seeds, and Rations)",
+                choiceLabel = "[Mở Túi Giao Thương]",
+                choiceDetails = "Xem toàn bộ hàng hóa (Công Thức, Hạt Giống và Lương Khô)",
                 opensMerchantShop = true,
-                outcomeNarrative = "The botanist unfolds his travel pack, revealing rare seed packets and recipes."
+                outcomeNarrative = "Nhà thực vật học mở ba lô du hành, bày ra các gói hạt giống quý và công thức nấu nướng."
             });
             botanistEvt.choices.Add(new DungeonEventChoice
             {
-                choiceLabel = "[Leave]",
-                choiceDetails = "Bid farewell and continue onward",
+                choiceLabel = "[Rời Đi]",
+                choiceDetails = "Chào tạm biệt và tiếp tục hành trình",
                 isLeaveChoice = true,
-                outcomeNarrative = "\"May the harvest spirits guide your blade, adventurer!\""
+                outcomeNarrative = "\"Cầu mong linh hồn vụ mùa dẫn lối thanh kiếm của bạn, nhà thám hiểm!\""
             });
             runtimeEvents.Add(botanistEvt);
 
@@ -138,46 +138,46 @@ public class DungeonEventManager : MonoBehaviour
             DungeonEvent chefEvt = new()
             {
                 eventID = "Event_Merchant_Chef",
-                eventTitle = "The Wandering Chef",
-                eventCategory = "MERCHANT",
-                narrativeStory = "The mouth-watering aroma of roasted herbs and boiling broth warms the damp corridor.\nA cheerful chef stirs an oversized cast-iron pot over a glowing stove.\n\"Never explore on an empty stomach, friend! Trade some produce for a hot feast!\""
+                eventTitle = "Đầu Bếp Du Mục",
+                eventCategory = "THƯƠNG NHÂN",
+                narrativeStory = "Hương thơm ngào ngạt của thảo mộc nướng và canh hầm sưởi ấm hành lang ẩm ướt.\nMột đầu bếp vui tính đang khuấy chiếc nồi gang lớn trên bếp lửa rực hồng.\n\"Đừng bao giờ thám hiểm với cái bụng đói, bạn ơi! Hãy đổi chút nông sản để thưởng thức bữa tiệc nóng hổi nào!\""
             };
             chefEvt.choices.Add(new DungeonEventChoice
             {
-                choiceLabel = "[Hot Gourmet Feast]",
-                choiceDetails = "Give 2x Harvested Crops -> Savor a hot meal (Restore 40 HP & 30 Fullness)",
+                choiceLabel = "[Thưởng Thức Đại Tiệc Nóng]",
+                choiceDetails = "Giao 2x Nông Sản -> Ăn bữa ăn nóng sốt (Hồi 40 Máu & 30 Độ No)",
                 requiredItem = carrot != null ? carrot : (wheat != null ? wheat : cabbage),
                 requiredItemAmount = 2,
                 rewardItem = freshSalad != null ? freshSalad : (tomatoSoup != null ? tomatoSoup : cabbage),
                 rewardItemAmount = 1,
                 hpRecovery = 40,
                 hungerRecovery = 30,
-                outcomeNarrative = "The rich, hot stew restores your stamina and warms you to the bone! Vitality surges back."
+                outcomeNarrative = "Món hầm nóng hổi, thơm ngon phục hồi thể lực và sưởi ấm toàn thân bạn! Sức sống tuôn trào trở lại."
             });
             chefEvt.choices.Add(new DungeonEventChoice
             {
-                choiceLabel = "[Fiery Combat Broth]",
-                choiceDetails = "Give 1x Crop -> Drink spicy dragon pepper broth (+4 ATK for 6 turns, restore 15 HP)",
+                choiceLabel = "[Canh Ớt Chiến Binh]",
+                choiceDetails = "Giao 1x Nông Sản -> Uống nước hầm ớt cay nồng (+4 Sức Đánh trong 6 lượt, hồi 15 Máu)",
                 requiredItem = carrot != null ? carrot : (wheat != null ? wheat : cabbage),
                 requiredItemAmount = 1,
                 atkBuff = 4,
                 buffDuration = 6,
                 hpRecovery = 15,
-                outcomeNarrative = "A burst of fiery spice invigorates your muscles! You feel ready to shatter stone!"
+                outcomeNarrative = "Vị cay nồng bùng cháy tiếp thêm sinh lực cho từng thớ cơ! Bạn cảm thấy sẵn sàng đập vỡ đá tảng!"
             });
             chefEvt.choices.Add(new DungeonEventChoice
             {
-                choiceLabel = "[Check Recipes & Wares]",
-                choiceDetails = "Open the chef's culinary trade book (Open Shop)",
+                choiceLabel = "[Xem Công Thức & Quầy Hàng]",
+                choiceDetails = "Mở sổ tay ẩm thực của đầu bếp (Mở Quầy Hàng)",
                 opensMerchantShop = true,
-                outcomeNarrative = "The chef happily demonstrates his cooking repertoire and ingredients."
+                outcomeNarrative = "Đầu bếp hào hứng biểu diễn các công thức nấu ăn đặc sắc và nguyên liệu tươi ngon."
             });
             chefEvt.choices.Add(new DungeonEventChoice
             {
-                choiceLabel = "[Leave]",
-                choiceDetails = "Decline politely and keep moving",
+                choiceLabel = "[Rời Đi]",
+                choiceDetails = "Lịch sự từ chối và tiếp tục lên đường",
                 isLeaveChoice = true,
-                outcomeNarrative = "\"Bon appetit and safe travels, brave farmer!\""
+                outcomeNarrative = "\"Chúc ngon miệng và đi đường bình an, người nông dân dũng cảm!\""
             });
             runtimeEvents.Add(chefEvt);
 
@@ -185,14 +185,14 @@ public class DungeonEventManager : MonoBehaviour
             DungeonEvent quartermasterEvt = new()
             {
                 eventID = "Event_Merchant_Quartermaster",
-                eventTitle = "Dungeon Quartermaster",
-                eventCategory = "MERCHANT",
-                narrativeStory = "A veteran quartermaster in plate mail guards stacked supply crates.\n\"The guild's forward detachment needs farm produce for rations. Sell your crops, and we'll supply you with tactical provisions.\""
+                eventTitle = "Sĩ Quan Hậu Cần Hầm Ngục",
+                eventCategory = "THƯƠNG NHÂN",
+                narrativeStory = "Một viên sĩ quan hậu cần kỳ cựu mặc giáp sắt đứng gác cạnh những kiện hàng tiếp tế.\n\"Đội tiền tiêu của hội đang cần nông sản làm lương khô. Hãy bán nông sản cho chúng tôi, chúng tôi sẽ cấp quân nhu chiến thuật cho bạn.\""
             };
             quartermasterEvt.choices.Add(new DungeonEventChoice
             {
-                choiceLabel = "[Tactical Rations Requisition]",
-                choiceDetails = "Deliver 2x Crops -> Receive 2x Preserved Meals & +2 Speed (5 turns)",
+                choiceLabel = "[Đổi Quân Nhu Chiến Thuật]",
+                choiceDetails = "Giao 2x Nông Sản -> Nhận 2x Phần Lương Khô & +2 Tốc Độ (5 lượt)",
                 requiredItem = wheat != null ? wheat : (carrot != null ? carrot : cabbage),
                 requiredItemAmount = 2,
                 rewardItem = tomatoSoup != null ? tomatoSoup : freshSalad,
@@ -200,30 +200,30 @@ public class DungeonEventManager : MonoBehaviour
                 speedBuff = 2,
                 buffDuration = 5,
                 hpRecovery = 20,
-                outcomeNarrative = "The quartermaster stamps your voucher and hands over packed military provisions. You feel swift on your feet!"
+                outcomeNarrative = "Sĩ quan đóng dấu phiếu quân nhu và trao tận tay phần lương thực quân sự. Bạn cảm thấy đôi chân thoăn thoắt nhẹ nhàng!"
             });
             quartermasterEvt.choices.Add(new DungeonEventChoice
             {
-                choiceLabel = "[Emergency Field Dressings]",
-                choiceDetails = "Trade 1x Crop -> Clean and bandage wounds (Restore 30 HP)",
+                choiceLabel = "[Băng Gạc Chiến Trường]",
+                choiceDetails = "Giao 1x Nông Sản -> Làm sạch và băng bó vết thương (Hồi 30 Máu)",
                 requiredItem = carrot != null ? carrot : (wheat != null ? wheat : cabbage),
                 requiredItemAmount = 1,
                 hpRecovery = 30,
-                outcomeNarrative = "Using sterile battlefield bandages, you staunch your cuts and soothe aching muscles."
+                outcomeNarrative = "Dùng băng gạc vô trùng chiến trường, bạn cầm máu các vết cắt và làm dịu các cơ bắp đau nhức."
             });
             quartermasterEvt.choices.Add(new DungeonEventChoice
             {
-                choiceLabel = "[Open Quartermaster Depot]",
-                choiceDetails = "Access full trading depot (Open Shop)",
+                choiceLabel = "[Mở Kho Quân Nhu]",
+                choiceDetails = "Xem toàn bộ kho tiếp tế (Mở Quầy Hàng)",
                 opensMerchantShop = true,
-                outcomeNarrative = "The quartermaster unbolts his master supply locker for inspection."
+                outcomeNarrative = "Sĩ quan hậu cần mở khóa hòm đồ lớn để bạn kiểm tra quân trang tiếp tế."
             });
             quartermasterEvt.choices.Add(new DungeonEventChoice
             {
-                choiceLabel = "[Leave]",
-                choiceDetails = "Salute and proceed into the dungeon",
+                choiceLabel = "[Rời Đi]",
+                choiceDetails = "Chào từ biệt và tiến sâu vào hầm ngục",
                 isLeaveChoice = true,
-                outcomeNarrative = "\"Keep your guard up, recruit. Don't let your training fail you.\""
+                outcomeNarrative = "\"Luôn giữ vững cảnh giác, tân binh. Đừng để kỹ năng huấn luyện của bạn uổng phí.\""
             });
             runtimeEvents.Add(quartermasterEvt);
         }
@@ -232,34 +232,34 @@ public class DungeonEventManager : MonoBehaviour
         DungeonEvent shrineEvt = new()
         {
             eventID = "Event_Shrine",
-            eventTitle = "The Ancient Altar",
-            eventCategory = "SHRINE",
-            narrativeStory = "Carved from black obsidian, an ancient altar hums with forgotten runic magic.\nAn inscription reads: 'Give unto the stone, and the dungeon spirits shall heed your call.'"
+            eventTitle = "Bàn Thờ Cổ Xưa",
+            eventCategory = "TƯỢNG THẦN",
+            narrativeStory = "Được tạc từ đá hắc diện thạch đen nhánh, bàn thờ cổ rung lên với ma thuật cổ xưa đã bị lãng quên.\nDòng chữ khắc ghi: 'Dâng hiến cho đá thiêng, linh hồn hầm ngục sẽ lắng nghe tiếng gọi của bạn.'"
         };
         shrineEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Blood Offering]",
-            choiceDetails = "Sacrifice 12 HP -> Receive Ancient Blessing (+3 ATK, +2 DEF)",
+            choiceLabel = "[Hiến Tế Máu]",
+            choiceDetails = "Hy sinh 12 Máu -> Nhận Phước Lành Cổ Xưa (+3 Công, +2 Thủ trong 5 lượt)",
             hpCost = 12,
             atkBuff = 3,
             defBuff = 2,
             buffDuration = 5,
-            outcomeNarrative = "Crimson droplets touch the runes. A surge of spectral power courses into your veins!\nYour attacks and defense are empowered for the next 5 turns!"
+            outcomeNarrative = "Những giọt máu đỏ chạm vào văn tự cổ. Một luồng sức mạnh huyền bí chảy rực qua huyết quản của bạn!\nĐòn đánh và phòng thủ được cường hóa mạnh mẽ trong 5 lượt tiếp theo!"
         });
         shrineEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Pious Prayer]",
-            choiceDetails = "Spend 10 Fullness in quiet meditation -> Restore 35 HP",
+            choiceLabel = "[Cầu Nguyện Thành Tâm]",
+            choiceDetails = "Tiêu tốn 10 Độ No tĩnh tâm thiền định -> Hồi phục 35 Máu",
             hungerCost = 10,
             hpRecovery = 35,
-            outcomeNarrative = "You kneel in reverent stillness. A soothing warmth washes over your wounds, sealing your cuts."
+            outcomeNarrative = "Bạn quỳ gối thành tâm cầu nguyện. Hơi ấm dịu nhẹ xoa dịu vết thương, khép miệng các vết rách trên cơ thể."
         });
         shrineEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Leave]",
-            choiceDetails = "Bow respectfully and step past the altar",
+            choiceLabel = "[Rời Đi]",
+            choiceDetails = "Cúi đầu kính cẩn và bước qua bàn thờ",
             isLeaveChoice = true,
-            outcomeNarrative = "You decide not to tamper with ancient relics and continue your expedition."
+            outcomeNarrative = "Bạn quyết định không can thiệp vào thánh tích cổ và tiếp tục hành trình."
         });
         runtimeEvents.Add(shrineEvt);
 
@@ -267,32 +267,32 @@ public class DungeonEventManager : MonoBehaviour
         DungeonEvent fountainEvt = new()
         {
             eventID = "Event_Fountain",
-            eventTitle = "Fountain of Life",
-            eventCategory = "SANCTUARY",
-            narrativeStory = "Hidden behind ivy-covered pillars, a tranquil spring bubbles with luminescent azure water.\nThe air smells sweet and pure, untouched by the dungeon's corruption."
+            eventTitle = "Suối Nguồn Sự Sống",
+            eventCategory = "THÁNH ĐỊA",
+            narrativeStory = "Ẩn sau những cây cột phủ đầy dây leo, một dòng suối trong vắt sủi bọt với làn nước xanh biếc phát quang.\nKhông khí ngọt ngào và thanh khiết, hoàn toàn không bị vấy bẩn bởi bóng tối hầm ngục."
         };
         fountainEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Drink Deeply]",
-            choiceDetails = "Drink the pure spring water -> Restore 45 HP and 30 Fullness",
+            choiceLabel = "[Uống Nước Suối]",
+            choiceDetails = "Uống làn nước suối tinh khiết -> Hồi phục 45 Máu và 30 Độ No",
             hpRecovery = 45,
             hungerRecovery = 30,
-            outcomeNarrative = "The refreshing water invigorates your body and clears your mind!\nYou feel fully revitalized and ready for battle."
+            outcomeNarrative = "Làn nước mát lạnh hồi sinh cơ thể và làm sáng tỏ tâm trí bạn!\nBạn cảm thấy hoàn toàn tràn đầy sinh lực và sẵn sàng chiến đấu."
         });
         fountainEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Bathe Weapon]",
-            choiceDetails = "Submerge your weapon in the holy waters -> +4 ATK Buff",
+            choiceLabel = "[Thanh Tẩy Vũ Khí]",
+            choiceDetails = "Nhúng vũ khí vào dòng nước thánh -> Nhận Buff +4 Công trong 6 lượt",
             atkBuff = 4,
             buffDuration = 6,
-            outcomeNarrative = "The blade gleams with a luminous edge! Your strikes will hit with tremendous force."
+            outcomeNarrative = "Lưỡi kiếm ánh lên ánh sáng rực rỡ! Các đòn đánh của bạn sẽ giáng xuống với uy lực khủng khiếp."
         });
         fountainEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Leave]",
-            choiceDetails = "Take a breath and continue journey",
+            choiceLabel = "[Rời Đi]",
+            choiceDetails = "Hít thở sâu và tiếp tục lên đường",
             isLeaveChoice = true,
-            outcomeNarrative = "You take a quiet breath in the peaceful alcove before venturing deeper into the darkness."
+            outcomeNarrative = "Bạn hít một hơi thật sâu trong góc thanh bình này trước khi dấn thân sâu hơn vào bóng tối."
         });
         runtimeEvents.Add(fountainEvt);
 
@@ -300,36 +300,36 @@ public class DungeonEventManager : MonoBehaviour
         DungeonEvent relicEvt = new()
         {
             eventID = "Event_Relic",
-            eventTitle = "The Cursed Relic",
-            eventCategory = "MYSTERY",
-            narrativeStory = "You come across an ornate jeweled chest pulsing with a sinister purple glow.\nA latch holds the lid closed, but dark vapor seeps through the cracks."
+            eventTitle = "Bảo Vật Nguyền Rủa",
+            eventCategory = "BÍ ẨN",
+            narrativeStory = "Bạn bắt gặp một chiếc rương nạm ngọc tinh xảo đang phát ra ánh sáng tím ma quái.\nMột then cài giữ chặt nắp rương, nhưng làn khói đen u tối đang rỉ qua các khe hở."
         };
         relicEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Pry Open Chest]",
-            choiceDetails = "70% Chance: Gain valuable supplies / 30% Chance: Trap explodes (-15 HP)",
+            choiceLabel = "[Cạy Mở Rương]",
+            choiceDetails = "70% Tỉ lệ: Nhận nhu yếu phẩm quý / 30% Tỉ lệ: Bẫy nổ trúng độc (-15 Máu)",
             gambleSuccessChance = 0.70f,
             rewardItem = tomatoSoup != null ? tomatoSoup : freshSalad,
             rewardItemAmount = 2,
             failureDamage = 15,
-            failureNarrative = "TRAP TRIGGERED! The chest snaps open, spraying noxious poison gas! You suffer 15 damage!",
-            outcomeNarrative = "SUCCESS! You disarm the mechanism just in time! Inside, you find valuable preserved supplies."
+            failureNarrative = "KÍCH HOẠT BẪY! Nắp rương bật mở, phun ra khí độc chết người! Bạn nhận 15 sát thương!",
+            outcomeNarrative = "THÀNH CÔNG! Bạn vô hiệu hóa cơ quan kịp thời! Bên trong, bạn tìm thấy những phần lương thực quý giá."
         });
         relicEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Exorcise with Care]",
-            choiceDetails = "Carefully neutralize runes using 12 Fullness -> Safely receive 1x Crop",
+            choiceLabel = "[Cẩn Thận Giải Trừ]",
+            choiceDetails = "Dùng 12 Độ No cẩn thận phá giải cổ tự -> Nhận an toàn 2x Nông Sản",
             hungerCost = 12,
             rewardItem = carrot != null ? carrot : wheat,
             rewardItemAmount = 2,
-            outcomeNarrative = "With patient focus, you dismantle the curse safely and retrieve the contents inside."
+            outcomeNarrative = "Với sự kiên nhẫn và tập trung cao độ, bạn hóa giải lời nguyền an toàn và lấy được nông sản bên trong."
         });
         relicEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Avoid Relic]",
-            choiceDetails = "Too risky, walk away",
+            choiceLabel = "[Tránh Xa Rương]",
+            choiceDetails = "Quá nguy hiểm, quay lưng bước đi",
             isLeaveChoice = true,
-            outcomeNarrative = "Wisdom prevails. You leave the suspicious chest undisturbed."
+            outcomeNarrative = "Sự thận trọng đã chiến thắng. Bạn để chiếc rương khả nghi nằm yên tại chỗ."
         });
         runtimeEvents.Add(relicEvt);
 
@@ -337,34 +337,34 @@ public class DungeonEventManager : MonoBehaviour
         DungeonEvent foragerEvt = new()
         {
             eventID = "Event_Forager",
-            eventTitle = "The Lost Forager",
-            eventCategory = "ENCOUNTER",
-            narrativeStory = "A weary adventurer sits huddled against the stone wall, clutching an empty knapsack.\n\"Please... I lost my supplies to goblins on the upper floor. Do you have any spare food?\""
+            eventTitle = "Kẻ Hái Lượm Lạc Lối",
+            eventCategory = "GẶP GỠ",
+            narrativeStory = "Một nhà thám hiểm kiệt sức ngồi co ro bên vách đá, ôm chặt chiếc bao tải rỗng tuếch.\n\"Làm ơn... Tôi bị lũ yêu tinh cướp sạch lương thảo ở tầng trên rồi. Bạn có chút thức ăn thừa nào không?\""
         };
         foragerEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Share Food]",
-            choiceDetails = "Give 1x Crop to the forager -> In return, he gives his secret seed pouch",
+            choiceLabel = "[Chia Sẻ Thức Ăn]",
+            choiceDetails = "Tặng 1x Nông Sản cho kẻ hái lượm -> Đáp lại, anh ấy tặng túi hạt giống bí mật",
             requiredItem = carrot != null ? carrot : (wheat != null ? wheat : cabbage),
             requiredItemAmount = 1,
             rewardItem = cornSeed != null ? cornSeed : wheatSeed,
             rewardItemAmount = 3,
-            outcomeNarrative = "Tears fill the adventurer's eyes. \"Thank you, friend! Take this seed pouch I saved - it will serve you better!\""
+            outcomeNarrative = "Nước mắt lăn dài trên má nhà thám hiểm. \"Cảm ơn bạn hiền! Hãy nhận túi hạt giống tôi cất giấu này - nó sẽ hữu ích với bạn hơn!\""
         });
         foragerEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Provide Directions]",
-            choiceDetails = "Point him toward the Campfire sanctuary -> Gain +2 Speed from goodwill",
+            choiceLabel = "[Chỉ Đường Đến Trạm Nghỉ]",
+            choiceDetails = "Chỉ cho anh ấy hướng đến Lửa Trại an toàn -> Nhận +2 Tốc Độ từ lòng tốt",
             speedBuff = 2,
             buffDuration = 5,
-            outcomeNarrative = "\"A camp nearby? Bless you!\" The adventurer picks up his gear and hurries toward safety."
+            outcomeNarrative = "\"Có khu trại gần đây ư? Đội ơn bạn!\" Nhà thám hiểm vội vã gom đồ đạc và chạy về hướng an toàn."
         });
         foragerEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Keep Walking]",
-            choiceDetails = "Ignore him and move on",
+            choiceLabel = "[Tiếp Tục Bước Đi]",
+            choiceDetails = "Phớt lờ và tiếp tục đi tiếp",
             isLeaveChoice = true,
-            outcomeNarrative = "You avert your eyes and press forward into the dungeon."
+            outcomeNarrative = "Bạn ngoảnh mặt đi và tiếp tục dấn bước vào sâu trong hầm ngục."
         });
         runtimeEvents.Add(foragerEvt);
 
@@ -372,37 +372,37 @@ public class DungeonEventManager : MonoBehaviour
         DungeonEvent blessingEvt = new()
         {
             eventID = "Event_Divine_Blessing",
-            eventTitle = "Ancient Shrine of Blessings",
-            eventCategory = "SHRINE",
-            narrativeStory = "An ancient statue radiates a warm, golden aura amidst the dark and dreary dungeon.\nAncient runes read: 'Offer your sincerity, receive the divine grace of the protector gods.'"
+            eventTitle = "Tượng Thần Phước Lành Cổ Xưa",
+            eventCategory = "TƯỢNG THẦN",
+            narrativeStory = "Một bức tượng cổ tỏa ra vầng hào quang vàng ấm áp giữa hầm ngục tăm tối u uất.\nCổ tự ghi chép: 'Dâng hiến lòng thành, nhận lấy hồng ân hộ mệnh của các vị thần bảo hộ.'"
         };
         blessingEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Offer Crop for Divine Blessing]",
-            choiceDetails = "Sacrifice 1 Crop -> Receive 1 random Divine Combat Blessing for the run (including Death Protection)",
+            choiceLabel = "[Dâng Lễ Nhận Phước Lành]",
+            choiceDetails = "Hiến tế 1x Nông Sản -> Nhận 1 Phước Lành Chiến Đấu ngẫu nhiên cho chuyến đi (kể cả Bảo Hộ Không Rơi Đồ)",
             requiredItem = wheat != null ? wheat : (carrot != null ? carrot : cabbage),
             requiredItemAmount = 1,
             grantRandomBlessing = true,
-            outcomeNarrative = "A holy radiance envelops your body! Ancient divine energy surges through your veins!"
+            outcomeNarrative = "Ánh hào quang thần thánh bao bọc cơ thể bạn! Nguồn năng lượng cổ xưa cuộn trào trong huyết quản!"
         });
         blessingEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Pray Devoutly]",
-            choiceDetails = "Take time to meditate (-10 Hunger) -> Gain comprehensive buffs (+3 ATK, +3 DEF, +2 Speed for 8 turns, heal 25 HP)",
+            choiceLabel = "[Cầu Nguyện Chân Thành]",
+            choiceDetails = "Dành thời gian thiền định (-10 Độ No) -> Nhận buff toàn diện (+3 Công, +3 Thủ, +2 Tốc trong 8 lượt, hồi 25 Máu)",
             hungerCost = 10,
             hpRecovery = 25,
             atkBuff = 3,
             defBuff = 3,
             speedBuff = 2,
             buffDuration = 8,
-            outcomeNarrative = "Your mind becomes one with the sacred sanctuary. Your battle strength and endurance are greatly bolstered!"
+            outcomeNarrative = "Tâm trí bạn hòa làm một với thánh địa thiêng liêng. Sức chiến đấu và sức bền được gia tăng vượt bậc!"
         });
         blessingEvt.choices.Add(new DungeonEventChoice
         {
-            choiceLabel = "[Bow and Depart]",
-            choiceDetails = "Pay your respects and press forward",
+            choiceLabel = "[Cúi Đầu Rời Đi]",
+            choiceDetails = "Bày tỏ lòng tôn kính và tiếp tục tiến bước",
             isLeaveChoice = true,
-            outcomeNarrative = "You bow respectfully before the sacred statue and steadily journey deeper into the dungeon."
+            outcomeNarrative = "Bạn kính cẩn cúi đầu trước pho tượng thánh rồi vững bước tiến sâu hơn vào hầm ngục."
         });
         runtimeEvents.Add(blessingEvt);
     }
@@ -542,12 +542,12 @@ public class DungeonEventManager : MonoBehaviour
             if (backpack == null)
             {
                 Debug.LogWarning("[DungeonEventManager] Backpack is null - reward item could not be granted.");
-                resultNarrative += "\n<color=#FF9900>(Reward lost: no backpack found!)</color>";
+                resultNarrative += "\n<color=#FF9900>(Mất phần thưởng: không tìm thấy ba lô!)</color>";
             }
             else if (!backpack.CanAddItem(choice.rewardItem))
             {
                 Debug.LogWarning($"[DungeonEventManager] Backpack is full - '{choice.rewardItem.itemName}' could not be added.");
-                resultNarrative += $"\n<color=#FF9900>(Inventory full! Could not receive {choice.rewardItem.itemName} x{choice.rewardItemAmount}.)</color>";
+                resultNarrative += $"\n<color=#FF9900>(Ba lô đã đầy! Không thể nhận {choice.rewardItem.itemName} x{choice.rewardItemAmount}.)</color>";
             }
             else
             {

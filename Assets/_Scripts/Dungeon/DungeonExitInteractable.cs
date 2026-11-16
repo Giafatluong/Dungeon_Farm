@@ -130,6 +130,7 @@ public class DungeonExitInteractable : MonoBehaviour, IPointerClickHandler, IPoi
                     promptClickButton.onClick.AddListener(TriggerInteraction);
                     UIButtonHoverGlow.Ensure(promptClickButton);
                 }
+                ApplyPromptGOTYStyling(panelT.gameObject);
                 return;
             }
         }
@@ -154,27 +155,15 @@ public class DungeonExitInteractable : MonoBehaviour, IPointerClickHandler, IPoi
         promptPanelRect = panelGO.GetComponent<RectTransform>();
         promptPanelRect.anchorMin = Vector2.zero;
         promptPanelRect.anchorMax = Vector2.zero;
-        promptPanelRect.sizeDelta = new Vector2(370f, 78f);
+        promptPanelRect.sizeDelta = new Vector2(420f, 96f);
         promptPanelRect.pivot = new Vector2(0.5f, 0f);
 
         promptCanvasGroup = panelGO.AddComponent<CanvasGroup>();
         promptCanvasGroup.alpha = 0f;
 
         Image bgImage = panelGO.AddComponent<Image>();
-        Sprite frameSprite = DungeonUIAssetHelper.GetFrameSprite();
-        if (frameSprite != null)
-        {
-            bgImage.sprite = frameSprite;
-            bgImage.type = Image.Type.Sliced;
-            bgImage.color = new Color(0.08f, 0.14f, 0.20f, 0.95f); // Deep arcane cyan/navy frame
-        }
-        else
-        {
-            bgImage.color = new Color(0.10f, 0.16f, 0.22f, 0.95f);
-        }
-
         Outline outline = panelGO.AddComponent<Outline>();
-        outline.effectColor = new Color(0.35f, 0.85f, 1.0f, 0.9f); // Radiant cyan celestial glow
+        outline.effectColor = new Color(0.35f, 0.85f, 1.0f, 0.9f);
         outline.effectDistance = new Vector2(2f, -2f);
 
         promptClickButton = panelGO.AddComponent<Button>();
@@ -185,8 +174,8 @@ public class DungeonExitInteractable : MonoBehaviour, IPointerClickHandler, IPoi
 
         // Content Layout
         VerticalLayoutGroup vLayout = panelGO.AddComponent<VerticalLayoutGroup>();
-        vLayout.padding = new RectOffset(14, 14, 8, 8);
-        vLayout.spacing = 3f;
+        vLayout.padding = new RectOffset(26, 26, 14, 24);
+        vLayout.spacing = 4f;
         vLayout.childAlignment = TextAnchor.MiddleCenter;
         vLayout.childControlWidth = true;
         vLayout.childControlHeight = true;
@@ -198,7 +187,7 @@ public class DungeonExitInteractable : MonoBehaviour, IPointerClickHandler, IPoi
         titleGO.transform.SetParent(panelGO.transform, false);
         promptTitleText = titleGO.AddComponent<TextMeshProUGUI>();
         promptTitleText.text = "<b><color=#FFDF00>[E]</color> CỔNG DỊCH CHUYỂN HẦM NGỤC</b>";
-        promptTitleText.fontSize = 20f;
+        promptTitleText.fontSize = 18f;
         promptTitleText.alignment = TextAlignmentOptions.Center;
         promptTitleText.color = Color.white;
         promptTitleText.raycastTarget = false;
@@ -208,12 +197,69 @@ public class DungeonExitInteractable : MonoBehaviour, IPointerClickHandler, IPoi
         GameObject hintGO = new GameObject("HintText", typeof(RectTransform));
         hintGO.transform.SetParent(panelGO.transform, false);
         promptHintText = hintGO.AddComponent<TextMeshProUGUI>();
-        promptHintText.text = "<size=13><color=#C8F5FF>Bấm <b>[E]</b> hoặc <b>nhấp chuột</b> để Rời đi / Đi tiếp</color></size>";
-        promptHintText.fontSize = 14f;
+        promptHintText.text = "<color=#C8F5FF>Bấm <b>[E]</b> hoặc <b>nhấp chuột</b> để Rời đi / Đi tiếp</color>";
+        promptHintText.fontSize = 13.5f;
         promptHintText.alignment = TextAlignmentOptions.Center;
-        promptHintText.color = new Color(0.82f, 0.95f, 1f, 1f);
+        promptHintText.color = new Color(0.84f, 0.92f, 0.96f, 1f);
         promptHintText.raycastTarget = false;
         DungeonUIAssetHelper.ApplyFont(promptHintText, withOutline: false);
+
+        ApplyPromptGOTYStyling(panelGO);
+    }
+
+    private void ApplyPromptGOTYStyling(GameObject panelGO)
+    {
+        if (panelGO == null) return;
+
+        if (promptPanelRect != null)
+        {
+            promptPanelRect.sizeDelta = new Vector2(420f, 96f);
+        }
+
+        Image bgImage = panelGO.GetComponent<Image>();
+        Outline outline = panelGO.GetComponent<Outline>();
+        bool hasGotyPrompt = DungeonUIAssetHelper.ApplyCompSprite(bgImage, "Comp_Dungeon_ExitPromptBase", sliced: true, Color.white);
+        if (!hasGotyPrompt && bgImage != null)
+        {
+            Sprite frameSprite = DungeonUIAssetHelper.GetFrameSprite();
+            if (frameSprite != null)
+            {
+                bgImage.sprite = frameSprite;
+                bgImage.type = Image.Type.Sliced;
+            }
+            bgImage.color = new Color(0.08f, 0.14f, 0.20f, 0.95f);
+        }
+        if (outline != null)
+        {
+            outline.enabled = !hasGotyPrompt;
+        }
+
+        VerticalLayoutGroup vLayout = panelGO.GetComponent<VerticalLayoutGroup>();
+        if (vLayout != null)
+        {
+            vLayout.padding = new RectOffset(26, 26, 14, 24);
+            vLayout.spacing = 4f;
+        }
+
+        if (promptTitleText != null)
+        {
+            DungeonUIAssetHelper.ApplyFont(promptTitleText, withOutline: true);
+            promptTitleText.enableAutoSizing = true;
+            promptTitleText.fontSizeMin = 13f;
+            promptTitleText.fontSizeMax = 18f;
+            promptTitleText.textWrappingMode = TextWrappingModes.NoWrap;
+            promptTitleText.overflowMode = TextOverflowModes.Ellipsis;
+        }
+
+        if (promptHintText != null)
+        {
+            DungeonUIAssetHelper.ApplyFont(promptHintText);
+            promptHintText.enableAutoSizing = true;
+            promptHintText.fontSizeMin = 10.5f;
+            promptHintText.fontSizeMax = 13.5f;
+            promptHintText.textWrappingMode = TextWrappingModes.NoWrap;
+            promptHintText.overflowMode = TextOverflowModes.Ellipsis;
+        }
     }
 
     public void Setup(FloorData floor, int floorNumber, ItemContainer backpack, System.Action onInteract)

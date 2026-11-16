@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!29 &1
 OcclusionCullingSettings:
@@ -3825,7 +3825,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Mode: [ WINDOWED ]'
+  m_text: 'Ch\u1EBF \u0110\u1ED9: [ C\u1EECA S\u1ED4 ]'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -4198,8 +4198,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: A peaceful night has passed. New changes have arrived across the farm and
-    the world outside.
+  m_text: M\u1ED9t \u0111\u00EAm y\u00EAn b\u00ECnh \u0111\u00E3 tr\u00F4i qua. Nh\u1EEFng thay \u0111\u1ED5i m\u1EDBi \u0111\u00E3 xu\u1EA5t hi\u1EC7n tr\u00EAn n\u00F4ng tr\u1EA1i v\u00E0 th\u1EBF gi\u1EDBi b\u00EAn ngo\u00E0i.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -9119,7 +9118,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "[ T\u1EA6NG 1 - ANCIENT DUNGEON ]"
+  m_text: "[ T\u1EA6NG 1 - H\u1EA6M NG\u1EE5C C\u1ED4 X\u01AFA ]"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -9530,7 +9529,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: No
+  m_text: H\u1EE6Y
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -22357,7 +22356,7 @@ GameObject:
   - component: {fileID: 769926949}
   - component: {fileID: 769926948}
   m_Layer: 0
-  m_Name: Btn_BACK TO MENU
+  m_Name: Btn_QUAY L\u1EA0I MENU
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -23840,7 +23839,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "[ T\u1EA6NG 1 - ANCIENT DUNGEON ]"
+  m_text: "[ T\u1EA6NG 1 - H\u1EA6M NG\u1EE5C C\u1ED4 X\u01AFA ]"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -26776,7 +26775,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '[ MENU (ESC) ]'
+  m_text: '[ C\xC0I \u0110\u1EB6T ]'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -30659,8 +30658,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "FARMSTEAD KITCHEN STATION (B\u1EBEP N\u1EA4U GIA \u0110\xCCNH & S\u1ED4
-    TAY \u1EA8M TH\u1EF0C)"
+  m_text: "B\u1EBEP N\u1EA4U GIA \u0110\xCCNH & S\u1ED4 TAY \u1EA8M TH\u1EF0C"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -32520,7 +32518,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "H\u1ED3i 60 HP & +45 \u0110\u1ED9 No | C\u1EA7n: C\xE0 chua x2"
+  m_text: "H\u1ED3i 60 M\xE1u & +45 \u0110\u1ED9 No | C\u1EA7n: C\xE0 chua x2"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 0}
@@ -33019,7 +33017,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "B\u1ECE NGUY\xCAN LI\u1EC6U V\xC0O N\u1ED2I (T\u1ED0I \u0110A 4)"
+  m_text: "B\u1ECE NGUY\xCAN LI\u1EC6U V\xC0O N\u1ED2I"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -37184,8 +37182,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: <b><color=#FFCC44>[NO BLESSING CHOSEN]</color></b> Choose a blessing to
-    empower your run before entering the Dungeon!
+  m_text: <b><color=#FFCC44>[CH\u01AFA CH\u1ECCN PH\u01AF\u1EDAC L\xC0NH]</color></b> H\xE3y ch\u1ECDn m\u1ED9t ph\u01B0\u1EDBc l\xE0nh cho chuy\u1EBFn \u0111i
+    \u0111\u1EC3 gia t\u0103ng s\u1EE9c m\u1EA1nh tr\u01B0\u1EDBc khi v\xE0o h\u1EA7m ng\u1EE5c!
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -37439,7 +37437,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Change Build
+  m_text: \u0110\u1ED5i Ph\u01B0\u1EDBc L\xE0nh
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -37568,7 +37566,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Drag and drop items from your backpack or click requirement slots to offer.
+  m_text: K\xE9o th\u1EA3 v\u1EADt ph\u1EA9m t\u1EEB ba l\xF4 ho\u1EB7c nh\u1EA5p v\xE0o \xF4 y\xEAu c\u1EA7u \u0111\u1EC3 d\xE2ng l\u1EC5.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -38020,7 +38018,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: DIVINE OFFERINGS LIST
+  m_text: DANH S\xC1CH L\u1EC4 V\u1EACT C\u1ED4 X\u01AFA
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -38635,7 +38633,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: PLAYER INVENTORY
+  m_text: T\xDAI \u0110\u1ED2 NH\xC2N V\u1EACT
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -39247,7 +39245,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '<b>Blessed Permanent Stats:</b>   <color=#FF7777>ATK: 10 (+0)</color>  
+  m_text: '<b>Ch\u1EC9 S\u1ED1 V\u0129nh Vi\u1EC5n:</b>   <color=#FF7777>C\xF4ng: 10 (+0)</color>  
     |   <color=#77AAFF>DEF: 0 (+0)</color>   |   <color=#FFFF77>Speed: 10 (+0)</color>'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -41151,22 +41149,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '- <b>[W][A][S][D] / Arrow Keys:</b> Move character
-
-    - <b>[Left Click]:</b>
-    Plant seeds (when holding seed) / Harvest crops
-
-    - <b>[Key E]:</b> Interact
-    with Kitchen Pot, Storage Chest, Statue, Dungeon Portal
-
-    - <b>[Key I]:</b>
-    Open / Close Backpack Inventory
-
-    - <b>[Sleep]:</b> Approach Bed and press
-    <b>[E]</b> to advance day and crop cycles
-
-    - <b>[Key ESC]:</b> Open / Close
-    this Menu at any time in Base'
+  m_text: "- <b>[W][A][S][D] / Ph\xEDm m\u0169i t\xEAn:</b> Di chuy\u1EC3n nh\xE2n\n    v\u1EADt\n\n    - <b>[Chu\u1ED9t tr\xE1i]:</b> Gieo h\u1EA1t (khi c\u1EA7m h\u1EA1t)\n    / Thu ho\u1EA1ch n\xF4ng s\u1EA3n\n\n    - <b>[Ph\xEDm E]:</b> T\u01B0\u01A1ng\n    t\xE1c B\u1EBFp n\u1EA5u, R\u01B0\u01A1ng \u0111\u1ED3, T\u01B0\u01A1ng th\u1EA7n,\n    C\u1ED5ng h\u1EA7m ng\u1EE5c\n\n    - <b>[Ph\xEDm I]:</b> M\u1EDF / \u0110\xF3ng\n    T\xFAi \u0111\u1ED3 ba l\xF4\n\n    - <b>[Ngh\u1EC9 ng\u01A1i]:</b> \u0110\u1EBFn\n    g\u1EA7n Gi\u01B0\u1EDDng v\xE0 nh\u1EA5n <b>[E]</b> \u0111\u1EC3 qua ng\xE0y\n    m\u1EDBi\n\n    - <b>[Ph\xEDm ESC]:</b> M\u1EDF / \u0110\xF3ng Menu c\xE0i \u0111\u1EB7t"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -42573,7 +42556,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Sound: [ ON 100% ]'
+  m_text: '\xC2m Thanh: [ B\u1EACT 100% ]'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -45330,7 +45313,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '[*] DAWN - DAY 01'
+  m_text: '[*] B\xCCNH MINH - NG\xC0Y 01'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -46600,7 +46583,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "[ T\u1EA6NG 1 - ANCIENT DUNGEON ]"
+  m_text: "[ T\u1EA6NG 1 - H\u1EA6M NG\u1EE5C C\u1ED4 X\u01AFA ]"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -49843,7 +49826,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "[ T\u1EA6NG 1 - ANCIENT DUNGEON ]"
+  m_text: "[ T\u1EA6NG 1 - H\u1EA6M NG\u1EE5C C\u1ED4 X\u01AFA ]"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -58578,7 +58561,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: BACK TO MENU
+  m_text: QUAY L\u1EA0I MENU
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -59644,7 +59627,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Button
+  m_text: TI\u1EBEN V\xC0O NG\xC0Y M\u1EDAI
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -59980,7 +59963,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '[ HOW TO PLAY & CONTROLS ]'
+  m_text: '[ H\u01AF\u1EDANG D\u1EAAN & \u0110I\u1EC0U KHI\u1EC2N ]'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -60621,7 +60604,7 @@ GameObject:
   - component: {fileID: 1420576315}
   - component: {fileID: 1420576314}
   m_Layer: 0
-  m_Name: Btn_BACK TO MENU
+  m_Name: Btn_QUAY L\u1EA0I MENU
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -61828,7 +61811,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '[ DUNGEON ]'
+  m_text: '[ H\u1EA6M NG\u1EE5C ]'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -63755,7 +63738,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: START NEW DAY  (Space)
+  m_text: B\u1EACT \u0110\u1EA6U NG\xC0Y M\u1EDAI
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -64064,7 +64047,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Yes
+  m_text: TI\u1EBEN V\xC0O
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -65511,7 +65494,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '[ DUNGEON ]'
+  m_text: '[ H\u1EA6M NG\u1EE5C ]'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -65648,7 +65631,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "[ T\u1EA6NG 1 - ANCIENT DUNGEON ]"
+  m_text: "[ T\u1EA6NG 1 - H\u1EA6M NG\u1EE5C C\u1ED4 X\u01AFA ]"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -68975,7 +68958,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: BACK TO MENU
+  m_text: QUAY L\u1EA0I MENU
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -70322,7 +70305,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '[ SETTINGS ]'
+  m_text: '[ C\xC0I \u0110\u1EB6T ]'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -71450,7 +71433,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '[ DUNGEON ]'
+  m_text: '[ H\u1EA6M NG\u1EE5C ]'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -72043,7 +72026,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '[ DUNGEON ]'
+  m_text: '[ H\u1EA6M NG\u1EE5C ]'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -81532,7 +81515,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '[ DUNGEON ]'
+  m_text: '[ H\u1EA6M NG\u1EE5C ]'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -82921,7 +82904,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "[ T\u1EA6NG 1 - ANCIENT DUNGEON ]"
+  m_text: "[ T\u1EA6NG 1 - H\u1EA6M NG\u1EE5C C\u1ED4 X\u01AFA ]"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -83179,7 +83162,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '[ DUNGEON ]'
+  m_text: '[ H\u1EA6M NG\u1EE5C ]'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

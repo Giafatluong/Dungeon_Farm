@@ -548,19 +548,19 @@ public class MerchantEvent : MonoBehaviour
     {
         if (!merchantActive)
         {
-            OnTradeFailed?.Invoke("Merchant has departed.");
+            OnTradeFailed?.Invoke("Thương nhân đã rời đi.");
             return false;
         }
 
         if (GetItemCount(container, trade.inputSeed) < trade.inputAmount)
         {
-            OnTradeFailed?.Invoke($"Not enough {trade.inputSeed.itemName} (need {trade.inputAmount}) to exchange for {trade.outputSeed.itemName}.");
+            OnTradeFailed?.Invoke($"Không đủ {trade.inputSeed.itemName} (cần {trade.inputAmount}) để đổi lấy {trade.outputSeed.itemName}.");
             return false;
         }
 
         if (!HasContainerSpaceFor(container, trade.inputSeed, trade.inputAmount, trade.outputSeed))
         {
-            OnTradeFailed?.Invoke("Backpack is completely full! Cannot receive new seeds.");
+            OnTradeFailed?.Invoke("Ba lô đã đầy! Không thể nhận hạt giống mới.");
             return false;
         }
 
@@ -594,19 +594,19 @@ public class MerchantEvent : MonoBehaviour
     {
         if (!merchantActive)
         {
-            OnTradeFailed?.Invoke("Merchant has departed.");
+            OnTradeFailed?.Invoke("Thương nhân đã rời đi.");
             return false;
         }
 
         if (GetItemCount(container, trade.inputProduce) < trade.inputAmount)
         {
-            OnTradeFailed?.Invoke($"Not enough {trade.inputProduce.itemName} (need {trade.inputAmount}) for rations.");
+            OnTradeFailed?.Invoke($"Không đủ {trade.inputProduce.itemName} (cần {trade.inputAmount}) để đổi lương thảo.");
             return false;
         }
 
         if (!HasContainerSpaceFor(container, trade.inputProduce, trade.inputAmount, trade.outputFood))
         {
-            OnTradeFailed?.Invoke("Backpack is completely full! Cannot receive new rations.");
+            OnTradeFailed?.Invoke("Ba lô đã đầy! Không thể nhận lương thảo mới.");
             return false;
         }
 

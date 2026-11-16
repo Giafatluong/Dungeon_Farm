@@ -555,7 +555,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "FARMSTEAD KITCHEN STATION (B\u1EBEP N\u1EA4U GIA \u0110\xCCNH & S\u1ED4 TAY \u1EA8M TH\u1EF0C)"
+  m_text: "B\u1EBEP N\u1EA4U GIA \u0110\xCCNH & S\u1ED4 TAY \u1EA8M TH\u1EF0C"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 0}
@@ -3318,7 +3318,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "H\u1ED3i 60 HP & +45 \u0110\u1ED9 No | C\u1EA7n: C\u00E0 chua x2"
+  m_text: "H\u1ED3i 60 M\u00E1u & +45 \u0110\u1ED9 No | C\u1EA7n: C\u00E0 chua x2"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 0}
@@ -4133,7 +4133,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "BỎ NGUYÊN LIỆU VÀO NỒI (TỐI ĐA 4)"
+  m_text: "BỎ NGUYÊN LIỆU VÀO NỒI"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 0}

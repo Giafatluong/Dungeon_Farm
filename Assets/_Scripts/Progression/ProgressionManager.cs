@@ -1105,88 +1105,88 @@ public static class BlessingDatabase
             BlessingType.KeepLootOnDefeat,
             new BlessingInfo(
                 BlessingType.KeepLootOnDefeat,
-                "Divine Protection",
-                "When defeated in the Dungeon, keep all items in your inventory without dropping them.",
-                "[PROTECTION]",
+                "Bảo Hộ Thần Thánh",
+                "Khi ngã xuống trong Hầm Ngục, giữ lại toàn bộ vật phẩm trong ba lô mà không bị rơi mất.",
+                "[BẢO HỘ]",
                 new Color(0.3f, 0.8f, 1f),
-                "Unlocked by default from the start."
+                "Mở khóa mặc định ngay từ đầu."
             )
         },
         {
             BlessingType.BastionStrike,
             new BlessingInfo(
                 BlessingType.BastionStrike,
-                "Bastion Strike",
-                "Add 50% of your current DEF to ATK. Using the Defend action restores +1 Action Point (AP).",
-                "[BASTION]",
+                "Pháo Đài Vững Chắc",
+                "Cộng thêm 50% chỉ số Phòng Thủ hiện tại vào Sức Đánh. Hành động Phòng Thủ hồi phục +1 Điểm Thể Lực.",
+                "[PHÁO ĐÀI]",
                 new Color(1f, 0.7f, 0.2f),
-                "Clear Dungeon Floor 1 OR complete DEF Offering at the Statue."
+                "Vượt Tầng 1 Hầm Ngục HOẶC hoàn thành Lễ Vật Phòng Thủ tại Tượng Thần."
             )
         },
         {
             BlessingType.SwiftMomentum,
             new BlessingInfo(
                 BlessingType.SwiftMomentum,
-                "Swift Momentum",
-                "Gain +4 Speed during dungeon runs. If faster than the enemy, attacks deal extra bonus damage based on speed difference.",
-                "[SWIFT]",
+                "Xung Kích Thần Tốc",
+                "Tăng +4 Tốc Độ trong suốt chuyến đi. Nếu nhanh hơn quái vật, đòn đánh gây thêm sát thương dựa trên chênh lệch tốc độ.",
+                "[THẦN TỐC]",
                 new Color(0.2f, 1f, 0.5f),
-                "Clear Dungeon Floor 1 OR complete Speed Offering at the Statue."
+                "Vượt Tầng 1 Hầm Ngục HOẶC hoàn thành Lễ Vật Tốc Độ tại Tượng Thần."
             )
         },
         {
             BlessingType.StarvingFury,
             new BlessingInfo(
                 BlessingType.StarvingFury,
-                "Starving Fury",
-                "When Fullness is below 35%, gain +6 ATK and attacks have a 35% chance to critically strike for 150% damage.",
-                "[FURY]",
+                "Cơn Thịnh Nộ Kẻ Đói",
+                "Khi Độ No dưới 35%, nhận thêm +6 Sức Đánh và đòn tấn công có 35% tỉ lệ chí mạng gây 150% sát thương.",
+                "[THỊNH NỘ]",
                 new Color(1f, 0.3f, 0.3f),
-                "Clear Dungeon Floor 1 OR complete ATK Offering at the Statue."
+                "Vượt Tầng 1 Hầm Ngục HOẶC hoàn thành Lễ Vật Tấn Công tại Tượng Thần."
             )
         },
         {
             BlessingType.GluttonousAegis,
             new BlessingInfo(
                 BlessingType.GluttonousAegis,
-                "Gluttonous Aegis",
-                "When Fullness is above 70%, gain +8 DEF and reflect 40% of incoming damage back to the attacker.",
-                "[REFLECT]",
+                "Khiên No Nê",
+                "Khi Độ No trên 70%, nhận thêm +8 Phòng Thủ và phản lại 40% sát thương nhận vào về phía kẻ địch.",
+                "[PHẢN ĐÒN]",
                 new Color(0.9f, 0.8f, 0.2f),
-                "Defeat Boss and clear Dungeon Floor 2."
+                "Hạ gục Boss và vượt Tầng 2 Hầm Ngục."
             )
         },
         {
             BlessingType.EndlessFeast,
             new BlessingInfo(
                 BlessingType.EndlessFeast,
-                "Endless Feast",
-                "All food buff durations are doubled. The first food consumed each turn costs 0 Action Points (AP).",
-                "[FEAST]",
+                "Đại Tiệc Bất Tận",
+                "Thời gian kéo dài của mọi hiệu ứng thức ăn tăng gấp đôi. Món ăn đầu tiên mỗi lượt tiêu tốn 0 Điểm Thể Lực.",
+                "[ĐẠI TIỆC]",
                 new Color(1f, 0.5f, 0.8f),
-                "Complete 2 Offerings at the Statue OR clear Dungeon Floor 3."
+                "Hoàn thành 2 Lễ Vật tại Tượng Thần HOẶC vượt Tầng 3 Hầm Ngục."
             )
         },
         {
             BlessingType.BitterDecay,
             new BlessingInfo(
                 BlessingType.BitterDecay,
-                "Bitter Decay",
-                "All basic attacks inflict corrosive poison: reduce target's DEF by 2 permanently in combat and deal 4 poison damage.",
-                "[DECAY]",
+                "Hủ Bại Ăn Mòn",
+                "Mọi đòn đánh thường đều kèm độc ăn mòn: giảm vĩnh viễn 2 Phòng Thủ của mục tiêu trong trận và gây 4 sát thương độc.",
+                "[ĂN MÒN]",
                 new Color(0.6f, 0.3f, 0.9f),
-                "Defeat Boss and clear Dungeon Floor 2."
+                "Hạ gục Boss và vượt Tầng 2 Hầm Ngục."
             )
         },
         {
             BlessingType.RawVitality,
             new BlessingInfo(
                 BlessingType.RawVitality,
-                "Raw Vitality",
-                "Allows eating raw crops (wheat, carrot, corn...) directly in the Dungeon to restore +12 HP and +20 Fullness.",
-                "[VITALITY]",
+                "Sức Sống Tươi Nguyên",
+                "Cho phép ăn trực tiếp nông sản tươi (lúa mì, cà rốt, ngô...) trong Hầm Ngục để hồi phục +12 Máu và +20 Độ No.",
+                "[SINH LỰC]",
                 new Color(0.4f, 0.9f, 0.3f),
-                "Complete any crop Offering at the Statue."
+                "Hoàn thành bất kỳ Lễ Vật nông sản nào tại Tượng Thần."
             )
         }
     };

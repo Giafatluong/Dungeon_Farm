@@ -82,12 +82,12 @@ public class BuffTooltipUI : MonoBehaviour
     {
         if (rootGO != null) return;
 
-        // Container card
+        // Container card (304px width matches Comp_Tooltip_BuffBase GOTY asset with drop shadow margin)
         rootGO = new GameObject("BuffTooltipCard", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
         rootGO.transform.SetParent(transform, false);
 
         rootRT = rootGO.GetComponent<RectTransform>();
-        rootRT.sizeDelta = new Vector2(250, 110);
+        rootRT.sizeDelta = new Vector2(304f, 149f);
         rootRT.pivot = new Vector2(0f, 0f);
 
         canvasGroup = rootGO.GetComponent<CanvasGroup>();
@@ -96,24 +96,41 @@ public class BuffTooltipUI : MonoBehaviour
         canvasGroup.interactable = false;
 
         Image bg = rootGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.08f, 0.10f, 0.16f, 0.96f));
+        bool hasGotyBuffBase = DungeonUIAssetHelper.ApplyCompSprite(bg, "Comp_Tooltip_BuffBase", sliced: true, Color.white);
+        if (!hasGotyBuffBase)
+        {
+            DungeonUIAssetHelper.StyleSlicedFrame(bg, new Color(0.08f, 0.10f, 0.16f, 0.96f));
+            Outline outline = rootGO.AddComponent<Outline>();
+            outline.effectColor = new Color(0.25f, 0.35f, 0.55f, 0.85f);
+            outline.effectDistance = new Vector2(1.5f, -1.5f);
+        }
 
-        // Outline border effect
-        Outline outline = rootGO.AddComponent<Outline>();
-        outline.effectColor = new Color(0.25f, 0.35f, 0.55f, 0.85f);
-        outline.effectDistance = new Vector2(1.5f, -1.5f);
+        // Header Row: Icon Box (38x38) + Title & Category
+        GameObject iconBoxGO = new GameObject("IconBox", typeof(RectTransform), typeof(Image));
+        iconBoxGO.transform.SetParent(rootGO.transform, false);
+        RectTransform iconBoxRT = iconBoxGO.GetComponent<RectTransform>();
+        iconBoxRT.anchorMin = new Vector2(0, 1);
+        iconBoxRT.anchorMax = new Vector2(0, 1);
+        iconBoxRT.pivot = new Vector2(0, 1);
+        iconBoxRT.anchoredPosition = new Vector2(18, -14);
+        iconBoxRT.sizeDelta = new Vector2(38, 38);
+        Image iconBoxImg = iconBoxGO.GetComponent<Image>();
+        if (!DungeonUIAssetHelper.ApplyCompSprite(iconBoxImg, "Comp_Tooltip_IconBox", sliced: true, Color.white))
+        {
+            iconBoxImg.color = new Color(0.10f, 0.06f, 0.04f, 0.9f);
+        }
+        iconBoxImg.raycastTarget = false;
 
-        // Header Row: Icon (28x28) + Title & Category
         GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        iconGO.transform.SetParent(rootGO.transform, false);
+        iconGO.transform.SetParent(iconBoxGO.transform, false);
         RectTransform iconRT = iconGO.GetComponent<RectTransform>();
-        iconRT.anchorMin = new Vector2(0, 1);
-        iconRT.anchorMax = new Vector2(0, 1);
-        iconRT.pivot = new Vector2(0, 1);
-        iconRT.anchoredPosition = new Vector2(12, -12);
-        iconRT.sizeDelta = new Vector2(28, 28);
+        iconRT.anchorMin = Vector2.zero;
+        iconRT.anchorMax = Vector2.one;
+        iconRT.offsetMin = new Vector2(5, 5);
+        iconRT.offsetMax = new Vector2(-5, -5);
         iconImage = iconGO.GetComponent<Image>();
         iconImage.preserveAspect = true;
+        iconImage.raycastTarget = false;
 
         GameObject titleGO = new GameObject("TitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
         titleGO.transform.SetParent(rootGO.transform, false);
@@ -121,17 +138,19 @@ public class BuffTooltipUI : MonoBehaviour
         titleRT.anchorMin = new Vector2(0, 1);
         titleRT.anchorMax = new Vector2(1, 1);
         titleRT.pivot = new Vector2(0, 1);
-        titleRT.anchoredPosition = new Vector2(48, -10);
-        titleRT.sizeDelta = new Vector2(-58, 22);
+        titleRT.anchoredPosition = new Vector2(64, -14);
+        titleRT.sizeDelta = new Vector2(-82, 22);
 
         titleText = titleGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(titleText);
-        titleText.fontSize = 14;
+        DungeonUIAssetHelper.ApplyFont(titleText, withOutline: true);
+        titleText.fontSize = 14.5f;
         titleText.enableAutoSizing = true;
         titleText.fontSizeMin = 11f;
-        titleText.fontSizeMax = 14f;
+        titleText.fontSizeMax = 14.5f;
         titleText.fontStyle = FontStyles.Bold;
-        titleText.color = Color.white;
+        titleText.textWrappingMode = TextWrappingModes.NoWrap;
+        titleText.overflowMode = TextOverflowModes.Ellipsis;
+        titleText.color = new Color(1f, 0.90f, 0.55f);
 
         // Category Badge & Duration Row
         GameObject subRowGO = new GameObject("SubRow", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -140,13 +159,18 @@ public class BuffTooltipUI : MonoBehaviour
         subRT.anchorMin = new Vector2(0, 1);
         subRT.anchorMax = new Vector2(1, 1);
         subRT.pivot = new Vector2(0, 1);
-        subRT.anchoredPosition = new Vector2(48, -32);
-        subRT.sizeDelta = new Vector2(-58, 18);
+        subRT.anchoredPosition = new Vector2(64, -37);
+        subRT.sizeDelta = new Vector2(-82, 18);
 
         durationText = subRowGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(durationText);
-        durationText.fontSize = 11;
-        durationText.color = new Color(0.75f, 0.85f, 1f, 0.95f);
+        durationText.fontSize = 11.5f;
+        durationText.enableAutoSizing = true;
+        durationText.fontSizeMin = 9.5f;
+        durationText.fontSizeMax = 11.5f;
+        durationText.textWrappingMode = TextWrappingModes.NoWrap;
+        durationText.overflowMode = TextOverflowModes.Ellipsis;
+        durationText.color = new Color(0.84f, 0.88f, 0.96f, 0.98f);
 
         // Divider
         GameObject divGO = new GameObject("Divider", typeof(RectTransform), typeof(Image));
@@ -155,29 +179,32 @@ public class BuffTooltipUI : MonoBehaviour
         divRT.anchorMin = new Vector2(0, 1);
         divRT.anchorMax = new Vector2(1, 1);
         divRT.pivot = new Vector2(0.5f, 1);
-        divRT.anchoredPosition = new Vector2(0, -52);
-        divRT.sizeDelta = new Vector2(-24, 1.5f);
+        divRT.anchoredPosition = new Vector2(0, -58);
+        divRT.sizeDelta = new Vector2(-36, 2f);
         Image divImg = divGO.GetComponent<Image>();
-        divImg.color = new Color(0.3f, 0.4f, 0.55f, 0.5f);
+        if (!DungeonUIAssetHelper.ApplyCompSprite(divImg, "Comp_Tooltip_Divider", sliced: true, new Color(1f, 0.72f, 0.30f, 0.7f)))
+        {
+            divImg.color = new Color(0.3f, 0.4f, 0.55f, 0.5f);
+        }
 
-        // Description Body
+        // Description Body (Auto-grows card vertically via Show() so text never truncates)
         GameObject descGO = new GameObject("DescText", typeof(RectTransform), typeof(TextMeshProUGUI));
         descGO.transform.SetParent(rootGO.transform, false);
         RectTransform descRT = descGO.GetComponent<RectTransform>();
         descRT.anchorMin = new Vector2(0, 0);
         descRT.anchorMax = new Vector2(1, 1);
         descRT.pivot = new Vector2(0, 1);
-        descRT.anchoredPosition = new Vector2(12, -58);
-        descRT.sizeDelta = new Vector2(-24, -68);
+        descRT.anchoredPosition = new Vector2(18, -66);
+        descRT.sizeDelta = new Vector2(-36, -90);
 
         descText = descGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(descText);
-        descText.fontSize = 12;
-        descText.enableAutoSizing = true;
-        descText.fontSizeMin = 9.5f;
-        descText.fontSizeMax = 12f;
-        descText.color = new Color(0.85f, 0.90f, 0.95f, 1f);
+        DungeonUIAssetHelper.ApplyFont(descText, withOutline: true);
+        descText.fontSize = 12f;
+        descText.enableAutoSizing = false;
+        descText.color = new Color(0.95f, 0.93f, 0.90f, 1f);
+        descText.lineSpacing = 4f;
         descText.textWrappingMode = TextWrappingModes.Normal;
+        descText.overflowMode = TextOverflowModes.Overflow;
 
         rootGO.SetActive(false);
     }
@@ -196,7 +223,7 @@ public class BuffTooltipUI : MonoBehaviour
 
         if (titleText != null)
         {
-            titleText.text = info.title;
+            titleText.text = info.title ?? "";
         }
 
         if (durationText != null)
@@ -205,14 +232,19 @@ public class BuffTooltipUI : MonoBehaviour
             durationText.text = $"{cat}{info.durationText}";
         }
 
+        string safeDesc = info.description ?? "";
         if (descText != null)
         {
-            descText.text = info.description;
+            descText.text = safeDesc;
+            descText.ForceMeshUpdate();
+            Vector2 pref = descText.GetPreferredValues(safeDesc, 268f, 0f);
+            float cardHeight = Mathf.Clamp(98f + pref.y, 138f, 270f);
+            rootRT.sizeDelta = new Vector2(304f, cardHeight);
         }
-
-        // Auto-size card based on description length
-        float cardHeight = Mathf.Clamp(100f + (info.description.Length / 28f) * 16f, 105f, 180f);
-        rootRT.sizeDelta = new Vector2(250, cardHeight);
+        else
+        {
+            rootRT.sizeDelta = new Vector2(304f, 149f);
+        }
 
         targetScreenPos = Camera.main != null ? Camera.main.WorldToScreenPoint(worldPosition) : (Vector2)Input.mousePosition;
 

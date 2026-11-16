@@ -118,12 +118,17 @@ public static class DungeonUIAssetHelper
 
     public static Sprite GetHpFillSprite()
     {
-        return null;
+        return FindSprite("Comp_Combat_HPRealFill") ?? FindSprite("Fill_100");
     }
 
     public static Sprite GetHungerFillSprite()
     {
-        return null;
+        return FindSprite("Comp_Combat_HPRealFill") ?? FindSprite("Fill_100");
+    }
+
+    public static Sprite GetProgressBarTrackSprite()
+    {
+        return FindSprite("Comp_Combat_HPTrack") ?? FindSprite("RiskGauge_Bg");
     }
 
     public static Sprite GetApFillSprite()
@@ -569,20 +574,13 @@ public static class DungeonUIAssetHelper
 
     public static Sprite GetRiskGaugeBgSprite(int tier = 0)
     {
-        string name = tier switch
-        {
-            1 => "RiskGauge_Bg-1",
-            2 => "RiskGauge_Bg-2",
-            3 => "Compromised_Gauge",
-            _ => "RiskGauge_Bg"
-        };
-        return FindSprite(name);
+        return FindSprite("Comp_Camp_RiskGaugeTrack") ?? FindSprite("RiskGauge_Bg");
     }
 
     public static Sprite GetRiskGaugeFillSprite()
     {
         if (s_CachedRiskFillSprite != null) return s_CachedRiskFillSprite;
-        s_CachedRiskFillSprite = FindSprite("Fill_100");
+        s_CachedRiskFillSprite = FindSprite("Comp_Camp_RiskGaugeFill") ?? FindSprite("Fill_100");
         return s_CachedRiskFillSprite;
     }
     private static Sprite s_CachedRiskFillSprite;
@@ -664,13 +662,55 @@ public static class DungeonUIAssetHelper
             glow.RefreshOutline();
         }
     }
+
+    /// <summary>
+    /// Applies an exported Figma GOTY component sprite (Assets/_Assets/Assets/Comp_*.png)
+    /// defaulting to Color.white so pre-shaded borders and gradients are not darkened.
+    /// </summary>
+    public static bool ApplyCompSprite(Image img, string compName, bool sliced = true, Color? tint = null)
+    {
+        if (img == null || string.IsNullOrEmpty(compName)) return false;
+
+        Sprite sp = FindSprite(compName);
+        if (sp == null) return false;
+
+        img.sprite = sp;
+        img.type = (sliced && sp.border != Vector4.zero) ? Image.Type.Sliced : Image.Type.Simple;
+        img.color = tint ?? Color.white;
+        return true;
+    }
+
+    /// <summary>
+    /// Applies an exported Figma GOTY component sprite to a Button + its Image and configures hover glow.
+    /// </summary>
+    public static bool ApplyCompButton(Button btn, Image img, string compName, Color? tint = null)
+    {
+        if (btn == null) return false;
+        if (img == null) img = btn.GetComponent<Image>();
+        if (img == null) return false;
+
+        if (!ApplyCompSprite(img, compName, sliced: true, tint: tint)) return false;
+
+        btn.transition = Selectable.Transition.None;
+        btn.spriteState = default;
+        btn.targetGraphic = img;
+        img.preserveAspect = false;
+
+        UIButtonHoverGlow glow = UIButtonHoverGlow.Ensure(btn);
+        if (glow != null)
+        {
+            glow.SetOriginalColor(img.color);
+            glow.RefreshOutline();
+        }
+        return true;
+    }
     #endregion
 
     #region Utilities
     public static Sprite FindSprite(string spriteName)
     {
         if (string.IsNullOrEmpty(spriteName)) return null;
-        if (_spriteCache.TryGetValue(spriteName, out Sprite cached))
+        if (_spriteCache.TryGetValue(spriteName, out Sprite cached) && cached != null)
         {
             return cached;
         }
@@ -679,7 +719,23 @@ public static class DungeonUIAssetHelper
 
 #if UNITY_EDITOR
         // 1. Direct path lookup for primary UI and environment assets (instant 0ms resolution)
-        found = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>($"Assets/_Assets/Assets/{spriteName}.png");
+        string directPath = $"Assets/_Assets/Assets/{spriteName}.png";
+        found = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(directPath);
+        if (found == null)
+        {
+            Object[] subAssets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(directPath);
+            if (subAssets != null)
+            {
+                for (int i = 0; i < subAssets.Length; i++)
+                {
+                    if (subAssets[i] is Sprite s)
+                    {
+                        found = s;
+                        break;
+                    }
+                }
+            }
+        }
         if (found == null && spriteName.StartsWith("UI_", System.StringComparison.OrdinalIgnoreCase))
         {
             found = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>($"Assets/_Assets/Ui_Inventory/{spriteName}.png");
@@ -687,6 +743,39 @@ public static class DungeonUIAssetHelper
         else if (found == null && (spriteName.StartsWith("E1_") || spriteName.StartsWith("E2_") || spriteName.StartsWith("E3_") || spriteName.StartsWith("DungeonGround_")))
         {
             found = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>($"Assets/Fantasy Adventure Pack/Sprites/Environment Sprites/{spriteName}.png");
+        }
+
+        // 1b. If newly exported PNG has not yet been re-imported as a Sprite in Unity Editor, construct runtime Sprite from Texture2D / disk
+        if (found == null)
+        {
+            Texture2D tex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(directPath);
+            if (tex == null)
+            {
+                string fullDiskPath = System.IO.Path.Combine(Application.dataPath, directPath.Substring("Assets/".Length));
+                if (System.IO.File.Exists(fullDiskPath))
+                {
+                    byte[] bytes = System.IO.File.ReadAllBytes(fullDiskPath);
+                    Texture2D diskTex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                    if (ImageConversion.LoadImage(diskTex, bytes))
+                    {
+                        diskTex.name = spriteName;
+                        tex = diskTex;
+                    }
+                    else
+                    {
+                        Object.DestroyImmediate(diskTex);
+                    }
+                }
+            }
+
+            if (tex != null)
+            {
+                float bx = tex.width > 28 ? 12f : Mathf.Min(4f, Mathf.Floor((tex.width - 2) / 3f));
+                float by = tex.height > 28 ? 12f : Mathf.Min(4f, Mathf.Floor((tex.height - 2) / 3f));
+                Vector4 border = (bx > 0f || by > 0f) ? new Vector4(bx, by, bx, by) : Vector4.zero;
+                found = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, border);
+                found.name = spriteName;
+            }
         }
 #endif
 

@@ -139,7 +139,7 @@ public class LoadingScreenUI : MonoBehaviour
         if (isGoingToDungeon)
         {
             int floorNum = targetFloor >= 0 ? targetFloor : 1;
-            string floorName = FloorNames.TryGetValue(floorNum, out string name) ? name : $"Floor {floorNum}";
+            string floorName = FloorNames.TryGetValue(floorNum, out string name) ? name : $"Tầng {floorNum}";
 
             if (titleText != null)
             {
@@ -179,12 +179,12 @@ public class LoadingScreenUI : MonoBehaviour
 
             if (subtitleText != null)
             {
-                subtitleText.text = "[ NÔNG TRẠI YÊN BÌNH - BASE ]";
+                subtitleText.text = "[ NÔNG TRẠI YÊN BÌNH ]";
             }
 
             if (emblemText != null)
             {
-                emblemText.text = "[ FARM ]";
+                emblemText.text = "[ NÔNG TRẠI ]";
                 emblemText.fontSize = 28;
                 emblemText.color = new Color(0.48f, 0.88f, 0.60f, 1f);
             }

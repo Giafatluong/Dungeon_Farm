@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -294,7 +294,7 @@ public class DungeonEventUI : MonoBehaviour
             }
             else
             {
-                label.text = $"<b><color=#777777>{choice.choiceLabel}</color></b>   <size=11.5><color=#FF6666><b>[Missing: {reason}]</b></color></size>";
+                label.text = $"<b><color=#777777>{choice.choiceLabel}</color></b>   <size=11.5><color=#FF6666><b>[Thiếu: {reason}]</b></color></size>";
             }
 
             // Bind listener (capture local index)
@@ -372,14 +372,14 @@ public class DungeonEventUI : MonoBehaviour
         if (narrativeText != null)
         {
             string outcomeColor = isSuccess ? "#88FF88" : "#FF6666";
-            narrativeText.text = $"{currentEvent?.narrativeStory}\n\n<color={outcomeColor}><b>Outcome:</b>\n{outcomeText}</color>";
+            narrativeText.text = $"{currentEvent?.narrativeStory}\n\n<color={outcomeColor}><b>Kết quả:</b>\n{outcomeText}</color>";
         }
 
         if (statusFeedbackText != null)
         {
             statusFeedbackText.text = isSuccess
-                ? "<color=#88FF88>Encounter resolved successfully.</color>"
-                : "<color=#FF6666>The risk did not pay off!</color>";
+                ? "<color=#88FF88>Sự kiện đã hoàn tất thành công.</color>"
+                : "<color=#FF6666>Rủi ro không như ý muốn!</color>";
         }
 
         // 3. Reveal Continue button - create one on the fly if it was never built

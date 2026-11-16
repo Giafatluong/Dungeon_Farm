@@ -914,8 +914,8 @@ public class WaveManager : MonoBehaviour
 
         if (CombatUI.Instance != null && CombatUI.Instance.turnBannerText != null)
         {
-            string title = evt != null ? evt.eventTitle.ToUpper() : "MYSTERIOUS EVENT";
-            CombatUI.Instance.turnBannerText.text = $"EVENT - {title}";
+            string title = evt != null ? evt.eventTitle.ToUpper() : "SỰ KIỆN BÍ ẨN";
+            CombatUI.Instance.turnBannerText.text = $"SỰ KIỆN - {title}";
             CombatUI.Instance.turnBannerText.color = new Color(0.9f, 0.7f, 1f);
             if (CombatUI.Instance.turnBannerBg != null)
             {
@@ -1035,7 +1035,7 @@ public class WaveManager : MonoBehaviour
 
         if (CombatUI.Instance != null && CombatUI.Instance.turnBannerText != null)
         {
-            CombatUI.Instance.turnBannerText.text = "STAGE REWARD - TREASURE ROOM";
+            CombatUI.Instance.turnBannerText.text = "PHÒNG KHO BÁU - PHẦN THƯỞNG MÀN";
             CombatUI.Instance.turnBannerText.color = new Color(1f, 0.85f, 0.3f);
             if (CombatUI.Instance.turnBannerBg != null)
             {

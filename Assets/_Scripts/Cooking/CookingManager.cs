@@ -443,7 +443,7 @@ public class CookingManager : MonoBehaviour
             {
                 if (!destinationContainer.CanAddItem(matchedRecipe.resultFood))
                 {
-                    failReason = "Backpack is full! Free up space before cooking.";
+                    failReason = "Ba lô đã đầy! Hãy dọn chỗ trống trước khi nấu.";
                     OnCookFailed?.Invoke(failReason);
                     return false;
                 }
@@ -570,7 +570,7 @@ public class CookingManager : MonoBehaviour
 
             if (!willFreeSlot)
             {
-                string failMsg = "Backpack is full! Free up space before cooking.";
+                string failMsg = "Ba lô đã đầy! Hãy dọn chỗ trống trước khi nấu.";
                 OnCookFailed?.Invoke(failMsg);
                 Debug.LogWarning($"[CookingManager] {failMsg}");
                 return false;
@@ -618,8 +618,8 @@ public class CookingManager : MonoBehaviour
             }
 
             string failMsg = !allDeducted
-                ? $"Not enough ingredients to cook: {recipe.DisplayName}"
-                : "Backpack is full! No space to receive the dish.";
+                ? $"Không đủ nguyên liệu để nấu: {recipe.DisplayName}"
+                : "Ba lô đã đầy! Không còn chỗ để nhận món ăn.";
             OnCookFailed?.Invoke(failMsg);
             Debug.LogWarning($"[CookingManager] {failMsg}");
             return false;

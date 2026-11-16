@@ -128,6 +128,106 @@ public class StatueUI : MonoBehaviour
         {
             blessingCards = new List<BlessingCardUI>(blessingModalPanel.GetComponentsInChildren<BlessingCardUI>(true));
         }
+
+        ApplyStatueSceneGOTYStyling();
+    }
+
+    private void ApplyStatueSceneGOTYStyling()
+    {
+        if (statuePanel == null) return;
+
+        Transform windowT = statuePanel.transform.Find("Window");
+        if (windowT != null)
+        {
+            Image winImg = windowT.GetComponent<Image>();
+            if (winImg != null)
+            {
+                DungeonUIAssetHelper.ApplyCompSprite(winImg, "Comp_Statue_ModalBase", sliced: true, Color.white);
+            }
+
+            Transform bannerT = windowT.Find("BlessingBanner");
+            if (bannerT != null)
+            {
+                if (bannerT is RectTransform bRT && bRT.sizeDelta.y < 40f)
+                {
+                    bRT.sizeDelta = new Vector2(bRT.sizeDelta.x, 40f);
+                }
+                Image bImg = bannerT.GetComponent<Image>();
+                if (bImg != null)
+                {
+                    DungeonUIAssetHelper.ApplyCompSprite(bImg, "Comp_Statue_BlessingBanner", sliced: true, Color.white);
+                }
+            }
+
+            Transform offCol = windowT.Find("OfferingsColumn");
+            if (offCol != null)
+            {
+                Image offImg = offCol.GetComponent<Image>();
+                if (offImg != null)
+                    DungeonUIAssetHelper.ApplyCompSprite(offImg, "Comp_Statue_ColumnPanel", sliced: true, Color.white);
+            }
+
+            Transform bpCol = windowT.Find("BackpackColumn");
+            if (bpCol != null)
+            {
+                Image bpImg = bpCol.GetComponent<Image>();
+                if (bpImg != null)
+                    DungeonUIAssetHelper.ApplyCompSprite(bpImg, "Comp_Statue_ColumnPanel", sliced: true, Color.white);
+            }
+
+            Transform footerT = windowT.Find("Footer");
+            if (footerT != null)
+            {
+                Image fImg = footerT.GetComponent<Image>();
+                if (fImg != null)
+                    DungeonUIAssetHelper.ApplyCompSprite(fImg, "Comp_Statue_HintBar", sliced: true, Color.white);
+            }
+
+            if (titleText == null)
+                titleText = windowT.Find("Title")?.GetComponent<TextMeshProUGUI>();
+            if (feedbackText == null)
+                feedbackText = windowT.Find("Feedback")?.GetComponent<TextMeshProUGUI>();
+            if (permanentStatsText == null)
+                permanentStatsText = windowT.Find("Footer/StatsText")?.GetComponent<TextMeshProUGUI>();
+            if (closeButton == null)
+                closeButton = windowT.Find("BtnClose")?.GetComponent<Button>();
+            if (blessingSelectButton == null && bannerT != null)
+                blessingSelectButton = bannerT.Find("BtnSelectBlessing")?.GetComponent<Button>();
+            if (blessingStatusText == null && bannerT != null)
+                blessingStatusText = bannerT.Find("BlessingStatusText")?.GetComponent<TextMeshProUGUI>();
+            if (blessingButtonText == null && blessingSelectButton != null)
+                blessingButtonText = blessingSelectButton.GetComponentInChildren<TextMeshProUGUI>(true);
+        }
+
+        if (blessingSelectButton != null)
+        {
+            DungeonUIAssetHelper.ApplyCompButton(blessingSelectButton, blessingSelectButton.GetComponent<Image>(), "Comp_Statue_ActionButton", Color.white);
+        }
+        if (closeButton != null)
+        {
+            Image closeImg = closeButton.GetComponent<Image>();
+            if (DungeonUIAssetHelper.ApplyCompButton(closeButton, closeImg, "Comp_Statue_BtnCloseX", Color.white) && closeImg != null)
+            {
+                closeImg.type = Image.Type.Simple;
+            }
+        }
+
+        ConfigureStatueTextAutoSize(titleText, 14f, 20f, wrap: false);
+        ConfigureStatueTextAutoSize(blessingStatusText, 9f, 11.5f, wrap: true);
+        ConfigureStatueTextAutoSize(feedbackText, 9.5f, 12f, wrap: false);
+        ConfigureStatueTextAutoSize(permanentStatsText, 9.5f, 12.5f, wrap: false);
+        ConfigureStatueTextAutoSize(blessingButtonText, 9.5f, 12.5f, wrap: false);
+    }
+
+    private static void ConfigureStatueTextAutoSize(TextMeshProUGUI tmp, float minSize, float maxSize, bool wrap)
+    {
+        if (tmp == null) return;
+        DungeonUIAssetHelper.ApplyFont(tmp);
+        tmp.enableAutoSizing = true;
+        tmp.fontSizeMin = minSize;
+        tmp.fontSizeMax = maxSize;
+        tmp.textWrappingMode = wrap ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
+        tmp.overflowMode = TextOverflowModes.Ellipsis;
     }
 
     private void Start()
@@ -243,6 +343,7 @@ public class StatueUI : MonoBehaviour
         }
 
         UIEscapeManager.NotifyModalOpened("Statue");
+        ApplyStatueSceneGOTYStyling();
 
         if (statuePanel != null)
         {
@@ -596,7 +697,7 @@ public class StatueUI : MonoBehaviour
         UpdateBlessingDisplay();
         RefreshBlessingCards(); // Instantly update active card gold border, keep modal open for free switching
         BlessingInfo info = BlessingDatabase.GetBlessingInfo(type);
-        SetFeedback($"<color=#55FF88>[PHÆ¯á»šC LÃ€NH ÄÃƒ Äá»”I] KÃ­ch hoáº¡t nhÃ¡nh: {info?.title ?? type.ToString()}!</color>");
+        SetFeedback($"<color=#55FF88>[PHƯỚC LÀNH ĐÃ ĐỔI] Kích hoạt nhánh: {info?.title ?? type.ToString()}!</color>");
     }
     #endregion
 
@@ -617,7 +718,7 @@ public class StatueUI : MonoBehaviour
             return a.tier.CompareTo(b.tier);
         });
 
-        // 1. Navigation Category Tabs (Táº¥n CÃ´ng (ATK), PhÃ²ng Thá»§ (DEF), Tá»‘c Äá»™ (SPD), Sinh Má»‡nh (HP))
+        // 1. Navigation Category Tabs (Tấn Công (ATK), Phòng Thủ (DEF), Tốc Độ (SPD), Sinh Mệnh (HP))
         // Place sticky category tabs in OfferingsColumn (outside ScrollRect content) so they stay fixed when scrolling
         ScrollRect sr = offeringsContainer.GetComponentInParent<ScrollRect>();
         Transform columnTransform = sr != null && sr.transform.parent != null ? sr.transform.parent : offeringsContainer.parent;
@@ -726,16 +827,19 @@ public class StatueUI : MonoBehaviour
 
         bool isSelected = currentViewCategory == category;
         Image img = btnGO.GetComponent<Image>();
-        if (isSelected)
+        if (!DungeonUIAssetHelper.ApplyCompSprite(img, "Comp_Statue_Tab", sliced: true, isSelected ? Color.white : new Color(0.76f, 0.72f, 0.70f, 0.95f)))
         {
-            DungeonUIAssetHelper.StyleSlicedFrame(img, new Color(0.85f, 0.65f, 0.16f, 1f));
+            if (isSelected)
+            {
+                DungeonUIAssetHelper.StyleSlicedFrame(img, new Color(0.85f, 0.65f, 0.16f, 1f));
+            }
+            else
+            {
+                DungeonUIAssetHelper.StyleSlicedPanel(img, DungeonUIAssetHelper.PanelStyle.Slate);
+                img.color = new Color(0.18f, 0.2f, 0.26f, 0.95f);
+            }
+            img.pixelsPerUnitMultiplier = 2.6f;
         }
-        else
-        {
-            DungeonUIAssetHelper.StyleSlicedPanel(img, DungeonUIAssetHelper.PanelStyle.Slate);
-            img.color = new Color(0.18f, 0.2f, 0.26f, 0.95f);
-        }
-        img.pixelsPerUnitMultiplier = 2.6f;
 
         Button btn = btnGO.GetComponent<Button>();
         btn.onClick.AddListener(() =>
@@ -749,16 +853,21 @@ public class StatueUI : MonoBehaviour
         RectTransform txtRT = txtGO.GetComponent<RectTransform>();
         txtRT.anchorMin = Vector2.zero;
         txtRT.anchorMax = Vector2.one;
-        txtRT.sizeDelta = Vector2.zero;
+        txtRT.offsetMin = new Vector2(4, 2);
+        txtRT.offsetMax = new Vector2(-4, -2);
 
         TextMeshProUGUI tmp = txtGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(tmp, withOutline: isSelected);
-        tmp.fontSize = 10.5f;
+        tmp.fontSize = 11f;
+        tmp.enableAutoSizing = true;
+        tmp.fontSizeMin = 8.5f;
+        tmp.fontSizeMax = 11f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.textWrappingMode = TextWrappingModes.NoWrap;
+        tmp.overflowMode = TextOverflowModes.Ellipsis;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.text = label;
-        tmp.color = isSelected ? Color.white : new Color(0.82f, 0.86f, 0.92f);
+        tmp.color = isSelected ? new Color(1f, 0.92f, 0.55f) : new Color(0.84f, 0.80f, 0.78f);
     }
 
     private void CreateOfferingCard(Offering off, Transform parent)
@@ -767,174 +876,232 @@ public class StatueUI : MonoBehaviour
             (ProgressionManager.Instance != null && ProgressionManager.Instance.IsOfferingCompleted(off.offeringKey));
         bool isUnlocked = off.IsUnlocked();
 
-        // Card Root
+        // Card Root (112px accommodates GOTY OfferingCardBase shadow + non-overlapping header & req slots)
         GameObject cardGO = new GameObject($"Card_{off.offeringKey}", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
         cardGO.transform.SetParent(parent, false);
 
         RectTransform cardRT = cardGO.GetComponent<RectTransform>();
-        cardRT.sizeDelta = new Vector2(0, 86);
+        cardRT.sizeDelta = new Vector2(0, 112);
 
         LayoutElement cardLE = cardGO.AddComponent<LayoutElement>();
-        cardLE.minHeight = 86f;
-        cardLE.preferredHeight = 86f;
+        cardLE.minHeight = 112f;
+        cardLE.preferredHeight = 112f;
         cardLE.flexibleHeight = 0;
 
         Image cardBg = cardGO.GetComponent<Image>();
-        if (isDone)
+        Color cardTint = isDone
+            ? new Color(0.92f, 1f, 0.92f, 1f)
+            : (!isUnlocked ? new Color(0.62f, 0.60f, 0.62f, 0.92f) : Color.white);
+        bool usesGotyCard = DungeonUIAssetHelper.ApplyCompSprite(cardBg, "Comp_Statue_OfferingCardBase", sliced: true, cardTint);
+        if (!usesGotyCard)
         {
-            DungeonUIAssetHelper.StyleSlicedPanel(cardBg, DungeonUIAssetHelper.PanelStyle.Wood);
-        }
-        else if (!isUnlocked)
-        {
-            DungeonUIAssetHelper.StyleSlicedPanel(cardBg, DungeonUIAssetHelper.PanelStyle.Slate);
-            cardBg.color = new Color(0.12f, 0.13f, 0.17f, 0.92f);
-        }
-        else
-        {
-            DungeonUIAssetHelper.StyleSlicedPanel(cardBg, DungeonUIAssetHelper.PanelStyle.Slate);
-        }
-        cardBg.pixelsPerUnitMultiplier = 1.6f;
+            if (isDone)
+            {
+                DungeonUIAssetHelper.StyleSlicedPanel(cardBg, DungeonUIAssetHelper.PanelStyle.Wood);
+            }
+            else if (!isUnlocked)
+            {
+                DungeonUIAssetHelper.StyleSlicedPanel(cardBg, DungeonUIAssetHelper.PanelStyle.Slate);
+                cardBg.color = new Color(0.12f, 0.13f, 0.17f, 0.92f);
+            }
+            else
+            {
+                DungeonUIAssetHelper.StyleSlicedPanel(cardBg, DungeonUIAssetHelper.PanelStyle.Slate);
+            }
+            cardBg.pixelsPerUnitMultiplier = 1.6f;
 
-        Outline outline = cardGO.AddComponent<Outline>();
-        if (isDone)
-        {
-            outline.effectColor = new Color(0.25f, 0.85f, 0.45f, 0.7f);
+            Outline outline = cardGO.AddComponent<Outline>();
+            if (isDone)
+                outline.effectColor = new Color(0.25f, 0.85f, 0.45f, 0.7f);
+            else if (!isUnlocked)
+                outline.effectColor = new Color(0.35f, 0.35f, 0.4f, 0.4f);
+            else if (off.tier == 5)
+                outline.effectColor = new Color(1f, 0.78f, 0.2f, 0.95f);
+            else if (off.tier == 10)
+                outline.effectColor = new Color(0.9f, 0.45f, 1f, 0.95f);
+            else
+                outline.effectColor = new Color(0.65f, 0.55f, 0.25f, 0.6f);
+            outline.effectDistance = new Vector2(1, -1);
         }
-        else if (!isUnlocked)
-        {
-            outline.effectColor = new Color(0.35f, 0.35f, 0.4f, 0.4f);
-        }
-        else if (off.tier == 5)
-        {
-            outline.effectColor = new Color(1f, 0.78f, 0.2f, 0.95f);
-        }
-        else if (off.tier == 10)
-        {
-            outline.effectColor = new Color(0.9f, 0.45f, 1f, 0.95f);
-        }
-        else
-        {
-            outline.effectColor = new Color(0.65f, 0.55f, 0.25f, 0.6f);
-        }
-        outline.effectDistance = new Vector2(1, -1);
 
         VerticalLayoutGroup vlg = cardGO.GetComponent<VerticalLayoutGroup>();
-        vlg.padding = new RectOffset(12, 12, 8, 6);
-        vlg.spacing = 4;
+        vlg.padding = new RectOffset(18, 18, 12, 16);
+        vlg.spacing = 6f;
         vlg.childControlWidth = true;
         vlg.childControlHeight = false;
         vlg.childForceExpandWidth = true;
         vlg.childForceExpandHeight = false;
 
-        // Header Row (Name + Reward Badge + Completed Badge + Quick Offer Button)
+        // Header Row (Flexible Title + Reward Badge + Completed/Lock/Quick Offer Button)
         GameObject headerGO = new GameObject("Header", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
         headerGO.transform.SetParent(cardGO.transform, false);
         RectTransform headerRT = headerGO.GetComponent<RectTransform>();
-        headerRT.sizeDelta = new Vector2(0, 20);
+        headerRT.sizeDelta = new Vector2(0, 26);
 
         LayoutElement headerLE = headerGO.GetComponent<LayoutElement>();
-        headerLE.minHeight = 20f;
-        headerLE.preferredHeight = 20f;
+        headerLE.minHeight = 26f;
+        headerLE.preferredHeight = 26f;
 
         HorizontalLayoutGroup hlg = headerGO.GetComponent<HorizontalLayoutGroup>();
-        hlg.spacing = 8;
-        hlg.childControlWidth = false;
+        hlg.spacing = 6f;
+        hlg.childAlignment = TextAnchor.MiddleLeft;
+        hlg.childControlWidth = true;
         hlg.childControlHeight = true;
         hlg.childForceExpandWidth = false;
         hlg.childForceExpandHeight = true;
 
-        // Title
-        GameObject nameGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
+        // Title (flexible width + autosize prevents colliding into RewardBadge)
+        GameObject nameGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
         nameGO.transform.SetParent(headerGO.transform, false);
+        LayoutElement nameLE = nameGO.GetComponent<LayoutElement>();
+        nameLE.minWidth = 100f;
+        nameLE.flexibleWidth = 1f;
         TextMeshProUGUI titleTMP = nameGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(titleTMP);
-        titleTMP.fontSize = 11.5f;
+        DungeonUIAssetHelper.ApplyFont(titleTMP, withOutline: true);
+        titleTMP.fontSize = 12.5f;
+        titleTMP.enableAutoSizing = true;
+        titleTMP.fontSizeMin = 9.5f;
+        titleTMP.fontSizeMax = 12.5f;
         titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.alignment = TextAlignmentOptions.MidlineLeft;
+        titleTMP.textWrappingMode = TextWrappingModes.NoWrap;
+        titleTMP.overflowMode = TextOverflowModes.Ellipsis;
         titleTMP.text = GetOfferingDisplayName(off);
         if (isDone)
-            titleTMP.color = new Color(0.4f, 1f, 0.6f);
+            titleTMP.color = new Color(0.50f, 1f, 0.65f);
         else if (!isUnlocked)
-            titleTMP.color = new Color(0.65f, 0.65f, 0.7f);
+            titleTMP.color = new Color(0.68f, 0.66f, 0.70f);
         else
-            titleTMP.color = new Color(1f, 0.88f, 0.4f);
-        nameGO.GetComponent<RectTransform>().sizeDelta = new Vector2(250, 20);
+            titleTMP.color = new Color(1f, 0.88f, 0.51f);
 
         // Reward Badge
-        GameObject badgeGO = new GameObject("RewardBadge", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
+        GameObject badgeGO = new GameObject("RewardBadge", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
         badgeGO.transform.SetParent(headerGO.transform, false);
+        LayoutElement badgeLE = badgeGO.GetComponent<LayoutElement>();
+        badgeLE.minWidth = 88f;
+        badgeLE.preferredWidth = 92f;
         Image badgeImg = badgeGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(badgeImg, GetStatBadgeColor(off.rewardStat));
-        badgeImg.pixelsPerUnitMultiplier = 2.6f;
-        badgeGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
+        string badgeCompName = off.rewardStat switch
+        {
+            Offering.RewardStat.ATK => "Comp_Combat_ActionBtn",
+            Offering.RewardStat.DEF => "Comp_EnterDungeon_StatusBadge",
+            Offering.RewardStat.MaxHP => "Comp_Statue_ActionButton",
+            _ => "Comp_Statue_RewardBadge"
+        };
+        if (!DungeonUIAssetHelper.ApplyCompSprite(badgeImg, badgeCompName, sliced: true, Color.white)
+            && !DungeonUIAssetHelper.ApplyCompSprite(badgeImg, "Comp_Statue_RewardBadge", sliced: true, Color.white))
+        {
+            DungeonUIAssetHelper.StyleSlicedFrame(badgeImg, GetStatBadgeColor(off.rewardStat));
+            badgeImg.pixelsPerUnitMultiplier = 2.6f;
+        }
+        HorizontalLayoutGroup bHlg = badgeGO.GetComponent<HorizontalLayoutGroup>();
+        bHlg.padding = new RectOffset(4, 4, 1, 1);
+        bHlg.childControlWidth = true;
+        bHlg.childControlHeight = true;
 
         GameObject badgeTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         badgeTextGO.transform.SetParent(badgeGO.transform, false);
         TextMeshProUGUI badgeTMP = badgeTextGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(badgeTMP);
-        badgeTMP.fontSize = 10;
+        DungeonUIAssetHelper.ApplyFont(badgeTMP, withOutline: true);
+        badgeTMP.fontSize = 10.5f;
+        badgeTMP.enableAutoSizing = true;
+        badgeTMP.fontSizeMin = 8.5f;
+        badgeTMP.fontSizeMax = 10.5f;
         badgeTMP.alignment = TextAlignmentOptions.Center;
+        badgeTMP.textWrappingMode = TextWrappingModes.NoWrap;
         badgeTMP.fontStyle = FontStyles.Bold;
         string statLabel = GetStatDisplayName(off.rewardStat);
         badgeTMP.text = $"+{off.rewardAmount} {statLabel}";
         badgeTMP.color = Color.white;
-        badgeTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
 
         // Status or Quick Offer Button
         if (isDone)
         {
-            GameObject doneGO = new GameObject("DoneBadge", typeof(RectTransform), typeof(TextMeshProUGUI));
+            GameObject doneGO = new GameObject("DoneBadge", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
             doneGO.transform.SetParent(headerGO.transform, false);
+            LayoutElement doneLE = doneGO.GetComponent<LayoutElement>();
+            doneLE.minWidth = 108f;
+            doneLE.preferredWidth = 116f;
             TextMeshProUGUI doneTMP = doneGO.GetComponent<TextMeshProUGUI>();
-            DungeonUIAssetHelper.ApplyFont(doneTMP);
-            doneTMP.fontSize = 11;
+            DungeonUIAssetHelper.ApplyFont(doneTMP, withOutline: true);
+            doneTMP.fontSize = 10.5f;
+            doneTMP.enableAutoSizing = true;
+            doneTMP.fontSizeMin = 8.5f;
+            doneTMP.fontSizeMax = 10.5f;
+            doneTMP.alignment = TextAlignmentOptions.Right;
+            doneTMP.textWrappingMode = TextWrappingModes.NoWrap;
             doneTMP.fontStyle = FontStyles.Bold;
             doneTMP.text = "[ĐÃ HOÀN THÀNH]";
-            doneTMP.color = new Color(0.35f, 1f, 0.5f);
-            doneGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 20);
+            doneTMP.color = new Color(0.45f, 1f, 0.58f);
         }
         else if (!isUnlocked)
         {
-            GameObject lockBadgeGO = new GameObject("LockBadge", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
+            GameObject lockBadgeGO = new GameObject("LockBadge", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
             lockBadgeGO.transform.SetParent(headerGO.transform, false);
+            LayoutElement lockLE = lockBadgeGO.GetComponent<LayoutElement>();
+            lockLE.minWidth = 112f;
+            lockLE.preferredWidth = 122f;
             Image lockBg = lockBadgeGO.GetComponent<Image>();
-            DungeonUIAssetHelper.StyleSlicedFrame(lockBg, new Color(0.35f, 0.15f, 0.15f, 0.95f));
-            lockBg.pixelsPerUnitMultiplier = 2.6f;
-            lockBadgeGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 20);
+            if (!DungeonUIAssetHelper.ApplyCompSprite(lockBg, "Comp_EnterDungeon_HintBar", sliced: true, Color.white))
+            {
+                DungeonUIAssetHelper.StyleSlicedFrame(lockBg, new Color(0.35f, 0.15f, 0.15f, 0.95f));
+                lockBg.pixelsPerUnitMultiplier = 2.6f;
+            }
+            HorizontalLayoutGroup lHlg = lockBadgeGO.GetComponent<HorizontalLayoutGroup>();
+            lHlg.padding = new RectOffset(4, 4, 1, 1);
+            lHlg.childControlWidth = true;
+            lHlg.childControlHeight = true;
 
             GameObject lockTxtGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
             lockTxtGO.transform.SetParent(lockBadgeGO.transform, false);
             TextMeshProUGUI lockTMP = lockTxtGO.GetComponent<TextMeshProUGUI>();
             DungeonUIAssetHelper.ApplyFont(lockTMP);
-            lockTMP.fontSize = 9;
+            lockTMP.fontSize = 9.5f;
+            lockTMP.enableAutoSizing = true;
+            lockTMP.fontSizeMin = 7.5f;
+            lockTMP.fontSizeMax = 9.5f;
             lockTMP.fontStyle = FontStyles.Bold;
             lockTMP.alignment = TextAlignmentOptions.Center;
+            lockTMP.textWrappingMode = TextWrappingModes.NoWrap;
             lockTMP.text = off.tier == 5 ? "[CẦN BOSS 1]" : (off.tier == 10 ? "[CẦN BOSS TỐI THƯỢNG]" : "[CHƯA MỞ KHÓA]");
             lockTMP.color = new Color(1f, 0.65f, 0.65f);
-            lockTxtGO.GetComponent<RectTransform>().sizeDelta = new Vector2(120, 20);
         }
         else
         {
-            GameObject btnGO = new GameObject("BtnQuickOffer", typeof(RectTransform), typeof(Image), typeof(Button));
+            GameObject btnGO = new GameObject("BtnQuickOffer", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
             btnGO.transform.SetParent(headerGO.transform, false);
+            LayoutElement btnLE = btnGO.GetComponent<LayoutElement>();
+            btnLE.minWidth = 98f;
+            btnLE.preferredWidth = 104f;
             Image btnBg = btnGO.GetComponent<Image>();
-            btnGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
 
             Button btn = btnGO.GetComponent<Button>();
-            DungeonUIAssetHelper.StyleTactileButton(btn, btnBg, DungeonUIAssetHelper.ButtonStyle.Victory);
-            btnBg.pixelsPerUnitMultiplier = 2.6f;
+            if (!DungeonUIAssetHelper.ApplyCompButton(btn, btnBg, "Comp_Statue_ActionButton", Color.white))
+            {
+                DungeonUIAssetHelper.StyleTactileButton(btn, btnBg, DungeonUIAssetHelper.ButtonStyle.Victory);
+                btnBg.pixelsPerUnitMultiplier = 2.6f;
+            }
             Offering offRef = off;
             btn.onClick.AddListener(() => QuickOffer(offRef));
 
             GameObject btnTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
             btnTextGO.transform.SetParent(btnGO.transform, false);
+            RectTransform btRT = btnTextGO.GetComponent<RectTransform>();
+            btRT.anchorMin = Vector2.zero;
+            btRT.anchorMax = Vector2.one;
+            btRT.offsetMin = new Vector2(4, 2);
+            btRT.offsetMax = new Vector2(-4, -2);
             TextMeshProUGUI btnTMP = btnTextGO.GetComponent<TextMeshProUGUI>();
-            DungeonUIAssetHelper.ApplyFont(btnTMP);
-            btnTMP.fontSize = 10;
+            DungeonUIAssetHelper.ApplyFont(btnTMP, withOutline: true);
+            btnTMP.fontSize = 10.5f;
+            btnTMP.enableAutoSizing = true;
+            btnTMP.fontSizeMin = 8.5f;
+            btnTMP.fontSizeMax = 10.5f;
             btnTMP.fontStyle = FontStyles.Bold;
             btnTMP.alignment = TextAlignmentOptions.Center;
+            btnTMP.textWrappingMode = TextWrappingModes.NoWrap;
             btnTMP.text = "Dâng Nhanh";
             btnTMP.color = Color.white;
-            btnTextGO.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 20);
         }
 
         // Requirements Row
@@ -973,30 +1140,33 @@ public class StatueUI : MonoBehaviour
         slotGO.transform.SetParent(parent, false);
 
         RectTransform slotRT = slotGO.GetComponent<RectTransform>();
-        slotRT.sizeDelta = new Vector2(48, 48);
+        slotRT.sizeDelta = new Vector2(48, 52);
 
         LayoutElement slotLE = slotGO.GetComponent<LayoutElement>();
         slotLE.minWidth = 48f;
         slotLE.preferredWidth = 48f;
-        slotLE.minHeight = 48f;
-        slotLE.preferredHeight = 48f;
+        slotLE.minHeight = 52f;
+        slotLE.preferredHeight = 52f;
 
         Image slotBg = slotGO.GetComponent<Image>();
-        Sprite slotSp = DungeonUIAssetHelper.GetSlotSprite();
-        if (slotSp != null)
+        if (!DungeonUIAssetHelper.ApplyCompSprite(slotBg, "Comp_Statue_ReqSlot", sliced: true, Color.white))
         {
-            slotBg.sprite = slotSp;
-            slotBg.type = Image.Type.Sliced;
-            slotBg.color = Color.white;
-        }
-        else
-        {
-            slotBg.color = new Color(0.14f, 0.16f, 0.22f, 0.95f);
+            Sprite slotSp = DungeonUIAssetHelper.GetSlotSprite();
+            if (slotSp != null)
+            {
+                slotBg.sprite = slotSp;
+                slotBg.type = Image.Type.Sliced;
+                slotBg.color = Color.white;
+            }
+            else
+            {
+                slotBg.color = new Color(0.14f, 0.16f, 0.22f, 0.95f);
+            }
         }
 
         Outline outline = slotGO.AddComponent<Outline>();
         outline.effectColor = new Color(0.5f, 0.45f, 0.3f, 0.6f);
-        outline.effectDistance = new Vector2(3f, -3f);
+        outline.effectDistance = new Vector2(2f, -2f);
 
         // Item Icon
         GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
@@ -1004,8 +1174,8 @@ public class StatueUI : MonoBehaviour
         RectTransform iconRT = iconGO.GetComponent<RectTransform>();
         iconRT.anchorMin = new Vector2(0.5f, 0.5f);
         iconRT.anchorMax = new Vector2(0.5f, 0.5f);
-        iconRT.anchoredPosition = new Vector2(0, 5);
-        iconRT.sizeDelta = new Vector2(28, 28);
+        iconRT.anchoredPosition = new Vector2(0, 7);
+        iconRT.sizeDelta = new Vector2(26, 26);
 
         Image iconImg = iconGO.GetComponent<Image>();
         iconImg.preserveAspect = true;
@@ -1018,8 +1188,8 @@ public class StatueUI : MonoBehaviour
         countRT.anchorMin = new Vector2(0, 0);
         countRT.anchorMax = new Vector2(1, 0);
         countRT.pivot = new Vector2(0.5f, 0);
-        countRT.anchoredPosition = new Vector2(0, 1);
-        countRT.sizeDelta = new Vector2(0, 14);
+        countRT.anchoredPosition = new Vector2(0, 3);
+        countRT.sizeDelta = new Vector2(-4, 15);
 
         TextMeshProUGUI countTMP = countGO.GetComponent<TextMeshProUGUI>();
         DungeonUIAssetHelper.ApplyFont(countTMP);
