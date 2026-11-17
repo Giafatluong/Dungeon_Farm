@@ -238,12 +238,10 @@ public class BlessingCardUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         if (cardOutline == null) cardOutline = gameObject.AddComponent<Outline>();
         cardOutline.enabled = false;
 
-        // Nested Canvas & GraphicRaycaster for popping out above other grid items when hovered
+        // Nested Canvas & GraphicRaycaster for popping out above other grid items when hovered (authored in scene)
         if (cardCanvas == null) cardCanvas = GetComponent<Canvas>();
-        if (cardCanvas == null) cardCanvas = gameObject.AddComponent<Canvas>();
         if (cardRaycaster == null) cardRaycaster = GetComponent<GraphicRaycaster>();
-        if (cardRaycaster == null) cardRaycaster = gameObject.AddComponent<GraphicRaycaster>();
-        cardCanvas.overrideSorting = false;
+        if (cardCanvas != null) cardCanvas.overrideSorting = false;
     }
 
     private void EnsureCompositeLayers()

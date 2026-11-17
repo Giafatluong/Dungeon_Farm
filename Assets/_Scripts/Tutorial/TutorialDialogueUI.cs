@@ -32,8 +32,8 @@ public class TutorialDialogueUI : MonoBehaviour
     public static TutorialDialogueUI Instance { get; private set; }
 
     [Header("Master Canvas")]
-    private GameObject masterCanvasGO;
-    private Canvas masterCanvas;
+    [SerializeField] public GameObject masterCanvasGO;
+    [SerializeField] public Canvas masterCanvas;
 
     [Header("1. HUD Quest Tracker (Top-Left)")]
     private GameObject trackerRootGO;
@@ -84,7 +84,7 @@ public class TutorialDialogueUI : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (Application.isPlaying) DontDestroyOnLoad(gameObject);
         EnsureUIConstructed();
     }
 
@@ -484,458 +484,89 @@ public class TutorialDialogueUI : MonoBehaviour
     }
 
     #region UI Construction
-    private void EnsureUIConstructed()
+    public void EnsureUIConstructed()
     {
-        if (masterCanvasGO != null) return;
-
-        masterCanvasGO = new GameObject("[TutorialCanvas]");
-        DontDestroyOnLoad(masterCanvasGO);
-
-        masterCanvas = masterCanvasGO.AddComponent<Canvas>();
-        masterCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        masterCanvas.sortingOrder = 18; // Above map/sprites (0-3) and health bar (15), below Inventory (25), Chest (21), Kitchen (20)
-
-        CanvasScaler cs = masterCanvasGO.AddComponent<CanvasScaler>();
-        cs.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        cs.referenceResolution = new Vector2(1920, 1080);
-        cs.matchWidthOrHeight = 0.5f;
-
-        masterCanvasGO.AddComponent<GraphicRaycaster>();
-
-        TMP_FontAsset font = DungeonUIAssetHelper.GetFontAsset();
-
-        ConstructQuestTracker(font);
-        ConstructEdgePointer(font);
-        ConstructWorldMarker(font);
-        ConstructDialogueBox(font);
-    }
-
-    private void ConstructQuestTracker(TMP_FontAsset font)
-    {
-        // Tracker Panel (Top-Left)
-        trackerRootGO = new GameObject("QuestTrackerPanel", typeof(RectTransform), typeof(Image));
-        trackerRootGO.transform.SetParent(masterCanvasGO.transform, false);
-        RectTransform rt = trackerRootGO.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0f, 1f);
-        rt.anchorMax = new Vector2(0f, 1f);
-        rt.pivot = new Vector2(0f, 1f);
-        rt.anchoredPosition = new Vector2(25, -25);
-        rt.sizeDelta = new Vector2(460, 206);
-
-        Image frameImg = trackerRootGO.GetComponent<Image>();
-        bool hasGotyQuestBox = DungeonUIAssetHelper.ApplyCompSprite(frameImg, "Comp_Tutorial_QuestBox", sliced: true, Color.white);
-        if (!hasGotyQuestBox)
+        if (masterCanvasGO != null)
         {
-            DungeonUIAssetHelper.StyleSlicedFrame(frameImg, new Color(0.18f, 0.45f, 0.35f, 0.95f)); // Emerald frame
+            BindSceneReferences();
+            return;
         }
 
-        // Inner plate (transparent layout container when GOTY sprite is used)
-        GameObject plate = new GameObject("DarkPlate", typeof(RectTransform), typeof(Image));
-        plate.transform.SetParent(trackerRootGO.transform, false);
-        RectTransform plateRT = plate.GetComponent<RectTransform>();
-        plateRT.anchorMin = Vector2.zero;
-        plateRT.anchorMax = Vector2.one;
-        plateRT.offsetMin = hasGotyQuestBox ? new Vector2(12, 10) : new Vector2(4, 4);
-        plateRT.offsetMax = hasGotyQuestBox ? new Vector2(-12, -10) : new Vector2(-4, -4);
-        Image plateImg = plate.GetComponent<Image>();
-        plateImg.color = hasGotyQuestBox ? Color.clear : new Color(0.08f, 0.10f, 0.12f, 0.94f);
-        plateImg.raycastTarget = false;
-
-        // Header text
-        GameObject headerGO = new GameObject("Header", typeof(RectTransform), typeof(TextMeshProUGUI));
-        headerGO.transform.SetParent(plate.transform, false);
-        RectTransform hRT = headerGO.GetComponent<RectTransform>();
-        hRT.anchorMin = new Vector2(0, 1);
-        hRT.anchorMax = new Vector2(1, 1);
-        hRT.pivot = new Vector2(0, 1);
-        hRT.anchoredPosition = new Vector2(8, -6);
-        hRT.sizeDelta = new Vector2(-16, 22);
-        trackerHeaderText = headerGO.GetComponent<TextMeshProUGUI>();
-        trackerHeaderText.fontSize = 13.5f;
-        trackerHeaderText.enableAutoSizing = true;
-        trackerHeaderText.fontSizeMin = 10f;
-        trackerHeaderText.fontSizeMax = 13.5f;
-        trackerHeaderText.textWrappingMode = TextWrappingModes.NoWrap;
-        trackerHeaderText.overflowMode = TextOverflowModes.Ellipsis;
-        trackerHeaderText.fontStyle = FontStyles.Bold;
-        trackerHeaderText.color = new Color(1f, 0.92f, 0.30f); // Sunlight gold
-        DungeonUIAssetHelper.ApplyFont(trackerHeaderText, withOutline: true);
-
-        // Title text
-        GameObject titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
-        titleGO.transform.SetParent(plate.transform, false);
-        RectTransform tRT = titleGO.GetComponent<RectTransform>();
-        tRT.anchorMin = new Vector2(0, 1);
-        tRT.anchorMax = new Vector2(1, 1);
-        tRT.pivot = new Vector2(0, 1);
-        tRT.anchoredPosition = new Vector2(8, -30);
-        tRT.sizeDelta = new Vector2(-16, 24);
-        trackerTitleText = titleGO.GetComponent<TextMeshProUGUI>();
-        trackerTitleText.fontSize = 15f;
-        trackerTitleText.enableAutoSizing = true;
-        trackerTitleText.fontSizeMin = 11f;
-        trackerTitleText.fontSizeMax = 15f;
-        trackerTitleText.textWrappingMode = TextWrappingModes.NoWrap;
-        trackerTitleText.overflowMode = TextOverflowModes.Ellipsis;
-        trackerTitleText.fontStyle = FontStyles.Bold;
-        trackerTitleText.color = Color.white;
-        DungeonUIAssetHelper.ApplyFont(trackerTitleText, withOutline: true);
-
-        // Instruction text (Auto-sized with safe vertical bounds so lines never collide)
-        GameObject instGO = new GameObject("Instruction", typeof(RectTransform), typeof(TextMeshProUGUI));
-        instGO.transform.SetParent(plate.transform, false);
-        RectTransform iRT = instGO.GetComponent<RectTransform>();
-        iRT.anchorMin = new Vector2(0, 0);
-        iRT.anchorMax = new Vector2(1, 1);
-        iRT.offsetMin = new Vector2(8, 30);
-        iRT.offsetMax = new Vector2(-8, -56);
-        trackerInstructionText = instGO.GetComponent<TextMeshProUGUI>();
-        trackerInstructionText.fontSize = 13.5f;
-        trackerInstructionText.enableAutoSizing = true;
-        trackerInstructionText.fontSizeMin = 10f;
-        trackerInstructionText.fontSizeMax = 13.5f;
-        trackerInstructionText.color = Color.white;
-        trackerInstructionText.lineSpacing = 0f;
-        trackerInstructionText.textWrappingMode = TextWrappingModes.Normal;
-        trackerInstructionText.overflowMode = TextOverflowModes.Ellipsis;
-        DungeonUIAssetHelper.ApplyFont(trackerInstructionText, withOutline: true);
-
-        // Status / Distance meter text
-        GameObject statusGO = new GameObject("StatusMeter", typeof(RectTransform), typeof(TextMeshProUGUI));
-        statusGO.transform.SetParent(plate.transform, false);
-        RectTransform sRT = statusGO.GetComponent<RectTransform>();
-        sRT.anchorMin = new Vector2(0, 0);
-        sRT.anchorMax = new Vector2(1, 0);
-        sRT.pivot = new Vector2(0, 0);
-        sRT.anchoredPosition = new Vector2(8, 4);
-        sRT.sizeDelta = new Vector2(-16, 22);
-        trackerStatusText = statusGO.GetComponent<TextMeshProUGUI>();
-        trackerStatusText.fontSize = 13f;
-        trackerStatusText.enableAutoSizing = true;
-        trackerStatusText.fontSizeMin = 10f;
-        trackerStatusText.fontSizeMax = 13f;
-        trackerStatusText.textWrappingMode = TextWrappingModes.NoWrap;
-        trackerStatusText.overflowMode = TextOverflowModes.Ellipsis;
-        trackerStatusText.fontStyle = FontStyles.Bold;
-        trackerStatusText.color = new Color(0.35f, 1f, 0.65f); // Bright neon emerald
-        DungeonUIAssetHelper.ApplyFont(trackerStatusText, withOutline: true);
-
-        trackerRootGO.SetActive(false);
-    }
-
-    private void ConstructEdgePointer(TMP_FontAsset font)
-    {
-        edgePointerGO = new GameObject("EdgeRadarPointer", typeof(RectTransform), typeof(Image));
-        edgePointerGO.transform.SetParent(masterCanvasGO.transform, false);
-        edgePointerRT = edgePointerGO.GetComponent<RectTransform>();
-        edgePointerRT.anchorMin = new Vector2(0.5f, 0.5f);
-        edgePointerRT.anchorMax = new Vector2(0.5f, 0.5f);
-        edgePointerRT.pivot = new Vector2(0.5f, 0.5f);
-        edgePointerRT.sizeDelta = new Vector2(240, 42);
-
-        Image img = edgePointerGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(img, new Color(0.85f, 0.55f, 0.15f, 0.95f)); // Amber gold
-
-        // Dark background plate
-        GameObject plate = new GameObject("Plate", typeof(RectTransform), typeof(Image));
-        plate.transform.SetParent(edgePointerGO.transform, false);
-        RectTransform pRT = plate.GetComponent<RectTransform>();
-        pRT.anchorMin = Vector2.zero;
-        pRT.anchorMax = Vector2.one;
-        pRT.offsetMin = new Vector2(3, 3);
-        pRT.offsetMax = new Vector2(-3, -3);
-        plate.GetComponent<Image>().color = new Color(0.12f, 0.10f, 0.08f, 0.92f);
-
-        // Arrow icon (rotates)
-        GameObject arrowGO = new GameObject("ArrowIcon", typeof(RectTransform), typeof(TextMeshProUGUI));
-        arrowGO.transform.SetParent(plate.transform, false);
-        edgeArrowIconRT = arrowGO.GetComponent<RectTransform>();
-        edgeArrowIconRT.anchorMin = new Vector2(0, 0.5f);
-        edgeArrowIconRT.anchorMax = new Vector2(0, 0.5f);
-        edgeArrowIconRT.pivot = new Vector2(0.5f, 0.5f);
-        edgeArrowIconRT.anchoredPosition = new Vector2(18, 0);
-        edgeArrowIconRT.sizeDelta = new Vector2(26, 26);
-        TextMeshProUGUI aTMP = arrowGO.GetComponent<TextMeshProUGUI>();
-        aTMP.text = ">";
-        aTMP.alignment = TextAlignmentOptions.Center;
-        aTMP.fontSize = 20;
-        aTMP.fontStyle = FontStyles.Bold;
-        aTMP.color = new Color(1f, 0.85f, 0.2f);
-        if (font != null) aTMP.font = font;
-
-        // Label with name & distance
-        GameObject labelGO = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
-        labelGO.transform.SetParent(plate.transform, false);
-        RectTransform lRT = labelGO.GetComponent<RectTransform>();
-        lRT.anchorMin = new Vector2(0, 0);
-        lRT.anchorMax = new Vector2(1, 1);
-        lRT.offsetMin = new Vector2(34, 0);
-        lRT.offsetMax = new Vector2(-8, 0);
-        edgeDistanceText = labelGO.GetComponent<TextMeshProUGUI>();
-        edgeDistanceText.alignment = TextAlignmentOptions.Left;
-        edgeDistanceText.fontSize = 12;
-        edgeDistanceText.fontStyle = FontStyles.Bold;
-        edgeDistanceText.color = Color.white;
-        if (font != null) edgeDistanceText.font = font;
-
-        edgePointerGO.SetActive(false);
-    }
-
-    private void ConstructWorldMarker(TMP_FontAsset font)
-    {
-        worldMarkerGO = new GameObject("InScreenWorldMarker", typeof(RectTransform));
-        worldMarkerGO.transform.SetParent(masterCanvasGO.transform, false);
-        worldMarkerRT = worldMarkerGO.GetComponent<RectTransform>();
-        worldMarkerRT.anchorMin = new Vector2(0.5f, 0.5f);
-        worldMarkerRT.anchorMax = new Vector2(0.5f, 0.5f);
-        worldMarkerRT.pivot = new Vector2(0.5f, 0f); // Pivot at the bottom tip of ▼ arrow
-        worldMarkerRT.sizeDelta = new Vector2(190, 70);
-
-        // Bouncing arrow
-        GameObject arrowGO = new GameObject("Arrow", typeof(RectTransform), typeof(TextMeshProUGUI));
-        arrowGO.transform.SetParent(worldMarkerGO.transform, false);
-        worldArrowRT = arrowGO.GetComponent<RectTransform>();
-        worldArrowRT.anchorMin = new Vector2(0.5f, 0f);
-        worldArrowRT.anchorMax = new Vector2(0.5f, 0f);
-        worldArrowRT.pivot = new Vector2(0.5f, 0f);
-        worldArrowRT.anchoredPosition = new Vector2(0, 0);
-        worldArrowRT.sizeDelta = new Vector2(30, 26);
-        TextMeshProUGUI arrowTMP = arrowGO.GetComponent<TextMeshProUGUI>();
-        arrowTMP.text = "v";
-        arrowTMP.fontSize = 22;
-        arrowTMP.fontStyle = FontStyles.Bold;
-        arrowTMP.alignment = TextAlignmentOptions.Center;
-        arrowTMP.color = new Color(1f, 0.85f, 0.2f);
-        if (font != null) arrowTMP.font = font;
-
-        // Action badge plaque
-        GameObject plaqueGO = new GameObject("ActionBadge", typeof(RectTransform), typeof(Image));
-        plaqueGO.transform.SetParent(worldMarkerGO.transform, false);
-        RectTransform pRT = plaqueGO.GetComponent<RectTransform>();
-        pRT.anchorMin = new Vector2(0.5f, 0f);
-        pRT.anchorMax = new Vector2(0.5f, 0f);
-        pRT.pivot = new Vector2(0.5f, 0f);
-        pRT.anchoredPosition = new Vector2(0, 26);
-        pRT.sizeDelta = new Vector2(170, 36);
-        Image pImg = plaqueGO.GetComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(pImg, new Color(0.15f, 0.65f, 0.45f, 0.95f)); // Emerald jade
-
-        GameObject plate = new GameObject("DarkPlate", typeof(RectTransform), typeof(Image));
-        plate.transform.SetParent(plaqueGO.transform, false);
-        RectTransform plRT = plate.GetComponent<RectTransform>();
-        plRT.anchorMin = Vector2.zero;
-        plRT.anchorMax = Vector2.one;
-        plRT.offsetMin = new Vector2(2, 2);
-        plRT.offsetMax = new Vector2(-2, -2);
-        plate.GetComponent<Image>().color = new Color(0.10f, 0.12f, 0.14f, 0.95f);
-
-        // Action prompt text (e.g. [E] THU HOẠCH)
-        GameObject txtGO = new GameObject("ActionText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        txtGO.transform.SetParent(plate.transform, false);
-        RectTransform tRT = txtGO.GetComponent<RectTransform>();
-        tRT.anchorMin = Vector2.zero;
-        tRT.anchorMax = Vector2.one;
-        tRT.offsetMin = new Vector2(4, 0);
-        tRT.offsetMax = new Vector2(-4, 0);
-        worldMarkerKeyText = txtGO.GetComponent<TextMeshProUGUI>();
-        worldMarkerKeyText.fontSize = 13;
-        worldMarkerKeyText.fontStyle = FontStyles.Bold;
-        worldMarkerKeyText.alignment = TextAlignmentOptions.Center;
-        worldMarkerKeyText.color = new Color(1f, 0.95f, 0.35f);
-        DungeonUIAssetHelper.ApplyFont(worldMarkerKeyText, withOutline: true);
-
-        // Distance text
-        GameObject distGO = new GameObject("DistText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        distGO.transform.SetParent(worldMarkerGO.transform, false);
-        RectTransform dRT = distGO.GetComponent<RectTransform>();
-        dRT.anchorMin = new Vector2(0.5f, 0f);
-        dRT.anchorMax = new Vector2(0.5f, 0f);
-        dRT.pivot = new Vector2(0.5f, 0f);
-        dRT.anchoredPosition = new Vector2(0, 64);
-        dRT.sizeDelta = new Vector2(80, 16);
-        worldMarkerDistText = distGO.GetComponent<TextMeshProUGUI>();
-        worldMarkerDistText.fontSize = 12;
-        worldMarkerDistText.fontStyle = FontStyles.Bold;
-        worldMarkerDistText.alignment = TextAlignmentOptions.Center;
-        worldMarkerDistText.color = new Color(0.35f, 1f, 0.65f);
-        DungeonUIAssetHelper.ApplyFont(worldMarkerDistText, withOutline: true);
-
-        worldMarkerGO.SetActive(false);
-    }
-
-    private void ConstructDialogueBox(TMP_FontAsset font)
-    {
-        // Dialogue Box Frame (Bottom Center, positioned safely above the Toolbar)
-        dialogueBoxGO = new GameObject("DialogueBox", typeof(RectTransform), typeof(Image));
-        dialogueBoxGO.transform.SetParent(masterCanvasGO.transform, false);
-        dialogueBoxRT = dialogueBoxGO.GetComponent<RectTransform>();
-        dialogueBoxRT.anchorMin = new Vector2(0.5f, 0f);
-        dialogueBoxRT.anchorMax = new Vector2(0.5f, 0f);
-        dialogueBoxRT.pivot = new Vector2(0.5f, 0f);
-        dialogueBoxRT.anchoredPosition = new Vector2(0, 82);
-        dialogueBoxRT.sizeDelta = new Vector2(960, 260);
-
-        Image boxImg = dialogueBoxGO.GetComponent<Image>();
-        bool hasGotyDialogue = DungeonUIAssetHelper.ApplyCompSprite(boxImg, "Comp_Tutorial_DialogueBase", sliced: true, Color.white);
-        if (!hasGotyDialogue)
+        GameObject existingCanvas = GameObject.Find("[TutorialCanvas]");
+        if (existingCanvas == null)
         {
-            DungeonUIAssetHelper.StyleSlicedFrame(boxImg, new Color(0.15f, 0.55f, 0.40f, 1f)); // Emerald jade frame
+            Canvas[] allCanvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < allCanvases.Length; i++)
+            {
+                if (allCanvases[i] != null && allCanvases[i].name == "[TutorialCanvas]")
+                {
+                    existingCanvas = allCanvases[i].gameObject;
+                    break;
+                }
+            }
         }
 
-        // Inner layout container (transparent when GOTY DialogueBase is used)
-        GameObject bgGO = new GameObject("InnerBg", typeof(RectTransform), typeof(Image));
-        bgGO.transform.SetParent(dialogueBoxGO.transform, false);
-        RectTransform bgRT = bgGO.GetComponent<RectTransform>();
-        bgRT.anchorMin = Vector2.zero;
-        bgRT.anchorMax = Vector2.one;
-        bgRT.offsetMin = hasGotyDialogue ? new Vector2(24, 30) : new Vector2(6, 6);
-        bgRT.offsetMax = hasGotyDialogue ? new Vector2(-24, -16) : new Vector2(-6, -6);
-        Image bgImg = bgGO.GetComponent<Image>();
-        bgImg.color = hasGotyDialogue ? Color.clear : new Color(0.08f, 0.10f, 0.12f, 0.96f);
-        bgImg.raycastTarget = false;
-
-        // Avatar Frame (Left)
-        GameObject avatarFrameGO = new GameObject("AvatarFrame", typeof(RectTransform), typeof(Image));
-        avatarFrameGO.transform.SetParent(bgGO.transform, false);
-        RectTransform avFrameRT = avatarFrameGO.GetComponent<RectTransform>();
-        avFrameRT.anchorMin = new Vector2(0, 0.5f);
-        avFrameRT.anchorMax = new Vector2(0, 0.5f);
-        avFrameRT.pivot = new Vector2(0, 0.5f);
-        avFrameRT.anchoredPosition = new Vector2(12, 0);
-        avFrameRT.sizeDelta = new Vector2(100, 100);
-        Image avFrameImg = avatarFrameGO.GetComponent<Image>();
-        if (!DungeonUIAssetHelper.ApplyCompSprite(avFrameImg, "Comp_Tutorial_AvatarBox", sliced: false, Color.white))
+        if (existingCanvas != null)
         {
-            DungeonUIAssetHelper.StyleSlicedFrame(avFrameImg, new Color(0.20f, 0.65f, 0.45f, 1f));
+            masterCanvasGO = existingCanvas;
+            masterCanvas = existingCanvas.GetComponent<Canvas>();
+            BindSceneReferences();
+            return;
         }
 
-        GameObject avatarGO = new GameObject("AvatarImage", typeof(RectTransform), typeof(Image));
-        avatarGO.transform.SetParent(avatarFrameGO.transform, false);
-        RectTransform avRT = avatarGO.GetComponent<RectTransform>();
-        avRT.anchorMin = Vector2.zero;
-        avRT.anchorMax = Vector2.one;
-        avRT.offsetMin = new Vector2(8, 8);
-        avRT.offsetMax = new Vector2(-8, -8);
-        avatarImg = avatarGO.GetComponent<Image>();
-        avatarImg.preserveAspect = true;
-
-        Sprite tentSprite = DungeonUIAssetHelper.GetTentSprite();
-        if (tentSprite != null) avatarImg.sprite = tentSprite;
-        avatarImg.color = new Color(0.55f, 1.0f, 0.70f, 1f);
-
-        // Content Column (Right of Avatar)
-        GameObject colGO = new GameObject("ContentCol", typeof(RectTransform));
-        colGO.transform.SetParent(bgGO.transform, false);
-        RectTransform colRT = colGO.GetComponent<RectTransform>();
-        colRT.anchorMin = new Vector2(0, 0);
-        colRT.anchorMax = new Vector2(1, 1);
-        colRT.offsetMin = new Vector2(126, 8);
-        colRT.offsetMax = new Vector2(-12, -8);
-
-        // Header Row (Speaker Plaque + Objective Badge)
-        GameObject headerGO = new GameObject("HeaderRow", typeof(RectTransform));
-        headerGO.transform.SetParent(colGO.transform, false);
-        RectTransform headerRT = headerGO.GetComponent<RectTransform>();
-        headerRT.anchorMin = new Vector2(0, 1);
-        headerRT.anchorMax = new Vector2(1, 1);
-        headerRT.pivot = new Vector2(0, 1);
-        headerRT.anchoredPosition = Vector2.zero;
-        headerRT.sizeDelta = new Vector2(0, 28);
-
-        // Speaker Plaque Background + Name
-        GameObject namePlaqueGO = new GameObject("SpeakerPlaque", typeof(RectTransform), typeof(Image));
-        namePlaqueGO.transform.SetParent(headerGO.transform, false);
-        RectTransform plaqueRT = namePlaqueGO.GetComponent<RectTransform>();
-        plaqueRT.anchorMin = new Vector2(0, 0);
-        plaqueRT.anchorMax = new Vector2(0.34f, 1);
-        plaqueRT.offsetMin = Vector2.zero;
-        plaqueRT.offsetMax = Vector2.zero;
-        Image plaqueImg = namePlaqueGO.GetComponent<Image>();
-        if (!DungeonUIAssetHelper.ApplyCompSprite(plaqueImg, "Comp_Tutorial_SpeakerPlaque", sliced: true, Color.white))
-        {
-            plaqueImg.color = new Color(0.12f, 0.35f, 0.18f, 0.9f);
-        }
-
-        GameObject nameGO = new GameObject("SpeakerName", typeof(RectTransform), typeof(TextMeshProUGUI));
-        nameGO.transform.SetParent(namePlaqueGO.transform, false);
-        RectTransform nameRT = nameGO.GetComponent<RectTransform>();
-        nameRT.anchorMin = Vector2.zero;
-        nameRT.anchorMax = Vector2.one;
-        nameRT.offsetMin = new Vector2(8, 2);
-        nameRT.offsetMax = new Vector2(-8, -2);
-        speakerNameText = nameGO.GetComponent<TextMeshProUGUI>();
-        speakerNameText.text = "Tinh Linh Mầm Cây";
-        speakerNameText.fontSize = 14.5f;
-        speakerNameText.enableAutoSizing = true;
-        speakerNameText.fontSizeMin = 10.5f;
-        speakerNameText.fontSizeMax = 14.5f;
-        speakerNameText.fontStyle = FontStyles.Bold;
-        speakerNameText.alignment = TextAlignmentOptions.Center;
-        speakerNameText.textWrappingMode = TextWrappingModes.NoWrap;
-        speakerNameText.overflowMode = TextOverflowModes.Ellipsis;
-        speakerNameText.color = Color.white;
-        DungeonUIAssetHelper.ApplyFont(speakerNameText, withOutline: true);
-
-        // Objective Badge
-        GameObject badgeGO = new GameObject("ObjectiveBadge", typeof(RectTransform), typeof(TextMeshProUGUI));
-        badgeGO.transform.SetParent(headerGO.transform, false);
-        RectTransform badgeRT = badgeGO.GetComponent<RectTransform>();
-        badgeRT.anchorMin = new Vector2(0.35f, 0);
-        badgeRT.anchorMax = new Vector2(1, 1);
-        badgeRT.offsetMin = Vector2.zero;
-        badgeRT.offsetMax = Vector2.zero;
-        objectiveBadgeText = badgeGO.GetComponent<TextMeshProUGUI>();
-        objectiveBadgeText.alignment = TextAlignmentOptions.Right;
-        objectiveBadgeText.fontSize = 12.5f;
-        objectiveBadgeText.enableAutoSizing = true;
-        objectiveBadgeText.fontSizeMin = 9.5f;
-        objectiveBadgeText.fontSizeMax = 12.5f;
-        objectiveBadgeText.fontStyle = FontStyles.Bold;
-        objectiveBadgeText.textWrappingMode = TextWrappingModes.NoWrap;
-        objectiveBadgeText.overflowMode = TextOverflowModes.Ellipsis;
-        objectiveBadgeText.color = new Color(1f, 0.92f, 0.30f, 1f); // Bright sunlight gold
-        DungeonUIAssetHelper.ApplyFont(objectiveBadgeText, withOutline: true);
-
-        // Dialogue Body Text (normal line spacing + auto-sizing prevents vertical collisions)
-        GameObject bodyGO = new GameObject("BodyText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        bodyGO.transform.SetParent(colGO.transform, false);
-        RectTransform bodyRT = bodyGO.GetComponent<RectTransform>();
-        bodyRT.anchorMin = new Vector2(0, 0);
-        bodyRT.anchorMax = new Vector2(1, 1);
-        bodyRT.offsetMin = new Vector2(0, 24);
-        bodyRT.offsetMax = new Vector2(0, -32);
-        dialogueBodyText = bodyGO.GetComponent<TextMeshProUGUI>();
-        dialogueBodyText.fontSize = 14.5f;
-        dialogueBodyText.enableAutoSizing = true;
-        dialogueBodyText.fontSizeMin = 10.5f;
-        dialogueBodyText.fontSizeMax = 14.5f;
-        dialogueBodyText.textWrappingMode = TextWrappingModes.Normal;
-        dialogueBodyText.overflowMode = TextOverflowModes.Ellipsis;
-        dialogueBodyText.color = Color.white;
-        dialogueBodyText.lineSpacing = 0f;
-        DungeonUIAssetHelper.ApplyFont(dialogueBodyText, withOutline: true);
-
-        // Continue Prompt Text
-        GameObject promptGO = new GameObject("ContinuePrompt", typeof(RectTransform), typeof(TextMeshProUGUI));
-        promptGO.transform.SetParent(colGO.transform, false);
-        RectTransform promptRT = promptGO.GetComponent<RectTransform>();
-        promptRT.anchorMin = new Vector2(0, 0);
-        promptRT.anchorMax = new Vector2(1, 0);
-        promptRT.pivot = new Vector2(1, 0);
-        promptRT.sizeDelta = new Vector2(0, 20);
-        promptRT.anchoredPosition = Vector2.zero;
-        continuePromptText = promptGO.GetComponent<TextMeshProUGUI>();
-        continuePromptText.alignment = TextAlignmentOptions.Right;
-        continuePromptText.fontSize = 12.5f;
-        continuePromptText.enableAutoSizing = true;
-        continuePromptText.fontSizeMin = 10f;
-        continuePromptText.fontSizeMax = 12.5f;
-        continuePromptText.fontStyle = FontStyles.Bold;
-        continuePromptText.color = new Color(1f, 0.90f, 0.35f, 1f);
-        continuePromptText.text = "[ Nhấn Space hoặc Click để tiếp tục ]";
-        DungeonUIAssetHelper.ApplyFont(continuePromptText, withOutline: true);
-
-        dialogueBoxGO.SetActive(false);
+        Debug.LogWarning("[TutorialDialogueUI] [TutorialCanvas] not found in scene!");
     }
+
+    public void BindSceneReferences()
+    {
+        if (masterCanvasGO == null) return;
+        Transform root = masterCanvasGO.transform;
+
+        // 1. Tracker
+        Transform trackerT = root.Find("QuestTrackerPanel");
+        if (trackerT != null)
+        {
+            trackerRootGO = trackerT.gameObject;
+            trackerHeaderText = trackerT.Find("Header")?.GetComponent<TextMeshProUGUI>();
+            trackerTitleText = trackerT.Find("Title")?.GetComponent<TextMeshProUGUI>();
+            trackerInstructionText = trackerT.Find("Instruction")?.GetComponent<TextMeshProUGUI>();
+            trackerStatusText = trackerT.Find("StatusMeter")?.GetComponent<TextMeshProUGUI>();
+        }
+
+        // 2. Edge Pointer
+        Transform edgeT = root.Find("EdgeRadarPointer");
+        if (edgeT != null)
+        {
+            edgePointerGO = edgeT.gameObject;
+            edgePointerRT = edgeT.GetComponent<RectTransform>();
+            edgeArrowIconRT = edgeT.Find("ArrowIcon")?.GetComponent<RectTransform>();
+            edgeDistanceText = edgeT.Find("DistanceText")?.GetComponent<TextMeshProUGUI>();
+        }
+
+        // 3. World Marker
+        Transform markerT = root.Find("InScreenWorldMarker");
+        if (markerT != null)
+        {
+            worldMarkerGO = markerT.gameObject;
+            worldMarkerRT = markerT.GetComponent<RectTransform>();
+            worldArrowRT = markerT.Find("Arrow")?.GetComponent<RectTransform>();
+            worldMarkerKeyText = markerT.Find("ActionBadge/ActionText")?.GetComponent<TextMeshProUGUI>();
+            worldMarkerDistText = markerT.Find("DistText")?.GetComponent<TextMeshProUGUI>();
+        }
+
+        // 4. Dialogue Box
+        Transform diagT = root.Find("DialogueBox");
+        if (diagT != null)
+        {
+            dialogueBoxGO = diagT.gameObject;
+            dialogueBoxRT = diagT.GetComponent<RectTransform>();
+            speakerNameText = diagT.Find("InnerBg/ContentCol/HeaderRow/SpeakerPlaque/SpeakerName")?.GetComponent<TextMeshProUGUI>();
+            dialogueBodyText = diagT.Find("InnerBg/ContentCol/BodyText")?.GetComponent<TextMeshProUGUI>();
+            objectiveBadgeText = diagT.Find("InnerBg/ContentCol/HeaderRow/ObjectiveBadge")?.GetComponent<TextMeshProUGUI>();
+            continuePromptText = diagT.Find("InnerBg/ContinuePrompt")?.GetComponent<TextMeshProUGUI>();
+            avatarImg = diagT.Find("InnerBg/AvatarFrame/AvatarImage")?.GetComponent<Image>();
+        }
+    }
+
     #endregion
 }

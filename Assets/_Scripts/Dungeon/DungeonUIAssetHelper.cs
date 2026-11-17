@@ -314,7 +314,7 @@ public static class DungeonUIAssetHelper
     public static GameObject CreateProceduralSlotPrefab()
     {
         GameObject slotObj = new("inventorySlot", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button), typeof(InventoryButton));
-        Object.DontDestroyOnLoad(slotObj);
+        if (Application.isPlaying) Object.DontDestroyOnLoad(slotObj);
         slotObj.SetActive(false);
 
         RectTransform rt = slotObj.GetComponent<RectTransform>();

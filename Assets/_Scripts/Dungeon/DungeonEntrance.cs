@@ -46,7 +46,8 @@ public class DungeonEntrance : MonoBehaviour, IPointerClickHandler, IPointerEnte
         if (Instance == this) Instance = null;
         if (promptCanvas != null)
         {
-            Destroy(promptCanvas.gameObject);
+            if (Application.isPlaying)
+                Destroy(promptCanvas.gameObject);
             promptCanvas = null;
         }
     }
@@ -164,70 +165,32 @@ public class DungeonEntrance : MonoBehaviour, IPointerClickHandler, IPointerEnte
         }
     }
 
-    private void EnsurePromptUI()
+    public void EnsurePromptUI()
     {
         if (promptCanvas != null) return;
 
-        GameObject canvasGO = new GameObject("DungeonEntrancePromptCanvas");
-        canvasGO.transform.SetParent(null);
-        promptCanvas = canvasGO.AddComponent<Canvas>();
-        promptCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        promptCanvas.sortingOrder = 150;
+        GameObject canvasGO = GameObject.Find("DungeonEntrancePromptCanvas");
+        if (canvasGO != null)
+        {
+            promptCanvas = canvasGO.GetComponent<Canvas>();
+            promptPanelRect = canvasGO.transform.Find("PromptPanel")?.GetComponent<RectTransform>();
+            if (promptPanelRect != null)
+            {
+                promptCanvasGroup = promptPanelRect.GetComponent<CanvasGroup>();
+                promptClickButton = promptPanelRect.GetComponent<Button>();
+                promptTitleText = promptPanelRect.Find("TitleText")?.GetComponent<TextMeshProUGUI>();
+                promptHintText = promptPanelRect.Find("HintText")?.GetComponent<TextMeshProUGUI>();
 
-        CanvasScaler scaler = canvasGO.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.matchWidthOrHeight = 0.5f;
+                if (promptClickButton != null && Application.isPlaying)
+                {
+                    promptClickButton.onClick.RemoveListener(OpenDungeonUI);
+                    promptClickButton.onClick.AddListener(OpenDungeonUI);
+                }
+            }
+            if (promptCanvas != null && promptPanelRect != null) return;
+        }
 
-        canvasGO.AddComponent<GraphicRaycaster>();
-
-        GameObject panelGO = new GameObject("PromptPanel", typeof(RectTransform));
-        panelGO.transform.SetParent(canvasGO.transform, false);
-        promptPanelRect = panelGO.GetComponent<RectTransform>();
-        promptPanelRect.anchorMin = Vector2.zero;
-        promptPanelRect.anchorMax = Vector2.zero;
-        promptPanelRect.sizeDelta = new Vector2(360f, 76f);
-        promptPanelRect.pivot = new Vector2(0.5f, 0f);
-
-        promptCanvasGroup = panelGO.AddComponent<CanvasGroup>();
-        promptCanvasGroup.alpha = 0f;
-        promptCanvasGroup.blocksRaycasts = false;
-
-        Image panelBg = panelGO.AddComponent<Image>();
-        DungeonUIAssetHelper.StyleSlicedFrame(panelBg, new Color(0.08f, 0.12f, 0.20f, 0.95f));
-
-        promptClickButton = panelGO.AddComponent<Button>();
-        promptClickButton.targetGraphic = panelBg;
-        promptClickButton.onClick.AddListener(OpenDungeonUI);
-
-        // Header Title
-        GameObject titleGO = new GameObject("TitleText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        titleGO.transform.SetParent(panelGO.transform, false);
-        RectTransform titleRT = titleGO.GetComponent<RectTransform>();
-        titleRT.anchorMin = new Vector2(0f, 0.5f);
-        titleRT.anchorMax = new Vector2(1f, 1f);
-        titleRT.anchoredPosition = new Vector2(0f, -2f);
-        titleRT.sizeDelta = new Vector2(-16f, 0f);
-        promptTitleText = titleGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(promptTitleText);
-        promptTitleText.fontSize = 15f;
-        promptTitleText.fontStyle = FontStyles.Bold;
-        promptTitleText.alignment = TextAlignmentOptions.Center;
-        promptTitleText.text = "<color=#FFD54F>CỔNG HẦM NGỤC</color>";
-
-        // Hint Subtitle
-        GameObject hintGO = new GameObject("HintText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        hintGO.transform.SetParent(panelGO.transform, false);
-        RectTransform hintRT = hintGO.GetComponent<RectTransform>();
-        hintRT.anchorMin = new Vector2(0f, 0f);
-        hintRT.anchorMax = new Vector2(1f, 0.5f);
-        hintRT.anchoredPosition = new Vector2(0f, 4f);
-        hintRT.sizeDelta = new Vector2(-16f, 0f);
-        promptHintText = hintGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(promptHintText);
-        promptHintText.fontSize = 12f;
-        promptHintText.alignment = TextAlignmentOptions.Center;
-        promptHintText.text = "<color=#80D8FF>[E]</color> hoặc <color=#69F0AE>Nhấp Chuột</color> để vào";
+        Debug.LogWarning("[DungeonEntrance] DungeonEntrancePromptCanvas not found in scene!");
     }
 
     private void UpdatePromptPositionAndVisibility()

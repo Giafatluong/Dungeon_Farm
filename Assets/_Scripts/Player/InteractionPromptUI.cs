@@ -1,6 +1,6 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 /// <summary>
 /// Shows a small "[E] action" prompt right above the player whenever an object
@@ -70,94 +70,47 @@ public class InteractionPromptUI : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
-        if (canvas != null) Destroy(canvas.gameObject);
+        if (canvasGroup != null) canvasGroup.alpha = 0f;
     }
 
     #region UI Construction
-    private void BuildUI()
+    public bool BindSceneReferences()
     {
-        // Overlay canvas (ignores player scale / flip)
-        GameObject canvasGO = new GameObject("InteractionPromptCanvas");
-        canvasGO.transform.SetParent(transform, false);
-        canvas = canvasGO.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 20;
-        CanvasScaler scaler = canvasGO.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.matchWidthOrHeight = 0.5f;
+        if (canvas == null)
+        {
+            Transform t = transform.Find("InteractionPromptCanvas");
+            if (t != null) canvas = t.GetComponent<Canvas>();
+            else
+            {
+                Canvas[] all = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                for (int i = 0; i < all.Length; i++)
+                {
+                    if (all[i] != null && all[i].name == "InteractionPromptCanvas")
+                    {
+                        canvas = all[i];
+                        break;
+                    }
+                }
+            }
+        }
 
-        // Panel
-        GameObject panelGO = new GameObject("Prompt", typeof(RectTransform));
-        panelGO.transform.SetParent(canvasGO.transform, false);
-        panelRect = panelGO.GetComponent<RectTransform>();
-        panelRect.anchorMin = Vector2.zero;
-        panelRect.anchorMax = Vector2.zero;
-        panelRect.pivot = new Vector2(0.5f, 0f);
+        if (canvas == null) return false;
 
-        canvasGroup = panelGO.AddComponent<CanvasGroup>();
-        canvasGroup.alpha = 0f;
-        canvasGroup.blocksRaycasts = false;   // never block mouse clicks (farm plots etc.)
-        canvasGroup.interactable = false;
+        Transform canvasT = canvas.transform;
+        Transform promptT = canvasT.Find("Prompt");
+        if (promptT != null)
+        {
+            panelRect = promptT.GetComponent<RectTransform>();
+            canvasGroup = promptT.GetComponent<CanvasGroup>();
+            labelText = promptT.Find("Label")?.GetComponent<TextMeshProUGUI>();
+        }
+        return panelRect != null && canvasGroup != null;
+    }
 
-        Image bg = panelGO.AddComponent<Image>();
-        bg.color = new Color(0.09f, 0.07f, 0.06f, 0.88f);
-        bg.raycastTarget = false;
-        Outline border = panelGO.AddComponent<Outline>();
-        border.effectColor = new Color(1f, 0.82f, 0.35f, 0.55f);
-        border.effectDistance = new Vector2(1.5f, -1.5f);
-
-        HorizontalLayoutGroup layout = panelGO.AddComponent<HorizontalLayoutGroup>();
-        layout.padding = new RectOffset(8, 14, 6, 6);
-        layout.spacing = 10f;
-        layout.childAlignment = TextAnchor.MiddleCenter;
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = false;
-        layout.childForceExpandHeight = false;
-
-        ContentSizeFitter fitter = panelGO.AddComponent<ContentSizeFitter>();
-        fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        // Key badge "E"
-        GameObject keyGO = new GameObject("Key", typeof(RectTransform));
-        keyGO.transform.SetParent(panelGO.transform, false);
-        Image keyBg = keyGO.AddComponent<Image>();
-        keyBg.color = new Color(1f, 0.84f, 0.32f, 1f);
-        keyBg.raycastTarget = false;
-        Shadow keyShadow = keyGO.AddComponent<Shadow>();
-        keyShadow.effectColor = new Color(0.45f, 0.3f, 0.05f, 1f);
-        keyShadow.effectDistance = new Vector2(0f, -3f);
-        LayoutElement keyLE = keyGO.AddComponent<LayoutElement>();
-        keyLE.minWidth = keyLE.preferredWidth = 30f;
-        keyLE.minHeight = keyLE.preferredHeight = 30f;
-
-        GameObject keyTextGO = new GameObject("KeyText", typeof(RectTransform));
-        keyTextGO.transform.SetParent(keyGO.transform, false);
-        RectTransform keyTextRect = keyTextGO.GetComponent<RectTransform>();
-        keyTextRect.anchorMin = Vector2.zero;
-        keyTextRect.anchorMax = Vector2.one;
-        keyTextRect.offsetMin = Vector2.zero;
-        keyTextRect.offsetMax = Vector2.zero;
-        TextMeshProUGUI keyText = keyTextGO.AddComponent<TextMeshProUGUI>();
-        keyText.text = keyLabel;
-        keyText.fontSize = 20f;
-        keyText.fontStyle = FontStyles.Bold;
-        keyText.alignment = TextAlignmentOptions.Center;
-        keyText.color = new Color(0.18f, 0.12f, 0.05f, 1f);
-        keyText.raycastTarget = false;
-
-        // Action label
-        GameObject labelGO = new GameObject("Label", typeof(RectTransform));
-        labelGO.transform.SetParent(panelGO.transform, false);
-        labelText = labelGO.AddComponent<TextMeshProUGUI>();
-        labelText.fontSize = 20f;
-        labelText.fontStyle = FontStyles.Bold;
-        labelText.alignment = TextAlignmentOptions.MidlineLeft;
-        labelText.color = new Color(1f, 0.97f, 0.9f, 1f);
-        labelText.textWrappingMode = TextWrappingModes.NoWrap;
-        labelText.raycastTarget = false;
+    public void BuildUI()
+    {
+        if (BindSceneReferences()) return;
+        Debug.LogWarning("[InteractionPromptUI] InteractionPromptCanvas not found in scene or parent.");
     }
     #endregion
 

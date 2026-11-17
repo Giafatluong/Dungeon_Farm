@@ -37,8 +37,8 @@ public class ItemTooltipUI : MonoBehaviour
     [Header("Corner Accents")]
     [SerializeField] private Image[] cornerAccents;
 
-    private Canvas parentCanvas;
-    private RectTransform canvasRT;
+    [SerializeField] public Canvas parentCanvas;
+    [SerializeField] public RectTransform canvasRT;
     private ItemData currentItem;
     private FarmPlot currentPlot;
     private int currentPlotStage = -1;
@@ -80,31 +80,24 @@ public class ItemTooltipUI : MonoBehaviour
         if (Instance != null) return Instance;
 
         Instance = FindFirstObjectByType<ItemTooltipUI>(FindObjectsInactive.Include);
-        if (Instance != null) return Instance;
+        if (Instance != null)
+        {
+            Instance.BindSceneReferences();
+            return Instance;
+        }
 
-        // Auto-generate UI Hierarchy inside high-sorting Canvas
-        GameObject rootGO = new GameObject("[ItemTooltipUI]");
-        DontDestroyOnLoad(rootGO);
+        GameObject canvasGO = GameObject.Find("[ItemTooltipCanvas]") ?? GameObject.Find("ItemTooltipCanvas");
+        if (canvasGO != null)
+        {
+            Instance = canvasGO.GetComponentInChildren<ItemTooltipUI>(true);
+            if (Instance != null)
+            {
+                Instance.BindSceneReferences();
+                return Instance;
+            }
+        }
 
-        Canvas c = rootGO.AddComponent<Canvas>();
-        c.renderMode = RenderMode.ScreenSpaceOverlay;
-        c.sortingOrder = 9999; // Topmost
-        CanvasScaler cs = rootGO.AddComponent<CanvasScaler>();
-        cs.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        cs.referenceResolution = new Vector2(1920, 1080);
-        cs.matchWidthOrHeight = 0.5f;
-
-        // Never intercept mouse clicks
-        CanvasGroup cg = rootGO.AddComponent<CanvasGroup>();
-        cg.blocksRaycasts = false;
-        cg.interactable = false;
-
-        Instance = rootGO.AddComponent<ItemTooltipUI>();
-        Instance.parentCanvas = c;
-        Instance.canvasRT = rootGO.GetComponent<RectTransform>();
-        Instance.BuildUIHierarchy(rootGO.transform);
-
-        return Instance;
+        return null;
     }
 
     private void Awake()
@@ -115,22 +108,60 @@ public class ItemTooltipUI : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (Application.isPlaying) DontDestroyOnLoad(gameObject);
 
         if (parentCanvas == null) parentCanvas = GetComponentInParent<Canvas>();
         if (canvasRT == null && parentCanvas != null) canvasRT = parentCanvas.GetComponent<RectTransform>();
 
         if (tooltipRoot == null)
         {
-            BuildUIHierarchy(transform);
-        }
-        else if (tooltipCG == null)
-        {
-            tooltipCG = tooltipRoot.GetComponent<CanvasGroup>();
-            if (tooltipCG == null) tooltipCG = tooltipRoot.AddComponent<CanvasGroup>();
+            Transform existingBox = transform.Find("TooltipBox");
+            if (existingBox != null)
+            {
+                tooltipRoot = existingBox.gameObject;
+            }
         }
 
+        BindSceneReferences();
         Hide(true);
+    }
+
+    public void BindSceneReferences()
+    {
+        if (tooltipRoot == null)
+        {
+            Transform existingBox = transform.Find("TooltipBox");
+            if (existingBox != null) tooltipRoot = existingBox.gameObject;
+        }
+        if (tooltipRoot == null) return;
+        Transform root = tooltipRoot.transform;
+
+        tooltipCG = tooltipRoot.GetComponent<CanvasGroup>();
+        tooltipRT = tooltipRoot.GetComponent<RectTransform>();
+        outerFrameImg = tooltipRoot.GetComponent<Image>();
+        innerBgImg = root.Find("InnerBackground")?.GetComponent<Image>();
+
+        Transform header = root.Find("HeaderRow");
+        if (header != null)
+        {
+            itemIconBox = header.Find("IconBox")?.GetComponent<Image>();
+            itemIcon = header.Find("IconBox/Icon")?.GetComponent<Image>();
+            itemNameText = header.Find("TitleColumn/ItemName")?.GetComponent<TextMeshProUGUI>() ?? header.Find("InfoCol/ItemName")?.GetComponent<TextMeshProUGUI>();
+            itemRarityBadge = header.Find("TitleColumn/BadgesRow/RarityBadgeBg/RarityBadge")?.GetComponent<TextMeshProUGUI>() ?? header.Find("InfoCol/BadgeRow/RarityBadge")?.GetComponent<TextMeshProUGUI>();
+            itemTypeBadge = header.Find("TitleColumn/BadgesRow/TypeBadge")?.GetComponent<TextMeshProUGUI>() ?? header.Find("InfoCol/BadgeRow/TypeBadge")?.GetComponent<TextMeshProUGUI>();
+        }
+
+        divider1 = root.Find("Divider1")?.GetComponent<Image>();
+        statsText = root.Find("StatsSection")?.GetComponent<TextMeshProUGUI>() ?? root.Find("StatsText")?.GetComponent<TextMeshProUGUI>();
+        divider2 = root.Find("Divider2")?.GetComponent<Image>();
+        descriptionText = root.Find("DescriptionText")?.GetComponent<TextMeshProUGUI>();
+
+        cornerAccents = new Image[4];
+        for (int i = 0; i < 4; i++)
+        {
+            Transform corner = root.Find($"Corner_{i}");
+            if (corner != null) cornerAccents[i] = corner.GetComponent<Image>();
+        }
     }
 
     private void OnEnable()
@@ -732,249 +763,14 @@ public class ItemTooltipUI : MonoBehaviour
     {
         if (tooltipRoot == null)
         {
-            BuildUIHierarchy(transform);
+            BindSceneReferences();
         }
     }
 
-    private void BuildUIHierarchy(Transform parent)
+    [System.Obsolete("UI hierarchy is now authored directly in the scene/prefab. Use BindSceneReferences instead.")]
+    public void BuildUIHierarchy(Transform parent = null)
     {
-        // 1. Root Tooltip Object (322px matches Comp_Tooltip_ItemBase drop shadow width)
-        tooltipRoot = new GameObject("TooltipBox", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter), typeof(CanvasGroup));
-        tooltipRoot.transform.SetParent(parent, false);
-
-        tooltipCG = tooltipRoot.GetComponent<CanvasGroup>();
-        tooltipCG.blocksRaycasts = false;
-        tooltipCG.interactable = false;
-        tooltipCG.alpha = 0f;
-
-        tooltipRT = tooltipRoot.GetComponent<RectTransform>();
-        tooltipRT.anchorMin = new Vector2(0.5f, 0.5f);
-        tooltipRT.anchorMax = new Vector2(0.5f, 0.5f);
-        tooltipRT.pivot = new Vector2(0f, 1f);
-        tooltipRT.sizeDelta = new Vector2(322f, 0f);
-
-        ContentSizeFitter csf = tooltipRoot.GetComponent<ContentSizeFitter>();
-        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-
-        VerticalLayoutGroup vlg = tooltipRoot.GetComponent<VerticalLayoutGroup>();
-        vlg.padding = new RectOffset(24, 24, 18, 30); // Insets cleanly inside GOTY frame border & drop shadow
-        vlg.spacing = 8f;
-        vlg.childControlWidth = true;
-        vlg.childControlHeight = true;
-        vlg.childForceExpandWidth = true;
-        vlg.childForceExpandHeight = false;
-
-        // 2. Outer Frame Image (Comp_Tooltip_ItemBase GOTY asset)
-        outerFrameImg = tooltipRoot.AddComponent<Image>();
-        if (!DungeonUIAssetHelper.ApplyCompSprite(outerFrameImg, "Comp_Tooltip_ItemBase", sliced: true, Color.white))
-        {
-            DungeonUIAssetHelper.StyleSlicedFrame(outerFrameImg, CommonBorder);
-        }
-
-        // 3. Inner Dark Background (Fallback when Comp_* sprite is not loaded; ignored by layout)
-        GameObject bgObj = new GameObject("InnerBackground", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
-        bgObj.transform.SetParent(tooltipRoot.transform, false);
-        bgObj.transform.SetAsFirstSibling();
-        bgObj.GetComponent<LayoutElement>().ignoreLayout = true;
-        RectTransform bgRT = bgObj.GetComponent<RectTransform>();
-        bgRT.anchorMin = Vector2.zero;
-        bgRT.anchorMax = Vector2.one;
-        bgRT.offsetMin = new Vector2(4, 4);
-        bgRT.offsetMax = new Vector2(-4, -4);
-        innerBgImg = bgObj.GetComponent<Image>();
-        innerBgImg.color = CommonBg;
-        innerBgImg.raycastTarget = false;
-        if (outerFrameImg.sprite != null && outerFrameImg.sprite.name.StartsWith("Comp_"))
-        {
-            bgObj.SetActive(false);
-        }
-
-        // 4. Header Row (Horizontal Layout - grows vertically if item name wraps)
-        GameObject headerGO = new GameObject("HeaderRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
-        headerGO.transform.SetParent(tooltipRoot.transform, false);
-        LayoutElement headerLE = headerGO.GetComponent<LayoutElement>();
-        headerLE.minHeight = 46f;
-
-        HorizontalLayoutGroup headerHLG = headerGO.GetComponent<HorizontalLayoutGroup>();
-        headerHLG.spacing = 10f;
-        headerHLG.childAlignment = TextAnchor.UpperLeft;
-        headerHLG.childControlWidth = false;
-        headerHLG.childControlHeight = true;
-        headerHLG.childForceExpandWidth = false;
-        headerHLG.childForceExpandHeight = false;
-
-        // 4a. Icon Box
-        GameObject iconBoxGO = new GameObject("IconBox", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
-        iconBoxGO.transform.SetParent(headerGO.transform, false);
-        iconBoxGO.GetComponent<RectTransform>().sizeDelta = new Vector2(44, 44);
-        LayoutElement iconBoxLE = iconBoxGO.GetComponent<LayoutElement>();
-        iconBoxLE.minWidth = 44f;
-        iconBoxLE.preferredWidth = 44f;
-        iconBoxLE.minHeight = 44f;
-        iconBoxLE.preferredHeight = 44f;
-        itemIconBox = iconBoxGO.GetComponent<Image>();
-        if (!DungeonUIAssetHelper.ApplyCompSprite(itemIconBox, "Comp_Tooltip_IconBox", sliced: true, Color.white))
-        {
-            DungeonUIAssetHelper.StyleSlotImage(itemIconBox, new Color(0.12f, 0.12f, 0.14f, 1f));
-        }
-
-        // 4b. Icon
-        GameObject iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-        iconGO.transform.SetParent(iconBoxGO.transform, false);
-        RectTransform iconRT = iconGO.GetComponent<RectTransform>();
-        iconRT.anchorMin = Vector2.zero;
-        iconRT.anchorMax = Vector2.one;
-        iconRT.offsetMin = new Vector2(5, 5);
-        iconRT.offsetMax = new Vector2(-5, -5);
-        itemIcon = iconGO.GetComponent<Image>();
-        itemIcon.preserveAspect = true;
-        itemIcon.raycastTarget = false;
-
-        // 4c. Title & Badge Column
-        GameObject titleColGO = new GameObject("TitleColumn", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(LayoutElement));
-        titleColGO.transform.SetParent(headerGO.transform, false);
-        LayoutElement titleColLE = titleColGO.GetComponent<LayoutElement>();
-        titleColLE.minWidth = 216f;
-        titleColLE.preferredWidth = 216f;
-        titleColLE.flexibleWidth = 1f;
-
-        VerticalLayoutGroup titleVLG = titleColGO.GetComponent<VerticalLayoutGroup>();
-        titleVLG.spacing = 4f;
-        titleVLG.childControlWidth = true;
-        titleVLG.childControlHeight = true;
-        titleVLG.childForceExpandWidth = true;
-        titleVLG.childForceExpandHeight = false;
-
-        // Title text (wraps cleanly without pushing into badges)
-        GameObject nameTextGO = new GameObject("ItemName", typeof(RectTransform), typeof(TextMeshProUGUI));
-        nameTextGO.transform.SetParent(titleColGO.transform, false);
-        itemNameText = nameTextGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(itemNameText, withOutline: true);
-        itemNameText.fontSize = 13.5f;
-        itemNameText.fontStyle = FontStyles.Bold;
-        itemNameText.textWrappingMode = TextWrappingModes.Normal;
-        itemNameText.overflowMode = TextOverflowModes.Overflow;
-        itemNameText.text = "Tên Vật Phẩm";
-
-        // Badges Row
-        GameObject badgeRowGO = new GameObject("BadgesRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-        badgeRowGO.transform.SetParent(titleColGO.transform, false);
-        HorizontalLayoutGroup badgeHLG = badgeRowGO.GetComponent<HorizontalLayoutGroup>();
-        badgeHLG.spacing = 6f;
-        badgeHLG.childAlignment = TextAnchor.MiddleLeft;
-        badgeHLG.childControlWidth = true;
-        badgeHLG.childControlHeight = true;
-        badgeHLG.childForceExpandWidth = false;
-        badgeHLG.childForceExpandHeight = false;
-
-        GameObject rarityBgGO = new GameObject("RarityBadgeBg", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
-        rarityBgGO.transform.SetParent(badgeRowGO.transform, false);
-        Image rarityBgImg = rarityBgGO.GetComponent<Image>();
-        if (!DungeonUIAssetHelper.ApplyCompSprite(rarityBgImg, "Comp_Tooltip_Badge", sliced: true, Color.white))
-        {
-            rarityBgImg.color = new Color(0.18f, 0.12f, 0.08f, 0.9f);
-        }
-        HorizontalLayoutGroup rbHLG = rarityBgGO.GetComponent<HorizontalLayoutGroup>();
-        rbHLG.padding = new RectOffset(6, 6, 2, 2);
-        rbHLG.childControlWidth = true;
-        rbHLG.childControlHeight = true;
-
-        GameObject rarityGO = new GameObject("RarityBadge", typeof(RectTransform), typeof(TextMeshProUGUI));
-        rarityGO.transform.SetParent(rarityBgGO.transform, false);
-        itemRarityBadge = rarityGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(itemRarityBadge);
-        itemRarityBadge.fontSize = 10f;
-        itemRarityBadge.fontStyle = FontStyles.Bold;
-        itemRarityBadge.textWrappingMode = TextWrappingModes.NoWrap;
-        itemRarityBadge.text = "[BÌNH THƯỜNG]";
-
-        GameObject typeGO = new GameObject("TypeBadge", typeof(RectTransform), typeof(TextMeshProUGUI));
-        typeGO.transform.SetParent(badgeRowGO.transform, false);
-        itemTypeBadge = typeGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(itemTypeBadge);
-        itemTypeBadge.fontSize = 10f;
-        itemTypeBadge.textWrappingMode = TextWrappingModes.NoWrap;
-        itemTypeBadge.color = new Color(0.84f, 0.80f, 0.78f, 1f);
-        itemTypeBadge.text = "• NÔNG SẢN";
-
-        // 5. Divider 1
-        GameObject div1GO = new GameObject("Divider1", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
-        div1GO.transform.SetParent(tooltipRoot.transform, false);
-        LayoutElement div1LE = div1GO.GetComponent<LayoutElement>();
-        div1LE.minHeight = 2f;
-        div1LE.preferredHeight = 2f;
-        divider1 = div1GO.GetComponent<Image>();
-        if (!DungeonUIAssetHelper.ApplyCompSprite(divider1, "Comp_Tooltip_Divider", sliced: true, Color.white))
-        {
-            divider1.color = new Color(1f, 1f, 1f, 0.2f);
-        }
-
-        // 6. Stats Section
-        GameObject statsGO = new GameObject("StatsSection", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
-        statsGO.transform.SetParent(tooltipRoot.transform, false);
-        statsText = statsGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(statsText, withOutline: true);
-        statsText.fontSize = 11.5f;
-        statsText.lineSpacing = 8f;
-        statsText.textWrappingMode = TextWrappingModes.Normal;
-        statsText.overflowMode = TextOverflowModes.Overflow;
-        statsText.text = "Thông tin chỉ số...";
-
-        // 7. Divider 2
-        GameObject div2GO = new GameObject("Divider2", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
-        div2GO.transform.SetParent(tooltipRoot.transform, false);
-        LayoutElement div2LE = div2GO.GetComponent<LayoutElement>();
-        div2LE.minHeight = 2f;
-        div2LE.preferredHeight = 2f;
-        divider2 = div2GO.GetComponent<Image>();
-        if (!DungeonUIAssetHelper.ApplyCompSprite(divider2, "Comp_Tooltip_Divider", sliced: true, Color.white))
-        {
-            divider2.color = new Color(1f, 1f, 1f, 0.12f);
-        }
-
-        // 8. Description Box
-        GameObject descGO = new GameObject("DescriptionText", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
-        descGO.transform.SetParent(tooltipRoot.transform, false);
-        descriptionText = descGO.GetComponent<TextMeshProUGUI>();
-        DungeonUIAssetHelper.ApplyFont(descriptionText, withOutline: true);
-        descriptionText.fontSize = 12f;
-        descriptionText.fontStyle = FontStyles.Italic;
-        descriptionText.color = new Color(0.95f, 0.96f, 0.98f, 1f);
-        descriptionText.lineSpacing = 6f;
-        descriptionText.textWrappingMode = TextWrappingModes.Normal;
-        descriptionText.overflowMode = TextOverflowModes.Overflow;
-        descriptionText.text = "Mô tả chi tiết...";
-
-        // 9. Corner Accents (4 rectangular corner brackets; ignored by VLG)
-        cornerAccents = new Image[4];
-        Vector2[] cornerPivots = new Vector2[]
-        {
-            new Vector2(0f, 1f), // Top-Left
-            new Vector2(1f, 1f), // Top-Right
-            new Vector2(0f, 0f), // Bottom-Left
-            new Vector2(1f, 0f)  // Bottom-Right
-        };
-
-        bool usingGotyBase = outerFrameImg.sprite != null && outerFrameImg.sprite.name.StartsWith("Comp_");
-        for (int i = 0; i < 4; i++)
-        {
-            GameObject cornerGO = new GameObject($"Corner_{i}", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
-            cornerGO.transform.SetParent(tooltipRoot.transform, false);
-            cornerGO.GetComponent<LayoutElement>().ignoreLayout = true;
-            RectTransform crt = cornerGO.GetComponent<RectTransform>();
-            crt.anchorMin = cornerPivots[i];
-            crt.anchorMax = cornerPivots[i];
-            crt.pivot = cornerPivots[i];
-            crt.sizeDelta = new Vector2(4f, 4f);
-            Image cImg = cornerGO.GetComponent<Image>();
-            cImg.color = CommonBadge;
-            cImg.raycastTarget = false;
-            cornerGO.SetActive(!usingGotyBase);
-            cornerAccents[i] = cImg;
-        }
-
-        tooltipRoot.SetActive(false);
+        BindSceneReferences();
     }
 }
 

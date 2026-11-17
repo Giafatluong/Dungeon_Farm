@@ -21,11 +21,11 @@ public class IntroCutsceneController : MonoBehaviour
     private CameraController camController;
     private PlayerMovement playerMovement;
 
-    private GameObject cutsceneCanvasGO;
-    private CanvasGroup canvasGroup;
-    private Image fullscreenOverlay;
-    private TextMeshProUGUI centerNarrationText;
-    private TextMeshProUGUI skipPromptText;
+    [SerializeField] public GameObject cutsceneCanvasGO;
+    [SerializeField] public CanvasGroup canvasGroup;
+    [SerializeField] public Image fullscreenOverlay;
+    [SerializeField] public TextMeshProUGUI centerNarrationText;
+    [SerializeField] public TextMeshProUGUI skipPromptText;
 
     private bool isCutscenePlaying = false;
     public bool IsPlaying => isCutscenePlaying || activeCutsceneRoutine != null;
@@ -149,8 +149,8 @@ public class IntroCutsceneController : MonoBehaviour
         }
 
         // Snap camera over player bed in the house so world is ready behind the black screen
-        Vector3 playerPos = playerMovement != null 
-            ? playerMovement.transform.position + new Vector3(0, 1.2f, -10f) 
+        Vector3 playerPos = playerMovement != null
+            ? playerMovement.transform.position + new Vector3(0, 1.2f, -10f)
             : new Vector3(12.0f, 0.5f, -10f);
         if (mainCam != null) mainCam.transform.position = playerPos;
 
@@ -321,70 +321,45 @@ public class IntroCutsceneController : MonoBehaviour
         }
     }
 
-    private void EnsureUIConstructed()
+    public void EnsureUIConstructed()
     {
-        if (cutsceneCanvasGO != null) return;
+        if (cutsceneCanvasGO != null)
+        {
+            BindSceneReferences();
+            return;
+        }
 
-        cutsceneCanvasGO = new GameObject("[IntroCutsceneCanvas]");
-        DontDestroyOnLoad(cutsceneCanvasGO);
+        GameObject existingCanvas = GameObject.Find("[IntroCutsceneCanvas]");
+        if (existingCanvas == null)
+        {
+            Canvas[] allCanvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < allCanvases.Length; i++)
+            {
+                if (allCanvases[i] != null && allCanvases[i].name == "[IntroCutsceneCanvas]")
+                {
+                    existingCanvas = allCanvases[i].gameObject;
+                    break;
+                }
+            }
+        }
 
-        Canvas c = cutsceneCanvasGO.AddComponent<Canvas>();
-        c.renderMode = RenderMode.ScreenSpaceOverlay;
-        c.sortingOrder = 9998;
+        if (existingCanvas != null)
+        {
+            cutsceneCanvasGO = existingCanvas;
+            BindSceneReferences();
+            return;
+        }
 
-        CanvasScaler cs = cutsceneCanvasGO.AddComponent<CanvasScaler>();
-        cs.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        cs.referenceResolution = new Vector2(1920, 1080);
-        cs.matchWidthOrHeight = 0.5f;
+        Debug.LogWarning("[IntroCutsceneController] [IntroCutsceneCanvas] not found in scene!");
+    }
 
-        canvasGroup = cutsceneCanvasGO.AddComponent<CanvasGroup>();
-        canvasGroup.alpha = 0f;
-        canvasGroup.blocksRaycasts = false;
-
-        // 1. Dedicated Fullscreen Dark Background
-        GameObject bgGO = new GameObject("FullscreenOverlay", typeof(RectTransform), typeof(Image));
-        bgGO.transform.SetParent(cutsceneCanvasGO.transform, false);
-        RectTransform bgRT = bgGO.GetComponent<RectTransform>();
-        bgRT.anchorMin = Vector2.zero;
-        bgRT.anchorMax = Vector2.one;
-        bgRT.sizeDelta = Vector2.zero;
-        fullscreenOverlay = bgGO.GetComponent<Image>();
-        fullscreenOverlay.color = new Color(0.03f, 0.035f, 0.05f, 1f); // Deep Atmospheric Obsidian Black
-        fullscreenOverlay.raycastTarget = true;
-
-        // 2. Center Narration Text (Exactly in the middle of the screen)
-        GameObject centerTextGO = new GameObject("CenterNarrationText", typeof(RectTransform), typeof(TextMeshProUGUI));
-        centerTextGO.transform.SetParent(cutsceneCanvasGO.transform, false);
-        RectTransform textRT = centerTextGO.GetComponent<RectTransform>();
-        textRT.anchorMin = new Vector2(0.5f, 0.5f);
-        textRT.anchorMax = new Vector2(0.5f, 0.5f);
-        textRT.pivot = new Vector2(0.5f, 0.5f);
-        textRT.anchoredPosition = Vector2.zero;
-        textRT.sizeDelta = new Vector2(1200f, 240f);
-
-        centerNarrationText = centerTextGO.GetComponent<TextMeshProUGUI>();
-        centerNarrationText.fontSize = 32;
-        centerNarrationText.alignment = TextAlignmentOptions.Center;
-        centerNarrationText.fontStyle = FontStyles.Bold;
-        centerNarrationText.color = new Color(0.96f, 0.96f, 0.98f, 1f);
-        DungeonUIAssetHelper.ApplyFont(centerNarrationText);
-
-        // 3. Skip Prompt Text (At the bottom of the screen)
-        GameObject skipGO = new GameObject("SkipPrompt", typeof(RectTransform), typeof(TextMeshProUGUI));
-        skipGO.transform.SetParent(cutsceneCanvasGO.transform, false);
-        RectTransform skipRT = skipGO.GetComponent<RectTransform>();
-        skipRT.anchorMin = new Vector2(0.5f, 0.06f);
-        skipRT.anchorMax = new Vector2(0.5f, 0.06f);
-        skipRT.pivot = new Vector2(0.5f, 0.5f);
-        skipRT.anchoredPosition = Vector2.zero;
-        skipRT.sizeDelta = new Vector2(800f, 32f);
-
-        skipPromptText = skipGO.GetComponent<TextMeshProUGUI>();
-        skipPromptText.fontSize = 15;
-        skipPromptText.color = new Color(0.6f, 0.65f, 0.75f, 0.7f);
-        skipPromptText.alignment = TextAlignmentOptions.Center;
-        DungeonUIAssetHelper.ApplyFont(skipPromptText);
-
-        cutsceneCanvasGO.SetActive(false);
+    public void BindSceneReferences()
+    {
+        if (cutsceneCanvasGO == null) return;
+        Transform root = cutsceneCanvasGO.transform;
+        canvasGroup = cutsceneCanvasGO.GetComponent<CanvasGroup>();
+        if (fullscreenOverlay == null) fullscreenOverlay = root.Find("FullscreenOverlay")?.GetComponent<Image>();
+        if (centerNarrationText == null) centerNarrationText = root.Find("CenterNarrationText")?.GetComponent<TextMeshProUGUI>();
+        if (skipPromptText == null) skipPromptText = root.Find("SkipPrompt")?.GetComponent<TextMeshProUGUI>();
     }
 }

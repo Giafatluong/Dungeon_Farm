@@ -129,11 +129,19 @@ public class TutorialManager : MonoBehaviour
     {
         if (Instance == null)
         {
-            GameObject managerGO = new GameObject("TutorialManager");
-            Instance = managerGO.AddComponent<TutorialManager>();
-            managerGO.AddComponent<IntroCutsceneController>();
-            managerGO.AddComponent<TutorialDialogueUI>();
-            DontDestroyOnLoad(managerGO);
+            TutorialManager existing = FindFirstObjectByType<TutorialManager>(FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                Instance = existing;
+            }
+            else
+            {
+                GameObject managerGO = new GameObject("TutorialManager");
+                Instance = managerGO.AddComponent<TutorialManager>();
+                managerGO.AddComponent<IntroCutsceneController>();
+                managerGO.AddComponent<TutorialDialogueUI>();
+                if (Application.isPlaying) DontDestroyOnLoad(managerGO);
+            }
         }
 
         string activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
@@ -151,7 +159,7 @@ public class TutorialManager : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (Application.isPlaying) DontDestroyOnLoad(gameObject);
 
         // If player already marked tutorial completed OR has ongoing game progression, complete tutorial immediately
         bool isAlreadyCompleted = PlayerPrefs.GetInt(TutorialDoneKey, 0) == 1

@@ -64,7 +64,7 @@ public class DungeonEventInteractable : MonoBehaviour, IPointerClickHandler, IPo
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
-        if (promptCanvas != null) Destroy(promptCanvas.gameObject);
+        if (promptCanvasGroup != null) promptCanvasGroup.alpha = 0f;
     }
 
     private void EnsureVisualComponents()
@@ -98,7 +98,7 @@ public class DungeonEventInteractable : MonoBehaviour, IPointerClickHandler, IPo
         BuildPromptUI();
     }
 
-    private void BuildPromptUI()
+    public void BuildPromptUI()
     {
         if (promptCanvas != null)
         {
@@ -112,6 +112,19 @@ public class DungeonEventInteractable : MonoBehaviour, IPointerClickHandler, IPo
         {
             GameObject existingCanvasGO = GameObject.Find("EventPromptCanvas");
             if (existingCanvasGO != null) promptCanvas = existingCanvasGO.GetComponent<Canvas>();
+        }
+
+        if (promptCanvas == null)
+        {
+            Canvas[] all = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i] != null && all[i].name == "EventPromptCanvas")
+                {
+                    promptCanvas = all[i];
+                    break;
+                }
+            }
         }
 
         if (promptCanvas != null)
@@ -135,86 +148,7 @@ public class DungeonEventInteractable : MonoBehaviour, IPointerClickHandler, IPo
             }
         }
 
-        GameObject canvasGO = new GameObject("EventPromptCanvas");
-        // Keep prompt canvas at scene root so it is never distorted by altar's localScale animation
-        canvasGO.transform.SetParent(null);
-        promptCanvas = canvasGO.AddComponent<Canvas>();
-        promptCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        promptCanvas.sortingOrder = 150; // Above combat HUD (100) and camp (120)
-
-        CanvasScaler scaler = canvasGO.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.matchWidthOrHeight = 0.5f;
-
-        canvasGO.AddComponent<GraphicRaycaster>();
-
-        // Prompt Panel - anchors must be at bottom-left (0,0) so WorldToScreenPoint directly maps to anchoredPosition!
-        GameObject panelGO = new GameObject("PromptPanel", typeof(RectTransform));
-        panelGO.transform.SetParent(canvasGO.transform, false);
-        promptPanelRect = panelGO.GetComponent<RectTransform>();
-        promptPanelRect.anchorMin = Vector2.zero;
-        promptPanelRect.anchorMax = Vector2.zero;
-        promptPanelRect.sizeDelta = new Vector2(340f, 74f);
-        promptPanelRect.pivot = new Vector2(0.5f, 0f);
-
-        promptCanvasGroup = panelGO.AddComponent<CanvasGroup>();
-        promptCanvasGroup.alpha = 0f;
-
-        Image bgImage = panelGO.AddComponent<Image>();
-        Sprite frameSprite = DungeonUIAssetHelper.GetFrameSprite();
-        if (frameSprite != null)
-        {
-            bgImage.sprite = frameSprite;
-            bgImage.type = Image.Type.Sliced;
-            bgImage.color = new Color(0.12f, 0.10f, 0.15f, 0.94f);
-        }
-        else
-        {
-            bgImage.color = new Color(0.14f, 0.11f, 0.18f, 0.95f);
-        }
-
-        Outline outline = panelGO.AddComponent<Outline>();
-        outline.effectColor = new Color(0.85f, 0.65f, 1.0f, 0.85f); // Mystical violet highlight
-        outline.effectDistance = new Vector2(2f, -2f);
-
-        promptClickButton = panelGO.AddComponent<Button>();
-        promptClickButton.targetGraphic = bgImage;
-        promptClickButton.onClick.RemoveListener(TriggerInteraction);
-        promptClickButton.onClick.AddListener(TriggerInteraction);
-        UIButtonHoverGlow.Ensure(promptClickButton);
-
-        // Content Layout
-        VerticalLayoutGroup vLayout = panelGO.AddComponent<VerticalLayoutGroup>();
-        vLayout.padding = new RectOffset(14, 14, 8, 8);
-        vLayout.spacing = 3f;
-        vLayout.childAlignment = TextAnchor.MiddleCenter;
-        vLayout.childControlWidth = true;
-        vLayout.childControlHeight = true;
-        vLayout.childForceExpandWidth = true;
-        vLayout.childForceExpandHeight = false;
-
-        // Title row with [E] badge
-        GameObject titleGO = new GameObject("TitleText", typeof(RectTransform));
-        titleGO.transform.SetParent(panelGO.transform, false);
-        promptTitleText = titleGO.AddComponent<TextMeshProUGUI>();
-        promptTitleText.text = "<b><color=#FFDF00>[E]</color> TƯƠNG TÁC SỰ KIỆN</b>";
-        promptTitleText.fontSize = 20f;
-        promptTitleText.alignment = TextAlignmentOptions.Center;
-        promptTitleText.color = Color.white;
-        promptTitleText.raycastTarget = false;
-        DungeonUIAssetHelper.ApplyFont(promptTitleText, withOutline: true);
-
-        // Subtitle / Hint
-        GameObject hintGO = new GameObject("HintText", typeof(RectTransform));
-        hintGO.transform.SetParent(panelGO.transform, false);
-        promptHintText = hintGO.AddComponent<TextMeshProUGUI>();
-        promptHintText.text = "<size=13><color=#D5C9E5>Bấm <b>[E]</b> hoặc <b>nhấp chuột</b> để kích hoạt</color></size>";
-        promptHintText.fontSize = 14f;
-        promptHintText.alignment = TextAlignmentOptions.Center;
-        promptHintText.color = new Color(0.85f, 0.82f, 0.92f, 1f);
-        promptHintText.raycastTarget = false;
-        DungeonUIAssetHelper.ApplyFont(promptHintText, withOutline: false);
+        Debug.LogWarning("[DungeonEventInteractable] EventPromptCanvas not found in scene!");
     }
 
     public void Setup(DungeonEvent evt, PlayerStats player, ItemContainer backpack, System.Action onComplete)

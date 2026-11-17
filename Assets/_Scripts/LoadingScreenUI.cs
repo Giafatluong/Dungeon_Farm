@@ -386,7 +386,14 @@ public class LoadingScreenUI : MonoBehaviour
                 else
                 {
                     // Clean up redundant duplicate canvases in scene
+#if UNITY_EDITOR
+                    if (!Application.isPlaying)
+                        DestroyImmediate(found[i].gameObject);
+                    else
+                        Destroy(found[i].gameObject);
+#else
                     Destroy(found[i].gameObject);
+#endif
                 }
             }
         }

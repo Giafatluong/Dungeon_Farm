@@ -10,7 +10,7 @@ using UnityEngine.UI;
 /// </summary>
 public class DungeonEntranceUI : MonoBehaviour
 {
-    [SerializeField] private GameObject enterDungeonPanel;
+    [SerializeField] public GameObject enterDungeonPanel;
 
     [Header("Floors Configuration")]
     [SerializeField] private int totalFloors = 10;
@@ -32,13 +32,13 @@ public class DungeonEntranceUI : MonoBehaviour
 
     // Scene & Runtime UI references
     [Header("Scene UI References")]
-    [SerializeField] private GameObject dialogPanel;
-    [SerializeField] private TextMeshProUGUI titleText;
-    [SerializeField] private TextMeshProUGUI subtitleText;
-    [SerializeField] private TextMeshProUGUI detailsText;
-    [SerializeField] private Button enterButton;
-    [SerializeField] private TextMeshProUGUI enterButtonText;
-    [SerializeField] private Button closeButton;
+    [SerializeField] public GameObject dialogPanel;
+    [SerializeField] public TextMeshProUGUI titleText;
+    [SerializeField] public TextMeshProUGUI subtitleText;
+    [SerializeField] public TextMeshProUGUI detailsText;
+    [SerializeField] public Button enterButton;
+    [SerializeField] public TextMeshProUGUI enterButtonText;
+    [SerializeField] public Button closeButton;
     private readonly Dictionary<int, FloorCardUI> floorCards = new Dictionary<int, FloorCardUI>();
     private Coroutine feedbackFlashCoroutine;
     private GameObject blessingWarningModalGO;
@@ -242,16 +242,6 @@ public class DungeonEntranceUI : MonoBehaviour
 
         if (enterDungeonPanel != null)
         {
-            Canvas panelCanvas = enterDungeonPanel.GetComponent<Canvas>();
-            if (panelCanvas == null) panelCanvas = enterDungeonPanel.AddComponent<Canvas>();
-            panelCanvas.overrideSorting = true;
-            panelCanvas.sortingOrder = 100;
-
-            if (enterDungeonPanel.GetComponent<GraphicRaycaster>() == null)
-            {
-                enterDungeonPanel.AddComponent<GraphicRaycaster>();
-            }
-
             Image bgImg = enterDungeonPanel.GetComponent<Image>();
             if (bgImg != null)
             {
@@ -795,7 +785,7 @@ public class DungeonEntranceUI : MonoBehaviour
     }
 
     #region Scene Binding & Procedural UI Builder
-    private void EnsureUIConstructed()
+    public void EnsureUIConstructed()
     {
         if (dialogPanel != null && floorCards.Count > 0) return;
 
@@ -816,16 +806,6 @@ public class DungeonEntranceUI : MonoBehaviour
             return;
         }
 
-        Canvas panelCanvas = enterDungeonPanel.GetComponent<Canvas>();
-        if (panelCanvas == null) panelCanvas = enterDungeonPanel.AddComponent<Canvas>();
-        panelCanvas.overrideSorting = true;
-        panelCanvas.sortingOrder = 100;
-
-        if (enterDungeonPanel.GetComponent<GraphicRaycaster>() == null)
-        {
-            enterDungeonPanel.AddComponent<GraphicRaycaster>();
-        }
-
         Image bgImg = enterDungeonPanel.GetComponent<Image>();
         if (bgImg != null)
         {
@@ -835,8 +815,10 @@ public class DungeonEntranceUI : MonoBehaviour
         Transform existingModal = enterDungeonPanel.transform.Find("FloorSelectionModal");
         if (existingModal != null)
         {
-            Destroy(existingModal.gameObject);
-            dialogPanel = null;
+            dialogPanel = existingModal.gameObject;
+            BindSceneReferences();
+            BindFloorCards();
+            return;
         }
 
         // Hide legacy unstyled Yes/No buttons in the scene so they don't overlap
@@ -935,7 +917,7 @@ public class DungeonEntranceUI : MonoBehaviour
         }
     }
 
-    private void BuildModalUI()
+    public void BuildModalUI()
     {
         if (floorList.Count == 0)
         {
